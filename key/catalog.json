@@ -1,0 +1,715 @@
+{
+  "schema_version": 1,
+  "fetched_at": "2026-09-11T00:55:53.079Z",
+  "source_mode": "netlify+supabase",
+  "remote_ok": true,
+  "source_urls": {
+    "base_catalog": "https://traveltg-bot.netlify.app/lib/data.js",
+    "content_contract": "https://traveltg-bot.netlify.app/lib/content/contract.js",
+    "remote_content": "https://qymhzqkenzsgszogkcdq.supabase.co/functions/v1/miniapp-content?locale=ru&environment=production"
+  },
+  "remote_snapshot": {
+    "version": 2,
+    "published_at": null,
+    "schema_version": 1
+  },
+  "content_sha256": "b8f4ee655740b2198774f35b6ff29e97ca844abe5b020743f3edd05184fa6556",
+  "partners": [
+    {
+      "id": "four-seasons",
+      "name": "Four Seasons Preferred Partner",
+      "logo": "https://traveltg-bot.netlify.app/assets/partners/normalized/four-seasons-pp.webp",
+      "brands": [],
+      "brands_text": "",
+      "hotel_count": "",
+      "summary": "",
+      "scope": "",
+      "perks": [
+        "Завтрак на двоих ежедневно (вкл. рум-сервис)",
+        "Кредит $100–$200 в отеле",
+        "Апгрейд номера при заселении (приоритет)",
+        "Ранний заезд и поздний выезд"
+      ],
+      "favorites_label": "Любимые адреса",
+      "favorites": [],
+      "fresh": [],
+      "source": {
+        "label": "",
+        "url": "",
+        "as_of": "",
+        "conditions": ""
+      },
+      "remote_overrides_applied": false
+    },
+    {
+      "id": "marriott-stars",
+      "name": "Marriott STARS & Luminous",
+      "logo": "https://traveltg-bot.netlify.app/assets/partners/normalized/marriott-stars.webp",
+      "brands": [
+        "Ritz-Carlton",
+        "St. Regis",
+        "EDITION",
+        "Luxury Collection",
+        "W Hotels"
+      ],
+      "brands_text": "Ritz-Carlton · St. Regis · EDITION · Luxury Collection · W Hotels",
+      "hotel_count": "",
+      "summary": "",
+      "scope": "",
+      "perks": [
+        "Завтрак на двоих ежедневно",
+        "Кредит $100 в отеле",
+        "Апгрейд номера при наличии",
+        "Поздний выезд до 16:00"
+      ],
+      "favorites_label": "Любимые адреса",
+      "favorites": [],
+      "fresh": [],
+      "source": {
+        "label": "",
+        "url": "",
+        "as_of": "",
+        "conditions": ""
+      },
+      "remote_overrides_applied": false
+    },
+    {
+      "id": "hyatt-prive",
+      "name": "Hyatt Privé",
+      "logo": "https://traveltg-bot.netlify.app/assets/partners/normalized/hyatt-prive.webp",
+      "brands": [
+        "Park Hyatt",
+        "Andaz",
+        "Alila",
+        "Thompson",
+        "Miraval"
+      ],
+      "brands_text": "Park Hyatt · Andaz · Alila · Thompson · Miraval",
+      "hotel_count": "",
+      "summary": "",
+      "scope": "",
+      "perks": [
+        "Апгрейд подтверждён за 24ч до заезда",
+        "Завтрак на двоих ежедневно",
+        "Кредит $50–$100 в отеле",
+        "Ранний заезд и поздний выезд"
+      ],
+      "favorites_label": "Любимые адреса",
+      "favorites": [],
+      "fresh": [],
+      "source": {
+        "label": "",
+        "url": "",
+        "as_of": "",
+        "conditions": ""
+      },
+      "remote_overrides_applied": false
+    },
+    {
+      "id": "hilton-for-luxury",
+      "name": "Hilton For Luxury",
+      "logo": "https://traveltg-bot.netlify.app/assets/partners/normalized/hilton-for-luxury.webp",
+      "brands": [
+        "Waldorf Astoria",
+        "Conrad",
+        "LXR",
+        "Signia",
+        "NoMad"
+      ],
+      "brands_text": "Waldorf Astoria · Conrad · LXR · Signia · NoMad",
+      "hotel_count": "",
+      "summary": "",
+      "scope": "",
+      "perks": [
+        "Двойные баллы Hilton Honors",
+        "Завтрак на двоих ежедневно",
+        "Кредит $100 в отеле",
+        "Апгрейд номера при наличии"
+      ],
+      "favorites_label": "Любимые адреса",
+      "favorites": [],
+      "fresh": [],
+      "source": {
+        "label": "",
+        "url": "",
+        "as_of": "",
+        "conditions": ""
+      },
+      "remote_overrides_applied": false
+    },
+    {
+      "id": "aman",
+      "name": "Aman",
+      "logo": "https://traveltg-bot.netlify.app/assets/partners/normalized/aman.webp",
+      "brands": [
+        "Aman Resorts",
+        "Janu"
+      ],
+      "brands_text": "Aman Resorts · Janu",
+      "hotel_count": "",
+      "summary": "",
+      "scope": "",
+      "perks": [
+        "Завтрак на двоих ежедневно",
+        "Кредит $100 на ресторан или спа",
+        "Апгрейд номера при заселении",
+        "Ранний заезд и поздний выезд"
+      ],
+      "favorites_label": "Любимые адреса",
+      "favorites": [],
+      "fresh": [],
+      "source": {
+        "label": "",
+        "url": "",
+        "as_of": "",
+        "conditions": ""
+      },
+      "remote_overrides_applied": false
+    },
+    {
+      "id": "mandarin-fan-club",
+      "name": "Mandarin Oriental Fan Club",
+      "logo": "https://traveltg-bot.netlify.app/assets/partners/normalized/mandarin-fan-club.webp",
+      "brands": [],
+      "brands_text": "",
+      "hotel_count": "",
+      "summary": "",
+      "scope": "",
+      "perks": [
+        "Завтрак на двоих ежедневно",
+        "Кредит $100 на ресторан или спа",
+        "Гарантия размещения (без переселения)",
+        "Приоритет в листе ожидания"
+      ],
+      "favorites_label": "Любимые адреса",
+      "favorites": [],
+      "fresh": [],
+      "source": {
+        "label": "",
+        "url": "",
+        "as_of": "",
+        "conditions": ""
+      },
+      "remote_overrides_applied": false
+    },
+    {
+      "id": "peninsula-penclub",
+      "name": "Peninsula PenClub",
+      "logo": "https://traveltg-bot.netlify.app/assets/partners/normalized/peninsula-penclub.webp",
+      "brands": [],
+      "brands_text": "",
+      "hotel_count": "",
+      "summary": "Камерный доступ ко всей коллекции Peninsula с фирменной свободой Peninsula Time.",
+      "scope": "Peninsula Time действует по правилам программы; остальные привилегии подтверждаем для выбранного отеля и тарифа.",
+      "perks": [
+        "Завтрак на двоих ежедневно",
+        "Кредит отеля — размер и категория зависят от тарифа",
+        "Апгрейд категории — по подтверждению при бронировании",
+        "Peninsula Time: заезд с 06:00 и выезд до 22:00 — при наличии",
+        "30 минут спа в подарок"
+      ],
+      "favorites_label": "Любимые адреса",
+      "favorites": [
+        "The Peninsula Hong Kong",
+        "The Peninsula Istanbul",
+        "The Peninsula London"
+      ],
+      "fresh": [
+        "Istanbul · открыт в 2023",
+        "London · открыт в 2023",
+        "New York · обновлён в 2024"
+      ],
+      "source": {
+        "label": "PenClub · Peninsula Time",
+        "url": "https://www.peninsula.com/en/global-pages/peninsula-time-terms",
+        "as_of": "2026-08-22",
+        "conditions": "Peninsula Time доступен только через подходящие каналы и при наличии; остальные привилегии подтверждаем для конкретного отеля и тарифа."
+      },
+      "remote_overrides_applied": false
+    },
+    {
+      "id": "one-and-only",
+      "name": "One&Only",
+      "logo": "https://traveltg-bot.netlify.app/assets/partners/normalized/one-and-only.webp",
+      "brands": [],
+      "brands_text": "",
+      "hotel_count": "",
+      "summary": "",
+      "scope": "",
+      "perks": [
+        "Кредит $100 в курорте",
+        "Завтрак на двоих ежедневно",
+        "Апгрейд номера при заселении",
+        "Приоритетный ранний заезд и поздний выезд"
+      ],
+      "favorites_label": "Любимые адреса",
+      "favorites": [],
+      "fresh": [],
+      "source": {
+        "label": "",
+        "url": "",
+        "as_of": "",
+        "conditions": ""
+      },
+      "remote_overrides_applied": false
+    },
+    {
+      "id": "rosewood-elite",
+      "name": "Rosewood Elite",
+      "logo": "https://traveltg-bot.netlify.app/assets/partners/normalized/rosewood-elite.webp",
+      "brands": [
+        "Rosewood Hotels",
+        "Carlyle",
+        "Hôtel de Crillon"
+      ],
+      "brands_text": "Rosewood Hotels · Carlyle · Hôtel de Crillon",
+      "hotel_count": "",
+      "summary": "",
+      "scope": "",
+      "perks": [
+        "Кредит $100",
+        "Завтрак на двоих ежедневно",
+        "Апгрейд номера при заселении",
+        "Прямая связь с управляющим"
+      ],
+      "favorites_label": "Любимые адреса",
+      "favorites": [],
+      "fresh": [],
+      "source": {
+        "label": "",
+        "url": "",
+        "as_of": "",
+        "conditions": ""
+      },
+      "remote_overrides_applied": false
+    },
+    {
+      "id": "belmond-bellini",
+      "name": "Belmond Bellini Club",
+      "logo": "https://traveltg-bot.netlify.app/assets/partners/normalized/belmond-bellini.webp",
+      "brands": [
+        "Belmond Hotels",
+        "Orient Express",
+        "River Cruises"
+      ],
+      "brands_text": "Belmond Hotels · Orient Express · River Cruises",
+      "hotel_count": "",
+      "summary": "",
+      "scope": "",
+      "perks": [
+        "Кредит $90–$200 (зависит от номера)",
+        "Завтрак на двоих ежедневно",
+        "Апгрейд номера при заселении",
+        "Ваучер $500 при тратах от $5,000"
+      ],
+      "favorites_label": "Любимые адреса",
+      "favorites": [],
+      "fresh": [],
+      "source": {
+        "label": "",
+        "url": "",
+        "as_of": "",
+        "conditions": ""
+      },
+      "remote_overrides_applied": false
+    },
+    {
+      "id": "accor-step",
+      "name": "Accor HERA",
+      "logo": "https://traveltg-bot.netlify.app/assets/partners/normalized/accor-preferred.webp",
+      "brands": [
+        "Raffles",
+        "Fairmont",
+        "Sofitel Legend",
+        "MGallery"
+      ],
+      "brands_text": "Raffles · Fairmont · Sofitel Legend · MGallery",
+      "hotel_count": "",
+      "summary": "HERA объединяет luxury-портфель Accor — от Raffles до Fairmont; пакет собирается на уровне отеля и тарифа.",
+      "scope": "Каждая привилегия зависит от конкретного HERA-предложения.",
+      "perks": [
+        "Кредит $100 (люксовый уровень)",
+        "Завтрак на двоих ежедневно",
+        "Апгрейд номера при заселении",
+        "Ранний заезд и поздний выезд"
+      ],
+      "favorites_label": "Редакторская витрина",
+      "favorites": [
+        "Raffles Singapore",
+        "Raffles London at The OWO",
+        "Fairmont Tokyo"
+      ],
+      "fresh": [
+        "Raffles Sentosa Singapore · 2025",
+        "Fairmont Tokyo · 2025",
+        "Raffles Jeddah · 2026"
+      ],
+      "source": {
+        "label": "HERA · описание программы",
+        "url": "https://travelpros.accor.com/en/hera-loyalty-program.html",
+        "as_of": "2026-08-22",
+        "conditions": "Состав участников, тариф и гостевые привилегии зависят от отеля и предложения; подтверждаем по актуальному HERA quote."
+      },
+      "remote_overrides_applied": false
+    },
+    {
+      "id": "ihg-luxury",
+      "name": "IHG Luxury & Lifestyle",
+      "logo": "https://traveltg-bot.netlify.app/assets/partners/normalized/ihg.webp",
+      "brands": [
+        "InterContinental",
+        "Six Senses",
+        "Regent",
+        "Kimpton"
+      ],
+      "brands_text": "InterContinental · Six Senses · Regent · Kimpton",
+      "hotel_count": "",
+      "summary": "",
+      "scope": "",
+      "perks": [
+        "Гарантированный поздний выезд до 14:00",
+        "Кредит $100 (люксовый уровень)",
+        "Завтрак на двоих ежедневно",
+        "Апгрейд номера при заселении"
+      ],
+      "favorites_label": "Любимые адреса",
+      "favorites": [],
+      "fresh": [],
+      "source": {
+        "label": "",
+        "url": "",
+        "as_of": "",
+        "conditions": ""
+      },
+      "remote_overrides_applied": false
+    },
+    {
+      "id": "dorchester-diamond",
+      "name": "Dorchester Diamond Club",
+      "logo": "https://traveltg-bot.netlify.app/assets/partners/normalized/dorchester-diamond.webp",
+      "brands": [
+        "The Dorchester",
+        "Beverly Hills Hotel",
+        "Plaza Athénée",
+        "Le Meurice"
+      ],
+      "brands_text": "The Dorchester · Beverly Hills Hotel · Plaza Athénée · Le Meurice",
+      "hotel_count": "",
+      "summary": "",
+      "scope": "",
+      "perks": [
+        "Гарантированный апгрейд при бронировании",
+        "Завтрак на двоих ежедневно",
+        "Кредит 100 ед. местной валюты",
+        "VIP-статус"
+      ],
+      "favorites_label": "Любимые адреса",
+      "favorites": [],
+      "fresh": [],
+      "source": {
+        "label": "",
+        "url": "",
+        "as_of": "",
+        "conditions": ""
+      },
+      "remote_overrides_applied": false
+    },
+    {
+      "id": "jumeirah-passport",
+      "name": "Jumeirah Passport to Luxury",
+      "logo": "https://traveltg-bot.netlify.app/assets/partners/normalized/jumeirah.webp",
+      "brands": [
+        "Jumeirah Hotels",
+        "Burj Al Arab"
+      ],
+      "brands_text": "Jumeirah Hotels · Burj Al Arab",
+      "hotel_count": "",
+      "summary": "",
+      "scope": "",
+      "perks": [
+        "Бесплатный трансфер из аэропорта (сьюты)",
+        "Кредит $75–$100 на ресторан/спа",
+        "Завтрак на двоих ежедневно",
+        "Апгрейд номера при заселении"
+      ],
+      "favorites_label": "Любимые адреса",
+      "favorites": [],
+      "fresh": [],
+      "source": {
+        "label": "",
+        "url": "",
+        "as_of": "",
+        "conditions": ""
+      },
+      "remote_overrides_applied": false
+    },
+    {
+      "id": "kempinski-1897",
+      "name": "Kempinski Club 1897",
+      "logo": "https://traveltg-bot.netlify.app/assets/partners/normalized/kempinski-club.webp",
+      "brands": [],
+      "brands_text": "",
+      "hotel_count": "",
+      "summary": "",
+      "scope": "",
+      "perks": [
+        "Кредит $50–$100",
+        "Завтрак на двоих ежедневно",
+        "Апгрейд номера при заселении",
+        "Личное приветствие от руководства"
+      ],
+      "favorites_label": "Любимые адреса",
+      "favorites": [],
+      "fresh": [],
+      "source": {
+        "label": "",
+        "url": "",
+        "as_of": "",
+        "conditions": ""
+      },
+      "remote_overrides_applied": false
+    },
+    {
+      "id": "standard-secret-agent",
+      "name": "The Standard Secret Agent",
+      "logo": "https://traveltg-bot.netlify.app/assets/partners/normalized/the-standard.webp",
+      "brands": [
+        "The Standard",
+        "Bunkhouse"
+      ],
+      "brands_text": "The Standard · Bunkhouse",
+      "hotel_count": "",
+      "summary": "",
+      "scope": "",
+      "perks": [
+        "Кредит на ресторан (варьируется)",
+        "Завтрак на двоих ежедневно",
+        "Гарантия лучшей цены с бонусами",
+        "Апгрейд номера при заселении"
+      ],
+      "favorites_label": "Любимые адреса",
+      "favorites": [],
+      "fresh": [],
+      "source": {
+        "label": "",
+        "url": "",
+        "as_of": "",
+        "conditions": ""
+      },
+      "remote_overrides_applied": false
+    },
+    {
+      "id": "address-hotels",
+      "name": "Address Hotels",
+      "logo": "https://traveltg-bot.netlify.app/assets/partners/normalized/address.webp",
+      "brands": [
+        "Address Hotels",
+        "Palace Downtown"
+      ],
+      "brands_text": "Address Hotels · Palace Downtown",
+      "hotel_count": "",
+      "summary": "",
+      "scope": "",
+      "perks": [
+        "Кредит $100 на ресторан",
+        "Шведский стол на двоих ежедневно",
+        "Апгрейд номера при заселении",
+        "VIP-статус в Дубае"
+      ],
+      "favorites_label": "Любимые адреса",
+      "favorites": [],
+      "fresh": [],
+      "source": {
+        "label": "",
+        "url": "",
+        "as_of": "",
+        "conditions": ""
+      },
+      "remote_overrides_applied": false
+    },
+    {
+      "id": "virtuoso",
+      "name": "Virtuoso",
+      "logo": "https://traveltg-bot.netlify.app/assets/partners/normalized/virtuoso.webp",
+      "brands": [],
+      "brands_text": "",
+      "hotel_count": "1,400+",
+      "summary": "Самая широкая кураторская сеть: ценность — в точном наборе привилегий у конкретного отеля.",
+      "scope": "Набор и статус каждой привилегии зависят от выбранного объекта и тарифа.",
+      "perks": [
+        "Завтрак на двоих ежедневно",
+        "Кредит $100+ или спа-процедура",
+        "Апгрейд номера при заселении",
+        "Ранний заезд и поздний выезд"
+      ],
+      "favorites_label": "Редакторская витрина · 2026",
+      "favorites": [
+        "Aman Venice",
+        "Hotel Cipriani, a Belmond Hotel",
+        "Orient Express Venezia"
+      ],
+      "fresh": [
+        "Aman Nai Lert Bangkok · 2025",
+        "Rosewood Amsterdam · 2025",
+        "Waldorf Astoria New York · 2025"
+      ],
+      "source": {
+        "label": "Virtuoso · обзор гостиничной программы",
+        "url": "https://static.virtuoso.com/division-marketing/PR/2025%20Press%20Releases/2025%20Hotel%20Update%20release_CONSUMER%20FINAL.pdf",
+        "as_of": "2026-08-22",
+        "conditions": "Привилегии и суммы зависят от отеля, дат и подходящего тарифа; подтверждаем по актуальному Virtuoso offer."
+      },
+      "remote_overrides_applied": false
+    },
+    {
+      "id": "design-hotels",
+      "name": "Design Hotels",
+      "logo": "https://traveltg-bot.netlify.app/assets/partners/normalized/design-hotels.webp",
+      "brands": [],
+      "brands_text": "",
+      "hotel_count": "550+",
+      "summary": "Коллекция культурно значимых дизайнерских бутик-отелей.",
+      "scope": "",
+      "perks": [
+        "Опыт на €50–€100",
+        "Завтрак на двоих ежедневно",
+        "Апгрейд номера при заселении",
+        "Локальный подарок от GM"
+      ],
+      "favorites_label": "Любимые адреса",
+      "favorites": [],
+      "fresh": [],
+      "source": {
+        "label": "",
+        "url": "",
+        "as_of": "",
+        "conditions": ""
+      },
+      "remote_overrides_applied": false
+    },
+    {
+      "id": "slh-within",
+      "name": "Small Luxury Hotels withIN",
+      "logo": "https://traveltg-bot.netlify.app/assets/partners/normalized/slh-within.webp",
+      "brands": [],
+      "brands_text": "",
+      "hotel_count": "560+",
+      "summary": "Независимые бутик-отели с аутентичной атмосферой.",
+      "scope": "",
+      "perks": [
+        "Кредит от $50",
+        "Континентальный завтрак на двоих",
+        "Апгрейд номера при заселении",
+        "Бонусы программы INVITED"
+      ],
+      "favorites_label": "Любимые адреса",
+      "favorites": [],
+      "fresh": [],
+      "source": {
+        "label": "",
+        "url": "",
+        "as_of": "",
+        "conditions": ""
+      },
+      "remote_overrides_applied": false
+    },
+    {
+      "id": "leading-hotels-vita",
+      "name": "Leading Hotels VITA",
+      "logo": "https://traveltg-bot.netlify.app/assets/partners/normalized/lhw.webp",
+      "brands": [],
+      "brands_text": "",
+      "hotel_count": "400+",
+      "summary": "Культовая коллекция замков, дворцов и легендарных отелей.",
+      "scope": "",
+      "perks": [
+        "Завтрак на двоих ежедневно",
+        "Приоритетный апгрейд (выше Leaders Club)",
+        "Кредит $100 (зависит от отеля)",
+        "VIP-статус"
+      ],
+      "favorites_label": "Любимые адреса",
+      "favorites": [],
+      "fresh": [],
+      "source": {
+        "label": "",
+        "url": "",
+        "as_of": "",
+        "conditions": ""
+      },
+      "remote_overrides_applied": false
+    },
+    {
+      "id": "preferred-hotels-platinum",
+      "name": "Preferred Hotels Platinum",
+      "logo": "https://traveltg-bot.netlify.app/assets/partners/normalized/preferred.webp",
+      "brands": [
+        "Legend Collection",
+        "LVX Collection",
+        "Lifestyle Collection"
+      ],
+      "brands_text": "Legend Collection · LVX Collection · Lifestyle Collection",
+      "hotel_count": "650+",
+      "summary": "Глобальный портфель независимых люксовых отелей в пяти коллекциях.",
+      "scope": "",
+      "perks": [
+        "Кредит $100 в отеле",
+        "Завтрак на двоих ежедневно",
+        "Апгрейд номера при заселении",
+        "Баллы I Prefer сохраняются"
+      ],
+      "favorites_label": "Любимые адреса",
+      "favorites": [],
+      "fresh": [],
+      "source": {
+        "label": "",
+        "url": "",
+        "as_of": "",
+        "conditions": ""
+      },
+      "remote_overrides_applied": false
+    },
+    {
+      "id": "relais-chateaux",
+      "name": "Relais & Châteaux",
+      "logo": "https://traveltg-bot.netlify.app/assets/partners/normalized/relais-chateaux.webp",
+      "brands": [],
+      "brands_text": "",
+      "hotel_count": "580+",
+      "summary": "Семейные поместья и рестораны со звёздами Мишлен по всему миру.",
+      "scope": "",
+      "perks": [
+        "Завтрак на двоих ежедневно",
+        "VIP-подарок при заезде",
+        "Апгрейд номера при заселении",
+        "Кредит в избранных отелях"
+      ],
+      "favorites_label": "Любимые адреса",
+      "favorites": [],
+      "fresh": [],
+      "source": {
+        "label": "",
+        "url": "",
+        "as_of": "",
+        "conditions": ""
+      },
+      "remote_overrides_applied": false
+    }
+  ],
+  "special_offers": {
+    "ru": [
+      "3-я ночь бесплатно",
+      "Бесплатное такси из аэропорта",
+      "60 мин спа-сессии",
+      "Апгрейд до сьюта при наличии",
+      "Поздний выезд до 16:00"
+    ],
+    "en": [
+      "3rd night free",
+      "Free airport taxi",
+      "60 min spa session",
+      "Suite upgrade on availability",
+      "Late checkout until 4PM"
+    ]
+  }
+}

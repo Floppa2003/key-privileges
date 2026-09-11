@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "ok": true,
+  "fetched_at": "2026-09-11T00:55:53.079Z",
+  "request_id": "2026-09-11T00:50:00Z-init-1",
+  "triggered_by": "push",
+  "partner_count": 23,
+  "special_offer_count": 5,
+  "remote_ok": true,
+  "source_mode": "netlify+supabase",
+  "content_sha256": "b8f4ee655740b2198774f35b6ff29e97ca844abe5b020743f3edd05184fa6556",
+  "warnings": []
+}
