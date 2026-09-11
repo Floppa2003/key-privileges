@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "ok": true,
-  "fetched_at": "2026-09-11T00:56:53.245Z",
-  "request_id": "2026-09-11T00:57:30Z-phone-path-test",
+  "fetched_at": "2026-09-11T01:20:13.257Z",
+  "request_id": "2026-09-11T01:20:00Z-refactor-e2e",
   "triggered_by": "push",
   "partner_count": 23,
   "special_offer_count": 5,
