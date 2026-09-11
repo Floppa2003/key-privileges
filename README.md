@@ -14,7 +14,7 @@ Public machine-readable snapshot of the KEY concierge Telegram Mini App privileg
 
 The scraper reads only public KEY resources: Netlify `data.js` for the base catalog, the public content contract for stable partner IDs, public Supabase configuration for the anon key when needed, and the production `miniapp-content` Supabase Edge Function for current Russian overrides.
 
-No Telegram token, browser cookie, Telegram `initData`, or user session is required or stored. Remote JavaScript is not executed wholesale: only required data literals are isolated, executable constructs rejected, evaluated in a restricted short-lived VM, and normalized output validated before writing.
+No Telegram token, browser cookie, Telegram `initData`, user session, or private KEY data is required or stored. Remote JavaScript is treated as untrusted input and is not executed wholesale: only required data literals are isolated, executable constructs rejected, evaluated in a restricted short-lived VM, and normalized output validated before writing.
 
 ## Refresh
 
