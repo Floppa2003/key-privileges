@@ -51,7 +51,10 @@ def main():
         if r.status_code!=200:raise RuntimeError('provider_http_'+str(r.status_code))
         return r.json()
     try:
-        metadata=read('/nodes/hosts');nodes=choose_nodes(metadata)
+        metadata=read('/nodes/hosts')
+        report['inventory_top_level_keys']=list(metadata)[:20] if isinstance(metadata,dict) else []
+        report['node_inventory']={name:value.get('location') for name,value in metadata.get('nodes',{}).items() if isinstance(value,dict)}
+        nodes=choose_nodes(metadata)
         report['nodes']={n:metadata['nodes'][n] for n in nodes}
         jobs=[]
         for name,kind,target in TARGETS:
@@ -63,8 +66,7 @@ def main():
                 report['checks'].append(item);jobs.append(item)
             except Exception as exc:
                 report['checks'].append({'id':name,'status':'request_failed','error_type':type(exc).__name__,
-                                         'reason':str(exc)[:120] if isinstance(exc,RuntimeError) else 'provider_contract_or_transport_error'})
-                # Do not repeatedly hit a rate-limited/refusing provider.
+                                         'reason':str(exc)[:120] if isinstance(exc,(RuntimeError,ValueError)) else 'provider_contract_or_transport_error'})
                 break
             time.sleep(1)
         for attempt in range(8):
@@ -80,7 +82,7 @@ def main():
                 except Exception as exc:
                     j['status']='result_failed';j['error_type']=type(exc).__name__
     except Exception as exc:
-        report['setup_error']={'type':type(exc).__name__,'reason':str(exc)[:120] if isinstance(exc,RuntimeError) else 'nodes_or_provider_unavailable'}
+        report['setup_error']={'type':type(exc).__name__,'reason':str(exc)[:120] if isinstance(exc,(RuntimeError,ValueError)) else 'nodes_or_provider_unavailable'}
     finally:
         report['finished_at']=datetime.now(timezone.utc).isoformat()
         (out/'independent.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf8')
