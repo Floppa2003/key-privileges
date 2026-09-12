@@ -1,4 +1,4 @@
 {
-  "request_id": "2026-09-12-normalized-v2.2-t2-rgo-mir-ural-publication",
-  "reason": "Collect all 43 configured public routes with the tested v2.2 adapters; publish only parser_offers and parser_coverage. Preserve source-specific failures, unknown fields, original terms and manual columns. Reconcile counts and independently read back the result. Do not enable the periodic schedule."
+  "request_id": "2026-09-13-normalized-v2.3-official-announcements",
+  "reason": "Run all 45 configured public sources and publish only normalized parser tabs. Keep announcements, source-post evidence and unknown current eligibility distinct from partner catalogues; preserve blocked-source diagnostics, all unrelated sheets and manual columns. Independently verify written values. Periodic scheduling remains disabled."
 }
