@@ -17,7 +17,9 @@ def options(kind,target):
     if kind=='ping':return target,{'protocol':'TCP','port':443,'packets':1,'ipVersion':4}
     p=urlsplit(target)
     if p.scheme!='https' or p.username or p.password:raise ValueError('non_public_target')
-    return p.hostname,{'protocol':'HTTPS','port':443,'ipVersion':4,'request':{'method':'GET','path':p.path or '/','query':p.query}}
+    request={'method':'GET','path':p.path or '/'}
+    if p.query:request['query']=p.query
+    return p.hostname,{'protocol':'HTTPS','port':443,'ipVersion':4,'request':request}
 
 
 def country_pair(payload):
@@ -38,7 +40,7 @@ def main():
     session=requests.Session();session.headers.update({'User-Agent':'LoyaltyNetworkResearch/0.1 (+https://github.com/Floppa2003/key-privileges)','Accept':'application/json','Accept-Encoding':'gzip'})
     def call(method,path,payload=None):
         r=session.request(method,BASE+path,json=payload,timeout=25,allow_redirects=False)
-        if r.status_code not in (200,202):raise RuntimeError('globalping_http_'+str(r.status_code))
+        if r.status_code not in (200,202):raise RuntimeError('globalping_http_'+str(r.status_code)+': '+r.text[:500])
         return r.json()
     def poll(rid):
         for _ in range(20):
@@ -52,8 +54,8 @@ def main():
           'results':[{'probe':{k:r['probe'].get(k) for k in ('continent','country','city','asn','network')},
                       'result':evidence(r.get('result',{}))} for r in data['results']]}
     location=[{'country':'RU','limit':1},{'country':'NL','limit':1}]
+    jobs=[]
     try:
-        jobs=[]
         for index,(name,kind,target) in enumerate(TARGETS):
             host,opts=options(kind,target)
             request={'type':kind,'target':host,'locations':location,'measurementOptions':opts}
@@ -68,16 +70,19 @@ def main():
                 location=rid
                 report['reuse_probe_measurement_id']=rid
             time.sleep(1)
-        for row in jobs:
-            if row['status']=='completed':continue
-            try:
-                row['evidence']=compact(poll(row['measurement_id']));row['status']='completed'
-            except Exception as exc:
-                row['status']='failed';row['error']=str(exc) if isinstance(exc,RuntimeError) else type(exc).__name__
-                if 'http_429' in row['error']:break
     except Exception as exc:
         report['experiment_error']=str(exc) if isinstance(exc,RuntimeError) else type(exc).__name__
     finally:
+        # Preserve completed work after a later request-validation failure.
+        # A rate limit stops further provider reads for this run.
+        if 'http_429' not in report.get('experiment_error',''):
+            for row in jobs:
+                if row['status']=='completed':continue
+                try:
+                    row['evidence']=compact(poll(row['measurement_id']));row['status']='completed'
+                except Exception as exc:
+                    row['status']='failed';row['error']=str(exc) if isinstance(exc,RuntimeError) else type(exc).__name__
+                    if 'http_429' in row['error']:break
         report['finished_at']=datetime.now(timezone.utc).isoformat()
         (out/'globalping.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf8')
     print(json.dumps({'checks':len(report['checks']),'complete':sum(c['status']=='completed' for c in report['checks']),'error':report.get('experiment_error')}))

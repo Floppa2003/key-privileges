@@ -15,3 +15,33 @@ class ProbeTests(unittest.TestCase):
   r={'status':'finished','statusCode':403,'rawOutput':'Set-Cookie: secret','headers':{'set-cookie':'secret'},'tls':{'valid':True}}
   self.assertEqual(probe.evidence(r),{'status':'finished','statusCode':403,'tls':{'valid':True}})
 if __name__=='__main__':unittest.main()
+
+class ApiContractTests(unittest.TestCase):
+ def test_absent_query_is_omitted_not_sent_as_empty_string(self):
+  host,opts=probe.options('http','https://ekp.spb.ru/capabilities/loyalty/')
+  self.assertEqual(opts['request'],{'method':'GET','path':'/capabilities/loyalty/'})
+ def test_created_measurements_are_read_even_if_a_later_creation_fails(self):
+  import os,tempfile,json
+  from unittest.mock import patch
+  class Response:
+   def __init__(self,code,obj):self.status_code=code;self.obj=obj;self.text=json.dumps(obj)
+   def json(self):return self.obj
+  class Session:
+   headers={}
+   def __init__(self):self.created=0
+   def request(self,method,url,**kwargs):
+    if method=='POST':
+     self.created+=1
+     if self.created==4:return Response(400,{'error':{'message':'bad optional field'}})
+     return Response(202,{'id':'m'+str(self.created),'probesCount':2})
+    return Response(200,{'status':'finished','results':[{'probe':{'country':'RU'},'result':{'status':'finished'}},{'probe':{'country':'NL'},'result':{'status':'finished'}}]})
+  old=os.getcwd()
+  try:
+   with tempfile.TemporaryDirectory() as tmp:
+    os.chdir(tmp)
+    with patch.object(probe.requests,'Session',Session),patch.object(probe.time,'sleep'):
+     probe.main()
+    result=json.loads(probe.Path('global-output/globalping.json').read_text())
+    self.assertEqual([x['status'] for x in result['checks']],['completed']*3)
+    self.assertIn('400',result['experiment_error'])
+  finally:os.chdir(old)
