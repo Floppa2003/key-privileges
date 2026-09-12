@@ -1,0 +1,31 @@
+name: Public source transport comparison
+on:
+  push:
+    branches: [loyalty/finish-catalogs]
+    paths: [diagnostics/transport_matrix.py, .github/workflows/transport-check.yml]
+permissions:
+  contents: read
+jobs:
+  inspect:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - run: python -m pip install requests==2.32.5 beautifulsoup4==4.14.3
+      - run: python diagnostics/transport_matrix.py
+      - run: python -m pip download --no-deps protego==0.6.2 -d transport-output
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: transport-${{ matrix.os }}-${{ github.run_id }}
+          path: transport-output/
+          retention-days: 7
