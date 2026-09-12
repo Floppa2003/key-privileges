@@ -103,6 +103,7 @@ class BrowserResponses:
     async def capture(self, response):
         try:
             if response.status != 200:
+                self.errors.append({'phase':'public_response','reason':f'http_{response.status}'})
                 return
             raw=await response.text()
             if len(raw.encode()) > 6000000:
@@ -132,6 +133,44 @@ class BrowserResponses:
         self.page.remove_listener('response',self.observe)
         for task in self.pending:task.cancel()
         if self.pending:await asyncio.gather(*list(self.pending),return_exceptions=True)
+
+
+async def read_matching_detail(client, captured, url, now, *, expected_id=None,
+                               deadline=float('inf'), wait_timeout=15):
+    """One repeat for a missing browser-owned response, within the source budget.
+
+    The offset is reset before each navigation. Old observations cannot satisfy a
+    new read. Authentication, rate limits and malformed responses do not retry.
+    """
+    for attempt in range(2):
+        if time.monotonic() >= deadline:
+            raise RuntimeError('source_time_budget_reached')
+        offset=len(captured.details); error_offset=len(captured.errors)
+        try:
+            await client.read(url,render=True)
+            data=await captured.wait(captured.details,offset,
+                lambda x:urlsplit(x['data']['content']['promoDetail']['promo']['promoAction']['url']).path==urlsplit(url).path,
+                timeout=min(wait_timeout,max(.001,deadline-time.monotonic())))
+            obj=data['data']['content']['promoDetail']['promo']['promoAction']
+            if expected_id is not None and str(obj['xml_id']) != str(expected_id):
+                raise RuntimeError('catalog_detail_identity_mismatch')
+            rs=mir_detail(data,url,now)
+            if len(rs)!=1 or urlsplit(rs[0]['source_url']).path!=urlsplit(url).path:
+                raise RuntimeError('catalog_detail_identity_mismatch')
+            record=rs[0]
+            record['details']['retrieval_attempts']=attempt+1
+            record['content_sha256']=content_hash(record)
+            return record
+        except RuntimeError as exc:
+            if str(exc)!='expected_public_response_not_observed':
+                raise
+            response_errors=captured.errors[error_offset:]
+            if response_errors:
+                raise RuntimeError(response_errors[-1]['reason']) from exc
+            if attempt==1:
+                raise
+            await asyncio.sleep(max(.5,client.request_interval))
+    raise AssertionError('unreachable detail retry state')
 
 
 async def collect_mir(client,cfg,report,now,limit):
@@ -185,15 +224,11 @@ async def collect_mir(client,cfg,report,now,limit):
             if time.monotonic()>=deadline:
                 report['errors'].append({'phase':'detail','reason':'source_time_budget_reached','remaining':len(candidates)-len(records)})
                 break
-            url=urljoin(cfg['url'],item['url']); offset=len(captured.details)
+            url=urljoin(cfg['url'],item['url'])
             try:
-                await client.read(url,render=True)
-                data=await captured.wait(captured.details,offset,
-                    lambda x:urlsplit(x['data']['content']['promoDetail']['promo']['promoAction']['url']).path==urlsplit(url).path)
-                rs=mir_detail(data,url,now)
-                if len(rs)!=1 or urlsplit(rs[0]['source_url']).path!=urlsplit(url).path:
-                    raise RuntimeError('catalog_detail_identity_mismatch')
-                record=rs[0];record['details'].update(catalog_profiles=memberships[identity],
+                record=await read_matching_detail(client,captured,url,now,
+                    expected_id=item.get('xml_id'),deadline=deadline)
+                record['details'].update(catalog_profiles=memberships[identity],
                     catalog_region=report['region'],retrieval_method='anonymous_browser_response_no_API_replay')
                 record['content_sha256']=content_hash(record);records.append(record)
             except Exception as exc:
