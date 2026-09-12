@@ -16,7 +16,12 @@ class FakeSheets(Sheets):
             return {'sheets':[{'properties':x['properties']} for x in self.tabs.values()]}
         if method == 'GET':
             title = unquote(suffix.split('/values/')[1]).split('!')[0].strip("'")
-            rows = [r[:9] for r in copy.deepcopy(self.tabs[title]['values'])]
+            a1 = unquote(suffix.split('/values/')[1]).split('!')[1]
+            import re
+            col = re.search(r':([A-Z]+)', a1)[1]
+            width = 0
+            for ch in col: width = width*26 + ord(ch)-64
+            rows = [r[:width] for r in copy.deepcopy(self.tabs[title]['values'])]
             if self.corrupt and len(rows) > 1:
                 rows[1][1] = 'CORRUPTED'
             return {'values':rows}
