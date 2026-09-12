@@ -1,0 +1,59 @@
+name: Independent Globalping and browser control
+on:
+  push:
+    branches: [loyalty/network-feasibility]
+    paths: [global-network-probe/**, .github/workflows/global-network.yml]
+permissions:
+  contents: read
+jobs:
+  measure:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r loyalty/requirements.txt
+      - run: python -m unittest discover -s global-network-probe -v
+      - run: python global-network-probe/probe.py
+      - run: python -m playwright install --with-deps chromium
+      - name: Compare one user-agent variable on actual target pages
+        run: |
+          python - <<'PY'
+          import asyncio,json,sys,os,hashlib
+          from pathlib import Path
+          from datetime import datetime,timezone
+          from urllib.parse import urlsplit
+          sys.path.insert(0,'loyalty/diagnostics')
+          import network_probe as probe
+          from playwright.async_api import async_playwright
+          async def main():
+              report={'observed_at':datetime.now(timezone.utc).isoformat(),'run_id':os.getenv('GITHUB_RUN_ID'),'probe_sha256':hashlib.sha256(Path(probe.__file__).read_bytes()).hexdigest(),'checks':[]}
+              async with async_playwright() as p:
+                  browser=await p.chromium.launch()
+                  try:
+                      ctx=await browser.new_context();page=await ctx.new_page()
+                      default=await page.evaluate('navigator.userAgent');await ctx.close()
+                      original=probe.UA
+                      report['user_agents']={'explicit_research_bot':original,'playwright_default':default}
+                      for source,url in [('coral','https://coralbonus.ru/klub-privilegii/zdorov-e/medsi/'),('rzd','https://www.rzd-bonus.ru/?accessible=true'),('utair','https://www.utair.ru/support/2/kakiye_partnery_est_u_utair_status')]:
+                          for mode in ('explicit_research_bot','playwright_default'):
+                              probe.UA=report['user_agents'][mode]
+                              observation=await probe.browser_read(browser,url,{urlsplit(url).hostname})
+                              report['checks'].append({'source_id':source,'mode':mode,'url':url,'observation':observation})
+                              await asyncio.sleep(2)
+                  finally:await browser.close()
+              report['finished_at']=datetime.now(timezone.utc).isoformat()
+              Path('global-output').mkdir(exist_ok=True)
+              Path('global-output/browser-comparison.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf8')
+          asyncio.run(main())
+          PY
+      - if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: global-network-${{ github.run_id }}
+          path: global-output/
+          retention-days: 7
