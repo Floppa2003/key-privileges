@@ -16,6 +16,8 @@ from adapters import extract,next_state,s7_catalog,s7_detail,mir_detail,PROGRAMS
 from normalized import VERSION,make_offer,content_hash,validate_offer,text
 from public_transport import PublicSource
 from mir_source import collect_mir
+from reviewed_pdf import extract_rgo_pdf
+from t2_source import collect_t2
 
 
 def error_record(exc,phase,url=''):
@@ -61,9 +63,11 @@ async def collect_rgo(client,cfg,report,now,limit):
     report['discovered']=len(urls);report['coverage']='load_more_exhausted' if exhausted else 'pagination_not_exhausted'
     records=[]
     for url in urls[:limit]:
-        if urlsplit(url).path.lower().endswith('.pdf'):
-            report['errors'].append({'phase':'detail','path':urlsplit(url).path,'reason':'pdf_offer_requires_separate_parser'});continue
-        try:records.extend(extract('rgo',await client.read(url),url,now))
+        try:
+            if urlsplit(url).path.lower().endswith('.pdf'):
+                records.extend(extract_rgo_pdf(await client.read_pdf(url),url,now))
+            else:
+                records.extend(extract('rgo',await client.read(url),url,now))
         except Exception as exc:report['errors'].append(error_record(exc,'detail',url))
     if len(urls)>limit:report['coverage']='detail_limit_reached'
     return records
@@ -114,6 +118,7 @@ async def one(browser,cfg,now,limit):
                     if not records:raise RuntimeError('no_partner_terms_found')
                 elif mode=='rgo':records=await collect_rgo(client,cfg,report,now,limit)
                 elif mode=='mir':records=await collect_mir(client,cfg,report,now,limit)
+                elif mode=='t2':records=await collect_t2(client,cfg,report,now,limit)
                 elif mode=='html':
                     raw=await client.read(cfg['url'],render=True)
                     records=extract(cfg['id'],raw,cfg['url'],now)

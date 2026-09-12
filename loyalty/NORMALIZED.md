@@ -1,4 +1,4 @@
-# Normalized loyalty sources (schema v2, adapter 2.1.0)
+# Normalized loyalty sources (schema v2, adapter 2.2.0)
 
 The canonical run output is `loyalty-output/normalized.json`: `schema_version`, `run_id`, `observed_at`, `records`, `sources`. `offers.jsonl` is one normalized record per line. `coverage.json` and `summary.md` distinguish discovered, normalized and failed observations.
 
@@ -11,7 +11,7 @@ The registry `sources_normalized.json` includes all programs in the live loyalty
 - Ural Wings: public partner array from the observed `ajax=partners&action=default` endpoint; fallback to actual `li#partner_*` blocks. Preserve each partner's separate text, category, city IDs and tier tables.
 - Moskvich: `.lpp-card` name and terms in the same block.
 - No Name: native record/element IDs and aligned card geometry, not DOM text order. Ambiguous pairings fail rather than moving the next partner's benefit onto this one.
-- RGO: exhaust its span-based load-more control, then parse individual pages. A linked PDF is reported separately and is not silently counted as parsed HTML.
+- RGO: exhaust its span-based load-more control, then parse individual pages. The full `.section-text__inner.text` content is preserved, not merely contact/summary sections. The Beeline image-PDF uses a separately declared digest-bound visual-review profile; changed bytes require a new review.
 - AZIMUT: status-table columns retained separately from summary cards. Image-coded unavailable amounts are not guessed. A summary card does not make a platinum privilege universal.
 - Museum Friends: published plan names/prices and corresponding benefits; membership plans remain a distinct record kind. The three explicitly named external partners are also represented separately with eligible plan names; their 10% discounts never inherit the 15% museum-program rate.
 - MEDI / Neva Travel: named partner-page fallbacks. These do not certify completeness of the EKP or SOGAZ catalogues.
@@ -30,6 +30,19 @@ Mileage normalization supports `13% милями`, an intervening accrual verb, 
 Askona's base earning rule and explicitly dated multiplier are separate records. A past temporary multiplier is marked expired while the base offer has no invented overall expiry. MEDSI/Taivas/Grether labelled periods are extracted separately from publication dates. EKP/Rostelecom new/existing customers are separate records; the article publication date is metadata, not an offer deadline, and the new-customer lifetime claim is not copied into the existing-customer benefit.
 
 Transient read-only 502/503/504 requests get at most three attempts with bounded backoff. Authorization failures, 429, CAPTCHA and a server `Retry-After` instruction are not immediately retried. Queue waiting no longer consumes a source's 420-second network budget. Robots/network/TLS/access failures are still not interpreted as empty catalogs.
+
+## T2 and source-quality corrections (2.2.0)
+
+- T2's normal browser loader can return an initial HTTP 503 and then replace the main document with HTTP 200. The transport observes the **final main-document response**, with a finite wait only on the reviewed T2 host. It does not click challenges, activate offers, sign in, provide SMS codes, alter TLS verification, or use external proxies.
+- Robots are parsed with pinned Protego 0.6.2, including wildcard rules, longest-match Allow handling and crawl/request-rate intervals. A failed robots request still fails closed. Query-card URLs are not crawled around a wildcard restriction.
+- T2 «Больше» records come from the allowed public root page's **own anonymous catalog response**. No additional API query is sent by the production adapter. IDs, company display names, complete agreement text, explicit expiration timestamps, categories and eligibility flags remain separate. This is the Moscow/Moscow Oblast anonymous response, not every regional/personal catalog. Direct card URLs are not fabricated or marked independently verified.
+- The public MiXX M help page is divided into prepared choices, selectable replacements, automatic inclusion and fixed benefits. Its six selection slots do not make every listed service simultaneously available. Selection's short Premium card remains a summary rather than an invented full benefit catalog. Speaker bundle terms and the archived powerbank campaign retain their own periods.
+- RGO's older fixture omitted the actual content wrapper. Real captured DOM regression fixtures now check the full benefit and conditions. Etnomir's explicit 31.12.2025 deadline is recognized. The fresh Paddock page currently states only the room discount; a gift from an older cached page is **not** carried forward without live evidence.
+- The Beeline PDF is image-based. `reviewed_pdf.py` contains a human-readable visual-review profile locked to the full PDF SHA256 and exact URL. It publishes only after each live download matches; a replacement PDF stops publication of this record pending review. This is not general-purpose OCR and not automatic understanding of arbitrary future PDFs. Monthly prices, included tethering and the separately priced option are distinct; the filename date is not an offer expiry.
+- One exact Domina Pulkovo partner-owned page adds limited NORDWIND CLUB coverage without claiming that the blocked airline catalog is collected.
+- `details.lexical_conditions` contains only recognized minimum-purchase, maximum-benefit, first-purchase/new-customer references and stacking clauses, each with its complete evidence clause. These are **references**, not a complete global eligibility decision: exceptions in the same clause and all original conditions remain authoritative. Tariff/subscription prices are not purchase minima or discount amounts.
+
+Public fixtures include only reviewed source blocks/objects, never personal sessions or the destination spreadsheet. Existing data boundaries, WIF credentials and disabled scheduling gates are unchanged.
 
 ## Record contract
 

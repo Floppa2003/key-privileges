@@ -128,32 +128,36 @@
   {
     "id": "t2_bolshe",
     "name": "T2 «Больше»",
-    "mode": "probe",
+    "mode": "t2",
     "url": "https://msk.t2.ru/bolshe/offers"
   },
   {
     "id": "t2_mixx",
     "name": "MiXX M",
-    "mode": "probe",
-    "url": "https://msk.t2.ru/help/article/what-included-mixx-m-subscription"
+    "mode": "html",
+    "url": "https://msk.t2.ru/help/article/what-included-mixx-m-subscription",
+    "coverage_scope": "reviewed_public_program_page_not_all_personal_privileges"
   },
   {
     "id": "t2_selection",
     "name": "T2 Selection",
-    "mode": "probe",
-    "url": "https://msk.t2.ru/tariff/premium"
+    "mode": "html",
+    "url": "https://msk.t2.ru/tariff/premium",
+    "coverage_scope": "reviewed_public_program_page_not_all_personal_privileges"
   },
   {
     "id": "t2_mixx_s",
     "name": "MiXX S — Яндекс Станции",
-    "mode": "probe",
-    "url": "https://msk.t2.ru/promotions/article/yandex-station-mixx"
+    "mode": "html",
+    "url": "https://msk.t2.ru/promotions/article/yandex-station-mixx",
+    "coverage_scope": "reviewed_public_program_page_not_all_personal_privileges"
   },
   {
     "id": "t2_powerbank",
     "name": "T2 — пауэрбанки",
-    "mode": "probe",
-    "url": "https://msk.t2.ru/promotions/article/bezlimitnaya-arenda-powerbank"
+    "mode": "html",
+    "url": "https://msk.t2.ru/promotions/article/bezlimitnaya-arenda-powerbank",
+    "coverage_scope": "reviewed_public_program_page_not_all_personal_privileges"
   },
   {
     "id": "loyals",
@@ -265,5 +269,12 @@
     "url": "https://media.utair.ru/status",
     "mode": "html",
     "coverage_scope": "all_rate_anchors_in_public_partner_panel_not_full_program_rules"
+  },
+  {
+    "id": "nordwind_domina",
+    "name": "NORDWIND CLUB → Domina Пулково (страница партнёра)",
+    "mode": "html",
+    "url": "https://dominapulkovo.ru/nordwind",
+    "coverage_scope": "reviewed_partner_page_not_program_catalog"
   }
 ]
