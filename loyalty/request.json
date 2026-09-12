@@ -1,4 +1,4 @@
 {
-  "request_id": "2026-09-12-first-authorized-sheets-test",
-  "reason": "Verify the first Google-authorized intake publication; schedule remains disabled."
+  "request_id": "2026-09-12-normalized-v2-authorized-publication",
+  "reason": "Collect reviewed public-source adapters, publish only normalized intake tabs and verify readback. Existing data and disabled periodic schedule remain unchanged."
 }
