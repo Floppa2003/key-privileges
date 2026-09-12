@@ -26,11 +26,15 @@ TARGETS=[
 
 
 def choose_nodes(payload):
-    names=['ru1.node.check-host.net','nl1.node.check-host.net']
-    for name,country in zip(names,['ru','nl']):
-        if payload.get('nodes',{}).get(name,{}).get('location',[None])[0]!=country:
-            raise ValueError('requested_independent_node_unavailable')
-    return names
+    selected=[]
+    for country in ('ru','nl'):
+        choices=sorted(name for name,value in payload.get('nodes',{}).items()
+            if re.fullmatch(country+r'[0-9]+\.node\.check-host\.net',name)
+            and isinstance(value,dict) and value.get('location',[None])[0]==country)
+        if not choices:
+            raise ValueError('requested_independent_country_unavailable:'+country)
+        selected.append(choices[0])
+    return selected
 
 
 def validate_job(payload,nodes):
@@ -52,7 +56,6 @@ def main():
         return r.json()
     try:
         metadata=read('/nodes/hosts')
-        report['inventory_top_level_keys']=list(metadata)[:20] if isinstance(metadata,dict) else []
         report['node_inventory']={name:value.get('location') for name,value in metadata.get('nodes',{}).items() if isinstance(value,dict)}
         nodes=choose_nodes(metadata)
         report['nodes']={n:metadata['nodes'][n] for n in nodes}
@@ -67,6 +70,7 @@ def main():
             except Exception as exc:
                 report['checks'].append({'id':name,'status':'request_failed','error_type':type(exc).__name__,
                                          'reason':str(exc)[:120] if isinstance(exc,(RuntimeError,ValueError)) else 'provider_contract_or_transport_error'})
+                # Do not repeatedly hit a rate-limited/refusing provider.
                 break
             time.sleep(1)
         for attempt in range(8):

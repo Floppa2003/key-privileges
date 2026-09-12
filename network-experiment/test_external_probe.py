@@ -13,3 +13,12 @@ class Tests(unittest.TestCase):
   with self.assertRaises(ValueError):e.validate_job({'ok':1,'request_id':'../../private','nodes':{'n1':[]}},['n1'])
   with self.assertRaises(ValueError):e.validate_job({'ok':1,'request_id':'a123','nodes':{'evil':[]}},['n1'])
 if __name__=='__main__':unittest.main()
+
+class LiveInventoryTests(unittest.TestCase):
+ def test_retired_example_node_does_not_prevent_current_country_selection(self):
+  nodes={'nodes':{'ru2.node.check-host.net':{'location':['ru','Russia','Moscow']},'nl1.node.check-host.net':{'location':['nl','Netherlands','Amsterdam']}}}
+  try: actual=e.choose_nodes(nodes)
+  except ValueError: self.fail('retired example node must not prevent using a current RU node')
+  self.assertEqual(actual,['ru2.node.check-host.net','nl1.node.check-host.net'])
+ def test_inventory_cannot_inject_nonprovider_hostname(self):
+  with self.assertRaises(ValueError):e.choose_nodes({'nodes':{'ru.evil.test':{'location':['ru']},'nl1.node.check-host.net':{'location':['nl']}}})
