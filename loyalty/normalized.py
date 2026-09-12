@@ -11,7 +11,7 @@ from urllib.parse import urlsplit
 from bs4 import BeautifulSoup
 from model import clean_url
 
-VERSION = '2.2.0'
+VERSION = '2.3.0'
 HOSTS = {
  'moskvich': ['moskvichmag.ru'], 'noname': ['nonameburo.com'],
  's7': ['marketplace.s7.ru'], 'ural': ['www.uralairlines.ru'],
@@ -25,6 +25,8 @@ HOSTS = {
 for _key,_cfg in json.loads(Path(__file__).with_name('partner_pages.json').read_text(encoding='utf8')).items():
     HOSTS[_key]=[urlsplit(_cfg['url']).hostname]
 HOSTS['utair_media']=['media.utair.ru']
+HOSTS['ekp_announcements']=['t.me']
+HOSTS['rzd_announcements']=['t.me']
 for _source in ('t2_bolshe','t2_mixx','t2_selection','t2_mixx_s','t2_powerbank'):
     HOSTS[_source]=['msk.t2.ru']
 BLOCKED = re.compile(r'access denied|just a moment|captcha|доступ к сайту временно ограничен|проверка безопасности|доступ запрещ[её]н', re.I)
@@ -198,6 +200,10 @@ def validate_offer(r: dict) -> None:
         raise ValueError('Evidence hash mismatch')
     if r.get('rates')!=normalize_rates(r.get('benefit_text','')):
         raise ValueError('Rate evidence mismatch')
+    if r['link_kind']=='source_post':
+        channel={'ekp_announcements':'ekpcard','rzd_announcements':'fpcrussia'}.get(r['source_id'])
+        if not channel or not re.fullmatch('/'+channel+r'/[0-9]+',urlsplit(r['source_url']).path) or r['benefit_url'] is not None or r['record_kind']!='announcement' or r['source_status']!='announced_unverified':
+            raise ValueError('Invalid announcement identity or evidence status')
     if r['link_kind']=='page_block' and r['benefit_url'] is not None:
         raise ValueError('Shared-page block is not a detail URL')
     if len(json.dumps(r,ensure_ascii=False))>90000:
