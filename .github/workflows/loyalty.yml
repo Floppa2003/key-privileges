@@ -1,0 +1,100 @@
+name: Loyalty catalog probe and Sheets sync
+
+on:
+  push:
+    branches: ["loyalty/catalog-probe-and-sheets-sync"]
+    paths: ["loyalty/**", ".github/workflows/loyalty.yml"]
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: Maximum detail pages per source (1-100; this is a diagnostic sample)
+        default: "12"
+        type: string
+      publish:
+        description: Publish to parser tabs after Google authorization has been configured
+        default: false
+        type: boolean
+  schedule:
+    - cron: "23 5 * * 1"
+
+permissions:
+  contents: read
+concurrency:
+  group: loyalty-catalog-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    if: github.event_name != 'schedule' || vars.LOYALTY_SCHEDULE_ENABLED == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -r loyalty/requirements.txt
+      - run: python -m unittest discover -s loyalty/tests -v
+      - run: python -m playwright install --with-deps chromium
+      - name: Collect public page evidence (no Google credentials)
+        env:
+          PAGE_LIMIT: ${{ inputs.limit || '12' }}
+        run: python loyalty/collect.py --limit "$PAGE_LIMIT"
+      - name: Validate publication payload without access to Google
+        if: always()
+        run: |
+          if test -f loyalty-output/bundle.json; then
+            python loyalty/sheets_sync.py --input loyalty-output/bundle.json
+          fi
+      - name: Preserve only public collection evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: loyalty-public-${{ github.run_id }}-${{ github.run_attempt }}
+          path: loyalty-output/
+          if-no-files-found: warn
+          retention-days: 7
+
+  publish:
+    needs: collect
+    if: >-
+      needs.collect.result == 'success' &&
+      github.ref == 'refs/heads/main' &&
+      vars.LOYALTY_SHEETS_SYNC == 'true' &&
+      (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.publish))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install requests==2.32.5
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: loyalty-public-${{ github.run_id }}-${{ github.run_attempt }}
+          path: loyalty-output
+      - run: python loyalty/sheets_sync.py --input loyalty-output/bundle.json
+      - name: Obtain a short-lived Sheets-scoped token
+        id: google
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
+        with:
+          workload_identity_provider: ${{ vars.GOOGLE_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GOOGLE_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/spreadsheets
+          access_token_lifetime: 600s
+          create_credentials_file: false
+          export_environment_variables: false
+      - name: Upsert parser tabs and verify by reading them back
+        env:
+          GOOGLE_ACCESS_TOKEN: ${{ steps.google.outputs.access_token }}
+          DISCOUNTS_SPREADSHEET_ID: ${{ secrets.DISCOUNTS_SPREADSHEET_ID }}
+        run: python loyalty/sheets_sync.py --input loyalty-output/bundle.json --publish

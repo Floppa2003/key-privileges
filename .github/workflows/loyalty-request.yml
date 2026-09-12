@@ -1,0 +1,32 @@
+name: Request loyalty Sheets sync
+
+on:
+  push:
+    branches: [main]
+    paths: ["loyalty/request.json"]
+
+permissions:
+  contents: read
+  actions: write
+
+concurrency:
+  group: loyalty-on-demand-request
+  cancel-in-progress: false
+
+jobs:
+  request:
+    if: github.repository == 'Floppa2003/key-privileges' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Dispatch the reviewed workflow on main
+        env:
+          GH_TOKEN: ${{ github.token }}
+          LOYALTY_SHEETS_SYNC: ${{ vars.LOYALTY_SHEETS_SYNC }}
+          GOOGLE_SERVICE_ACCOUNT: ${{ vars.GOOGLE_SERVICE_ACCOUNT }}
+          GOOGLE_WORKLOAD_IDENTITY_PROVIDER: ${{ vars.GOOGLE_WORKLOAD_IDENTITY_PROVIDER }}
+          DISCOUNTS_SPREADSHEET_ID: ${{ secrets.DISCOUNTS_SPREADSHEET_ID }}
+        run: bash loyalty/request.sh

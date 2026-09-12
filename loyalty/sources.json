@@ -1,0 +1,5 @@
+[
+  {"id":"ekp","name":"Единая карта петербуржца (ЕКП)","host":"ekp.spb.ru","roots":["https://ekp.spb.ru/capabilities/loyalty/"],"catalog_pattern":"/capabilities/loyalty/?","offer_pattern":"/capabilities/loyalty/tiles/[0-9]+/?"},
+  {"id":"s7","name":"S7 Priority Marketplace","host":"marketplace.s7.ru","roots":["https://marketplace.s7.ru/partners/category/retail"],"catalog_pattern":"/(?:partners|city)/category/[^/]+/?","offer_pattern":"/(?:partners|city)/offer/[^/]+/?"},
+  {"id":"coral","name":"CoralBonus — Клуб привилегий","host":"coralbonus.ru","roots":["https://coralbonus.ru/klub-privilegii/"],"catalog_pattern":"/klub-privilegii/(?:[^/]+/)?","offer_pattern":"/klub-privilegii/[^/]+/[^/]+/?"}
+]
