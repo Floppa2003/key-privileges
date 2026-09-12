@@ -200,9 +200,9 @@ def validate_offer(r: dict) -> None:
         raise ValueError('Evidence hash mismatch')
     if r.get('rates')!=normalize_rates(r.get('benefit_text','')):
         raise ValueError('Rate evidence mismatch')
-    if r['link_kind']=='source_post':
+    if r['source_id'] in ('ekp_announcements','rzd_announcements') or r['link_kind']=='source_post':
         channel={'ekp_announcements':'ekpcard','rzd_announcements':'fpcrussia'}.get(r['source_id'])
-        if not channel or not re.fullmatch('/'+channel+r'/[0-9]+',urlsplit(r['source_url']).path) or r['benefit_url'] is not None or r['record_kind']!='announcement' or r['source_status']!='announced_unverified':
+        if r['link_kind']!='source_post' or not channel or not re.fullmatch('/'+channel+r'/[0-9]+',urlsplit(r['source_url']).path) or r['benefit_url'] is not None or r['record_kind']!='announcement' or r['source_status']!='announced_unverified':
             raise ValueError('Invalid announcement identity or evidence status')
     if r['link_kind']=='page_block' and r['benefit_url'] is not None:
         raise ValueError('Shared-page block is not a detail URL')

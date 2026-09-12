@@ -35,7 +35,12 @@ def relevant(body, cfg, cards):
     if cfg['id'] == 'rzd_announcements':
         without_footer = GENERIC_RZD_FOOTER.sub('', body)
         return bool(RZD.search(without_footer) and NUMERIC_BENEFIT.search(without_footer))
-    return bool(cards or (LOYALTY.search(body) and NUMERIC_BENEFIT.search(body)))
+    if cards:
+        return True
+    if re.search(r'опрос|голосован|мониторинг\s+активност',body,re.I):
+        return False
+    role=re.search(r'скидк|к[еэ]шб[еэ]к|промокод|балл|подар',body,re.I)
+    return bool(LOYALTY.search(body) and role and NUMERIC_BENEFIT.search(body))
 
 
 def parse_feed(html: str, cfg: dict, observed_at: str) -> dict:
@@ -97,6 +102,8 @@ def parse_feed(html: str, cfg: dict, observed_at: str) -> dict:
             'https://t.me/'+native,observed_at,title=next((line.strip() for line in body.split('\n') if len(re.findall(r'[A-Za-zА-Яа-яЁё]',line))>=5),body)[:300],
             record_kind='announcement',link_kind='source_post',locator='data-post='+native,
             source_status='announced_unverified',details=detail,warnings=warnings))
+    if not ids:
+        result['errors'].append({'phase':'pagination','reason':'no_public_messages_in_response'})
     if dated:
         result['oldest_publication']=min(dated).isoformat()
         result['newest_publication']=max(dated).isoformat()

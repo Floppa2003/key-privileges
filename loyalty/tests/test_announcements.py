@@ -78,3 +78,21 @@ class AdditionalEvidenceTests(unittest.TestCase):
  def test_emoji_only_line_is_not_the_title(self):
   h=post('ekpcard/70','⚡️<br><b>Скидка 10% держателям ЕКП</b>')
   self.assertIn('Скидка',parse_feed(h,CFG,NOW)['records'][0]['title'])
+
+class PublicationBoundaryTests(unittest.TestCase):
+ def test_announcement_cannot_be_promoted_by_changing_link_kind(self):
+  from normalized import content_hash,validate_offer
+  r=parse_feed(post('ekpcard/70','ЕКП скидка 10%'),CFG,NOW)['records'][0]
+  r.update(record_kind='partner_offer',link_kind='detail_page',source_status='published',benefit_url=r['source_url'])
+  r['content_sha256']=content_hash(r)
+  with self.assertRaises(ValueError):validate_offer(r)
+ def test_empty_archive_response_is_not_a_confirmed_archive_end(self):
+  result=parse_feed('<html><body>Temporary empty page</body></html>',CFG,NOW)
+  self.assertTrue(result['errors'])
+
+class RelevanceTests(unittest.TestCase):
+ def test_poll_percentages_and_weekly_reward_reminders_are_not_partner_offers(self):
+  body='Итоги опроса «Городской диалог» ЕКП: 71% посетили театр. За новый опрос получите 20 баллов.'
+  self.assertEqual(parse_feed(post('ekpcard/70',body),CFG,NOW)['records'],[])
+ def test_percentage_requires_a_benefit_role_when_no_exact_card_is_linked(self):
+  self.assertEqual(parse_feed(post('ekpcard/70','ЕКП: прирост аудитории составил 20%.'),CFG,NOW)['records'],[])
