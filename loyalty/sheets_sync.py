@@ -53,6 +53,8 @@ def prepare(bundle: dict) -> dict[str, list[list[str]]]:
 
 
 class Sheets:
+    schemas = SCHEMAS
+
     def __init__(self, spreadsheet_id: str, token: str):
         if not spreadsheet_id or not token or any(x not in 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_' for x in spreadsheet_id):
             raise ValueError('Missing/invalid spreadsheet ID or Google access token')
@@ -76,42 +78,49 @@ class Sheets:
 
     def values(self, title: str, props: dict) -> list[list]:
         n = props['gridProperties']['rowCount']
-        if n > 5000 or props['gridProperties']['columnCount'] < 9:
+        width = len(self.schemas[title])
+        if n > 5000 or props['gridProperties']['columnCount'] < width:
             raise ValueError('Managed sheet outside safe dimensions')
-        a1 = f"'{title}'!A1:I{n}"
+        col, index = "", width
+        while index:
+            index, remainder = divmod(index-1,26)
+            col = chr(65+remainder)+col
+        a1 = f"'{title}'!A1:{col}{n}"
         return self.request('GET', '/values/' + quote(a1, safe=''), params={'valueRenderOption': 'FORMULA'}).get('values', [])
 
     def ensure_tab(self, title: str) -> dict:
-        if title not in SCHEMAS:
+        if title not in self.schemas:
             raise ValueError('Refusing to write to a non-parser sheet')
+        width = len(self.schemas[title])
         meta = self.metadata()
         if title not in meta:
             self.request('POST', ':batchUpdate', json={'requests': [{'addSheet': {'properties': {
-                'title': title, 'gridProperties': {'rowCount': 1000, 'columnCount': 10, 'frozenRowCount': 1}}}}]})
+                'title': title, 'gridProperties': {'rowCount': 1000, 'columnCount': width+1, 'frozenRowCount': 1}}}}]})
             meta = self.metadata()
         props = meta[title]
         existing = self.values(title, props)
-        if existing and existing[0] != SCHEMAS[title]:
+        if existing and existing[0] != self.schemas[title]:
             raise ValueError('Existing parser sheet has an unexpected schema; refusing overwrite')
         if not existing:
             sid = props['sheetId']
             self.request('POST', ':batchUpdate', json={'requests': [
-                {'updateCells': {'range': {'sheetId':sid,'startRowIndex':0,'endRowIndex':1,'startColumnIndex':0,'endColumnIndex':10},
-                                 'rows':[{'values':[cell(x) for x in SCHEMAS[title] + ['Ручной комментарий']]}], 'fields':'userEnteredValue'}},
-                {'repeatCell': {'range': {'sheetId':sid,'startRowIndex':0,'endRowIndex':1,'startColumnIndex':0,'endColumnIndex':10},
+                {'updateCells': {'range': {'sheetId':sid,'startRowIndex':0,'endRowIndex':1,'startColumnIndex':0,'endColumnIndex':width+1},
+                                 'rows':[{'values':[cell(x) for x in self.schemas[title] + ['Ручной комментарий']]}], 'fields':'userEnteredValue'}},
+                {'repeatCell': {'range': {'sheetId':sid,'startRowIndex':0,'endRowIndex':1,'startColumnIndex':0,'endColumnIndex':width+1},
                                 'cell': {'userEnteredFormat': {'textFormat': {'bold':True},'wrapStrategy':'WRAP'}}, 'fields':'userEnteredFormat'}},
-                {'updateDimensionProperties': {'range': {'sheetId':sid,'dimension':'COLUMNS','startIndex':0,'endIndex':10},
+                {'updateDimensionProperties': {'range': {'sheetId':sid,'dimension':'COLUMNS','startIndex':0,'endIndex':width+1},
                                                 'properties': {'pixelSize':180},'fields':'pixelSize'}},
                 {'updateDimensionProperties': {'range': {'sheetId':sid,'dimension':'COLUMNS','startIndex':4,'endIndex':5},
                                                 'properties': {'pixelSize':420},'fields':'pixelSize'}}]})
-            if self.values(title, props)[0] != SCHEMAS[title]:
+            if self.values(title, props)[0] != self.schemas[title]:
                 raise ValueError('Header creation readback failed')
         return props
 
     def upsert(self, title: str, incoming: list[list[str]]) -> int:
         props = self.ensure_tab(title)
+        width = len(self.schemas[title])
         before = self.values(title, props)
-        changes = plan_rows(before, incoming, 9)
+        changes = plan_rows(before, incoming, width)
         if not changes:
             return 0
         end = max(n for n, _ in changes) + 1
@@ -122,10 +131,10 @@ class Sheets:
         if end > props['gridProperties']['rowCount']:
             self.request('POST', ':batchUpdate', json={'requests':[{'appendDimension': {'sheetId':props['sheetId'],'dimension':'ROWS','length':end-props['gridProperties']['rowCount']}}]})
             props = self.metadata()[title]
-        # Bounded requests; no clear/delete and no write to manual column J.
+        # Bounded requests; never clear/delete or write to the trailing manual column.
         batch, size = [], 0
         for n, row in changes:
-            req = {'updateCells': {'range': {'sheetId':props['sheetId'],'startRowIndex':n,'endRowIndex':n+1,'startColumnIndex':0,'endColumnIndex':9},
+            req = {'updateCells': {'range': {'sheetId':props['sheetId'],'startRowIndex':n,'endRowIndex':n+1,'startColumnIndex':0,'endColumnIndex':width},
                                    'rows':[{'values':[cell(x) for x in row]}], 'fields':'userEnteredValue'}}
             weight = len(json.dumps(req, ensure_ascii=False).encode())
             if batch and size + weight > 1000000:
@@ -135,11 +144,11 @@ class Sheets:
             size += weight
         if batch:
             self.request('POST', ':batchUpdate', json={'requests':batch})
-        verify_rows(self.values(title, props), changes, 9)
+        verify_rows(self.values(title, props), changes, width)
         self.request('POST', ':batchUpdate', json={'requests':[{'setBasicFilter': {'filter': {'range': {
-            'sheetId':props['sheetId'],'startRowIndex':0,'endRowIndex':max(len(before),end),'startColumnIndex':0,'endColumnIndex':10}}}}]})
+            'sheetId':props['sheetId'],'startRowIndex':0,'endRowIndex':max(len(before),end),'startColumnIndex':0,'endColumnIndex':width+1}}}}]})
         # Final value readback after the last material operation.
-        verify_rows(self.values(title, props), changes, 9)
+        verify_rows(self.values(title, props), changes, width)
         return len(changes)
 
 
