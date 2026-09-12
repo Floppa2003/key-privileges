@@ -15,6 +15,7 @@ from playwright.async_api import async_playwright
 from adapters import extract,next_state,s7_catalog,s7_detail,mir_detail,PROGRAMS,node_text,ural_catalog,key_catalog,mir_page_url
 from normalized import VERSION,make_offer,content_hash,validate_offer,text
 from public_transport import PublicSource
+from mir_source import collect_mir
 
 
 def error_record(exc,phase,url=''):
@@ -65,57 +66,6 @@ async def collect_rgo(client,cfg,report,now,limit):
         try:records.extend(extract('rgo',await client.read(url),url,now))
         except Exception as exc:report['errors'].append(error_record(exc,'detail',url))
     if len(urls)>limit:report['coverage']='detail_limit_reached'
-    return records
-
-
-async def collect_mir(client,cfg,report,now,limit):
-    captures=[];tasks=[]
-    async def capture(resp):
-        if urlsplit(resp.url).hostname!=client.host or not urlsplit(resp.url).path.endswith('/promo/filter-json'):
-            return
-        if resp.status==200:
-            try:
-                payload=await resp.json()
-                captures.append((resp.url,resp.request.method,resp.request.post_data,
-                                 resp.request.headers.get('content-type'),payload))
-            except Exception:pass
-    client.page.on('response',lambda r:tasks.append(asyncio.create_task(capture(r))))
-    await client.read(cfg['url'],render=True)
-    await client.page.wait_for_timeout(1000)
-    if tasks:await asyncio.gather(*tasks,return_exceptions=True)
-    if not captures:raise RuntimeError('mir_catalog_response_not_observed')
-    first_url,method,body,ctype,payload=captures[0]
-    queue=[first_url];seen=set();candidates={};expected=None
-    report['region']=payload.get('data',{}).get('pageTitle','')
-    while queue and len(seen)<60:
-        url=queue.pop(0)
-        if url in seen:continue
-        seen.add(url)
-        current=payload if len(seen)==1 else await client.json(url)
-        if not current.get('success'):raise RuntimeError('mir_catalog_api_unsuccessful')
-        data=current['data']
-        if expected is None:expected=data.get('counter',{}).get('qt')
-        for item in data.get('items',[]):
-            if not isinstance(item,dict) or not item.get('xml_id') or not item.get('url'):continue
-            candidates[item['xml_id']]=item
-        for item in data.get('pagination',[]):
-            if item.get('link'):
-                link=mir_page_url(payload['data'].get('query',''),item['link'],cfg['url'])
-                if link not in seen and link not in queue:queue.append(link)
-        if expected and len(candidates)>=expected:break
-    report['discovered']=len(candidates)
-    report['coverage']=f'public_regional_catalog_{len(candidates)}_of_{expected}; detail_limit={limit}'
-    records=[]
-    for item in list(candidates.values())[:limit]:
-        url=urljoin(cfg['url'],item['url']);slug=urlsplit(url).path.rstrip('/').split('/')[-1]
-        endpoint='https://vamprivet.ru/api/configs/client/?'+urlencode({'code[]':'promoDetail','promoCode':slug})
-        try:
-            rs=mir_detail(await client.json(endpoint),url,now)
-            if len(rs)!=1 or rs[0]['native_id']!=item['xml_id']:raise RuntimeError('mir_catalog_detail_identity_mismatch')
-            r=rs[0];r['details']['retrieval_url']=endpoint;r['details']['catalog_region']=report['region']
-            r['content_sha256']=content_hash(r);records.append(r)
-        except Exception as exc:report['errors'].append(error_record(exc,'detail',url))
-    if expected!=len(candidates):report['errors'].append({'phase':'catalog','reason':'catalog_count_not_reconciled','expected':expected,'observed':len(candidates)})
     return records
 
 
