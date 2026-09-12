@@ -1,4 +1,4 @@
 {
-  "request_id": "2026-09-12-normalized-v2-authorized-publication",
-  "reason": "Collect reviewed public-source adapters, publish only normalized intake tabs and verify readback. Existing data and disabled periodic schedule remain unchanged."
+  "request_id": "2026-09-12-normalized-v2.1-source-expansion-publication",
+  "reason": "Collect all 42 reviewed source routes and publish normalized results only to parser_offers and parser_coverage. Keep explicit errors, partner-page coverage and unknown dates. Verify readback; preserve curated and historical intake tabs. Do not enable periodic scheduling."
 }
