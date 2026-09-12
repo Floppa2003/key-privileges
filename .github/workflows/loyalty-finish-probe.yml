@@ -1,0 +1,81 @@
+name: Inspect remaining public loyalty sources
+on:
+  push:
+    branches: [loyalty/finish-catalogs]
+    paths: [.github/workflows/loyalty-finish-probe.yml, loyalty/finish_probe.py]
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r loyalty/requirements.txt
+      - name: Bounded anonymous transport checks
+        run: |
+          python - <<'PY'
+          import concurrent.futures,json,pathlib,requests,re
+          from urllib.parse import urlsplit,urljoin
+          from bs4 import BeautifulSoup
+          out=pathlib.Path('finish-probe');out.mkdir()
+          targets={
+            't2_welcome':'https://welcome.t2.ru/bolshe/offers',
+            't2_spb':'https://spb.t2.ru/bolshe/offers',
+            't2_msk_help':'https://msk.t2.ru/help/article/what-included-mixx-m-subscription',
+            't2_welcome_help':'https://welcome.t2.ru/help/article/what-included-mixx-m-subscription',
+            'ekp':'https://ekp.spb.ru/capabilities/loyalty/',
+            'nordwind':'https://nordwindairlines.ru/ru/club/partnerlist',
+            'coral_www':'https://www.coralbonus.ru/klub-privilegii/',
+            'coral':'https://coralbonus.ru/klub-privilegii/',
+            'rzd':'https://rzd-bonus.ru/',
+            'loyals_www':'https://www.loyals.ru/',
+            'loyals':'https://loyals.ru/',
+            'rgo_pdf':'https://rgo.ru/upload/medialibrary/2ed/jm89ty2fg8j8an3g362l5uq6lij95owe/Moya_Kompaniya_RGO_belaya_20.01.26.pdf',
+            'aeroflot':'https://www.aeroflot.ru/ru-ru/afl_bonus/partners'}
+          def probe(pair):
+            key,url=pair; report={'id':key,'url':url}
+            session=requests.Session();session.headers['User-Agent']='LoyaltyCatalogResearchBot/2.2 (+public-source-diagnostic)'
+            for phase,target in [('robots',f'https://{urlsplit(url).hostname}/robots.txt'),('page',url)]:
+              try:
+                r=session.get(target,timeout=(12,20))
+                report[phase]={'status':r.status_code,'url':r.url,'type':r.headers.get('content-type',''),'bytes':len(r.content)}
+                if r.status_code==200 and phase=='robots':
+                  report[phase]['text']=r.text[:16000]
+                if r.status_code==200 and phase=='page' and len(r.content)<5000000:
+                  if r.content.startswith(b'%PDF-'):
+                    (out/f'{key}.pdf').write_bytes(r.content)
+                  else:
+                    soup=BeautifulSoup(r.text,'html.parser')
+                    report['title']=soup.title.get_text(' ',strip=True) if soup.title else ''
+                    report['script_urls']=[urljoin(r.url,x.get('src','')) for x in soup.select('script[src]')]
+                    report['json_script_metadata']=[{'id':x.get('id'),'type':x.get('type'),'length':len(x.get_text())} for x in soup.select('script') if x.get('type') in ['application/json','application/ld+json']]
+                    for x in soup.select('script,style,form,input,noscript,iframe'):x.decompose()
+                    for x in soup.find_all(True):
+                      for attr in list(x.attrs):
+                        if attr not in ('class','id','href','src','alt','title','data-elem-id','data-elem-type'):del x.attrs[attr]
+                    (out/f'{key}.html').write_text(str(soup),encoding='utf8')
+              except Exception as e:report[phase]={'error':type(e).__name__}
+            print(json.dumps(report,ensure_ascii=False),flush=True)
+            return report
+          with concurrent.futures.ThreadPoolExecutor(max_workers=3) as pool:
+            reports=list(pool.map(probe,targets.items()))
+          (out/'report.json').write_text(json.dumps(reports,ensure_ascii=False,indent=2),encoding='utf8')
+          PY
+      - name: Preserve public code and source evidence only
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: loyalty-finish-probe-${{ github.run_id }}
+          path: |
+            loyalty/
+            key/
+            .github/workflows/loyalty.yml
+            finish-probe/
+          include-hidden-files: true
+          retention-days: 7
