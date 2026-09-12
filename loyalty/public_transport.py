@@ -66,6 +66,17 @@ class PublicSource:
         if self.policy is None or not self.policy.can_fetch('LoyaltyCatalogResearchBot',url):
             raise RuntimeError('robots_disallow')
 
+    async def fetch_read(self,url,**kwargs):
+        # Only GETs / the validated read-only catalog POST reach this helper.
+        # Never retry authorization, CAPTCHA or rate-limit responses.
+        for attempt in range(3):
+            res=await self.context.request.fetch(url,timeout=20000,**kwargs)
+            if not allowed_request(res.url,self.host):raise RuntimeError('unexpected_redirect')
+            if res.status not in (502,503,504) or attempt==2 or res.headers.get('retry-after'):
+                return res
+            await asyncio.sleep(2**attempt)
+        raise AssertionError('unreachable retry state')
+
     async def read(self,url: str,*,render=False) -> str:
         self.check_url(url)
         async with self.lock:
@@ -77,7 +88,7 @@ class PublicSource:
                     raise RuntimeError('unexpected_redirect')
                 body=await self.page.content();check_response(res.status,body)
             else:
-                res=await self.context.request.get(url,timeout=20000)
+                res=await self.fetch_read(url,method='GET')
                 if not allowed_request(res.url,self.host):raise RuntimeError('unexpected_redirect')
                 body=await res.text();check_response(res.status,body)
             if len(body.encode())>6000000:raise RuntimeError('source_response_too_large')
@@ -90,7 +101,7 @@ class PublicSource:
         async with self.lock:
             await asyncio.sleep(0.25)
             headers={'Content-Type':content_type} if content_type else {}
-            res=await self.context.request.fetch(url,method=method,data=data,headers=headers,timeout=20000)
+            res=await self.fetch_read(url,method=method,data=data,headers=headers)
             if not allowed_request(res.url,self.host):raise RuntimeError('unexpected_redirect')
             body=await res.text();check_response(res.status,body)
             if len(body.encode())>6000000:raise RuntimeError('source_response_too_large')

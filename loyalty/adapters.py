@@ -7,6 +7,7 @@ from datetime import datetime
 from urllib.parse import urljoin, urlsplit, parse_qsl, urlencode
 from bs4 import BeautifulSoup
 from normalized import make_offer, text, BLOCKED
+from partner_pages import CONFIG as PARTNER_PAGES,extract_partner_page,utair_partners
 
 PROGRAMS = {'moskvich':'Карта «Москвича»','noname':'No Name Card','s7':'S7 Priority',
  'ural':'Уральские авиалинии — «Крылья»','rgo':'Программа лояльности членов РГО',
@@ -186,6 +187,22 @@ def extract(source: str,raw: str,url: str,observed_at: str) -> list[dict]:
             add(name,name,benefit,conditions=node_text(heading),record_kind='membership_plan',
                 link_kind='page_block',locator='.product-card__heading = '+name,
                 details={'plan_price_text':node_text(heading.select_one('.h4'))})
+        # The two cards share partner discounts, but differ on museum programs.
+        by_partner={}
+        for heading,plan in zip(headings,plans):
+            plan_name=node_text(heading.select_one('h3'))
+            for block in plan.select('.museum-friend-adv'):
+                claim=node_text(block)
+                if not re.search(r'скидка\s+\d+%\s+в\s+(?:кафе|магазине)',claim,re.I):continue
+                for partner in re.findall(r'«([^»]+)»',claim):
+                    obj=by_partner.setdefault(partner,{'claims':[],'plans':[]})
+                    if claim not in obj['claims']:obj['claims'].append(claim)
+                    if plan_name not in obj['plans']:obj['plans'].append(plan_name)
+        for partner,info in by_partner.items():
+            claim='\n'.join(info['claims'])
+            add('partner:'+partner,partner,claim,conditions=claim,link_kind='page_block',
+                locator='.museum-friend-adv containing «'+partner+'»',
+                details={'eligible_plans':info['plans']},warnings=['unspecified_other_partners_not_expanded'])
     elif source=='azimut':
         # Table columns explicitly bind each perk to a membership tier. Image-coded values
         # remain references when no textual value is published; do not guess SVG numbers.
@@ -222,6 +239,10 @@ def extract(source: str,raw: str,url: str,observed_at: str) -> list[dict]:
                          record_kind='campaign',source_status='archived' if archived else 'published',
                          details={'detail_url':target},link_kind='catalog_link',locator='.promotion-mini[href="'+card['href']+'"]',
                          warnings=['catalog_announcement_not_full_campaign_rules']))
+    elif source=='utair_media':
+        result.extend(utair_partners(soup,url,observed_at))
+    elif source in PARTNER_PAGES:
+        result.extend(extract_partner_page(source,soup,url,observed_at))
     else:raise ValueError('No reviewed extractor for source '+source)
     seen=set()
     for r in result:

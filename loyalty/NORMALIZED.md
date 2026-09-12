@@ -1,4 +1,4 @@
-# Normalized loyalty sources (v2)
+# Normalized loyalty sources (schema v2, adapter 2.1.0)
 
 The canonical run output is `loyalty-output/normalized.json`: `schema_version`, `run_id`, `observed_at`, `records`, `sources`. `offers.jsonl` is one normalized record per line. `coverage.json` and `summary.md` distinguish discovered, normalized and failed observations.
 
@@ -13,11 +13,23 @@ The registry `sources_normalized.json` includes all programs in the live loyalty
 - No Name: native record/element IDs and aligned card geometry, not DOM text order. Ambiguous pairings fail rather than moving the next partner's benefit onto this one.
 - RGO: exhaust its span-based load-more control, then parse individual pages. A linked PDF is reported separately and is not silently counted as parsed HTML.
 - AZIMUT: status-table columns retained separately from summary cards. Image-coded unavailable amounts are not guessed. A summary card does not make a platinum privilege universal.
-- Museum Friends: published plan names/prices and corresponding benefits; membership plans remain a distinct record kind.
+- Museum Friends: published plan names/prices and corresponding benefits; membership plans remain a distinct record kind. The three explicitly named external partners are also represented separately with eligible plan names; their 10% discounts never inherit the 15% museum-program rate.
 - MEDI / Neva Travel: named partner-page fallbacks. These do not certify completeness of the EKP or SOGAZ catalogues.
 - Promo Miles: distinguish campaign announcements and archived sections from current partner offers.
 - KEY: run the existing `key/refresh.mjs` live, check the resulting observation timestamp and adapt its structured snapshot. Do not relabel a checked-in old snapshot as a fresh scrape.
 - Other registry URLs: bounded anonymous access probes. Failure/status and `adapter_not_yet_implemented` remain explicit; no generic whole-page extractor invents normalized partner records.
+
+## Additional reviewed routes (2.1.0)
+
+`partner_pages.json` defines **14 exact public partner URLs** with reviewed selectors, program identity checks and stable partner-name mappings. Eleven are Aeroflot partner pages, two are RZD hotel pages and one is the EKP/Rostelecom announcement. These are not an extraction of the blocked main program catalogs. Every such record has `details.source_scope=reviewed_partner_page_not_program_catalog`. The coverage registry retains the blocked main sources separately.
+
+Utair's accessible `media.utair.ru/status` partner panel is parsed by each rate-bearing anchor's own destination, not by nearby advertising legal-entity names or global text order. Five known destination domains identify the partners; an unknown domain fails closed pending identity review. The public tier-specific Otello rate sentences remain distinct in `details.tier_rates`. Only that partner panel is covered, not Utair's full rules or all status benefits.
+
+Mileage normalization supports `13% милями`, an intervening accrual verb, and reversed `За каждые 60 руб начисляется 1 миля` wording. Percentages used for spending miles are not reclassified as earned-miles percentages. Inline bold/link markup does not split a spending denominator from its mileage value. The source spelling `милz` is deliberately retained and not silently corrected to a typed mileage rate.
+
+Askona's base earning rule and explicitly dated multiplier are separate records. A past temporary multiplier is marked expired while the base offer has no invented overall expiry. MEDSI/Taivas/Grether labelled periods are extracted separately from publication dates. EKP/Rostelecom new/existing customers are separate records; the article publication date is metadata, not an offer deadline, and the new-customer lifetime claim is not copied into the existing-customer benefit.
+
+Transient read-only 502/503/504 requests get at most three attempts with bounded backoff. Authorization failures, 429, CAPTCHA and a server `Retry-After` instruction are not immediately retried. Queue waiting no longer consumes a source's 420-second network budget. Robots/network/TLS/access failures are still not interpreted as empty catalogs.
 
 ## Record contract
 
@@ -27,7 +39,7 @@ Useful fields: `program`, `partner_name`, `record_kind`, `title`, `category`, `b
 
 - `partner_name` is null when a display name is not safely obtained; its native code/source description remains available.
 - Every extracted numeric rate includes its exact local evidence clause, kind, decimal-string value, unit and qualifier. Mileage rates preserve the spending denominator. A purchase minimum is not a discount amount. **Rates are lexical extractions, not a complete pricing/eligibility engine; never sum unrelated rates or convert miles into cash.** Full conditions remain authoritative.
-- Dates are typed only from explicit structured source date fields. A year in a copyright, campaign URL, display banner or unrelated card does not become an offer expiry. `null` means unknown/not stated, not unlimited validity.
+- Dates are typed only from explicit structured source date fields or a reviewed labelled interval within the precise partner terms block. A year in a copyright, campaign URL, display banner or unrelated card does not become an offer expiry. `null` means unknown/not stated, not unlimited validity.
 - `source_status` records publication flags; `validity_status` is a separate date comparison. Neither confirms the user's eligibility or checkout success.
 - Shared-page blocks have `benefit_url=null` plus the real `source_url` and a block locator. Actual anchors and source-published individual URLs are retained; unique URLs are not invented for cosmetic completeness.
 - `tables` and source-specific `details` keep information that must not be flattened into a universal percentage. Unknowns remain explicit.

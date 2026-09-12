@@ -1,0 +1,152 @@
+{
+  "af_medsi": {
+    "program": "Аэрофлот Бонус",
+    "partner": "МЕДСИ",
+    "url": "https://medsi.ru/actions/aeroflot-bonus-v-klinikakh-medsi/",
+    "selectors": [
+      ".med-actions-promo-detail__content"
+    ],
+    "benefit_selectors": [
+      ".med-actions-promo-detail__content > .med-middle__container:has(h2)"
+    ],
+    "date_rule": "full_dmy",
+    "category": "Медицина"
+  },
+  "af_viprooms": {
+    "program": "Аэрофлот Бонус",
+    "partner": "VIP-ROOMS.RU",
+    "url": "https://vip-rooms.ru/partner/aeroflot",
+    "selectors": [
+      "article"
+    ],
+    "category": "Бизнес-залы"
+  },
+  "af_stoletov": {
+    "program": "Аэрофлот Бонус",
+    "partner": "Доктор Столетов",
+    "url": "https://stoletov.ru/stock/aeroflot-bonus/",
+    "selectors": [
+      "[class*='PromoDescription_descriptionWrapper']"
+    ],
+    "category": "Аптеки",
+    "warnings": [
+      "source_period_label_requires_manual_review"
+    ]
+  },
+  "af_lavivion": {
+    "program": "Аэрофлот Бонус",
+    "partner": "LA VIVION",
+    "url": "https://lavivion.ru/articles/aeroflot-bonus/",
+    "selectors": [
+      ".main-content"
+    ],
+    "benefit_selectors": [
+      ".t1095"
+    ],
+    "category": "Украшения"
+  },
+  "af_askona": {
+    "program": "Аэрофлот Бонус",
+    "partner": "Askona / Askona Home",
+    "url": "https://www.askona.ru/landing/aeroflot/",
+    "selectors": [
+      "#popup-rules"
+    ],
+    "category": "Товары для дома"
+  },
+  "af_chefmarket": {
+    "program": "Аэрофлот Бонус",
+    "partner": "Шефмаркет",
+    "url": "https://www.chefmarket.ru/blog/letat-i-gotovit-eshhe-vygodnee/",
+    "selectors": [
+      "article .entry-content"
+    ],
+    "category": "Доставка продуктов",
+    "warnings": [
+      "partner_blog_publication_not_checkout_confirmation"
+    ]
+  },
+  "af_galladance": {
+    "program": "Аэрофлот Бонус",
+    "partner": "GallaDance",
+    "url": "https://www.galladance.com/offers/shares/aeroflot-bonus/",
+    "selectors": [
+      ".g-text"
+    ],
+    "category": "Танцы"
+  },
+  "af_parkfly": {
+    "program": "Аэрофлот Бонус",
+    "partner": "Park&Fly",
+    "url": "https://parkandfly.ru/blog/aeroflot_bonus/",
+    "selectors": [
+      "article.bArticle"
+    ],
+    "category": "Парковка"
+  },
+  "af_istochnik": {
+    "program": "Аэрофлот Бонус",
+    "partner": "Источник Кисловодск",
+    "url": "https://istochnikspa.ru/kislovodsk/aeroflot-bonus/",
+    "selectors": [
+      ".block_image_text .block--content"
+    ],
+    "category": "Санаторий"
+  },
+  "af_grether": {
+    "program": "Аэрофлот Бонус",
+    "partner": "GRETHER & WELLS EXCLUSIVE",
+    "url": "https://gretherwells.ru/aeroflot-bonus",
+    "selectors": [
+      "#rec580842861",
+      "#rec580842863",
+      "#rec925972101",
+      "#rec580842866"
+    ],
+    "date_rule": "single_month",
+    "category": "Товары для дома",
+    "warnings": [
+      "source_typo_milz_retained_not_converted_to_miles"
+    ],
+    "benefit_selectors": [
+      "#rec580842866"
+    ]
+  },
+  "af_braun": {
+    "program": "Аэрофлот Бонус",
+    "partner": "Braun Russia",
+    "url": "https://braun-russia.ru/actions/mili-aeroflota",
+    "selectors": [
+      "main#content .description"
+    ],
+    "category": "Техника"
+  },
+  "rzd_diplomat": {
+    "program": "РЖД Бонус",
+    "partner": "Отель Дипломат",
+    "url": "https://diplomat-hotel.spb.ru/predlozhenija/rzhd-bonus/",
+    "selectors": [
+      "section.rzhd"
+    ],
+    "category": "Отель"
+  },
+  "rzd_taivas": {
+    "program": "РЖД Бонус",
+    "partner": "Taivas",
+    "url": "https://taivashotel.ru/akcii_rzdbonus",
+    "selectors": [
+      "#rec1240645516"
+    ],
+    "date_rule": "shared_year_dmy",
+    "category": "Отель"
+  },
+  "ekp_rostelecom": {
+    "program": "Единая карта петербуржца (ЕКП)",
+    "partner": "Ростелеком",
+    "url": "https://www.company.rt.ru/press/news_fill/d476187/",
+    "selectors": [
+      "section.content_section"
+    ],
+    "category": "Домашний интернет / ТВ"
+  }
+}

@@ -6,11 +6,12 @@ import json
 import re
 from datetime import datetime, date
 from decimal import Decimal
+from pathlib import Path
 from urllib.parse import urlsplit
 from bs4 import BeautifulSoup
 from model import clean_url
 
-VERSION = '2.0.0'
+VERSION = '2.1.0'
 HOSTS = {
  'moskvich': ['moskvichmag.ru'], 'noname': ['nonameburo.com'],
  's7': ['marketplace.s7.ru'], 'ural': ['www.uralairlines.ru'],
@@ -20,6 +21,10 @@ HOSTS = {
  'ekp_neva': ['neva.travel'], 'mir_neva': ['neva.travel'],
  'key': ['traveltg-bot.netlify.app'],
 }
+# Checked-in public page configuration is trusted code, never scraped configuration.
+for _key,_cfg in json.loads(Path(__file__).with_name('partner_pages.json').read_text(encoding='utf8')).items():
+    HOSTS[_key]=[urlsplit(_cfg['url']).hostname]
+HOSTS['utair_media']=['media.utair.ru']
 BLOCKED = re.compile(r'access denied|just a moment|captcha|доступ к сайту временно ограничен|проверка безопасности|доступ запрещ[её]н', re.I)
 NUMBER = r'\d+(?:[ .,\u00a0]\d{3})*(?:[.,]\d+)?'
 TYPES = {'discount': r'[сc]кидк', 'cashback': r'к[еэ]шб[еэ]к', 'miles':r'мил[ьяиюе]',
@@ -63,6 +68,8 @@ def normalize_rates(value: str) -> list[dict]:
         for m in re.finditer(r'(?:(?P<lo>\d+(?:[.,]\d+)?)\s*[–—-]\s*)?(?P<value>\d+(?:[.,]\d+)?)\s*%', clause):
             before = sorted((pos,k) for pos,k in labels if pos < m.start())
             after = next((k for k in ('discount','cashback') if re.match(r'\s*'+TYPES[k],clause[m.end():],re.I)),None)
+            if re.match(r'\s+милями\b',clause[m.end():],re.I):
+                after='miles'
             if not before and not after:
                 continue
             kind = after or before[-1][1]
@@ -75,9 +82,13 @@ def normalize_rates(value: str) -> list[dict]:
             if m['lo']:
                 r['min_value'] = number(m['lo'])
             result.append(r)
-        pattern = rf'(?P<qual>до\s+)?(?P<value>{NUMBER})\s*мил[ьяиюе]\w*(?:\s+за\s+(?:кажды[еий]\s+)?(?P<basis>{NUMBER})\s*(?:₽|руб\w*))?'
+        pattern = rf'(?P<qual>до\s+)?(?P<value>{NUMBER})\s*мил[ьяиюе]\w*(?:\s+(?:начисля\w+\s+)?за\s+(?:кажды[еий]\s+)?(?:потраченн\w+\s+)?(?P<basis>{NUMBER})\s*(?:₽|руб\w*))?'
         for m in re.finditer(pattern,clause,re.I):
-            result.append({'kind':'miles','value':number(m['value']),'unit':'miles','qualifier':'up_to' if m['qual'] else 'exact','basis_amount':number(m['basis']) if m['basis'] else None,'basis_unit':'RUB' if m['basis'] else None,'evidence':clause})
+            basis=m['basis']
+            if not basis:
+                preceding=re.search(rf'за\s+кажды[еий]\s+(?:потраченн\w+\s+)?({NUMBER})\s*(?:₽|руб\w*\.?)[^0-9;]{{0,120}}(?:начисля\w+|получаете|получите)\s*$',clause[:m.start()],re.I)
+                if preceding:basis=preceding[1]
+            result.append({'kind':'miles','value':number(m['value']),'unit':'miles','qualifier':'up_to' if m['qual'] else 'exact','basis_amount':number(basis) if basis else None,'basis_unit':'RUB' if basis else None,'evidence':clause})
         for m in re.finditer(rf'скидк\w*\s+(?P<qual>до\s+)?(?P<value>{NUMBER})\s*(?:₽|руб\w*)',clause,re.I):
             result.append({'kind':'discount','value':number(m['value']),'unit':'RUB','qualifier':'up_to' if m['qual'] else 'exact','basis_amount':None,'basis_unit':None,'evidence':clause})
     unique = {json.dumps(r,ensure_ascii=False,sort_keys=True):r for r in result}
