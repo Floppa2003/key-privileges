@@ -81,7 +81,7 @@ def mir_detail(data: dict,url: str,observed_at: str) -> list[dict]:
     templates=[{'name':x.get('templateName'),'title':text(x.get('templateTitle')),
                 'text':text(x.get('templateText'))} for x in (p.get('templates') or [])]
     desc=p.get('desc',{});num=desc.get('number',{})
-    benefit=text(text(num.get('PREFIX'))+' '+text(num.get('AMOUNT'))+' '+desc.get('text',''))
+    benefit=text(text(num.get('PREFIX'))+' '+text(num.get('AMOUNT'))+' '+text(desc.get('text')))
     def iso(value):
         return datetime.strptime(value,'%d.%m.%Y').date().isoformat() if value else None
     dates={k:iso(p.get(v)) for k,v in [('valid_from','startDate'),('valid_until','endDate')]}
@@ -91,7 +91,7 @@ def mir_detail(data: dict,url: str,observed_at: str) -> list[dict]:
         for a in BeautifulSoup(x.get('templateText') or '','html.parser').select('a[href]'):
             if x.get('templateName')=='rules':
                 links.append(urljoin(url,a['href']))
-    details={'templates':templates,'payment_badges':[text(x.get('text')) for x in p.get('promoBadges',[])],
+    details={'templates':templates,'payment_badges':[text(x.get('text')) for x in (p.get('promoBadges') or [])],
              'rules_urls':links,'source_prize_suspended':p.get('prizeIsSuspended'),
              'limit_source_fields':{'perPromoActionLimit':p.get('perPromoActionLimit'),'clientTimeLimit':p.get('clientTimeLimit')},
              'source_is_started':p.get('promoIsStarted')}
