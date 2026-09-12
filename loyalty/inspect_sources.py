@@ -71,8 +71,12 @@ async def inspect(browser,sid,url,sem):
 
 async def main():
     OUT.mkdir(exist_ok=True)
-    cfg=json.loads(Path(__file__).with_name('sources_normalized.json').read_text())
-    targets=[(c['id'],c['url']) for c in cfg if c['mode']=='probe']+EXTRA
+    targets_path=Path(__file__).with_name('inspection_targets.json')
+    if targets_path.exists():
+      targets=json.loads(targets_path.read_text())
+    else:
+      cfg=json.loads(Path(__file__).with_name('sources_normalized.json').read_text())
+      targets=[(c['id'],c['url']) for c in cfg if c['mode']=='probe']+EXTRA
     async with async_playwright() as p:
       b=await p.chromium.launch();sem=asyncio.Semaphore(4)
       reports=await asyncio.gather(*(inspect(b,s,u,sem) for s,u in targets))
