@@ -19,6 +19,7 @@ from mir_source import collect_mir
 from reviewed_pdf import extract_rgo_pdf
 from t2_source import collect_t2
 from ural_ui import collect_ural
+from announcements import collect_announcements
 
 
 def error_record(exc,phase,url=''):
@@ -104,6 +105,7 @@ async def one(browser,cfg,now,limit):
                 elif mode=='rgo':records=await collect_rgo(client,cfg,report,now,limit)
                 elif mode=='mir':records=await collect_mir(client,cfg,report,now,limit)
                 elif mode=='t2':records=await collect_t2(client,cfg,report,now,limit)
+                elif mode=='announcements':records=await collect_announcements(client,cfg,report,now,limit)
                 elif mode=='html':
                     raw=await client.read(cfg['url'],render=True)
                     records=extract(cfg['id'],raw,cfg['url'],now)

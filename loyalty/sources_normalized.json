@@ -276,5 +276,23 @@
     "mode": "html",
     "url": "https://dominapulkovo.ru/nordwind",
     "coverage_scope": "reviewed_partner_page_not_program_catalog"
+  },
+  {
+    "id": "ekp_announcements",
+    "channel": "ekpcard",
+    "name": "ЕКП — официальные объявления",
+    "url": "https://t.me/s/ekpcard",
+    "mode": "announcements",
+    "lookback_days": 180,
+    "max_pages": 60
+  },
+  {
+    "id": "rzd_announcements",
+    "channel": "fpcrussia",
+    "name": "РЖД Бонус — объявления «Вагон скидок»",
+    "url": "https://t.me/s/fpcrussia",
+    "mode": "announcements",
+    "lookback_days": 180,
+    "max_pages": 60
   }
 ]
