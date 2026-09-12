@@ -12,7 +12,7 @@ from pathlib import Path
 from urllib.parse import urljoin,urlsplit,urlencode
 from bs4 import BeautifulSoup
 from playwright.async_api import async_playwright
-from adapters import extract,next_state,s7_catalog,s7_detail,mir_detail,PROGRAMS,node_text,ural_catalog,key_catalog
+from adapters import extract,next_state,s7_catalog,s7_detail,mir_detail,PROGRAMS,node_text,ural_catalog,key_catalog,mir_page_url
 from normalized import VERSION,make_offer,content_hash,validate_offer,text
 from public_transport import PublicSource
 
@@ -91,7 +91,7 @@ async def collect_mir(client,cfg,report,now,limit):
         url=queue.pop(0)
         if url in seen:continue
         seen.add(url)
-        current=payload if len(seen)==1 else await client.json(url,method=method,data=body,content_type=ctype)
+        current=payload if len(seen)==1 else await client.json(url)
         if not current.get('success'):raise RuntimeError('mir_catalog_api_unsuccessful')
         data=current['data']
         if expected is None:expected=data.get('counter',{}).get('qt')
@@ -100,7 +100,7 @@ async def collect_mir(client,cfg,report,now,limit):
             candidates[item['xml_id']]=item
         for item in data.get('pagination',[]):
             if item.get('link'):
-                link=urljoin(cfg['url'],item['link'])
+                link=mir_page_url(payload['data'].get('query',''),item['link'],cfg['url'])
                 if link not in seen and link not in queue:queue.append(link)
         if expected and len(candidates)>=expected:break
     report['discovered']=len(candidates)
@@ -148,13 +148,21 @@ async def one(browser,cfg,now,limit,sem):
                     if mode=='s7':records=await collect_s7(client,cfg,report,now,limit)
                     elif mode=='ural':
                         try:
-                            records=ural_catalog(await client.json(cfg['url']),cfg['url'],now)
+                            data=await client.json(cfg['url'])
+                            records=ural_catalog(data,cfg['url'],now)
+                            report['discovered']=len(data['partners'])
+                            missing=set('partner_'+str(p['id']) for p in data['partners'])-set(r['native_id'] for r in records)
+                            for native in sorted(missing):report['errors'].append({'phase':'detail','native_id':native,'reason':'empty_partner_terms'})
                             report['coverage']='public_partner_array'
-                        except Exception:
+                        except Exception as exc:
+                            report['errors'].append(error_record(exc,'api',cfg['url']))
                             root='https://www.uralairlines.ru/partners/'
-                            records=extract('ural',await client.read(root,render=True),root,now)
+                            await client.read(root,render=True)
+                            await client.page.wait_for_selector('li[id^="partner_"]',timeout=12000)
+                            records=extract('ural',await client.page.content(),root,now)
                             report['coverage']='browser_partner_blocks_api_fallback'
-                        report['discovered']=len(records)
+                            report['discovered']=len(records)
+                        if not records:raise RuntimeError('no_partner_terms_found')
                     elif mode=='rgo':records=await collect_rgo(client,cfg,report,now,limit)
                     elif mode=='mir':records=await collect_mir(client,cfg,report,now,limit)
                     elif mode=='html':

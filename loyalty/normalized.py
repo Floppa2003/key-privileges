@@ -22,7 +22,7 @@ HOSTS = {
 }
 BLOCKED = re.compile(r'access denied|just a moment|captcha|доступ к сайту временно ограничен|проверка безопасности|доступ запрещ[её]н', re.I)
 NUMBER = r'\d+(?:[ .,\u00a0]\d{3})*(?:[.,]\d+)?'
-TYPES = {'discount': r'скидк', 'cashback': r'к[еэ]шб[еэ]к', 'miles':r'мил[ьяиюе]',
+TYPES = {'discount': r'[сc]кидк', 'cashback': r'к[еэ]шб[еэ]к', 'miles':r'мил[ьяиюе]',
          'points':r'балл|бонус', 'gift':r'подар|комплимент', 'special_price':r'спеццен|специальн\w* цен'}
 
 
@@ -62,9 +62,10 @@ def normalize_rates(value: str) -> list[dict]:
         labels = [(m.start(), k) for k in ('discount','cashback') for m in re.finditer(TYPES[k],clause,re.I)]
         for m in re.finditer(r'(?:(?P<lo>\d+(?:[.,]\d+)?)\s*[–—-]\s*)?(?P<value>\d+(?:[.,]\d+)?)\s*%', clause):
             before = sorted((pos,k) for pos,k in labels if pos < m.start())
-            if not before:
+            after = next((k for k in ('discount','cashback') if re.match(r'\s*'+TYPES[k],clause[m.end():],re.I)),None)
+            if not before and not after:
                 continue
-            kind = before[-1][1]
+            kind = after or before[-1][1]
             amount = number(m['value'])
             if not 0 <= Decimal(amount) <= 100:
                 continue
@@ -124,6 +125,7 @@ def make_offer(source_id: str, native_id: str, program: str, partner_name: str |
     for m in re.finditer(pattern,all_text,re.I):
         c=m[1] or m[2]
         if m[2]:
+            c=c.rstrip('.')
             tail=re.match(r'(?: +[A-ZА-ЯЁ0-9][A-ZА-ЯЁ0-9_.-]{1,30}){1,3}(?=\W|$)',all_text[m.end():])
             if tail:
                 c+=tail[0]

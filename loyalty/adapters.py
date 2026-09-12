@@ -4,7 +4,7 @@ import json
 import hashlib
 import re
 from datetime import datetime
-from urllib.parse import urljoin, urlsplit
+from urllib.parse import urljoin, urlsplit, parse_qsl, urlencode
 from bs4 import BeautifulSoup
 from normalized import make_offer, text, BLOCKED
 
@@ -79,15 +79,15 @@ def mir_detail(data: dict,url: str,observed_at: str) -> list[dict]:
     if urlsplit(url).path.rstrip('/')!=urlsplit(p['url']).path.rstrip('/'):
         raise ValueError('Mir detail URL mismatch')
     templates=[{'name':x.get('templateName'),'title':text(x.get('templateTitle')),
-                'text':text(x.get('templateText'))} for x in p.get('templates',[])]
+                'text':text(x.get('templateText'))} for x in (p.get('templates') or [])]
     desc=p.get('desc',{});num=desc.get('number',{})
-    benefit=text(num.get('PREFIX','')+num.get('AMOUNT','')+' '+desc.get('text',''))
+    benefit=text(text(num.get('PREFIX'))+' '+text(num.get('AMOUNT'))+' '+desc.get('text',''))
     def iso(value):
         return datetime.strptime(value,'%d.%m.%Y').date().isoformat() if value else None
     dates={k:iso(p.get(v)) for k,v in [('valid_from','startDate'),('valid_until','endDate')]}
     status='cancelled' if p.get('promoIsCancelled') else 'finished' if p.get('promoIsFinished') else p.get('status','unknown')
     links=[]
-    for x in p.get('templates',[]):
+    for x in (p.get('templates') or []):
         for a in BeautifulSoup(x.get('templateText') or '','html.parser').select('a[href]'):
             if x.get('templateName')=='rules':
                 links.append(urljoin(url,a['href']))
@@ -230,17 +230,20 @@ def extract(source: str,raw: str,url: str,observed_at: str) -> list[dict]:
     return result
 
 def ural_catalog(data,url,observed_at):
-    categories={x['id']:x['name'] for x in data['category']}
+    categories={x['id']:x for x in data['category']}
     records=[]
     for p in data['partners']:
         raw=p.get('text',{}).get('detail','')
+        if not text(raw):
+            continue
+        category=categories.get(p.get('category'),{})
         detail=BeautifulSoup(raw,'html.parser')
         claims=[node_text(x) for x in detail.select('p,li,tr') if re.search(r'%|скидк|подар|мил[ьяию]|бонус',node_text(x),re.I)]
         benefit='\n'.join(dict.fromkeys(claims)) or text(raw)
         native='partner_'+str(p['id'])
         target='https://www.uralairlines.ru/partners/#'+native
         records.append(make_offer('ural',native,PROGRAMS['ural'],p['name'],benefit,target,observed_at,
-          conditions=text(raw),category=categories.get(p.get('category')),tables=tables_in(detail),
+          conditions=text(raw)+'\n'+text(category.get('text')),category=category.get('name'),tables=tables_in(detail),
           redemption='\n'.join(node_text(x) for x in detail.select('ol')),
           details={'city_ids':p.get('city',[]),'retrieval_url':url,'preview':text(p.get('text',{}).get('preview'))},
           link_kind='page_anchor',locator='#'+native))
@@ -260,3 +263,11 @@ def key_catalog(data,observed_at):
           record_kind='campaign',link_kind='api_record',locator='specialOffers.ru: '+offer,
           warnings=['special_offer_has_no_native_id_text_based_identity']))
     return records
+
+
+def mir_page_url(source_query: str, link: str, base: str) -> str:
+    """Follow the published read-only pagination link without stale POST page state."""
+    target=urlsplit(urljoin(base,link))
+    query=dict(parse_qsl(urlsplit(source_query).query))
+    query.update(parse_qsl(target.query))
+    return target._replace(query=urlencode(query)).geturl()
