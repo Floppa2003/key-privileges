@@ -7,7 +7,6 @@ for name,sha in before.items():
 p=Path('loyalty/normalized.py');s=p.read_text().replace("    if r['link_kind']=='source_post':","    if r['source_id'] in ('ekp_announcements','rzd_announcements') or r['link_kind']=='source_post':").replace("if not channel or not re.fullmatch('/'+channel+r'/[0-9]+',urlsplit(r['source_url']).path)","if r['link_kind']!='source_post' or not channel or not re.fullmatch('/'+channel+r'/[0-9]+',urlsplit(r['source_url']).path)");p.write_text(s)
 p=Path('loyalty/announcements.py');s=p.read_text().replace("    if dated:\n","    if not ids:\n        result['errors'].append({'phase':'pagination','reason':'no_public_messages_in_response'})\n    if dated:\n").replace("    return bool(cards or (LOYALTY.search(body) and NUMERIC_BENEFIT.search(body)))","    if cards:\n        return True\n    if re.search(r'опрос|голосован|мониторинг\\s+активност',body,re.I):\n        return False\n    role=re.search(r'скидк|к[еэ]шб[еэ]к|промокод|балл|подар',body,re.I)\n    return bool(LOYALTY.search(body) and role and NUMERIC_BENEFIT.search(body))");p.write_text(s)
 p=Path('loyalty/tests/test_announcements.py');s=p.read_text()+'''
-
 class PublicationBoundaryTests(unittest.TestCase):
  def test_announcement_cannot_be_promoted_by_changing_link_kind(self):
   from normalized import content_hash,validate_offer
