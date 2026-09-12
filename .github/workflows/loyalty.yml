@@ -1,7 +1,7 @@
 name: Loyalty normalized catalog and Sheets sync
 on:
   push:
-    branches: ["loyalty/catalog-probe-and-sheets-sync", "loyalty/normalized-sources", "loyalty/source-expansion"]
+    branches: ["loyalty/catalog-probe-and-sheets-sync", "loyalty/normalized-sources", "loyalty/source-expansion", "loyalty/finish-catalogs"]
     paths: ["loyalty/**", ".github/workflows/loyalty.yml"]
   workflow_dispatch:
     inputs:

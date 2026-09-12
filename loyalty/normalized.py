@@ -11,7 +11,7 @@ from urllib.parse import urlsplit
 from bs4 import BeautifulSoup
 from model import clean_url
 
-VERSION = '2.1.0'
+VERSION = '2.2.0'
 HOSTS = {
  'moskvich': ['moskvichmag.ru'], 'noname': ['nonameburo.com'],
  's7': ['marketplace.s7.ru'], 'ural': ['www.uralairlines.ru'],
@@ -25,6 +25,8 @@ HOSTS = {
 for _key,_cfg in json.loads(Path(__file__).with_name('partner_pages.json').read_text(encoding='utf8')).items():
     HOSTS[_key]=[urlsplit(_cfg['url']).hostname]
 HOSTS['utair_media']=['media.utair.ru']
+for _source in ('t2_bolshe','t2_mixx','t2_selection','t2_mixx_s','t2_powerbank'):
+    HOSTS[_source]=['msk.t2.ru']
 BLOCKED = re.compile(r'access denied|just a moment|captcha|доступ к сайту временно ограничен|проверка безопасности|доступ запрещ[её]н', re.I)
 NUMBER = r'\d+(?:[ .,\u00a0]\d{3})*(?:[.,]\d+)?'
 TYPES = {'discount': r'[сc]кидк', 'cashback': r'к[еэ]шб[еэ]к', 'miles':r'мил[ьяиюе]',
@@ -95,6 +97,26 @@ def normalize_rates(value: str) -> list[dict]:
     return list(unique.values())
 
 
+
+def lexical_conditions(value: str) -> list[dict]:
+    """Recognized clauses only; no claim to exhaust all eligibility conditions."""
+    result=[]
+    for clause in re.split(r'\n|(?<=[.!?])\s+(?=[А-ЯA-Z])',text(value)):
+        clause=clause.strip()
+        if not clause:continue
+        def add(kind,**kwargs):result.append({'kind':kind,'evidence':clause,**kwargs})
+        for match in re.finditer(rf'(?:заказ\w*|покупк\w*|чек\w*|бронировани\w*)\s+(?:на\s+сумму\s+)?от\s+({NUMBER})\s*(?:₽|руб\w*)',clause,re.I):
+            add('minimum_purchase',value=number(match[1]),unit='RUB',qualifier='at_least')
+        for match in re.finditer(rf'максимальн\w*\s+(?:размер\s+)?(?:скидк\w*|к[еэ]шб[еэ]к\w*)\s*(?:составля\w*\s*)?[:—–-]?\s*({NUMBER})\s*(?:₽|руб\w*)',clause,re.I):
+            add('maximum_benefit',value=number(match[1]),unit='RUB',qualifier='up_to')
+        if re.search(r'\b(?:перв\w*\s+(?:заказ|покупк|бронирован)|нов\w*\s+(?:клиент|пользоват))',clause,re.I):
+            # This is a referenced audience, not proof that every other audience is excluded.
+            add('first_purchase' if re.search(r'перв\w*\s+(?:заказ|покупк|бронирован)',clause,re.I) else 'new_customer_reference')
+        if re.search(r'не\s+суммиру\w*|не\s+сочета\w*\s+с',clause,re.I):add('stacking_restriction')
+    unique={json.dumps(x,ensure_ascii=False,sort_keys=True):x for x in result}
+    return list(unique.values())
+
+
 def content_hash(record: dict) -> str:
     content = {k:v for k,v in record.items() if k not in ('observed_at','content_sha256','run_id')}
     return hashlib.sha256(json.dumps(content,ensure_ascii=False,sort_keys=True,separators=(',',':')).encode()).hexdigest()
@@ -153,7 +175,8 @@ def make_offer(source_id: str, native_id: str, program: str, partner_name: str |
          'valid_from':valid_from,'valid_until':valid_until,'validity_status':validity,
          'source_status':source_status,'source_url':url,
          'benefit_url':url if link_kind in ('detail_page','page_anchor') else None,
-         'link_kind':link_kind,'locator':locator,'tables':tables or [],'details':details or {},
+         'link_kind':link_kind,'locator':locator,'tables':tables or [],
+         'details':{**(details or {}),'lexical_conditions':lexical_conditions(all_text)},
          'normalization_status':'source_fields_extracted',
          'warnings':warnings or [],'observed_at':observed_at}
     if not r['partner_name']:

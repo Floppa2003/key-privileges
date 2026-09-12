@@ -148,5 +148,15 @@
       "section.content_section"
     ],
     "category": "Домашний интернет / ТВ"
+  },
+  "nordwind_domina": {
+    "program": "NORDWIND CLUB",
+    "partner": "Domina Пулково",
+    "url": "https://dominapulkovo.ru/nordwind",
+    "selectors": [
+      "section.section"
+    ],
+    "category": "Отель",
+    "program_regex": "Nordwind.{0,5}(?:Club|Клуб)"
   }
 }

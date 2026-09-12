@@ -7,7 +7,8 @@ from datetime import datetime
 from urllib.parse import urljoin, urlsplit, parse_qsl, urlencode
 from bs4 import BeautifulSoup
 from normalized import make_offer, text, BLOCKED
-from partner_pages import CONFIG as PARTNER_PAGES,extract_partner_page,utair_partners
+from partner_pages import CONFIG as PARTNER_PAGES,extract_partner_page,utair_partners,content as block_content
+from t2_source import page_records as t2_page_records,URLS as T2_URLS
 
 PROGRAMS = {'moskvich':'Карта «Москвича»','noname':'No Name Card','s7':'S7 Priority',
  'ural':'Уральские авиалинии — «Крылья»','rgo':'Программа лояльности членов РГО',
@@ -161,12 +162,28 @@ def extract(source: str,raw: str,url: str,observed_at: str) -> list[dict]:
                           redemption='\n'.join(node_text(x) for x in terms.select('ol')),
                           link_kind='page_anchor',locator='#'+card['id']))
     elif source=='rgo':
-        h=soup.select_one('h1');name=node_text(h)
-        blocks=soup.select('.section-text-2col,.section-text')
-        terms='\n'.join(dict.fromkeys(node_text(b) for b in blocks if node_text(b)))
-        if not name or not terms:raise ValueError('Missing RGO offer content')
-        add(urlsplit(url).path.rstrip('/').split('/')[-1],name,terms,conditions=terms,
-            locator='h1 + .section-text-2col / .section-text',warnings=['published_text_requires_eligibility_check'])
+        name=node_text(soup.select_one('h1'))
+        inner=soup.select('.section-text__inner.text')
+        # The contact/summary two-column blocks are NOT the full offer terms.
+        if inner:
+            terms=block_content(inner)
+            summary=block_content(soup.select('.section-text-2col._img-left'))
+            benefit=terms
+        else:
+            # Keep compatibility for older complete .section-text markup; contact-only
+            # _img-right blocks cannot masquerade as an offer.
+            inner=soup.select('.section-text')
+            terms=block_content(inner)
+            summary=''
+            benefit=terms
+        if not name or not terms:raise ValueError('Missing complete RGO inner terms block')
+        ends=re.findall(r'(?:предложение|акция)\s+(?:действительно|действует)\s+до\s+(\d{2}\.\d{2}\.\d{4})',terms,re.I)
+        if len(set(ends))>1:raise ValueError('Conflicting RGO offer expiry dates')
+        until=datetime.strptime(ends[0],'%d.%m.%Y').date().isoformat() if ends else None
+        add(urlsplit(url).path.rstrip('/').split('/')[-1],name,benefit,conditions=terms,
+            valid_until=until,locator='.section-text__inner.text',
+            details={'source_summary':summary,'extraction_scope':'full_partner_description_and_terms'},
+            warnings=['published_text_requires_eligibility_check'])
     elif source in ('sogaz_medi','ekp_medi'):
         contents=soup.select('.content');content=next((x for x in contents if 'скидк' in node_text(x).lower()),None)
         if not content:raise ValueError('Missing MEDI partner terms')
@@ -239,6 +256,8 @@ def extract(source: str,raw: str,url: str,observed_at: str) -> list[dict]:
                          record_kind='campaign',source_status='archived' if archived else 'published',
                          details={'detail_url':target},link_kind='catalog_link',locator='.promotion-mini[href="'+card['href']+'"]',
                          warnings=['catalog_announcement_not_full_campaign_rules']))
+    elif source in T2_URLS:
+        result.extend(t2_page_records(source,raw,observed_at))
     elif source=='utair_media':
         result.extend(utair_partners(soup,url,observed_at))
     elif source in PARTNER_PAGES:

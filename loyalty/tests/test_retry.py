@@ -1,6 +1,6 @@
 import json,sys,unittest
 from pathlib import Path
-from urllib.robotparser import RobotFileParser
+from protego import Protego
 sys.path.insert(0,str(Path(__file__).parents[1]))
 from public_transport import PublicSource
 URL='https://vamprivet.ru/api/configs/client/?code=promoDetail'
@@ -20,7 +20,7 @@ class Context:
 
 class RetryTests(unittest.IsolatedAsyncioTestCase):
  def client(self,responses):
-  c=PublicSource(None,URL);c.context=Context(responses);c.policy=RobotFileParser();c.policy.parse([]);return c
+  c=PublicSource(None,URL);c.context=Context(responses);c.policy=Protego.parse('');return c
  async def test_transient_503_is_retried_without_changing_read_request(self):
   c=self.client([Response(503,'temporary'),Response(200,'{"offer_id":42}')])
   try:r=await c.json(URL)

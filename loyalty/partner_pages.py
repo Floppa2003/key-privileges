@@ -57,6 +57,7 @@ def extract_partner_page(source,soup,url,observed_at):
     blocks=required(soup,cfg['selectors']);terms=content(blocks)
     flat=re.sub(r'\s+',' ',terms)
     program_rx=r'Аэрофлот.{0,5}Бону[сc]' if source.startswith('af_') else r'РЖД.{0,5}Бонус' if source.startswith('rzd_') else r'Един\w* карт\w* петербуржца|ЕКП'
+    program_rx=cfg.get('program_regex',program_rx)
     if not re.search(program_rx,flat,re.I):raise ValueError('Partner content does not name the requested program')
     if not re.search(r'мил[ьяюеи]|милz|скидк',flat,re.I):raise ValueError('Missing actual partner benefit')
     details={'source_scope':'reviewed_partner_page_not_program_catalog',
@@ -91,6 +92,11 @@ def extract_partner_page(source,soup,url,observed_at):
         return [make(audience,claim,redemption=m[3],details={'audience':audience,'article_published_at':publication,
               'limitations':'press_release_not_full_partner_card_rules'})
                 for audience,claim in [('new_customers',m[1]),('existing_customers',m[2])]]
+    if source=='nordwind_domina':
+        match=re.search(r'Каждые ([0-9 ]+)₽, потраченные в Domina Пулково ([0-9]+) мил[ьяию]',flat)
+        if not match:raise ValueError('Nordwind hotel earning card changed')
+        return [make('offer',match[0],details={'earning_rule':{
+            'value':match[2],'unit':'miles','basis_amount':match[1].replace(' ',''),'basis_unit':'RUB','evidence':match[0]}})]
     benefit=content(required(soup,cfg['benefit_selectors'])) if cfg.get('benefit_selectors') else terms
     return [make('offer',benefit,valid_from=date_from,valid_until=date_until)]
 

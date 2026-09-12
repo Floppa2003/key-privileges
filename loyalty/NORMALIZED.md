@@ -1,59 +1,70 @@
-# Normalized loyalty sources (schema v2, adapter 2.1.0)
+# Normalized loyalty sources (schema v2, adapter 2.2.0)
 
-The canonical run output is `loyalty-output/normalized.json`: `schema_version`, `run_id`, `observed_at`, `records`, `sources`. `offers.jsonl` is one normalized record per line. `coverage.json` and `summary.md` distinguish discovered, normalized and failed observations.
+The canonical output is `loyalty-output/normalized.json`: `schema_version`, `run_id`, `observed_at`, `records`, `sources`. `offers.jsonl` contains one normalized record per line. `coverage.json` and `summary.md` distinguish discovered, normalized and failed observations. A successful workflow does not certify every source or the user's eligibility.
 
 ## Scope and source routes
 
-The registry `sources_normalized.json` includes all programs in the live loyalty source audit, the additional Loyals source, existing KEY collector and explicitly labelled partner-page fallbacks. Multiple URLs/program tiers/campaigns are **not** counted as different unique partner programs.
+`sources_normalized.json` includes the public programs in the source audit, Loyals, the existing KEY collector and explicitly labelled official partner-page fallbacks. Different URLs, tiers and campaigns are not counted as separate unique programs. Corporate/private Yandex and VG data are not collected by this public workflow.
 
-- S7: public `__NEXT_DATA__`; deduplicate native offer codes, follow the actual `priorityRulesUrl`, extract only that partner's `priorityDetails`. The page H1 is not a partner name. `otherOffers`, auth state, client state and tracking `outLink` are never copied.
-- Mir/Privet: observe the anonymous regional catalogue JSON request and replay only its same-origin read-only filter pagination; fetch `promoDetail.promo.promoAction`. Preserve dates, payment badges, source flags and named conditions templates. The default region and catalogue count are reported. Do not treat this as every offer in every Russian region or as a personalized-account catalogue.
-- Ural Wings: public partner array from the observed `ajax=partners&action=default` endpoint; fallback to actual `li#partner_*` blocks. Preserve each partner's separate text, category, city IDs and tier tables.
-- Moskvich: `.lpp-card` name and terms in the same block.
-- No Name: native record/element IDs and aligned card geometry, not DOM text order. Ambiguous pairings fail rather than moving the next partner's benefit onto this one.
-- RGO: exhaust its span-based load-more control, then parse individual pages. A linked PDF is reported separately and is not silently counted as parsed HTML.
-- AZIMUT: status-table columns retained separately from summary cards. Image-coded unavailable amounts are not guessed. A summary card does not make a platinum privilege universal.
-- Museum Friends: published plan names/prices and corresponding benefits; membership plans remain a distinct record kind. The three explicitly named external partners are also represented separately with eligible plan names; their 10% discounts never inherit the 15% museum-program rate.
-- MEDI / Neva Travel: named partner-page fallbacks. These do not certify completeness of the EKP or SOGAZ catalogues.
-- Promo Miles: distinguish campaign announcements and archived sections from current partner offers.
-- KEY: run the existing `key/refresh.mjs` live, check the resulting observation timestamp and adapt its structured snapshot. Do not relabel a checked-in old snapshot as a fresh scrape.
-- Other registry URLs: bounded anonymous access probes. Failure/status and `adapter_not_yet_implemented` remain explicit; no generic whole-page extractor invents normalized partner records.
-
-## Additional reviewed routes (2.1.0)
-
-`partner_pages.json` defines **14 exact public partner URLs** with reviewed selectors, program identity checks and stable partner-name mappings. Eleven are Aeroflot partner pages, two are RZD hotel pages and one is the EKP/Rostelecom announcement. These are not an extraction of the blocked main program catalogs. Every such record has `details.source_scope=reviewed_partner_page_not_program_catalog`. The coverage registry retains the blocked main sources separately.
-
-Utair's accessible `media.utair.ru/status` partner panel is parsed by each rate-bearing anchor's own destination, not by nearby advertising legal-entity names or global text order. Five known destination domains identify the partners; an unknown domain fails closed pending identity review. The public tier-specific Otello rate sentences remain distinct in `details.tier_rates`. Only that partner panel is covered, not Utair's full rules or all status benefits.
-
-Mileage normalization supports `13% милями`, an intervening accrual verb, and reversed `За каждые 60 руб начисляется 1 миля` wording. Percentages used for spending miles are not reclassified as earned-miles percentages. Inline bold/link markup does not split a spending denominator from its mileage value. The source spelling `милz` is deliberately retained and not silently corrected to a typed mileage rate.
-
-Askona's base earning rule and explicitly dated multiplier are separate records. A past temporary multiplier is marked expired while the base offer has no invented overall expiry. MEDSI/Taivas/Grether labelled periods are extracted separately from publication dates. EKP/Rostelecom new/existing customers are separate records; the article publication date is metadata, not an offer deadline, and the new-customer lifetime claim is not copied into the existing-customer benefit.
-
-Transient read-only 502/503/504 requests get at most three attempts with bounded backoff. Authorization failures, 429, CAPTCHA and a server `Retry-After` instruction are not immediately retried. Queue waiting no longer consumes a source's 420-second network budget. Robots/network/TLS/access failures are still not interpreted as empty catalogs.
+- **S7:** parse public `__NEXT_DATA__`, deduplicate native offer codes, follow source-published `priorityRulesUrl` and extract only that partner's `priorityDetails`. The page H1 is not a partner name. `otherOffers`, auth/client state and tracking `outLink` are excluded.
+- **Mir/Privet/SBP:** load the public anonymous catalogue in a normal browser. Observe its own initial response for each payment profile's count and region; click visible numbered pagination controls and reconcile the rendered catalogue-card URLs. A cached page need not generate a new request. Each detail page is visited using its real card URL, and only its matching `promoDetail.promo.promoAction` public response object is retained. No independent filter/configuration API request is sent by the production adapter. Null non-detail responses are ignored. Catalogue and detail URL paths must match; stable identity comes from the detail's source-native XML ID. Moscow/Moscow Oblast public profiles are not all regions or personal offers. Incomplete pagination, changed counts, missing details and the bounded time budget are explicit, not successful empty catalogues. The legacy `mir_source.walk_catalog` helper remains only for fixture compatibility; production uses `mir_ui.collect_mir`.
+- **Ural Wings:** observe the public partner array generated by the root page's own browser request, then reconcile every source-native partner ID against its corresponding `li#partner_*` block. A missing API terms field can be filled only from the same ID, never the next card. This recovers BelkaCar's HTML terms. Preserve category, city IDs, partner-specific text and tier tables. If only HTML is available and the independent source count was not observed, report that coverage limitation.
+- **Moskvich:** extract name and terms from the same `.lpp-card` block.
+- **No Name:** use native record/element IDs and aligned card geometry, not DOM text order. Ambiguous pairings fail rather than moving one brand's benefit onto another.
+- **RGO:** exhaust the span-based load-more control, then parse individual pages' full `.section-text__inner.text`, not just their summaries. The Beeline raster PDF uses a separately declared digest-bound visual-review profile. Changed PDF bytes require review.
+- **AZIMUT:** retain status-table columns separately from summary cards. Image-coded missing values are not guessed. Platinum-only privileges do not become universal.
+- **Museum Friends:** preserve the two plans and their prices as membership-plan records. The three explicitly named external partners have their own eligible-plan conditions; their 10% offer does not inherit the museum-program 15% rate.
+- **MEDI, Neva Travel, Nordwind/Domina and the configured Aeroflot/RZD partner pages:** reviewed exact selectors plus program identity checks. These pages never certify completeness of an inaccessible parent-program catalogue.
+- **Utair:** use the accessible official `media.utair.ru/status` partner panel. Pair rates with the corresponding anchor destination, not nearby legal-entity or navigation text. Unknown partner destinations fail review. Retain Otello tier-specific sentences separately; this covers a panel, not all Utair rules.
+- **T2:** observe the allowed root page's own anonymous offer response. Preserve native IDs, company names, agreements, explicit expiry, categories and source eligibility flags. No login, activation, SMS/code retrieval or independent API replay. Query-card URLs are not invented or marked independently visited. The response is regional and anonymous, not a personal account catalogue.
+- **MiXX M:** separate prepared selections, selectable replacements, automatically included services and fixed benefits. Six selection slots do not make all listed services simultaneously available. Preserve the source's own ambiguous fixed-component count as a warning.
+- **T2 Selection:** the Premium page's short programme card is a summary, not a complete Selection catalogue. Speaker bundles and the closed powerbank campaign are separate records with source-labelled periods and model-specific requirements.
+- **Promo Miles:** distinguish archived campaign announcements from current partner offers; an announcement is not its complete campaign rules.
+- **KEY:** run the existing reviewed `key/refresh.mjs` live and verify the resulting snapshot timestamp. Do not relabel a checked-in old snapshot as a new scrape. KEY code is unchanged.
+- **Remaining registry URLs:** bounded anonymous probes with explicit access/adapter failures. No generic whole-page extractor fabricates normalized benefits.
 
 ## Record contract
 
-`id` is SHA256 of `source_id + newline + native_id`. Prefer a native offer/card ID; same S7 offer under `/city/` and `/partners/` is one identity. Missing source-native identities use a documented stable name/text key, never the observed discount amount as a key for a known partner.
+`id` is SHA256 of `source_id + newline + native_id`. Prefer source-native identifiers; an S7 offer under both `/city/` and `/partners/` is one identity. A known partner's observed discount amount is never its identity. Where a native ID is unavailable, use the adapter's documented stable name/block key.
 
-Useful fields: `program`, `partner_name`, `record_kind`, `title`, `category`, `benefit_text`, `conditions_text`, `redemption_text`, `benefit_types`, `rates`, `promo_codes`, `valid_from`, `valid_until`, `validity_status`, `source_status`, `source_url`, `benefit_url`, `link_kind`, `locator`, `tables`, `details`, `warnings`, `observed_at`, `adapter_version`, `content_sha256`.
+Core fields: `program`, `partner_name`, `record_kind`, `title`, `category`, `benefit_text`, `conditions_text`, `redemption_text`, `benefit_types`, `rates`, `promo_codes`, `valid_from`, `valid_until`, `validity_status`, `source_status`, `source_url`, `benefit_url`, `link_kind`, `locator`, `tables`, `details`, `warnings`, `observed_at`, `adapter_version`, `content_sha256`.
 
-- `partner_name` is null when a display name is not safely obtained; its native code/source description remains available.
-- Every extracted numeric rate includes its exact local evidence clause, kind, decimal-string value, unit and qualifier. Mileage rates preserve the spending denominator. A purchase minimum is not a discount amount. **Rates are lexical extractions, not a complete pricing/eligibility engine; never sum unrelated rates or convert miles into cash.** Full conditions remain authoritative.
-- Dates are typed only from explicit structured source date fields or a reviewed labelled interval within the precise partner terms block. A year in a copyright, campaign URL, display banner or unrelated card does not become an offer expiry. `null` means unknown/not stated, not unlimited validity.
-- `source_status` records publication flags; `validity_status` is a separate date comparison. Neither confirms the user's eligibility or checkout success.
-- Shared-page blocks have `benefit_url=null` plus the real `source_url` and a block locator. Actual anchors and source-published individual URLs are retained; unique URLs are not invented for cosmetic completeness.
-- `tables` and source-specific `details` keep information that must not be flattened into a universal percentage. Unknowns remain explicit.
-- `content_sha256` covers the normalized record including source text/conditions, excluding observation time, hash itself and run ID. This is an integrity check, not cryptographic proof of website authorship. Source markup is reduced to relevant public card fields; no whole-page sessions are exported.
+- Missing safe display names remain null; native codes and the source's own description remain available. Do not invent company names from unrelated text.
+- Numeric evidence preserves decimal-string amount, kind, unit, qualifier, spending denominator and exact local clause. Purchase minima are not discount amounts. Percentages earned in miles are not cash discounts; percentages spent in miles are not earned miles. Never add unrelated percentages or convert miles to money automatically.
+- `details.lexical_conditions` contains recognized purchase-minimum, benefit-cap, audience and non-stacking references with their complete evidence clauses. These are not globally executable eligibility rules: scope, exceptions and original terms remain authoritative.
+- Dates are typed only from explicit structured fields or reviewed labelled intervals in the precise terms block. Copyright, publication, filename and campaign-URL dates do not establish offer validity. Unknown dates remain null, not unlimited validity.
+- Source archived/published/cancelled flags are independent of date-based validity. Neither implies that the user qualifies or that checkout accepted the offer.
+- Shared-page records have `benefit_url=null`, their real `source_url` and a block locator. Real anchors and source-published individual links are retained. Do not invent unique URLs for appearance. API-native evidence has an explicit locator and link kind.
+- Preserve tier tables and source-specific details instead of flattening everything to a universal percentage. Conditions and warnings must survive serialization and publication.
+- `content_sha256` covers normalized content, excluding observation time, hash itself and run ID. It is an integrity check, not cryptographic proof of website authorship. Do not export whole-page sessions or client/auth configuration.
 
-## Publication / existing data
+## Reviewed source corrections
 
-The current workflow automatically upserts **only** `parser_offers` (A:Y managed, Z manual comments) and `parser_coverage` (A:N managed, O manual comments) in the existing configured spreadsheet. The curated benefits, source audit, Yandex/VG and old v1 `parser_inbox` / `parser_runs` are not rewritten. Those old v1 tabs are retained as historical diagnostic evidence, not the current normalized feed.
+- Askona base earnings and its explicitly dated August multiplier are separate records; a past multiplier expires without inventing an expiry for the base offer.
+- MEDSI/Taivas/Grether labelled intervals are separate from article publication dates. The source spelling `милz` is retained rather than silently converted to a typed mileage rate.
+- EKP/Rostelecom new and existing customers are distinct. Article publication is metadata, not the deadline. The new-customer lifetime claim is not copied to existing customers.
+- RGO's real DOM fixtures retain full terms. Etnomir's 31.12.2025 end is recognized. The current Paddock page states room discount but not the older cached karting gift; old wording is not retained without live evidence.
+- `reviewed_pdf.py` recognizes one exact URL and complete PDF SHA256 after each live download. Its visually reviewed profile separates the Beeline monthly tariff from the paid extra option and from included tethering. Changed bytes fail closed. This is not general-purpose OCR or automatic interpretation of replacement PDFs; filename dates are not validity dates.
 
-Writes use literal `stringValue`, are ID-idempotent, retain missing observations, reject unknown sheet schemas and read back after the final write. Missing/failed scraping does **not** expire or delete prior offers. Consumers must inspect observation date and latest source coverage before using an older row. Manual comments are outside managed columns.
+## Transport and operational boundaries
 
-The existing WIF/service account configuration is reused. Collection has no Google credentials; publication is isolated to trusted main and explicit enable flags. Schedule remains opt-in and is not activated by this code. Request-file dispatch now uses a 200-detail-page per-source cap; successful count-reconciled sources are distinguished from capped or partial ones.
+Use pinned Protego 0.6.2 for wildcard/longest-match robots rules and respect crawl/request intervals. A robots failure is not permission to scrape arbitrary paths. Browser-owned responses can be observed while visiting allowed public pages; their private/auth fields are not retained or replayed.
 
-## Run / verify
+T2's ordinary loader can replace an initial 503 with a same-origin 200 document. Observe the final main-document status with a finite wait on the reviewed host; do not solve/click access challenges. Independent read-only 502/503/504 failures get at most three bounded attempts. Do not immediately retry authorization failures, 429, CAPTCHA or a response with Retry-After.
+
+Source deadlines start after concurrency admission, not while waiting for a slot. Most source budgets are 420 seconds; Mir's bounded public UI traversal has 900 seconds, with an earlier partial-result cutoff. The per-source detail cap is 200 by default (CLI accepts 1–500). Exhausted page controls and reconciled source counts are distinguished from capped/partial observations.
+
+Linux, Windows, macOS and an independent anonymous Reader service were compared for the remaining inaccessible public catalogues on 2026-09-12. One Coral Windows root request returned a category listing, but repeat direct and browser reads returned 403; this is not a verified working Coral adapter. The Reader returned refusals/timeouts too. No paid API key, residential proxy, personal cookie, login, CAPTCHA solver or TLS-verification override was used. See PR #5 for concrete run IDs and final evidence. Inaccessible catalogues remain gaps, not completed sources.
+
+## Publication and preservation
+
+Automatically upsert only `parser_offers` A:Y (Z manual) and `parser_coverage` A:N (O manual) in the configured existing spreadsheet. Do not rewrite curated benefits, source audit, private Yandex/VG sheets or the old v1 `parser_inbox`/`parser_runs`. Old v1 tabs are historical diagnostics, not the normalized feed.
+
+Use literal `stringValue`, stable-ID upserts, schema/duplicate/bounds checks and read-after-write verification. Missing/failed source observations never delete or expire prior rows. Consumers must inspect row observation time and the latest source report before relying on a retained row. Preserve manual columns. Workflow concurrency is not a transaction lock against unrelated human editors; avoid editing managed columns during a run.
+
+Collection receives no Google credentials. Publication is isolated to trusted main with existing WIF/service-account authorization and explicit enable flags. The periodic schedule remains opt-in and disabled unless the user enables it; deploying this code does not enable it. No destination spreadsheet ID, private exports, Google tokens or personal browser state belongs in the public repository or public artifacts. Artifacts expire after seven days; durable history beyond retained Sheet rows is not implemented.
+
+## Run and verification
 
 ```sh
 python -m pip install -r loyalty/requirements.txt
@@ -64,6 +75,6 @@ python loyalty/collect_normalized.py --limit 200
 python loyalty/sheets_normalized.py --input loyalty-output/normalized.json
 ```
 
-The last command is a dry run. Live publication adds `--publish` and requires the existing short-lived Google token environment. Do not send tokens, personal browser state, spreadsheet exports or private corporate offers to the public repository/artifacts. Public artifacts expire after seven days; persistent history beyond the sheet's retained rows is not implemented.
+The last command is a dry run. Actual publication additionally uses `--publish` and the existing short-lived token environment. A skipped publish job is not successful synchronization.
 
-Tests use small hand-checked fixtures of observed source structures, with synthetic negative canaries. They cover shifted partners, ambiguous No Name geometry, mixed mileage/discount units, purchase thresholds, archived headings, duplicate rows, tampering, readback mismatches and preservation of trailing manual columns. Local tests do not prove live source accessibility or completeness; use concrete Actions artifacts and independently read the destination after each production change.
+Tests combine reviewed source-block fixtures with synthetic negative canaries: shifted brands, ambiguous No Name geometry, mileage units/denominators, purchase thresholds, scoped clauses, explicit expiry, archived campaigns, null public responses, DOM pagination, count reconciliation, same-ID Ural fallback, duplicate/tampered rows and preservation of manual columns. Unit tests do not prove live accessibility or complete coverage. Verify concrete Actions artifacts, then independently read every published field and compare all untouched sheets after each production change.
