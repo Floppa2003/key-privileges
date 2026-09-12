@@ -1,5 +1,5 @@
-# One-time public-code transport. Hashes bind the patch to locally tested files.
-# This workflow removes itself and all transport/inspection files before commit.
+# One-time checksum-bound public-code transport; no Google credentials.
+# Workflow changes and removal are performed separately by the authorized app.
 name: Apply tested loyalty expansion and verify sources
 on:
   push:
@@ -46,11 +46,16 @@ jobs:
       - run: python -m pip install -r loyalty/requirements.txt
       - run: python -m unittest discover -s loyalty/tests -v
       - run: node --test key/refresh.test.mjs
-      - name: Commit tested files and remove temporary transport
+      - name: Commit code without modifying workflow files
         id: commit
         run: |
+          git restore --source=HEAD --staged --worktree -- .github/workflows
           git rm -r -- loyalty/transport
-          git rm -- .github/workflows/loyalty-apply.yml .github/workflows/loyalty-inspect.yml loyalty/inspect_sources.py loyalty/inspection_targets.json
+          git rm -- loyalty/inspect_sources.py loyalty/inspection_targets.json
+          if git diff --cached --name-only | grep '^.github/workflows/'; then
+            echo 'Unexpected workflow change; refusing token-scope violation.' >&2
+            exit 1
+          fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git commit -m 'feat: expand normalized loyalty sources and harden mileage/date extraction'
