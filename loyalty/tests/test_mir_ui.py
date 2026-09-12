@@ -14,15 +14,15 @@ class Tests(unittest.IsolatedAsyncioTestCase):
         clicks=[]
         async def click(n):clicks.append(n);return catalog_snapshot(page(n),'sbp',n)
         items,report=await walk_ui_catalog(catalog_snapshot(page(1),'sbp',1),click)
-        self.assertEqual(clicks,[2,3]);self.assertEqual(set(items),{'1','2','3'});self.assertEqual(report['errors'],[])
+        self.assertEqual(clicks,[2,3]);self.assertEqual(set(items),{'/promo/test/1/','/promo/test/2/','/promo/test/3/'});self.assertEqual(report['errors'],[])
     async def test_click_failure_retains_previous_pages(self):
         async def click(n):raise RuntimeError('next_page_not_visible')
         items,report=await walk_ui_catalog(catalog_snapshot(page(1),'sbp',1),click)
-        self.assertEqual(set(items),{'1'});self.assertEqual(report['observed'],1);self.assertTrue(report['errors'])
+        self.assertEqual(set(items),{'/promo/test/1/'});self.assertEqual(report['observed'],1);self.assertTrue(report['errors'])
     async def test_wrong_page_or_profile_is_not_counted(self):
         async def click(n):return catalog_snapshot(page(1),'mir',1)
         items,report=await walk_ui_catalog(catalog_snapshot(page(1),'sbp',1),click)
-        self.assertEqual(set(items),{'1'});self.assertTrue(report['errors'])
+        self.assertEqual(set(items),{'/promo/test/1/'});self.assertTrue(report['errors'])
     async def test_duplicate_results_do_not_reconcile_count(self):
         async def click(n):return catalog_snapshot(page(n,items=[{'xml_id':'1','url':'/promo/test/1/'}]),'sbp',n)
         items,report=await walk_ui_catalog(catalog_snapshot(page(1),'sbp',1),click)
@@ -39,5 +39,15 @@ class Tests(unittest.IsolatedAsyncioTestCase):
     def test_catalog_rejects_unsafe_urls_and_unknown_filters(self):
         with self.assertRaises(ValueError):catalog_snapshot(page(1),'personal',1)
         with self.assertRaises(ValueError):catalog_snapshot(page(1,items=[{'xml_id':'a','url':'https://evil.invalid/'}]),'sbp',1)
+
+class DOMTests(unittest.TestCase):
+    def test_null_non_detail_config_is_ignored(self):
+        for payload in ({'data':None},{'data':{'content':None}},{'data':{'content':{'promoDetail':None}}}):
+            self.assertIsNone(public_detail_envelope(payload))
+    def test_dom_cards_remain_scoped_to_catalog_and_not_suggested_cards(self):
+        from mir_ui import dom_snapshot
+        html='''<main><div class="styles-module__promos__abc"><a class="promo-card-v2__link" href="/promo/test/a/"><div class="promo-card-v2-owner__name">A</div></a></div><aside><a class="promo-card-v2__link" href="/promo/test/b/">Other</a></aside></main>'''
+        result=dom_snapshot(html,{'expected':1,'page_title':'Mir'},'mir',1)
+        self.assertEqual(result['items'],[{'xml_id':None,'url':'/promo/test/a/','name':'A'}])
 
 if __name__=='__main__':unittest.main()

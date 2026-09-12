@@ -2,7 +2,9 @@
 from __future__ import annotations
 import asyncio
 import json
+import time
 from urllib.parse import urlsplit, urljoin
+from bs4 import BeautifulSoup
 from adapters import mir_detail
 from normalized import content_hash
 
@@ -12,7 +14,10 @@ DETAIL_FIELDS = ('xml_id','url','name','owner','templates','desc','short_desc','
 
 
 def public_detail_envelope(payload):
-    obj = payload.get('data',{}).get('content',{}).get('promoDetail',{}).get('promo',{}).get('promoAction')
+    obj = payload
+    for key in ('data','content','promoDetail','promo','promoAction'):
+        if not isinstance(obj,dict):return None
+        obj=obj.get(key)
     if not isinstance(obj,dict) or not obj.get('xml_id') or not obj.get('url'):
         return None
     public = {key:obj[key] for key in DETAIL_FIELDS if key in obj}
@@ -37,8 +42,24 @@ def catalog_snapshot(payload, payment, number):
     return {'payment_type':payment,'page':number,'items':safe,'expected':count,'page_title':data.get('pageTitle')}
 
 
+CARDS = 'main [class*="__promos__"] a.promo-card-v2__link'
+
+def dom_snapshot(raw, profile, payment, number):
+    soup=BeautifulSoup(raw,'html.parser');items=[]
+    for card in soup.select(CARDS):
+        url=card.get('href','');parts=urlsplit(url)
+        if parts.scheme or parts.netloc or parts.query or not parts.path.startswith('/promo/'):
+            raise ValueError('invalid_public_card_url')
+        owner=card.select_one('.promo-card-v2-owner__name')
+        if owner is None:raise ValueError('public_card_partner_missing')
+        items.append({'xml_id':None,'url':url,'name':owner.get_text(' ',strip=True)})
+    if not items or len(items)>50:raise ValueError('unexpected_visible_card_count')
+    return {'payment_type':payment,'page':number,'items':items,'expected':profile['expected'],
+            'page_title':profile['page_title']}
+
+
 async def walk_ui_catalog(first, click_page):
-    """A callback clicks a visible numbered control; it must return that page's response."""
+    """A callback clicks a visible numbered control; it must return that page's snapshot."""
     items = {}; errors = []; visited = 0; current = first
     expected = first['expected']; payment = first['payment_type']
     for number in range(1,61):
@@ -52,7 +73,7 @@ async def walk_ui_catalog(first, click_page):
             visited += 1
             before = len(items)
             for item in current['items']:
-                items[item['xml_id']] = item
+                items[item['url']] = item
             if len(items) >= expected:
                 break
             if len(items) == before:
@@ -114,6 +135,7 @@ class BrowserResponses:
 
 
 async def collect_mir(client,cfg,report,now,limit):
+    deadline=time.monotonic()+cfg.get("timeout_seconds",900)-50
     page=client.page; captured=BrowserResponses(page,client.host)
     page.on('response',captured.observe)
     candidates={}; memberships={}; summaries=[]; records=[]
@@ -131,14 +153,26 @@ async def collect_mir(client,cfg,report,now,limit):
                 except Exception as exc:
                     report['errors'].append({'phase':'catalog_profile','reason':str(exc) if isinstance(exc,RuntimeError) else type(exc).__name__})
                     continue
+            await page.wait_for_function("""({selector,expected})=>{
+                const actual=[...document.querySelectorAll(selector)].map(e=>e.getAttribute('href')).sort();
+                return JSON.stringify(actual)===JSON.stringify(expected.sort());
+            }""",arg={'selector':CARDS,'expected':[x['url'] for x in first['items']]},timeout=15000)
+            first=dom_snapshot(await page.content(),first,payment,1)
             async def click(number):
-                offset=len(captured.catalogs)
+                before=await page.locator(CARDS).evaluate_all('(els)=>els.map(e=>e.getAttribute("href"))')
                 button=page.locator('[class*="_pagination_"]').get_by_role('button',name=str(number),exact=True)
                 if await button.count()!=1 or not await button.is_visible():
                     raise RuntimeError('next_page_not_visible')
                 await page.wait_for_timeout(int(client.request_interval*1000))
                 await button.click(timeout=5000)
-                return await captured.wait(captured.catalogs,offset,lambda x:x['payment_type']==payment and x['page']==number)
+                await page.wait_for_function("""({number,before,selector,expectedLength})=>{
+                    const active=[...document.querySelectorAll('[class*="_pagination_"] button')]
+                      .some(e=>e.textContent.trim()===String(number)&&e.className.includes('selected'));
+                    const links=[...document.querySelectorAll(selector)].map(e=>e.getAttribute('href'));
+                    return active&&links.length===expectedLength&&JSON.stringify(links)!==JSON.stringify(before);
+                }""",arg={'number':number,'before':before,'selector':CARDS,
+                    'expectedLength':min(len(first['items']),first['expected']-(number-1)*len(first['items']))},timeout=15000)
+                return dom_snapshot(await page.content(),first,payment,number)
             items,summary=await walk_ui_catalog(first,click)
             summaries.append(summary); report['errors'].extend(summary['errors'])
             for identity,item in items.items():
@@ -148,13 +182,16 @@ async def collect_mir(client,cfg,report,now,limit):
         report['coverage']=json.dumps({'method':'anonymous_browser_UI_no_API_replay','catalogs':summaries,
             'unique_discovered':len(candidates),'detail_limit':limit},ensure_ascii=False)
         for identity,item in list(candidates.items())[:limit]:
+            if time.monotonic()>=deadline:
+                report['errors'].append({'phase':'detail','reason':'source_time_budget_reached','remaining':len(candidates)-len(records)})
+                break
             url=urljoin(cfg['url'],item['url']); offset=len(captured.details)
             try:
                 await client.read(url,render=True)
                 data=await captured.wait(captured.details,offset,
-                    lambda x:x['data']['content']['promoDetail']['promo']['promoAction']['xml_id']==identity)
+                    lambda x:urlsplit(x['data']['content']['promoDetail']['promo']['promoAction']['url']).path==urlsplit(url).path)
                 rs=mir_detail(data,url,now)
-                if len(rs)!=1 or rs[0]['native_id']!=identity:
+                if len(rs)!=1 or urlsplit(rs[0]['source_url']).path!=urlsplit(url).path:
                     raise RuntimeError('catalog_detail_identity_mismatch')
                 record=rs[0];record['details'].update(catalog_profiles=memberships[identity],
                     catalog_region=report['region'],retrieval_method='anonymous_browser_response_no_API_replay')

@@ -18,6 +18,7 @@ from public_transport import PublicSource
 from mir_source import collect_mir
 from reviewed_pdf import extract_rgo_pdf
 from t2_source import collect_t2
+from ural_ui import collect_ural
 
 
 def error_record(exc,phase,url=''):
@@ -99,23 +100,7 @@ async def one(browser,cfg,now,limit):
                 await client.robots()
                 mode=cfg['mode']
                 if mode=='s7':records=await collect_s7(client,cfg,report,now,limit)
-                elif mode=='ural':
-                    try:
-                        data=await client.json(cfg['url'])
-                        records=ural_catalog(data,cfg['url'],now)
-                        report['discovered']=len(data['partners'])
-                        missing=set('partner_'+str(p['id']) for p in data['partners'])-set(r['native_id'] for r in records)
-                        for native in sorted(missing):report['errors'].append({'phase':'detail','native_id':native,'reason':'empty_partner_terms'})
-                        report['coverage']='public_partner_array'
-                    except Exception as exc:
-                        report['errors'].append(error_record(exc,'api',cfg['url']))
-                        root='https://www.uralairlines.ru/partners/'
-                        await client.read(root,render=True)
-                        await client.page.wait_for_selector('li[id^="partner_"]',timeout=12000)
-                        records=extract('ural',await client.page.content(),root,now)
-                        report['coverage']='browser_partner_blocks_api_fallback'
-                        report['discovered']=len(records)
-                    if not records:raise RuntimeError('no_partner_terms_found')
+                elif mode=='ural':records=await collect_ural(client,cfg,report,now,limit)
                 elif mode=='rgo':records=await collect_rgo(client,cfg,report,now,limit)
                 elif mode=='mir':records=await collect_mir(client,cfg,report,now,limit)
                 elif mode=='t2':records=await collect_t2(client,cfg,report,now,limit)
@@ -143,6 +128,13 @@ async def one(browser,cfg,now,limit):
     return report,records
 
 
+def source_budget(cfg):
+    budget=cfg.get("timeout_seconds",900 if cfg.get("id")=="mir" else 420)
+    if type(budget) is not int or not 30<=budget<=1000:
+        raise ValueError("invalid_source_timeout")
+    return budget
+
+
 async def bounded_source(factory,sem,timeout=420):
     # A queued source has not started its network budget yet.
     async with sem:
@@ -158,11 +150,12 @@ async def main():
     async with async_playwright() as p:
         browser=await p.chromium.launch();sem=asyncio.Semaphore(4)
         async def guarded(cfg):
-            try:return await bounded_source(lambda:one(browser,cfg,now,args.limit),sem)
+            budget=source_budget(cfg)
+            try:return await bounded_source(lambda:one(browser,cfg,now,args.limit),sem,timeout=budget)
             except asyncio.TimeoutError:
                 return {'source_id':cfg['id'],'name':cfg['name'],'root':cfg['url'],'status':'failed',
                     'discovered':0,'normalized':0,'failed':1,'coverage':'source_timeout',
-                    'region':None,'errors':[{'phase':'source','reason':'420_second_bound'}],'observed_at':now},[]
+                    'region':None,'errors':[{'phase':'source','reason':f'{budget}_second_bound'}],'observed_at':now},[]
         try:results=await asyncio.gather(*(guarded(cfg) for cfg in cfgs))
         finally:await browser.close()
     reports=[r for r,_ in results];records=[r for _,rs in results for r in rs]
