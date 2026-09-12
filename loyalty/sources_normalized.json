@@ -1,29 +1,269 @@
 [
-  {"id":"moskvich","name":"Карта «Москвича»","mode":"html","url":"https://moskvichmag.ru/programma-loyalnosti/"},
-  {"id":"noname","name":"No Name Card","mode":"html","url":"https://nonameburo.com/card"},
-  {"id":"s7","name":"S7 Priority Marketplace","mode":"s7","url":"https://marketplace.s7.ru/partners/category/retail"},
-  {"id":"ural","name":"Уральские авиалинии — «Крылья»","mode":"ural","url":"https://www.uralairlines.ru/partners/?ajax=partners&action=default"},
-  {"id":"rgo","name":"РГО","mode":"rgo","url":"https://rgo.ru/membership/loyalty-program/"},
-  {"id":"mir","name":"Привет! / Мир / СБП","mode":"mir","url":"https://vamprivet.ru/promo/"},
-  {"id":"azimut","name":"AZIMUT Bonus","mode":"html","url":"https://azimuthotels.com/ru/info/bonus"},
-  {"id":"rusimp","name":"Клуб Друзей Музея русского импрессионизма","mode":"html","url":"https://www.rusimp.su/membership/friends"},
-  {"id":"sogaz_medi","name":"СОГАЗ → МЕДИ","mode":"html","url":"https://medi.spb.ru/medi/spetspredlozheniya/partnerskie-programmy/sogaz/"},
-  {"id":"ekp_medi","name":"ЕКП → МЕДИ (страница партнёра)","mode":"html","url":"https://medi.spb.ru/medi/spetspredlozheniya/partnerskie-programmy/ekp/"},
-  {"id":"ekp_neva","name":"ЕКП → Нева Тревел (страница партнёра)","mode":"html","url":"https://neva.travel/ru/promotions/skidka-dlya-derzhateley-edinoy-karty-peterburzhtsa/"},
-  {"id":"mir_neva","name":"Мир → Нева Тревел (страница партнёра)","mode":"html","url":"https://neva.travel/ru/promotions/kesbek-10-pri-oplate-kartoi-mir/"},
-  {"id":"promomiles","name":"Аэрофлот Бонус — Promo Miles","mode":"html","url":"https://promomiles.aeroflot.ru/"},
-  {"id":"key","name":"KEY","mode":"key","url":"https://traveltg-bot.netlify.app/"},
-  {"id":"nordwind","name":"NORDWIND CLUB","mode":"probe","url":"https://nordwindairlines.ru/ru/club/partnerlist"},
-  {"id":"utair","name":"Utair Status","mode":"probe","url":"https://www.utair.ru/support/2/kakiye_partnery_est_u_utair_status"},
-  {"id":"coral","name":"CoralBonus — Клуб","mode":"probe","url":"https://coralbonus.ru/klub-privilegii/"},
-  {"id":"coral_promo","name":"CoralBonus — Акции","mode":"probe","url":"https://coralbonus.ru/promo/"},
-  {"id":"rzd","name":"РЖД Бонус","mode":"probe","url":"https://www.rzd-bonus.ru/?accessible=true"},
-  {"id":"aeroflot","name":"Аэрофлот Бонус — каталог","mode":"probe","url":"https://www.aeroflot.ru/ru-ru/afl_bonus/partners"},
-  {"id":"ekp","name":"ЕКП — каталог","mode":"probe","url":"https://ekp.spb.ru/capabilities/loyalty/"},
-  {"id":"t2_bolshe","name":"T2 «Больше»","mode":"probe","url":"https://msk.t2.ru/bolshe/offers"},
-  {"id":"t2_mixx","name":"MiXX M","mode":"probe","url":"https://msk.t2.ru/help/article/what-included-mixx-m-subscription"},
-  {"id":"t2_selection","name":"T2 Selection","mode":"probe","url":"https://msk.t2.ru/tariff/premium"},
-  {"id":"t2_mixx_s","name":"MiXX S — Яндекс Станции","mode":"probe","url":"https://msk.t2.ru/promotions/article/yandex-station-mixx"},
-  {"id":"t2_powerbank","name":"T2 — пауэрбанки","mode":"probe","url":"https://msk.t2.ru/promotions/article/bezlimitnaya-arenda-powerbank"},
-  {"id":"loyals","name":"Loyals","mode":"probe","url":"https://loyals.ru/"}
+  {
+    "id": "moskvich",
+    "name": "Карта «Москвича»",
+    "mode": "html",
+    "url": "https://moskvichmag.ru/programma-loyalnosti/"
+  },
+  {
+    "id": "noname",
+    "name": "No Name Card",
+    "mode": "html",
+    "url": "https://nonameburo.com/card"
+  },
+  {
+    "id": "s7",
+    "name": "S7 Priority Marketplace",
+    "mode": "s7",
+    "url": "https://marketplace.s7.ru/partners/category/retail"
+  },
+  {
+    "id": "ural",
+    "name": "Уральские авиалинии — «Крылья»",
+    "mode": "ural",
+    "url": "https://www.uralairlines.ru/partners/?ajax=partners&action=default"
+  },
+  {
+    "id": "rgo",
+    "name": "РГО",
+    "mode": "rgo",
+    "url": "https://rgo.ru/membership/loyalty-program/"
+  },
+  {
+    "id": "mir",
+    "name": "Привет! / Мир / СБП",
+    "mode": "mir",
+    "url": "https://vamprivet.ru/promo/"
+  },
+  {
+    "id": "azimut",
+    "name": "AZIMUT Bonus",
+    "mode": "html",
+    "url": "https://azimuthotels.com/ru/info/bonus"
+  },
+  {
+    "id": "rusimp",
+    "name": "Клуб Друзей Музея русского импрессионизма",
+    "mode": "html",
+    "url": "https://www.rusimp.su/membership/friends"
+  },
+  {
+    "id": "sogaz_medi",
+    "name": "СОГАЗ → МЕДИ",
+    "mode": "html",
+    "url": "https://medi.spb.ru/medi/spetspredlozheniya/partnerskie-programmy/sogaz/"
+  },
+  {
+    "id": "ekp_medi",
+    "name": "ЕКП → МЕДИ (страница партнёра)",
+    "mode": "html",
+    "url": "https://medi.spb.ru/medi/spetspredlozheniya/partnerskie-programmy/ekp/"
+  },
+  {
+    "id": "ekp_neva",
+    "name": "ЕКП → Нева Тревел (страница партнёра)",
+    "mode": "html",
+    "url": "https://neva.travel/ru/promotions/skidka-dlya-derzhateley-edinoy-karty-peterburzhtsa/"
+  },
+  {
+    "id": "mir_neva",
+    "name": "Мир → Нева Тревел (страница партнёра)",
+    "mode": "html",
+    "url": "https://neva.travel/ru/promotions/kesbek-10-pri-oplate-kartoi-mir/"
+  },
+  {
+    "id": "promomiles",
+    "name": "Аэрофлот Бонус — Promo Miles",
+    "mode": "html",
+    "url": "https://promomiles.aeroflot.ru/"
+  },
+  {
+    "id": "key",
+    "name": "KEY",
+    "mode": "key",
+    "url": "https://traveltg-bot.netlify.app/"
+  },
+  {
+    "id": "nordwind",
+    "name": "NORDWIND CLUB",
+    "mode": "probe",
+    "url": "https://nordwindairlines.ru/ru/club/partnerlist"
+  },
+  {
+    "id": "utair",
+    "name": "Utair Status",
+    "mode": "probe",
+    "url": "https://www.utair.ru/support/2/kakiye_partnery_est_u_utair_status"
+  },
+  {
+    "id": "coral",
+    "name": "CoralBonus — Клуб",
+    "mode": "probe",
+    "url": "https://coralbonus.ru/klub-privilegii/"
+  },
+  {
+    "id": "coral_promo",
+    "name": "CoralBonus — Акции",
+    "mode": "probe",
+    "url": "https://coralbonus.ru/promo/"
+  },
+  {
+    "id": "rzd",
+    "name": "РЖД Бонус",
+    "mode": "probe",
+    "url": "https://www.rzd-bonus.ru/?accessible=true"
+  },
+  {
+    "id": "aeroflot",
+    "name": "Аэрофлот Бонус — каталог",
+    "mode": "probe",
+    "url": "https://www.aeroflot.ru/ru-ru/afl_bonus/partners"
+  },
+  {
+    "id": "ekp",
+    "name": "ЕКП — каталог",
+    "mode": "probe",
+    "url": "https://ekp.spb.ru/capabilities/loyalty/"
+  },
+  {
+    "id": "t2_bolshe",
+    "name": "T2 «Больше»",
+    "mode": "probe",
+    "url": "https://msk.t2.ru/bolshe/offers"
+  },
+  {
+    "id": "t2_mixx",
+    "name": "MiXX M",
+    "mode": "probe",
+    "url": "https://msk.t2.ru/help/article/what-included-mixx-m-subscription"
+  },
+  {
+    "id": "t2_selection",
+    "name": "T2 Selection",
+    "mode": "probe",
+    "url": "https://msk.t2.ru/tariff/premium"
+  },
+  {
+    "id": "t2_mixx_s",
+    "name": "MiXX S — Яндекс Станции",
+    "mode": "probe",
+    "url": "https://msk.t2.ru/promotions/article/yandex-station-mixx"
+  },
+  {
+    "id": "t2_powerbank",
+    "name": "T2 — пауэрбанки",
+    "mode": "probe",
+    "url": "https://msk.t2.ru/promotions/article/bezlimitnaya-arenda-powerbank"
+  },
+  {
+    "id": "loyals",
+    "name": "Loyals",
+    "mode": "probe",
+    "url": "https://loyals.ru/"
+  },
+  {
+    "id": "af_medsi",
+    "name": "Аэрофлот Бонус → МЕДСИ (страница партнёра)",
+    "url": "https://medsi.ru/actions/aeroflot-bonus-v-klinikakh-medsi/",
+    "mode": "html",
+    "coverage_scope": "one_reviewed_partner_page_not_full_program_catalog"
+  },
+  {
+    "id": "af_viprooms",
+    "name": "Аэрофлот Бонус → VIP-ROOMS.RU (страница партнёра)",
+    "url": "https://vip-rooms.ru/partner/aeroflot",
+    "mode": "html",
+    "coverage_scope": "one_reviewed_partner_page_not_full_program_catalog"
+  },
+  {
+    "id": "af_stoletov",
+    "name": "Аэрофлот Бонус → Доктор Столетов (страница партнёра)",
+    "url": "https://stoletov.ru/stock/aeroflot-bonus/",
+    "mode": "html",
+    "coverage_scope": "one_reviewed_partner_page_not_full_program_catalog"
+  },
+  {
+    "id": "af_lavivion",
+    "name": "Аэрофлот Бонус → LA VIVION (страница партнёра)",
+    "url": "https://lavivion.ru/articles/aeroflot-bonus/",
+    "mode": "html",
+    "coverage_scope": "one_reviewed_partner_page_not_full_program_catalog"
+  },
+  {
+    "id": "af_askona",
+    "name": "Аэрофлот Бонус → Askona / Askona Home (страница партнёра)",
+    "url": "https://www.askona.ru/landing/aeroflot/",
+    "mode": "html",
+    "coverage_scope": "one_reviewed_partner_page_not_full_program_catalog"
+  },
+  {
+    "id": "af_chefmarket",
+    "name": "Аэрофлот Бонус → Шефмаркет (страница партнёра)",
+    "url": "https://www.chefmarket.ru/blog/letat-i-gotovit-eshhe-vygodnee/",
+    "mode": "html",
+    "coverage_scope": "one_reviewed_partner_page_not_full_program_catalog"
+  },
+  {
+    "id": "af_galladance",
+    "name": "Аэрофлот Бонус → GallaDance (страница партнёра)",
+    "url": "https://www.galladance.com/offers/shares/aeroflot-bonus/",
+    "mode": "html",
+    "coverage_scope": "one_reviewed_partner_page_not_full_program_catalog"
+  },
+  {
+    "id": "af_parkfly",
+    "name": "Аэрофлот Бонус → Park&Fly (страница партнёра)",
+    "url": "https://parkandfly.ru/blog/aeroflot_bonus/",
+    "mode": "html",
+    "coverage_scope": "one_reviewed_partner_page_not_full_program_catalog"
+  },
+  {
+    "id": "af_istochnik",
+    "name": "Аэрофлот Бонус → Источник Кисловодск (страница партнёра)",
+    "url": "https://istochnikspa.ru/kislovodsk/aeroflot-bonus/",
+    "mode": "html",
+    "coverage_scope": "one_reviewed_partner_page_not_full_program_catalog"
+  },
+  {
+    "id": "af_grether",
+    "name": "Аэрофлот Бонус → GRETHER & WELLS EXCLUSIVE (страница партнёра)",
+    "url": "https://gretherwells.ru/aeroflot-bonus",
+    "mode": "html",
+    "coverage_scope": "one_reviewed_partner_page_not_full_program_catalog"
+  },
+  {
+    "id": "af_braun",
+    "name": "Аэрофлот Бонус → Braun Russia (страница партнёра)",
+    "url": "https://braun-russia.ru/actions/mili-aeroflota",
+    "mode": "html",
+    "coverage_scope": "one_reviewed_partner_page_not_full_program_catalog"
+  },
+  {
+    "id": "rzd_diplomat",
+    "name": "РЖД Бонус → Отель Дипломат (страница партнёра)",
+    "url": "https://diplomat-hotel.spb.ru/predlozhenija/rzhd-bonus/",
+    "mode": "html",
+    "coverage_scope": "one_reviewed_partner_page_not_full_program_catalog"
+  },
+  {
+    "id": "rzd_taivas",
+    "name": "РЖД Бонус → Taivas (страница партнёра)",
+    "url": "https://taivashotel.ru/akcii_rzdbonus",
+    "mode": "html",
+    "coverage_scope": "one_reviewed_partner_page_not_full_program_catalog"
+  },
+  {
+    "id": "ekp_rostelecom",
+    "name": "Единая карта петербуржца (ЕКП) → Ростелеком (страница партнёра)",
+    "url": "https://www.company.rt.ru/press/news_fill/d476187/",
+    "mode": "html",
+    "coverage_scope": "one_reviewed_partner_page_not_full_program_catalog"
+  },
+  {
+    "id": "utair_media",
+    "name": "Utair Status — официальный блок партнёров",
+    "url": "https://media.utair.ru/status",
+    "mode": "html",
+    "coverage_scope": "all_rate_anchors_in_public_partner_panel_not_full_program_rules"
+  }
 ]

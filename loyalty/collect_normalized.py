@@ -83,60 +83,65 @@ async def collect_key(report,now):
     return records
 
 
-async def one(browser,cfg,now,limit,sem):
+async def one(browser,cfg,now,limit):
     report={'source_id':cfg['id'],'name':cfg['name'],'root':cfg['url'],'status':'failed',
             'discovered':0,'normalized':0,'failed':0,'coverage':'not_collected',
             'region':None,'errors':[],'observed_at':now}
     records=[]
-    async with sem:
-        try:
-            if cfg['mode']=='key':records=await collect_key(report,now)
-            else:
-                async with PublicSource(browser,cfg['url']) as client:
-                    await client.robots()
-                    mode=cfg['mode']
-                    if mode=='s7':records=await collect_s7(client,cfg,report,now,limit)
-                    elif mode=='ural':
-                        try:
-                            data=await client.json(cfg['url'])
-                            records=ural_catalog(data,cfg['url'],now)
-                            report['discovered']=len(data['partners'])
-                            missing=set('partner_'+str(p['id']) for p in data['partners'])-set(r['native_id'] for r in records)
-                            for native in sorted(missing):report['errors'].append({'phase':'detail','native_id':native,'reason':'empty_partner_terms'})
-                            report['coverage']='public_partner_array'
-                        except Exception as exc:
-                            report['errors'].append(error_record(exc,'api',cfg['url']))
-                            root='https://www.uralairlines.ru/partners/'
-                            await client.read(root,render=True)
-                            await client.page.wait_for_selector('li[id^="partner_"]',timeout=12000)
-                            records=extract('ural',await client.page.content(),root,now)
-                            report['coverage']='browser_partner_blocks_api_fallback'
-                            report['discovered']=len(records)
-                        if not records:raise RuntimeError('no_partner_terms_found')
-                    elif mode=='rgo':records=await collect_rgo(client,cfg,report,now,limit)
-                    elif mode=='mir':records=await collect_mir(client,cfg,report,now,limit)
-                    elif mode=='html':
+    try:
+        if cfg['mode']=='key':records=await collect_key(report,now)
+        else:
+            async with PublicSource(browser,cfg['url']) as client:
+                await client.robots()
+                mode=cfg['mode']
+                if mode=='s7':records=await collect_s7(client,cfg,report,now,limit)
+                elif mode=='ural':
+                    try:
+                        data=await client.json(cfg['url'])
+                        records=ural_catalog(data,cfg['url'],now)
+                        report['discovered']=len(data['partners'])
+                        missing=set('partner_'+str(p['id']) for p in data['partners'])-set(r['native_id'] for r in records)
+                        for native in sorted(missing):report['errors'].append({'phase':'detail','native_id':native,'reason':'empty_partner_terms'})
+                        report['coverage']='public_partner_array'
+                    except Exception as exc:
+                        report['errors'].append(error_record(exc,'api',cfg['url']))
+                        root='https://www.uralairlines.ru/partners/'
+                        await client.read(root,render=True)
+                        await client.page.wait_for_selector('li[id^="partner_"]',timeout=12000)
+                        records=extract('ural',await client.page.content(),root,now)
+                        report['coverage']='browser_partner_blocks_api_fallback'
+                        report['discovered']=len(records)
+                    if not records:raise RuntimeError('no_partner_terms_found')
+                elif mode=='rgo':records=await collect_rgo(client,cfg,report,now,limit)
+                elif mode=='mir':records=await collect_mir(client,cfg,report,now,limit)
+                elif mode=='html':
+                    raw=await client.read(cfg['url'],render=True)
+                    records=extract(cfg['id'],raw,cfg['url'],now)
+                    if not records:
                         raw=await client.read(cfg['url'],render=True)
                         records=extract(cfg['id'],raw,cfg['url'],now)
-                        if not records:
-                            raw=await client.read(cfg['url'],render=True)
-                            records=extract(cfg['id'],raw,cfg['url'],now)
-                        if not records:raise RuntimeError('no_offer_blocks_found')
-                        report['discovered']=len(records);report['coverage']='all_matched_blocks_on_public_page'
-                    else:
-                        await client.read(cfg['url'],render=True)
-                        report['coverage']='page_accessible_adapter_not_yet_implemented'
-                        report['errors'].append({'phase':'extraction','reason':'no_reviewed_adapter'})
-            for r in records:validate_offer(r)
-            report['normalized']=len(records)
-            report['status']='partial' if report['errors'] else 'ok' if records else 'no_normalized_records'
-        except Exception as exc:
-            report['errors'].append(error_record(exc,'source',cfg['url']))
-            report['status']='failed' if not records else 'partial'
-            report['normalized']=len(records)
-        report['failed']=len(report['errors'])
+                    if not records:raise RuntimeError('no_offer_blocks_found')
+                    report['discovered']=len(records);report['coverage']=cfg.get('coverage_scope','all_matched_blocks_on_public_page')
+                else:
+                    await client.read(cfg['url'],render=True)
+                    report['coverage']='page_accessible_adapter_not_yet_implemented'
+                    report['errors'].append({'phase':'extraction','reason':'no_reviewed_adapter'})
+        for r in records:validate_offer(r)
+        report['normalized']=len(records)
+        report['status']='partial' if report['errors'] else 'ok' if records else 'no_normalized_records'
+    except Exception as exc:
+        report['errors'].append(error_record(exc,'source',cfg['url']))
+        report['status']='failed' if not records else 'partial'
+        report['normalized']=len(records)
+    report['failed']=len(report['errors'])
     print(json.dumps({k:report[k] for k in ('source_id','status','discovered','normalized','failed')},ensure_ascii=False),flush=True)
     return report,records
+
+
+async def bounded_source(factory,sem,timeout=420):
+    # A queued source has not started its network budget yet.
+    async with sem:
+        return await asyncio.wait_for(factory(),timeout=timeout)
 
 
 async def main():
@@ -148,7 +153,7 @@ async def main():
     async with async_playwright() as p:
         browser=await p.chromium.launch();sem=asyncio.Semaphore(4)
         async def guarded(cfg):
-            try:return await asyncio.wait_for(one(browser,cfg,now,args.limit,sem),timeout=420)
+            try:return await bounded_source(lambda:one(browser,cfg,now,args.limit),sem)
             except asyncio.TimeoutError:
                 return {'source_id':cfg['id'],'name':cfg['name'],'root':cfg['url'],'status':'failed',
                     'discovered':0,'normalized':0,'failed':1,'coverage':'source_timeout',
