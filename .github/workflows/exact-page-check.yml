@@ -1,0 +1,75 @@
+name: Explicit public URL inspection
+on:
+  push:
+    branches: [loyalty/robots-availability]
+    paths: [.github/workflows/exact-page-check.yml]
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r loyalty/requirements.txt
+      - run: python -m playwright install --with-deps chromium
+      - name: Inspect explicit targets only; no discovered link crawl
+        run: |
+          mkdir -p exact-output
+          python - <<'PY'
+          import asyncio,json,hashlib,re
+          from pathlib import Path
+          from datetime import datetime,timezone
+          from urllib.parse import urlsplit
+          from bs4 import BeautifulSoup
+          from playwright.async_api import async_playwright
+          out=Path('exact-output')
+          targets=[('ekp','https://ekp.spb.ru/capabilities/loyalty/tiles?region=78'),('aeroflot','https://www.aeroflot.ru/ru-ru/afl_bonus/partners')]
+          async def main():
+              result={'observed_at':datetime.now(timezone.utc).isoformat(),'scope':'explicit_URL_diagnostics_not_recursive_crawl','targets':[]}
+              async with async_playwright() as p:
+                  b=await p.chromium.launch()
+                  try:
+                      for key,url in targets:
+                          ctx=await b.new_context(locale='ru-RU');page=await ctx.new_page();jobs=[];responses=[]
+                          async def receive(resp):
+                              u=urlsplit(resp.url)
+                              if u.hostname=='ekp.spb.ru' and resp.request.method=='GET' and re.fullmatch(r'/api/portal/loyalty/(?:partners(?:/[0-9]+)?|regions|categories/partners)',u.path) and len(responses)<6:
+                                  info={'url':resp.url,'status':resp.status}
+                                  if resp.status==200:
+                                      raw=await resp.body()
+                                      if len(raw)<2000000:
+                                          obj=json.loads(raw);name='ekp-'+hashlib.sha256(raw).hexdigest()[:12]+'.json'
+                                          (out/name).write_text(json.dumps(obj,ensure_ascii=False,indent=2));info['file']=name
+                                  responses.append(info)
+                          def capture(resp):jobs.append(asyncio.create_task(receive(resp)))
+                          page.on('response',capture);r={'source':key,'url':url}
+                          try:
+                              response=await page.goto(url,wait_until='domcontentloaded',timeout=35000)
+                              await page.wait_for_timeout(4000)
+                              if jobs:await asyncio.gather(*jobs,return_exceptions=True)
+                              soup=BeautifulSoup(await page.content(),'html.parser')
+                              r.update(http_status=response.status if response else None,final_url=page.url,title=await page.title(),public_responses=responses)
+                              for tag in soup.select('script,style,form,input,textarea'):tag.decompose()
+                              (out/(key+'.html')).write_text(str(soup),encoding='utf8')
+                          except Exception as exc:r['error']=str(exc)[:300]
+                          finally:
+                              page.remove_listener('response',capture)
+                              if jobs:await asyncio.gather(*jobs,return_exceptions=True)
+                              await ctx.close()
+                          result['targets'].append(r)
+                  finally:await b.close()
+              (out/'report.json').write_text(json.dumps(result,ensure_ascii=False,indent=2));print(json.dumps(result,ensure_ascii=False))
+          asyncio.run(main())
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: exact-pages-${{ github.run_id }}
+          path: exact-output/
+          retention-days: 7
