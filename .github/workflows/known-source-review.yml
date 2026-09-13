@@ -31,11 +31,11 @@ jobs:
         id: commit
         run: |
           if test -f loyalty/register_known.py; then
-            git add -- loyalty/normalized.py loyalty/collect_normalized.py loyalty/sources_normalized.json loyalty/sheets_normalized.py loyalty/offer.schema.json
+            git add -- loyalty/known_rules.py loyalty/known_rules.json loyalty/sources_normalized.json loyalty/requirements.txt
             git rm -- loyalty/register_known.py
             git config user.name 'github-actions[bot]'
             git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-            git commit -m 'feat: register reviewed known-rule sources and evidence type'
+            git commit -m 'feat: register native PDF rules and delayed article readiness'
             git push origin HEAD:refs/heads/loyalty/known-source-completion
           fi
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
@@ -57,6 +57,7 @@ jobs:
         run: |
           mkdir -p known-review
           git archive --format=tar --output=known-review/code.tar HEAD
+          python -m pip download --no-deps pypdf==6.18.1 -d known-review
           python - <<'PY'
           import asyncio,json,os,sys
           from pathlib import Path
