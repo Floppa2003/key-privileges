@@ -39,6 +39,37 @@ def check_response(status: int, body: str) -> None:
         raise RuntimeError('access_challenge')
 
 
+def robots_document(status: int, body: str) -> tuple[str,str]:
+    """Interpret robots only; never use this function for a target response."""
+    if status==429:
+        raise RuntimeError('robots_http_429')
+    if 400<=status<500:
+        return '', 'unavailable_4xx'
+    if not 200<=status<300:
+        raise RuntimeError(f'robots_http_{status}')
+    if len(body.encode('utf-8'))>1024*1024:
+        raise RuntimeError('robots_response_too_large')
+    body='\n'.join(line for line in body.splitlines() if not line.lstrip().startswith('#'))
+    # Some origins wrap actual rules in <pre>. Extract rules, not HTML tags.
+    # An arbitrary home/challenge page still is not a robots rule set.
+    if re.search(r'<(?:!doctype|html|head|body|pre)\b',body,re.I):
+        soup=BeautifulSoup(body,'html.parser')
+        title=soup.title.get_text(' ',strip=True) if soup.title else ''
+        if BLOCKED.search(title):
+            raise RuntimeError('robots_not_readable')
+        for node in soup.select('script,style'):node.decompose()
+        visible=soup.get_text('\n')
+        if not re.search(r'^\s*user-agent\s*:',visible,re.I|re.M):
+            raise RuntimeError('robots_not_readable')
+        body=visible
+    # Ignore challenge words when they are merely paths or comments in real
+    # rules, e.g. Disallow: /captcha/ and Disallow: /forbidden/.
+    directives=re.search(r'^\s*(?:user-agent|allow|disallow|sitemap)\s*:',body,re.I|re.M)
+    if not directives and BLOCKED.search(body[:350]):
+        raise RuntimeError('robots_not_readable')
+    return body,'rules_loaded' if body.strip() else 'empty_2xx'
+
+
 class PublicSource:
     def __init__(self,browser,url: str):
         self.browser=browser;self.host=urlsplit(url).hostname;self.policy=None
@@ -95,23 +126,48 @@ class PublicSource:
             self.page.remove_listener('response', observe)
 
     async def robots(self):
+        """RFC 9309: unavailable (4xx) is distinct from unreachable (5xx/network).
+
+        A missing robots file is not a target-page authorization failure. Keep
+        actual target responses, rate limits, and explicit rules independent.
+        """
         url=f'https://{self.host}/robots.txt'
+        self.policy=None
+        self.robots_info={'state':'fetching','http_status':None,'method':'http'}
         try:
             res=await self.context.request.get(url,timeout=15000)
-            status=res.status;body=await res.text()
         except Exception:
-            status=None;body=''
-        if status not in (200,404):
-            # A regular browser read is a transport fallback, not CAPTCHA/login solving.
-            status,_=await self.navigate(url)
-            body=await self.page.locator('body').inner_text()
-        if status==404:
-            body=''
-        elif status!=200:
-            raise RuntimeError(f'robots_http_{status}')
-        if '<html' in body.lower() or BLOCKED.search(body[:350]):
-            raise RuntimeError('robots_not_readable')
-        self.policy=Protego.parse(body)
+            status=None;body='';headers={}
+        else:
+            if not allowed_request(getattr(res,'url',url),self.host):
+                self.robots_info['state']='unexpected_redirect'
+                raise RuntimeError('robots_unexpected_redirect')
+            status=res.status;body=await res.text();headers=getattr(res,'headers',{})
+        self.robots_info['http_status']=status
+        # Retry-After and 429 are intentionally stricter than generic RFC 4xx:
+        # do not create another browser request when asked to slow down.
+        if headers.get('retry-after'):
+            self.robots_info['state']='retry_after'
+            raise RuntimeError('robots_retry_after')
+        if status==429:
+            self.robots_info['state']='rate_limited'
+            raise RuntimeError('robots_http_429')
+        if status is None or status>=500 or 300<=status<400:
+            self.robots_info['method']='browser_fallback'
+            try:
+                status,_=await self.navigate(url)
+                body=await self.page.locator('body').inner_text()
+            except Exception:
+                self.robots_info['state']='unreachable'
+                raise
+            self.robots_info['http_status']=status
+        try:
+            rules,state=robots_document(status,body)
+        except RuntimeError:
+            self.robots_info['state']='unreadable_or_unreachable'
+            raise
+        self.policy=Protego.parse(rules)
+        self.robots_info['state']=state
         delay=self.policy.crawl_delay('LoyaltyCatalogResearchBot') or 0
         rate=self.policy.request_rate('LoyaltyCatalogResearchBot')
         self.request_interval=max(0.25,delay,rate.seconds/rate.requests if rate else 0)
