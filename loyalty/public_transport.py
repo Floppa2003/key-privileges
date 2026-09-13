@@ -49,6 +49,7 @@ def robots_document(status: int, body: str) -> tuple[str,str]:
         raise RuntimeError(f'robots_http_{status}')
     if len(body.encode('utf-8'))>1024*1024:
         raise RuntimeError('robots_response_too_large')
+    body='\n'.join(line for line in body.splitlines() if not line.lstrip().startswith('#'))
     # Some origins wrap actual rules in <pre>. Extract rules, not HTML tags.
     # An arbitrary home/challenge page still is not a robots rule set.
     if re.search(r'<(?:!doctype|html|head|body|pre)\b',body,re.I):

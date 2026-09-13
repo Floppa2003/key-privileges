@@ -41,6 +41,9 @@ class RobotsResponseTests(unittest.IsolatedAsyncioTestCase):
         c=self.client(Response(200,'User-agent: *\nDisallow: /captcha/\nDisallow: /forbidden/\n'))
         await c.robots();c.check_url('https://example.com/catalog')
         with self.assertRaisesRegex(RuntimeError,'robots_disallow'):c.check_url('https://example.com/captcha/x')
+    async def test_comments_are_not_an_access_challenge(self):
+        c=self.client(Response(200,'# captcha rules intentionally empty\n# <html> is just a comment\n'))
+        await c.robots();c.check_url('https://example.com/catalog')
     async def test_html_wrapper_with_real_rules_is_parsed(self):
         c=self.client(Response(200,'<!DOCTYPE html><html><body><pre>'+RULES+'</pre></body></html>'))
         await c.robots();c.check_url('https://example.com/private/public/x')

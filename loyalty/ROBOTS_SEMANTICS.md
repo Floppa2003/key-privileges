@@ -1,0 +1,20 @@
+# Robots availability repair — 2.3.4
+
+The crawler's robots preflight was stricter than its intended RFC 9309 behavior. A 403 for `/robots.txt` is not a 403 for a target page. In this version generic robots 4xx responses establish an unavailable rule set rather than blocking the whole origin. HTTP 429 and Retry-After remain stop signals. Empty 2xx is accepted. Parseable rules in a simple HTML wrapper are extracted; ordinary denial/home HTML is not accepted as robots. Words such as `captcha` or `forbidden` in rule paths or comment-only files no longer cause false challenge detections. Real Disallow, Allow specificity and crawl timing still apply.
+
+This is not a blanket ignore-robots switch or a claim of full RFC implementation. Same-origin redirect restrictions remain deliberately stricter; long-lived caching and cross-authority robots redirect support are not added. Network failures and 5xx stay closed unless the existing bounded ordinary-browser fallback retrieves valid rules. Target HTTP errors, TLS validation, access challenges, same-origin scope and source budgets are unchanged. Plain-text interpretation remains conservative rather than a universal challenge classifier.
+
+`one()` now includes robots state/status/method in the source JSON report, and labels failure phase `robots` separately from subsequent source/page errors. The fixed Sheets layout is unchanged; the extra report metadata is in the JSON artifact, with error phases represented in existing errors JSON.
+
+## Checked behavior and experiments
+
+- 13 targeted tests were written against the real PublicSource boundary; old behavior failed before the fixes. The full local tree passes 234 Python tests and 7 KEY tests. Initial 12-test revision also passed the Actions test stage.
+- Run `34769899905` tested actual exact public pages using the repaired preflight. Coral MEDSI and RZD accepted robots 403 as unavailable, then received a real target 403. EKP/Nordwind could not load robots; Aeroflot returned unreadable owner-restriction HTML. Artifact `10321617303`, ZIP SHA256 `99b6fb0ef173a88562b5734afff5c6255f172602dabe2f8d3f548b51a3d83519`, independently downloaded and checked.
+- That run also tried anonymous Jina Reader with caching disabled and its optional robots header. Coral and RZD returned reader HTTP 200 wrappers, but their embedded `httpStatus` and actual HTML showed **origin 403**; no valid offers were obtained. EKP/Nordwind failed at the reader's robots retrieval. The reader is not integrated into production and is not represented as a successful alternative.
+- Run `34770186379` inspected two explicit URLs directly in a fresh browser, **without any robots preflight** and without recursive link discovery. EKP catalogue navigation timed out. Aeroflot returned HTTP 200 with the owner's denial page, not a catalogue. Artifact `10322031685`, ZIP SHA256 `59899828d986c4faa5ccca17f563e5c02eb74bd10f91b7feb56cc3543526ad1b`, independently checked. This separates their preflight symptom from target accessibility; deleting robots handling would not have fixed those measured requests.
+
+These are one-window observations, not proof of permanent impossibility. Earlier web-tool retrieval of Coral pages is a different access path and may be indexed content; it is not evidence that the GitHub origin requests now work. A page excerpt or service wrapper status is not a complete verified catalogue. No inaccessible source is promoted from probe mode to a fictitious adapter by this repair.
+
+Reference: RFC 9309 sections 2.3.1.3 (unavailable 4xx), 2.3.1.4 (unreachable network/5xx), and 3 (not access authorization): https://www.rfc-editor.org/rfc/rfc9309.html .
+
+Only existing parser tabs may be published by the established main workflow. Temporary public-reader and explicit-URL inspection scripts/workflows have been removed. No private Sheet contents, credentials or sessions were sent to Jina or committed. Google access, schedule flags, KEY code and source set are unchanged. A main run and independent Sheets readback are still required before claiming production publication of this revision.
