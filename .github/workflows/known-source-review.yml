@@ -31,11 +31,10 @@ jobs:
         id: commit
         run: |
           if test -f loyalty/register_known.py; then
-            git add -- loyalty/known_rules.py loyalty/known_rules.json loyalty/sources_normalized.json loyalty/requirements.txt
             git rm -- loyalty/register_known.py
             git config user.name 'github-actions[bot]'
             git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-            git commit -m 'feat: register native PDF rules and delayed article readiness'
+            git commit -m 'feat: read public product conditions and complete linked Utair PDF rules'
             git push origin HEAD:refs/heads/loyalty/known-source-completion
           fi
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
@@ -68,7 +67,7 @@ jobs:
           from collect_normalized import one
           from sheets_normalized import prepare
           async def main():
-              cfgs=[c for c in json.loads(Path('loyalty/sources_normalized.json').read_text()) if c['mode']=='known_rules']
+              cfgs=[c for c in json.loads(Path('loyalty/sources_normalized.json').read_text()) if c['mode'] in ('known_rules','utair_documents')]
               now=datetime.now(timezone.utc).isoformat();sem=asyncio.Semaphore(3);locks={}
               async with async_playwright() as p:
                   browser=await p.chromium.launch()

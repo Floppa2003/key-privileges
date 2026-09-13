@@ -1,0 +1,173 @@
+--- a/loyalty/public_transport.py
++++ b/loyalty/public_transport.py
+@@ -22,6 +22,8 @@
+ def allowed_request(url: str, host: str) -> bool:
+     try:
+         u=urlsplit(clean_url(url))
++        if u.hostname==host=='www.gazprombank.ru' and u.path=='/personal/cards/7515685/' and not u.query:
++            return True  # Reviewed anonymous product page, not a personal account.
+         return u.hostname==host and not re.search(r'/(?:auth|login|personal|register|accept|activate|participate)(?:/|$)',u.path,re.I)
+     except (ValueError,TypeError):
+         return False
+--- a/loyalty/known_rules.py
++++ b/loyalty/known_rules.py
+@@ -88,6 +88,12 @@
+         headings=[text(n.select_one('h2').get_text()) for n in nodes]
+         if sorted(headings)!=sorted(['О партнёре','Как воспользоваться?','Условия предложения']):
+             raise ValueError('x5_rule_sections_changed')
++    if handler=='gpb':
++        products=[n for n in nodes if any(re.fullmatch(r'TariffsMsbItemContent_root__(?!.*__)[A-Za-z0-9_-]+',c) for c in n.get('class',[]))]
++        titles=['Условия по карте','Условия программы лояльности «Аэрофлот Бонус»']
++        accordions=[n.parent.parent for n in nodes if text(n.get_text(' ',strip=True)) in titles]
++        if len(products)!=2 or len(accordions)!=2:raise ValueError('gpb_public_sections_ambiguous')
++        nodes=products+accordions
+     terms=content(nodes)
+     if any(x.casefold() not in flat(terms).casefold() for x in cfg['required']):
+         raise ValueError('known_rule_required_evidence_missing')
+@@ -102,7 +108,25 @@
+         'scope':'reviewed_public_sections_only','linked_documents':linked_documents(nodes,url)}
+     warnings=['user_eligibility_not_verified','rule_bundle_not_additive_discount']+cfg.get('warnings',[])
+     benefit=terms;start=end=None;handler=cfg.get('handler')
+-    if handler=='retail_miles':
++    if handler=='gpb':
++        options=[]
++        for node,label,paid in zip(nodes[:2],('Без Газпром Бонус «Плюс»','С Газпром Бонус «Плюс»'),(False,True)):
++            value=flat(node.get_text(' ',strip=True))
++            if not value.startswith(label):raise ValueError('gpb_subscription_label_mismatch')
++            rate=match(r'Мили «Аэрофлот Бонус» (\d+(?:[.,]\d+)?) мили за (\d+) ₽ покупок',value,'gpb_rate_missing')
++            cap=match(r'Максимум миль в месяц ('+NUM+r')(?= Переводы|$)',value,'gpb_cap_missing')
++            cost=match(r'далее [—-] (\d+) ₽ в месяц',value,'gpb_subscription_price_missing')[1] if paid else '0'
++            if not paid and 'Бесплатно' not in value:raise ValueError('gpb_free_option_missing')
++            options.append({'subscription':paid,'label':label,'miles':number(rate[1]),'basis_rub':rate[2],
++                'monthly_cap_miles':number(cap[1]),'monthly_subscription_rub':cost,'evidence':value})
++        minimum=match(r'Минимальная сумма покупок по карте в месяц [—–-] ('+NUM+r') ₽',terms,'gpb_minimum_missing')
++        service=match(r'Стоимость обслуживания (\d+) ₽',terms,'gpb_service_fee_missing')
++        notify=match(r'со 2 месяца [—–-] (\d+) ₽/мес',terms,'gpb_notification_fee_missing')
++        details.update(mileage_options=options,monthly_minimum_purchases_rub=number(minimum[1]),
++            minimum_evidence=minimum[0],fees={'card_service_rub':service[1],
++            'notifications_after_first_month_rub':notify[1],'evidence':notify[0]})
++        benefit='\n'.join(o['evidence'] for o in options)
++    elif handler=='retail_miles':
+         earning=terms.split('Условия начислений:',1)[1].split('Условия списаний:',1)[0].strip()
+         redemption=terms.split('Условия списаний:',1)[1].strip()
+         rules=earning_rules(earning)
+--- a/loyalty/known_rules.json
++++ b/loyalty/known_rules.json
+@@ -438,5 +438,29 @@
+     "partner": "Банк Приморье",
+     "title": "Тариф карты: начисление миль и ограничения",
+     "format": "pdf"
++  },
++  "af_gpb_rules": {
++    "url": "https://www.gazprombank.ru/personal/cards/7515685/",
++    "program": "Аэрофлот Бонус",
++    "partner": "Газпромбанк",
++    "handler": "gpb",
++    "selectors": [
++      "div[class^=\"TariffsMsbItemContent_root__\"]",
++      "div[class*=\"Accordion_root__trigger_title__\"]"
++    ],
++    "single_selectors": false,
++    "render": false,
++    "required": [
++      "Без Газпром Бонус «Плюс»",
++      "С Газпром Бонус «Плюс»",
++      "Минимальная сумма покупок по карте в месяц",
++      "Стоимость обслуживания"
++    ],
++    "warnings": [
++      "bank_product_not_free_money",
++      "linked_complete_bank_documents_not_fetched"
++    ],
++    "title": "Карта Газпромбанка «Аэрофлот Бонус» — публичные условия",
++    "record_kind": "program_rules"
+   }
+ }
+--- a/loyalty/known_pdf.py
++++ b/loyalty/known_pdf.py
+@@ -33,7 +33,7 @@
+     return found
+ 
+ 
+-def pdf_pages(data: bytes,expected_pages: int) -> list[str]:
++def pdf_pages(data: bytes,expected_pages: int, *, short_pages: dict | None = None) -> list[str]:
+     if not isinstance(data,bytes) or not data.startswith(b'%PDF-') or not 100<=len(data)<=3000000:
+         raise ValueError('invalid_or_oversized_pdf')
+     # Imported only in collection, never needed by the Google publisher.
+@@ -42,13 +42,14 @@
+     if reader.is_encrypted or len(reader.pages)!=expected_pages:
+         raise ValueError('pdf_encrypted_or_page_count_changed')
+     pages=[]
+-    for page in reader.pages:
++    for page_number,page in enumerate(reader.pages,1):
+         stream=page.get_contents()
+         if stream is None or len(stream.get_data())>4000000:
+             raise ValueError('pdf_content_stream_empty_or_oversized')
+         value=page.extract_text()
+         if not value or len(re.findall(r'[A-Za-zА-Яа-яЁё]',value))<80:
+-            raise ValueError('pdf_missing_text_layer_review_required')
++            if not value or compact(value)!=(short_pages or {}).get(str(page_number)):
++                raise ValueError('pdf_missing_text_layer_review_required')
+         pages.append(value)
+     if sum(map(len,pages))>35000:
+         raise ValueError('pdf_text_too_large_no_truncation')
+--- a/loyalty/normalized.py
++++ b/loyalty/normalized.py
+@@ -193,6 +193,9 @@
+     return r
+ 
+ 
++UTAIR_DOCUMENT_IDS=set(json.loads(Path(__file__).with_name('utair_documents.json').read_text()))
++HOSTS['utair_rule_documents']=['ut0.ru']
++
+ def validate_offer(r: dict) -> None:
+     if r.get('schema_version')!=2 or r.get('adapter_version')!=VERSION:
+         raise ValueError('Unexpected schema/adapter version')
+@@ -213,6 +216,9 @@
+         raise ValueError('Promo code evidence mismatch')
+     if r.get('details',{}).get('table_benefits')!=extract_table_benefits(r.get('tables',[])):
+         raise ValueError('Table benefit evidence mismatch')
++    if r['source_id']=='utair_rule_documents':
++        if (r['record_kind']!='program_rules' or r['source_status']!='public_rules_text' or r['native_id'].removeprefix('document:') not in UTAIR_DOCUMENT_IDS or r['source_url']!='https://ut0.ru/'+r['native_id'].removeprefix('document:') or r['details'].get('evidence_role')!='supplementary_rules_not_incremental_discount'):
++            raise ValueError('Public rule documents cannot certify standalone partner offers')
+     if r['source_id'] in KNOWN_RULES:
+         cfg=KNOWN_RULES[r['source_id']]
+         allowed_kinds=('program_rules','membership_plan') if r['source_id']=='smartavia_rules' else ('program_rules',)
+--- a/loyalty/collect_normalized.py
++++ b/loyalty/collect_normalized.py
+@@ -25,6 +25,7 @@
+ from tier_sources import collect_utair_tiers, collect_ural_tiers
+ from read_budget import within_source_budget, stops_catalog
+ from known_rules import collect_known_rules
++from utair_documents import collect_documents
+ 
+ 
+ def error_record(exc,phase,url=''):
+@@ -125,6 +126,7 @@
+                 elif mode=='utair_tiers':records=await collect_utair_tiers(client,cfg,report,now,limit)
+                 elif mode=='ural_tiers':records=await collect_ural_tiers(client,cfg,report,now,limit)
+                 elif mode=='known_rules':records=await collect_known_rules(client,cfg,report,now,limit)
++                elif mode=='utair_documents':records=await collect_documents(client,cfg,report,now,limit)
+                 elif mode=='html':
+                     raw=await client.read(cfg['url'],render=True)
+                     records=extract(cfg['id'],raw,cfg['url'],now)
+--- a/loyalty/sources_normalized.json
++++ b/loyalty/sources_normalized.json
+@@ -485,5 +485,17 @@
+     "name": "Аэрофлот Бонус → Банк Приморье — PDF",
+     "url": "https://www.primbank.ru/d/tariffs-aeroflot-bonus",
+     "mode": "known_rules"
++  },
++  {
++    "id": "af_gpb_rules",
++    "name": "Аэрофлот Бонус — условия карты Газпромбанка",
++    "url": "https://www.gazprombank.ru/personal/cards/7515685/",
++    "mode": "known_rules"
++  },
++  {
++    "id": "utair_rule_documents",
++    "name": "Utair Status — подробные PDF-правила привилегий",
++    "mode": "utair_documents",
++    "url": "https://media.utair.ru/status"
+   }
+ ]
