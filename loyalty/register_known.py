@@ -1,0 +1,19 @@
+"""Temporary code-only registration, bound to reviewed before/after hashes."""
+from pathlib import Path
+import hashlib,json
+BEFORE={'loyalty/normalized.py':'cd2a070fd52355c22e7d9eb9f0b7a566c95c1b7dec2e5018dd966ce6dae2a6d6','loyalty/collect_normalized.py':'a58aa0f582ef56d1585b5287bf98b4e6d449088cbd7147eeef7a0abcfc886be6','loyalty/sources_normalized.json':'97defb17ed62b41d07322f6450f94901a8b191e55a18aa37f6eada9bb6d168c5','loyalty/sheets_normalized.py':'45a45adcec06d693837e11fc9bcc66d06d1f068700a22107b9b167160c788e4a','loyalty/offer.schema.json':'1e230751403bcacb97675e88c1bcd82e51df87e3a6b5b365f856347a5533c6fe'}
+for name,sha in BEFORE.items():
+    if hashlib.sha256(Path(name).read_bytes()).hexdigest()!=sha:raise ValueError('Unexpected source baseline '+name)
+p=Path('loyalty/normalized.py');s=p.read_text().replace("VERSION = '2.5.0'","VERSION = '2.6.0'")
+a="HOSTS['utair_media']=['media.utair.ru']"
+s=s.replace(a,"KNOWN_RULES=json.loads(Path(__file__).with_name('known_rules.json').read_text(encoding='utf8'))\nfor _key,_cfg in KNOWN_RULES.items():\n    HOSTS[_key]=[urlsplit(_cfg['url']).hostname]\n"+a)
+s=s.replace("    if r['source_id']=='t2_selection_public':", "    if r['source_id'] in KNOWN_RULES:\n        cfg=KNOWN_RULES[r['source_id']]\n        allowed_kinds=('program_rules','membership_plan') if r['source_id']=='smartavia_rules' else ('program_rules',)\n        if (r['record_kind'] not in allowed_kinds or canonical_url(r['source_url'])!=canonical_url(cfg['url'])\n            or r['details'].get('evidence_role')!='supplementary_rules_not_incremental_discount'):\n            raise ValueError('Known rules cannot be relabelled as new verified partner offers')\n    if r['source_id']=='t2_selection_public':")
+p.write_text(s)
+p=Path('loyalty/collect_normalized.py');s=p.read_text().replace('from read_budget import within_source_budget, stops_catalog','from read_budget import within_source_budget, stops_catalog\nfrom known_rules import collect_known_rules').replace("                elif mode=='html':","                elif mode=='known_rules':records=await collect_known_rules(client,cfg,report,now,limit)\n                elif mode=='html':");p.write_text(s)
+p=Path('loyalty/sources_normalized.json');v=json.loads(p.read_text());cfg=json.loads(Path('loyalty/known_rules.json').read_text());v.extend({'id':sid,'name':c['program']+' — '+c['title'],'url':c['url'],'mode':'known_rules','timeout_seconds':120} for sid,c in cfg.items());p.write_text(json.dumps(v,ensure_ascii=False,indent=2)+'\n')
+p=Path('loyalty/sheets_normalized.py');p.write_text(p.read_text().replace("len(bundle['sources'])>50","len(bundle['sources'])>128"))
+p=Path('loyalty/offer.schema.json');v=json.loads(p.read_text());v['properties']['record_kind']['enum'].append('program_rules');p.write_text(json.dumps(v,ensure_ascii=False,separators=(',',':'))+'\n')
+AFTER={'loyalty/normalized.py':'e20c37103fce7f13c7bb4ac0ebbf1db71804513795638e2ffb1cb924cf140773','loyalty/collect_normalized.py':'b416c4ab6ef257b09c850c9e731ed9fc4cb80d4cb6b8d5ca20f6988e8420c671','loyalty/sources_normalized.json':'168bd32f6c3716fabc75b111a8d55cb2618725aa590e0f550179063778fa5de4','loyalty/sheets_normalized.py':'549c4b0a0b1116e9ce5149139cf0290969e8f1523edd44fec6c6fc983f4d335c','loyalty/offer.schema.json':'581fa184b48ab038d0889714225d9ac8b83a3bf0747478f6fc09839af0b5acde','loyalty/known_rules.py':'d82dbcfd9d15d18def396b65273b7be032c00189ea65201fd06ac28d93b23510','loyalty/known_rules.json':'2f2efeef64c09cbf16359cfcc38ffef3e5e8629de71fee1e092e7bddefbff5ae','loyalty/tests/test_known_rules.py':'143ae6409a8d50bcea787a9f85fa66c73b4e702290603ae09b1efb1ce1067057','loyalty/tests/test_known_rule_routing.py':'520d8ff9e6e8b21a0d1d9b37f40dfa7f94eb2214f8062e009975ecd40d583856'}
+for name,sha in AFTER.items():
+    if hashlib.sha256(Path(name).read_bytes()).hexdigest()!=sha:raise ValueError('Code transfer mismatch '+name)
+print('All nine registered files match the locally tested bytes.')
