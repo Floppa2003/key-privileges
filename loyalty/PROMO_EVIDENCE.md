@@ -1,6 +1,6 @@
-# Literal promo code normalization — 2.3.2
+# Literal promo code normalization and bounded recovery — 2.3.2
 
-Schema version 2 and the Google Sheets column layout are unchanged. This revision repairs coupon extraction; it does not add catalogue access, sign in, retrieve personalized codes, or certify offers as currently usable.
+Schema version 2 and the Google Sheets column layout are unchanged. This revision repairs coupon extraction and one transient Mir detail read; it does not add catalogue access, sign in, retrieve personalized codes, or certify offers as currently usable.
 
 ## Defect and boundary
 
@@ -28,10 +28,20 @@ On the exact same observations, 43 code lists change: 33 false-only lists become
 
 Examples: i'way loses the spurious `1`; Ramada uses the published `Крылья` instead of `Скидка 10`; Park Wood obtains `BLUE WINGS`, `SILVER WINGS`, `GOLD WINGS` from the code column rather than including the `Скидка` heading; Olimp and Gorskiy retain each code's tier/discount row. Lowercase `moskvichmag` and `mskvmag` are preserved. Publication and expiry are separate: recovering a code does not renew its source offer.
 
+## Mir detail 5xx recovery
+
+Fresh full branch run `34751234531` validated coupon extraction but exposed an unrelated HTTP 503 on the public detail response for Novikov Group. Its catalogue URL was `/promo/mir-supreme/gastronomicheskoe-udovolstvie-s-premialnymi-produktami-ps-mir-5/`. The resulting temporary omission was not a coupon parser defect.
+
+`read_matching_detail` now allows one additional ordinary page navigation after a captured 502/503/504 from `/api/configs/client`, only without `Retry-After`, within the existing source deadline, and still requiring the matching URL/native ID. It does not replay API requests. 401, 403, 429, malformed payloads, unrelated endpoints and `Retry-After` remain terminal. At most two detail navigations occur; a repeat failure is not empty success.
+
+Recovered failures are preserved in `details.retrieval_recovered_errors`, and original public-response diagnostics stay in the source report. Therefore `partial` may coexist with a reconciled detail count when a failure was recovered: inspect the counts and diagnostics separately. The HTTP response's path/status and presence of `Retry-After` are recorded, not cookies or private headers.
+
+Four additional tests exercise temporary 5xx recovery, repeated failure, Retry-After and access denials using the real capture/wait/recovery code with an in-memory response boundary. The pre-fix failure was observed. Separate live canaries and the final full main run are recorded in the PR; a unit recovery test is not a claim that a real server returned a fresh 503 again.
+
 ## Verification and limits
 
-28 additional tests cover negative instructions/dates/amounts, numeric and Cyrillic positive cases, quoted and plural lists, table provenance, and tampered publication records. New failing behaviors were exercised before fixes, alongside passing nonregression controls. Full local suite: 195 Python tests and seven KEY tests. A fresh branch collection and authorized main publication/readback are separate release gates, recorded in the pull request.
+28 coupon tests cover negative instructions/dates/amounts, numeric and Cyrillic positive cases, quoted and plural lists, table provenance, and tampered publication records. New failing behaviors were exercised before fixes, alongside passing nonregression controls. With the four Mir recovery tests, the full local suite is 199 Python tests and seven KEY tests. Fresh branch collection and authorized main publication/readback are separate release gates, recorded in the pull request.
 
 The grammar intentionally favors precision over recall. It is not a general natural-language parser: unusual formats, unsupported code labels and ambiguous lowercase Cyrillic words can remain unresolved. A nonempty code list does not imply that every code in the source was extracted, that the discount is active, or that codes can be combined. Full source conditions remain authoritative.
 
-No changes to site access policy, TLS validation, network routes, Google authorization, scheduling, stable IDs or managed-tab boundaries are included.
+No changes to site access-refusal policy, TLS validation, network routes, Google authorization, scheduling, stable IDs or managed-tab boundaries are included.
