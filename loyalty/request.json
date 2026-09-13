@@ -1,4 +1,4 @@
 {
-  "request_id": "2026-09-13-scoped-tables-v2.3.3",
-  "reason": "Run the existing public source set with scoped table evidence and S7/RGO partial-read retention. Publish only parser_offers and parser_coverage, preserving existing manual columns and unrelated sheets. Verify normalized fields and independently read back the destination. No new credentials, network infrastructure, unverified source adapters or periodic schedule activation."
+  "request_id": "2026-09-13-robots-availability-v2.3.4",
+  "reason": "Run the existing public source set after robots response semantics repair. Distinguish unavailable robots rules from actual target refusals. Preserve source failures, managed parser tab boundaries, manual columns and all unrelated sheets. Independently verify the published payload. No new external reader, credentials, TLS override, source-adapter claims or periodic schedule activation."
 }
