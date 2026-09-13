@@ -250,6 +250,9 @@ def smartavia_records(cfg,nodes,terms,details,warnings,url,now):
     return records
 
 
+ARTICLE_READY_JS=r"(q)=>{const a=document.querySelectorAll(q.selector);const n=(s)=>s.replace(/\s+/g,' ').replace(/‑/g,'-');return a.length===1 && n(a[0].innerText).includes(n(q.text))}"
+
+
 async def collect_known_rules(client,cfg,report,now,limit):
     settings=CONFIG[cfg['id']]
     if settings.get('format')=='pdf':
@@ -261,7 +264,7 @@ async def collect_known_rules(client,cfg,report,now,limit):
             selector=settings['selectors'][0]
             async def ready_article():
                 await client.page.wait_for_function(
-                    '(q)=>{const a=document.querySelectorAll(q.selector);return a.length===1 && a[0].innerText.includes(q.text)}',
+                    ARTICLE_READY_JS,
                     arg={'selector':selector,'text':settings['ready_text']},timeout=8000)
                 if canonical_url(client.page.url)!=canonical_url(cfg['url']):
                     raise RuntimeError('known_rule_redirect_during_readiness')
