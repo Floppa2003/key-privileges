@@ -11,6 +11,11 @@ from normalized import make_offer,text
 from partner_pages import content,MONTHS
 
 ROOT='https://msk.t2.ru/bolshe/offers'
+REGIONS = {
+    'msk': {'region': 'Москва и область', 'source_url': ROOT},
+    'spb': {'region': 'Санкт-Петербург и Ленинградская область',
+            'source_url': 'https://spb.t2.ru/bolshe/offers'},
+}
 URLS={
  't2_mixx':'https://msk.t2.ru/help/article/what-included-mixx-m-subscription',
  't2_selection':'https://msk.t2.ru/tariff/premium',
@@ -18,7 +23,9 @@ URLS={
  't2_powerbank':'https://msk.t2.ru/promotions/article/bezlimitnaya-arenda-powerbank'}
 
 
-def catalog_records(data,observed_at):
+def catalog_records(data,observed_at,*,region_key='msk'):
+    if region_key not in REGIONS:raise ValueError('unknown_t2_region')
+    region=REGIONS[region_key]
     if data.get('meta',{}).get('status')!='OK':raise ValueError('t2_catalog_not_successful')
     offers=data.get('data',{}).get('offers')
     if not isinstance(offers,list) or not offers or len(offers)>1000:raise ValueError('t2_catalog_missing_or_unbounded')
@@ -35,45 +42,16 @@ def catalog_records(data,observed_at):
         company=text(obj.get('companyName')) or text((obj.get('partner') or {}).get('name'))
         flags={key:obj.get(key) for key in ('availableForAll','forAllTariffs','offlineOffer','areaType','offerType','promoCodeType','duration')}
         categories=[{'id':x.get('id'),'name':text(x.get('name'))} for x in obj.get('segments',[])]
-        rows.append(make_offer('t2_bolshe',native,'T2 «Больше»',company,benefit,ROOT,observed_at,
+        rows.append(make_offer('t2_bolshe',native,'T2 «Больше»',company,benefit,region['source_url'],observed_at,
             conditions=terms,redemption=content(agreement.select('ol')),title=obj.get('name',''),
             category='; '.join(x['name'] for x in categories if x['name']),valid_until=until,
             link_kind='api_record',locator='anonymous page response /api/loyalty/offers data.offers[id='+native+']',
             details={'source_partner_name':text((obj.get('partner') or {}).get('name')),
                      'source_categories':categories,'source_eligibility_flags':flags,'source_date_to':expiry,
-                     'region':'Москва и область','source_scope':'anonymous_catalog_response_not_personal_account'},
+                     'region':region['region'],'source_scope':'anonymous_catalog_response_not_personal_account'},
             warnings=['full_terms_are_authoritative','activation_and_personal_code_not_requested','query_card_not_independently_opened']))
     return rows
 
-
-async def collect_t2(client,cfg,report,now,limit):
-    snapshots=[];pending=[]
-    async def capture(resp):
-        if resp.status!=200:return
-        body=await resp.text()
-        if len(body.encode())>6000000:raise RuntimeError('t2_response_too_large')
-        snapshots.append(json.loads(body))
-    def observe(resp):
-        parts=urlsplit(resp.url)
-        if parts.hostname=='msk.t2.ru' and parts.path=='/api/loyalty/offers' and resp.request.method=='GET':
-            pending.append(asyncio.create_task(capture(resp)))
-    client.page.on('response',observe)
-    try:
-        await client.read(ROOT,render=True)
-        for _ in range(12):
-            if snapshots:break
-            await client.page.wait_for_timeout(500)
-        if pending:await asyncio.gather(*pending)
-        if not snapshots:raise RuntimeError('t2_public_catalog_response_not_observed')
-        data=snapshots[-1]
-        records=catalog_records(data,now)
-        report['discovered']=len(records);report['region']='Москва и область'
-        report['coverage']='all_objects_in_observed_anonymous_public_catalog_response'
-        return records
-    finally:
-        client.page.remove_listener('response',observe)
-        for task in pending:
-            if not task.done():task.cancel()
 
 
 def period(value):

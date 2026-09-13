@@ -18,7 +18,7 @@ from normalized import VERSION,make_offer,content_hash,validate_offer,text
 from public_transport import PublicSource
 from mir_source import collect_mir
 from reviewed_pdf import extract_rgo_pdf
-from t2_source import collect_t2
+from t2_regions import collect_t2
 from ural_ui import collect_ural
 from announcements import collect_announcements
 from read_budget import within_source_budget, stops_catalog
@@ -110,7 +110,7 @@ async def one(browser,cfg,now,limit):
         else:
             async with PublicSource(browser,cfg['url']) as client:
                 client.deadline=deadline
-                await client.robots()
+                if cfg['mode']!='t2':await client.robots()
                 mode=cfg['mode']
                 if mode=='s7':records=await collect_s7(client,cfg,report,now,limit)
                 elif mode=='ural':records=await collect_ural(client,cfg,report,now,limit)
