@@ -294,5 +294,23 @@
     "mode": "announcements",
     "lookback_days": 180,
     "max_pages": 60
+  },
+  {
+    "id": "t2_selection_public",
+    "name": "T2 Selection — публичные карточки",
+    "url": "https://msk.t2.ru/bolshe/selection",
+    "mode": "selection"
+  },
+  {
+    "id": "utair_tiers",
+    "name": "Utair Status — уровни",
+    "url": "https://media.utair.ru/status",
+    "mode": "utair_tiers"
+  },
+  {
+    "id": "ural_tiers",
+    "name": "Крылья — уровни",
+    "url": "https://www.uralairlines.ru/wings_rules/",
+    "mode": "ural_tiers"
   }
 ]

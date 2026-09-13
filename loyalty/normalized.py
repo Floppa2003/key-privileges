@@ -13,7 +13,7 @@ from model import clean_url
 from promo_codes import extract_promocodes
 from table_benefits import extract_table_benefits
 
-VERSION = '2.4.0'
+VERSION = '2.5.0'
 HOSTS = {
  'moskvich': ['moskvichmag.ru'], 'noname': ['nonameburo.com'],
  's7': ['marketplace.s7.ru'], 'ural': ['www.uralairlines.ru'],
@@ -32,6 +32,9 @@ HOSTS['rzd_announcements']=['t.me']
 for _source in ('t2_bolshe','t2_mixx','t2_selection','t2_mixx_s','t2_powerbank'):
     HOSTS[_source]=['msk.t2.ru']
 HOSTS['t2_bolshe'].append('spb.t2.ru')
+HOSTS['t2_selection_public']=['msk.t2.ru','spb.t2.ru']
+HOSTS['utair_tiers']=['media.utair.ru']
+HOSTS['ural_tiers']=['www.uralairlines.ru']
 BLOCKED = re.compile(r'access denied|just a moment|captcha|доступ к сайту временно ограничен|проверка безопасности|доступ запрещ[её]н', re.I)
 NUMBER = r'\d+(?:[ .,\u00a0]\d{3})*(?:[.,]\d+)?'
 TYPES = {'discount': r'[сc]кидк', 'cashback': r'к[еэ]шб[еэ]к', 'miles':r'мил[ьяиюе]',
@@ -207,6 +210,9 @@ def validate_offer(r: dict) -> None:
         raise ValueError('Promo code evidence mismatch')
     if r.get('details',{}).get('table_benefits')!=extract_table_benefits(r.get('tables',[])):
         raise ValueError('Table benefit evidence mismatch')
+    if r['source_id']=='t2_selection_public':
+        if r['record_kind']!='tier_benefit' or r['link_kind']!='page_block' or r['source_status']!='public_preview_requires_login' or r['benefit_url'] is not None or urlsplit(r['source_url']).path!='/bolshe/selection':
+            raise ValueError('Selection preview cannot certify private catalogue eligibility')
     if r['source_id'] in ('ekp_announcements','rzd_announcements') or r['link_kind']=='source_post':
         channel={'ekp_announcements':'ekpcard','rzd_announcements':'fpcrussia'}.get(r['source_id'])
         if r['link_kind']!='source_post' or not channel or not re.fullmatch('/'+channel+r'/[0-9]+',urlsplit(r['source_url']).path) or r['benefit_url'] is not None or r['record_kind']!='announcement' or r['source_status']!='announced_unverified':

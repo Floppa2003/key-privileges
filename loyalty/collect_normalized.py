@@ -21,6 +21,8 @@ from reviewed_pdf import extract_rgo_pdf
 from t2_regions import collect_t2
 from ural_ui import collect_ural
 from announcements import collect_announcements
+from selection_source import collect_selection
+from tier_sources import collect_utair_tiers, collect_ural_tiers
 from read_budget import within_source_budget, stops_catalog
 
 
@@ -110,7 +112,7 @@ async def one(browser,cfg,now,limit):
         else:
             async with PublicSource(browser,cfg['url']) as client:
                 client.deadline=deadline
-                if cfg['mode'] not in ('t2','mir'):await client.robots()
+                if cfg['mode'] not in ('t2','mir','selection'):await client.robots()
                 mode=cfg['mode']
                 if mode=='s7':records=await collect_s7(client,cfg,report,now,limit)
                 elif mode=='ural':records=await collect_ural(client,cfg,report,now,limit)
@@ -118,6 +120,9 @@ async def one(browser,cfg,now,limit):
                 elif mode=='mir':records=await collect_mir(client,cfg,report,now,limit)
                 elif mode=='t2':records=await collect_t2(client,cfg,report,now,limit)
                 elif mode=='announcements':records=await collect_announcements(client,cfg,report,now,limit)
+                elif mode=='selection':records=await collect_selection(client,cfg,report,now,limit)
+                elif mode=='utair_tiers':records=await collect_utair_tiers(client,cfg,report,now,limit)
+                elif mode=='ural_tiers':records=await collect_ural_tiers(client,cfg,report,now,limit)
                 elif mode=='html':
                     raw=await client.read(cfg['url'],render=True)
                     records=extract(cfg['id'],raw,cfg['url'],now)
