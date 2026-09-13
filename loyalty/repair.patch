@@ -1,0 +1,115 @@
+--- a/loyalty/mir_ui.py
++++ b/loyalty/mir_ui.py
+@@ -46,13 +46,14 @@
+ 
+ def dom_snapshot(raw, profile, payment, number):
+     soup=BeautifulSoup(raw,'html.parser');items=[]
++    native_ids={x['url']:x.get('xml_id') for x in profile.get('items',[])}
+     for card in soup.select(CARDS):
+         url=card.get('href','');parts=urlsplit(url)
+         if parts.scheme or parts.netloc or parts.query or not parts.path.startswith('/promo/'):
+             raise ValueError('invalid_public_card_url')
+         owner=card.select_one('.promo-card-v2-owner__name')
+         if owner is None:raise ValueError('public_card_partner_missing')
+-        items.append({'xml_id':None,'url':url,'name':owner.get_text(' ',strip=True)})
++        items.append({'xml_id':native_ids.get(url),'url':url,'name':owner.get_text(' ',strip=True)})
+     if not items or len(items)>50:raise ValueError('unexpected_visible_card_count')
+     return {'payment_type':payment,'page':number,'items':items,'expected':profile['expected'],
+             'page_title':profile['page_title']}
+@@ -147,10 +148,11 @@
+             raise RuntimeError('source_time_budget_reached')
+         offset=len(captured.details); error_offset=len(captured.errors)
+         try:
+-            await client.read(url,render=True)
+-            data=await captured.wait(captured.details,offset,
+-                lambda x:urlsplit(x['data']['content']['promoDetail']['promo']['promoAction']['url']).path==urlsplit(url).path,
+-                timeout=min(wait_timeout,max(.001,deadline-time.monotonic())))
++            async with asyncio.timeout(max(.001,deadline-time.monotonic())):
++                await client.read(url,render=True)
++                data=await captured.wait(captured.details,offset,
++                    lambda x:urlsplit(x['data']['content']['promoDetail']['promo']['promoAction']['url']).path==urlsplit(url).path,
++                    timeout=min(wait_timeout,max(.001,deadline-time.monotonic())))
+             obj=data['data']['content']['promoDetail']['promo']['promoAction']
+             if expected_id is not None and str(obj['xml_id']) != str(expected_id):
+                 raise RuntimeError('catalog_detail_identity_mismatch')
+@@ -161,6 +163,8 @@
+             record['details']['retrieval_attempts']=attempt+1
+             record['content_sha256']=content_hash(record)
+             return record
++        except TimeoutError as exc:
++            raise RuntimeError('source_time_budget_reached') from exc
+         except RuntimeError as exc:
+             if str(exc)!='expected_public_response_not_observed':
+                 raise
+@@ -174,7 +178,8 @@
+ 
+ 
+ async def collect_mir(client,cfg,report,now,limit):
+-    deadline=time.monotonic()+cfg.get("timeout_seconds",900)-50
++    deadline=min(time.monotonic()+cfg.get("timeout_seconds",900)-50,
++                 getattr(client,"deadline",float("inf"))-5)
+     page=client.page; captured=BrowserResponses(page,client.host)
+     page.on('response',captured.observe)
+     candidates={}; memberships={}; summaries=[]; records=[]
+--- a/loyalty/collect_normalized.py
++++ b/loyalty/collect_normalized.py
+@@ -7,6 +7,7 @@
+ import json
+ import os
+ import re
++import time
+ from datetime import datetime,timezone
+ from pathlib import Path
+ from urllib.parse import urljoin,urlsplit,urlencode
+@@ -94,10 +95,12 @@
+             'discovered':0,'normalized':0,'failed':0,'coverage':'not_collected',
+             'region':None,'errors':[],'observed_at':now}
+     records=[]
++    deadline=time.monotonic()+source_budget(cfg)
+     try:
+         if cfg['mode']=='key':records=await collect_key(report,now)
+         else:
+             async with PublicSource(browser,cfg['url']) as client:
++                client.deadline=deadline
+                 await client.robots()
+                 mode=cfg['mode']
+                 if mode=='s7':records=await collect_s7(client,cfg,report,now,limit)
+--- a/loyalty/normalized.py
++++ b/loyalty/normalized.py
+@@ -11,7 +11,7 @@
+ from model import clean_url
+ 
+-VERSION = '2.3.0'
++VERSION = '2.3.1'
+ HOSTS = {
+  'moskvich': ['moskvichmag.ru'], 'noname': ['nonameburo.com'],
+  's7': ['marketplace.s7.ru'], 'ural': ['www.uralairlines.ru'],
+--- a/loyalty/tests/test_mir_repair.py
++++ b/loyalty/tests/test_mir_repair.py
+@@ -59,3 +59,26 @@
+             with self.assertRaisesRegex(RuntimeError,'expected_public_response_not_observed'):
+                 await self.fn(c,self.capture,URL,NOW,wait_timeout=.01)
+         self.assertEqual(len(c.calls),2)
++
++    async def test_in_flight_navigation_is_stopped_at_source_deadline(self):
++        import asyncio
++        stopped=asyncio.Event()
++        class StalledClient:
++            request_interval=0
++            async def read(self,*args,**kwargs):
++                try:await asyncio.Event().wait()
++                finally:stopped.set()
++        try:
++            await asyncio.wait_for(self.fn(StalledClient(),self.capture,URL,NOW,
++                deadline=time.monotonic()+.01),.1)
++        except RuntimeError as exc:self.assertIn('budget',str(exc))
++        except asyncio.TimeoutError:self.fail('In-flight read ignored its source deadline')
++        else:self.fail('Stalled read returned success')
++        self.assertTrue(stopped.is_set())
++
++class MirCatalogIdentityTests(unittest.TestCase):
++    def test_dom_validation_keeps_native_id_observed_in_same_catalogue(self):
++        html='<main><div class="x__promos__y"><a class="promo-card-v2__link" href="/promo/test/a/"><div class="promo-card-v2-owner__name">A</div></a></div></main>'
++        profile={'expected':1,'page_title':'Москва','items':[{'xml_id':'native-123','url':'/promo/test/a/','name':'A'}]}
++        result=mir_ui.dom_snapshot(html,profile,'mir',1)
++        self.assertEqual(result['items'][0]['xml_id'],'native-123')

@@ -6,9 +6,9 @@ on:
 permissions:
   contents: read
 jobs:
-  inspect:
+  verify:
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 8
     permissions:
       contents: write
     steps:
@@ -17,75 +17,56 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m pip install -r loyalty/requirements.txt
-      - name: Apply tested patch when present
-        run: |
+      - run: |
           if test -f loyalty/apply_repair.py; then python loyalty/apply_repair.py; fi
       - run: python -m unittest discover -s loyalty/tests -v
       - run: node --test key/refresh.test.mjs
-      - name: Commit only verified code
+      - name: Commit tested changes only
         run: |
           if test -f loyalty/apply_repair.py; then
-            git add loyalty/public_transport.py loyalty/mir_ui.py
             git rm loyalty/apply_repair.py loyalty/repair.patch
             git config user.name 'github-actions[bot]'
             git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-            git commit -m 'fix: bound transient read recovery and preserve Mir card identity'
+            git commit -m 'fix: preserve observed Mir IDs and enforce in-flight source deadline'
             git push origin HEAD:refs/heads/loyalty/repair-and-ekp
           fi
           git config --local --unset-all http.https://github.com/.extraheader || true
-      - run: python -m playwright install --with-deps chromium
-      - name: Inspect anonymous EKP and run full catalogue regression
-        run: |
           mkdir -p repair-output
           git archive --format=tar --output=repair-output/code.tar HEAD
+      - run: python -m playwright install --with-deps chromium
+      - name: Verify exact public Mir card and MEDSI without Google access
+        run: |
           python - <<'PY'
-          import asyncio,json,re,sys
+          import asyncio,json,sys,time
           from pathlib import Path
-          from urllib.parse import urlsplit
-          from bs4 import BeautifulSoup
+          from datetime import datetime,timezone
           sys.path.insert(0,'loyalty')
           from public_transport import PublicSource
+          from mir_ui import BrowserResponses,read_matching_detail
+          from adapters import extract
           from playwright.async_api import async_playwright
           async def main():
-              out=Path('repair-output');events=[];pending=set()
+              now=datetime.now(timezone.utc).isoformat();report=[]
               async with async_playwright() as p:
                   browser=await p.chromium.launch()
-                  try:
-                      async with PublicSource(browser,'https://ekp.spb.ru/capabilities/loyalty/') as c:
-                          async def save(resp):
-                              u=urlsplit(resp.url)
-                              if u.hostname!='ekp.spb.ru' or not re.fullmatch(r'/api/portal/loyalty/(?:partners(?:/[0-9]+)?|regions|categories/partners)/?',u.path):return
-                              if re.search(r'token|secret|auth|session',u.query,re.I):return
-                              try:
-                                  raw=await resp.text()
-                                  if len(raw.encode())<=6000000:events.append({'url':resp.url,'status':resp.status,'data':json.loads(raw)})
-                              except Exception:pass
-                          def observe(resp):
-                              t=asyncio.create_task(save(resp));pending.add(t);t.add_done_callback(pending.discard)
-                          c.page.on('response',observe)
-                          await c.robots();await c.read('https://ekp.spb.ru/capabilities/loyalty/',render=True)
-                          await c.page.wait_for_timeout(4000)
-                          for i in range(3):
-                              (out/f'page-{i}.txt').write_text(await c.page.locator('body').inner_text(),encoding='utf8')
-                              soup=BeautifulSoup(await c.page.content(),'html.parser')
-                              for n in soup.select('script,style,form,input,textarea'):n.decompose()
-                              (out/f'page-{i}.html').write_text(str(soup),encoding='utf8')
-                              if i==0:
-                                  links=await c.page.locator('a[href]').evaluate_all('(xs)=>xs.map(x=>x.href)')
-                                  urls=list(dict.fromkeys(x for x in links if urlsplit(x).hostname=='ekp.spb.ru' and re.fullmatch(r'/capabilities/loyalty/tiles/[0-9]+/?',urlsplit(x).path)))[:2]
-                              if i<len(urls):await c.read(urls[i],render=True);await c.page.wait_for_timeout(2000)
-                              else:break
-                          if pending:await asyncio.gather(*list(pending),return_exceptions=True)
-                  except Exception as e:(out/'error.json').write_text(json.dumps({'type':type(e).__name__,'reason':str(e)[:300]},ensure_ascii=False))
-                  finally:
-                      (out/'public-responses.json').write_text(json.dumps(events,ensure_ascii=False,indent=2),encoding='utf8');await browser.close()
+                  for sid,url in [('mir','https://vamprivet.ru/promo/krasota-i-zdorovye/chekap-zubov-dlya-zdorovoy-ulybki-1/'),('af_medsi','https://medsi.ru/actions/aeroflot-bonus-v-klinikakh-medsi/')]:
+                      try:
+                          async with PublicSource(browser,url) as client:
+                              await client.robots()
+                              if sid=='mir':
+                                  captured=BrowserResponses(client.page,client.host);client.page.on('response',captured.observe)
+                                  try:records=[await read_matching_detail(client,captured,url,now,expected_id='db7f56ef-dd05-4b44-a103-21d5b1316d58',deadline=time.monotonic()+70)]
+                                  finally:await captured.close()
+                              else:records=extract(sid,await client.read(url,render=True),url,now)
+                              report.append({'source':sid,'status':'ok' if records else 'empty','records':records})
+                      except Exception as exc:report.append({'source':sid,'status':'failed','reason':str(exc)[:180]})
+                  await browser.close()
+              Path('repair-output/live-canaries.json').write_text(json.dumps(report,ensure_ascii=False,indent=2))
           asyncio.run(main())
           PY
-          python loyalty/collect_normalized.py --limit 200 --out repair-output/collection
-          python loyalty/sheets_normalized.py --input repair-output/collection/normalized.json
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
-          name: repairs-${{ github.run_id }}
+          name: repairs-final-${{ github.run_id }}
           path: repair-output/
           retention-days: 7
