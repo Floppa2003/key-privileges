@@ -11,7 +11,7 @@ concurrency:
 jobs:
   review:
     runs-on: ubuntu-24.04
-    timeout-minutes: 8
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
@@ -21,66 +21,48 @@ jobs:
           python-version: '3.12'
       - run: python -m pip install -r loyalty/requirements.txt
       - run: python -m playwright install --with-deps chromium
-      - name: Observe normal page assets and open public offer details
+      - name: Capture public evidence only
         run: |
           mkdir -p selection-review
           python - <<'PY'
-          import asyncio,json,re,sys
+          import asyncio,json,sys
           from pathlib import Path
-          from urllib.parse import urlsplit
           from bs4 import BeautifulSoup
           sys.path.insert(0,'loyalty')
           from public_transport import PublicSource
           from playwright.async_api import async_playwright
           OUT=Path('selection-review')
-          def save_html(name,raw):
+          def clean(raw):
               soup=BeautifulSoup(raw,'html.parser')
               for n in soup.select('script,style,input,textarea,form'):n.decompose()
-              (OUT/(name+'.html')).write_text(str(soup.body or soup),encoding='utf8')
-          async def inspect(browser,key):
-              url=f'https://{key}.t2.ru/bolshe/selection'
-              report={'source':key,'url':url,'network':[],'errors':[]};tasks=[]
-              async with asyncio.timeout(150):
-                  async with PublicSource(browser,url) as c:
-                      async def capture(resp):
-                          u=urlsplit(resp.url)
-                          if u.hostname!=c.host or resp.request.method!='GET':return
-                          if re.fullmatch(r'/static/js/LoyaltySelection\.[a-z0-9]+\.mjs',u.path) and resp.status==200:
-                              (OUT/f'{key}-LoyaltySelection.mjs').write_text(await resp.text(),encoding='utf8')
-                          if '/api/loyalty/' not in u.path:return
-                          report['network'].append({'path':u.path,'status':resp.status})
-                          try:
-                              value=await resp.json();encoded=json.dumps(value,ensure_ascii=False)
-                              if resp.status==200 and len(encoded)<2500000 and not re.search('"(?:access_token|refresh_token|password|sessionId|phoneNumber)"',encoded):
-                                  n=len(report['network']);(OUT/f'{key}-public-{n}.json').write_text(encoded,encoding='utf8')
-                          except Exception:pass
-                      c.page.on('response',lambda r:tasks.append(asyncio.create_task(capture(r))))
-                      await c.robots();await c.read(url,render=True);await c.page.wait_for_timeout(2200)
-                      save_html(key+'-landing',await c.page.content())
-                      card=c.page.locator('.loyalty-short-offers-offer-card').filter(has_text='MILE·ON·AIR').first
-                      if await card.count():
-                          try:
-                              await card.click();await c.page.wait_for_timeout(1600)
-                              save_html(key+'-mile-detail',await c.page.content());report['detail_url']=c.page.url
-                          except Exception as exc:report['errors'].append({'phase':'public_card','type':type(exc).__name__})
-                      await c.read(url,render=True)
-                      button=c.page.get_by_role('button',name='СМОТРЕТЬ ВСЕ ПРЕДЛОЖЕНИЯ',exact=True)
-                      if await button.count():
-                          try:
-                              await button.click();await c.page.wait_for_timeout(1600)
-                              save_html(key+'-all-offers',await c.page.content());report['all_offers_url']=c.page.url
-                          except Exception as exc:report['errors'].append({'phase':'catalog_link','type':type(exc).__name__})
-                      if tasks:await asyncio.gather(*tasks,return_exceptions=True)
-                      report['status']='read'
+              return str(soup.body or soup)
+          async def one(browser,key,url):
+              report={'source':key,'url':url,'cards':[],'errors':[]}
+              try:
+                  async with asyncio.timeout(180):
+                      async with PublicSource(browser,url) as c:
+                          await c.robots();await c.read(url,render=True);await c.page.wait_for_timeout(1600)
+                          (OUT/f'{key}-page.html').write_text(clean(await c.page.content()),encoding='utf8')
+                          if key.startswith('selection'):
+                              cards=c.page.locator('.loyalty-short-offers-offer-card');count=await cards.count()
+                              for i in range(min(count,20)):
+                                  card=cards.nth(i);label=await card.inner_text()
+                                  try:
+                                      await card.click();popup=c.page.locator('[data-element="Popup"]').filter(has=c.page.locator('.more-offer-info-popup'))
+                                      await popup.wait_for(state='visible',timeout=5000)
+                                      (OUT/f'{key}-card-{i}.html').write_text(clean(await popup.inner_html()),encoding='utf8')
+                                      report['cards'].append({'index':i,'label':label})
+                                      await popup.locator('[data-element="PopupClose"]').click();await popup.wait_for(state='hidden',timeout=3000)
+                                  except Exception as exc:
+                                      report['errors'].append({'index':i,'type':type(exc).__name__});break
+                          report['status']='read'
+              except Exception as exc:report['status']='failed';report['error']=str(exc)[:180] if isinstance(exc,RuntimeError) else type(exc).__name__
               print(json.dumps(report,ensure_ascii=False),flush=True);return report
           async def main():
-              results=[]
+              targets=[('selection-msk','https://msk.t2.ru/bolshe/selection'),('selection-spb','https://spb.t2.ru/bolshe/selection'),('utair-tiers','https://media.utair.ru/status'),('ural-tiers','https://www.uralairlines.ru/wings_rules/')]
               async with async_playwright() as p:
                   browser=await p.chromium.launch()
-                  try:
-                      for key in ('msk','spb'):
-                          try:results.append(await inspect(browser,key))
-                          except Exception as exc:results.append({'source':key,'status':'failed','error':str(exc)[:150] if isinstance(exc,RuntimeError) else type(exc).__name__})
+                  try:results=[await one(browser,k,u) for k,u in targets]
                   finally:await browser.close()
               (OUT/'report.json').write_text(json.dumps(results,ensure_ascii=False,indent=2),encoding='utf8')
           asyncio.run(main())
