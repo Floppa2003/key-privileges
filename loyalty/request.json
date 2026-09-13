@@ -1,4 +1,4 @@
 {
-  "request_id": "2026-09-13-robots-availability-v2.3.4",
-  "reason": "Run the existing public source set after robots response semantics repair. Distinguish unavailable robots rules from actual target refusals. Preserve source failures, managed parser tab boundaries, manual columns and all unrelated sheets. Independently verify the published payload. No new external reader, credentials, TLS override, source-adapter claims or periodic schedule activation."
+  "request_id": "2026-09-13-regional-catalogs-v2.4.0",
+  "reason": "Run the existing public source set with verified T2 and Mir Moscow/Saint Petersburg catalogue unions. Preserve native IDs, exact-term comparisons, per-region listing evidence and explicit partial/conflict reports. Publish only managed parser tabs and independently verify every written value plus unchanged unrelated sheets/manual columns. Use the bounded 500-record source limit; no new credentials, network service or periodic schedule activation."
 }
