@@ -11,7 +11,7 @@ concurrency:
 jobs:
   review:
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 8
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
@@ -21,7 +21,7 @@ jobs:
           python-version: '3.12'
       - run: python -m pip install -r loyalty/requirements.txt
       - run: python -m playwright install --with-deps chromium
-      - name: Capture public evidence only
+      - name: Read tier panels after ordinary tab clicks
         run: |
           mkdir -p selection-review
           python - <<'PY'
@@ -32,39 +32,33 @@ jobs:
           from public_transport import PublicSource
           from playwright.async_api import async_playwright
           OUT=Path('selection-review')
-          def clean(raw):
-              soup=BeautifulSoup(raw,'html.parser')
-              for n in soup.select('script,style,input,textarea,form'):n.decompose()
-              return str(soup.body or soup)
-          async def one(browser,key,url):
-              report={'source':key,'url':url,'cards':[],'errors':[]}
-              try:
-                  async with asyncio.timeout(180):
-                      async with PublicSource(browser,url) as c:
-                          await c.robots();await c.read(url,render=True);await c.page.wait_for_timeout(1600)
-                          (OUT/f'{key}-page.html').write_text(clean(await c.page.content()),encoding='utf8')
-                          if key.startswith('selection'):
-                              cards=c.page.locator('.loyalty-short-offers-offer-card');count=await cards.count()
-                              for i in range(min(count,20)):
-                                  card=cards.nth(i);label=await card.inner_text()
-                                  try:
-                                      await card.click();popup=c.page.locator('[data-element="Popup"]').filter(has=c.page.locator('.more-offer-info-popup'))
-                                      await popup.wait_for(state='visible',timeout=5000)
-                                      (OUT/f'{key}-card-{i}.html').write_text(clean(await popup.inner_html()),encoding='utf8')
-                                      report['cards'].append({'index':i,'label':label})
-                                      await popup.locator('[data-element="PopupClose"]').click();await popup.wait_for(state='hidden',timeout=3000)
-                                  except Exception as exc:
-                                      report['errors'].append({'index':i,'type':type(exc).__name__});break
-                          report['status']='read'
-              except Exception as exc:report['status']='failed';report['error']=str(exc)[:180] if isinstance(exc,RuntimeError) else type(exc).__name__
-              print(json.dumps(report,ensure_ascii=False),flush=True);return report
           async def main():
-              targets=[('selection-msk','https://msk.t2.ru/bolshe/selection'),('selection-spb','https://spb.t2.ru/bolshe/selection'),('utair-tiers','https://media.utair.ru/status'),('ural-tiers','https://www.uralairlines.ru/wings_rules/')]
+              rows=[]
               async with async_playwright() as p:
                   browser=await p.chromium.launch()
-                  try:results=[await one(browser,k,u) for k,u in targets]
+                  try:
+                      async with PublicSource(browser,'https://media.utair.ru/status') as c:
+                          await c.robots();await c.read('https://media.utair.ru/status',render=True)
+                          nav=c.page.locator('#rec759374982')
+                          await nav.scroll_into_view_if_needed();await c.page.wait_for_timeout(500)
+                          headers=await nav.locator('.t396__elem[data-elem-type="text"]').evaluate_all('(els)=>els.map(e=>({text:e.innerText.trim(),left:Number(e.getAttribute("data-field-left-value")),top:Number(e.getAttribute("data-field-top-value")),id:e.getAttribute("data-elem-id")}))')
+                          (OUT/'utair-header.json').write_text(json.dumps(headers,ensure_ascii=False,indent=2))
+                          for name in ['Start','Basic','Bronze','Silver','Gold','Platinum']:
+                              label=nav.get_by_text(name,exact=True);box=await label.bounding_box()
+                              if not box:raise RuntimeError('tier label is not visible')
+                              await c.page.mouse.click(box['x']+box['width']/2,box['y']+box['height']/2)
+                              await c.page.wait_for_timeout(350)
+                              active=c.page.locator('.t-rec.description.active')
+                              if await active.count()!=1:raise RuntimeError('active panel is ambiguous')
+                              raw=await active.evaluate('(e)=>e.outerHTML')
+                              soup=BeautifulSoup(raw,'html.parser')
+                              for n in soup.select('script,style,input,textarea,form'):n.decompose()
+                              for a in soup.select('a[href]'):
+                                  if any(x in a['href'].lower() for x in ('signature=','accesskeyid=','token=')):del a['href']
+                              (OUT/f'utair-{name}.html').write_text(str(soup),encoding='utf8')
+                              rows.append({'tier':name,'active_panel':await active.get_attribute('id'),'text':await active.inner_text()})
+                          (OUT/'utair-ui-mapping.json').write_text(json.dumps(rows,ensure_ascii=False,indent=2),encoding='utf8')
                   finally:await browser.close()
-              (OUT/'report.json').write_text(json.dumps(results,ensure_ascii=False,indent=2),encoding='utf8')
           asyncio.run(main())
           PY
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
