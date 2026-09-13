@@ -1,4 +1,4 @@
 {
-  "request_id": "2026-09-13-normalized-v2.3-official-announcements",
-  "reason": "Run all 45 configured public sources and publish only normalized parser tabs. Keep announcements, source-post evidence and unknown current eligibility distinct from partner catalogues; preserve blocked-source diagnostics, all unrelated sheets and manual columns. Independently verify written values. Periodic scheduling remains disabled."
+  "request_id": "2026-09-13-read-recovery-v2.3.1",
+  "reason": "Collect all configured public sources with bounded transient recovery and exact Mir identity/deadline checks. Publish only existing normalized parser tabs, preserving old observations and manual comments. Keep inaccessible catalogues explicit and the periodic schedule disabled. Verify actual main payload and independently read back Sheets."
 }
