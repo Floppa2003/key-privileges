@@ -103,7 +103,7 @@ async def one(browser,cfg,now,limit):
     report={'source_id':cfg['id'],'name':cfg['name'],'root':cfg['url'],'status':'failed',
             'discovered':0,'normalized':0,'failed':0,'coverage':'not_collected',
             'region':None,'errors':[],'observed_at':now}
-    records=[]
+    records=[];client=None
     deadline=time.monotonic()+source_budget(cfg)
     try:
         if cfg['mode']=='key':records=await collect_key(report,now)
@@ -134,9 +134,12 @@ async def one(browser,cfg,now,limit):
         report['normalized']=len(records)
         report['status']='partial' if report['errors'] else 'ok' if records else 'no_normalized_records'
     except Exception as exc:
-        report['errors'].append(error_record(exc,'source',cfg['url']))
+        phase='robots' if client is not None and client.policy is None else 'source'
+        report['errors'].append(error_record(exc,phase,cfg['url']))
         report['status']='failed' if not records else 'partial'
         report['normalized']=len(records)
+    if client is not None and getattr(client,'robots_info',None):
+        report['robots']=client.robots_info
     report['failed']=len(report['errors'])
     print(json.dumps({k:report[k] for k in ('source_id','status','discovered','normalized','failed')},ensure_ascii=False),flush=True)
     return report,records

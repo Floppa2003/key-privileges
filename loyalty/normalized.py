@@ -13,7 +13,7 @@ from model import clean_url
 from promo_codes import extract_promocodes
 from table_benefits import extract_table_benefits
 
-VERSION = '2.3.3'
+VERSION = '2.3.4'
 HOSTS = {
  'moskvich': ['moskvichmag.ru'], 'noname': ['nonameburo.com'],
  's7': ['marketplace.s7.ru'], 'ural': ['www.uralairlines.ru'],
