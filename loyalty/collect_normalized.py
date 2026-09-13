@@ -7,6 +7,7 @@ import hashlib
 import json
 import os
 import re
+import time
 from datetime import datetime,timezone
 from pathlib import Path
 from urllib.parse import urljoin,urlsplit,urlencode
@@ -94,10 +95,12 @@ async def one(browser,cfg,now,limit):
             'discovered':0,'normalized':0,'failed':0,'coverage':'not_collected',
             'region':None,'errors':[],'observed_at':now}
     records=[]
+    deadline=time.monotonic()+source_budget(cfg)
     try:
         if cfg['mode']=='key':records=await collect_key(report,now)
         else:
             async with PublicSource(browser,cfg['url']) as client:
+                client.deadline=deadline
                 await client.robots()
                 mode=cfg['mode']
                 if mode=='s7':records=await collect_s7(client,cfg,report,now,limit)

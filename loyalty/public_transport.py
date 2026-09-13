@@ -7,6 +7,16 @@ from protego import Protego
 from bs4 import BeautifulSoup
 from model import clean_url
 from normalized import BLOCKED
+from playwright.async_api import Error as BrowserError, TimeoutError as BrowserTimeout
+
+
+def retryable_read_error(exc: Exception) -> bool:
+    """Transient transport failures only; never authentication, TLS or policy errors."""
+    return isinstance(exc, (TimeoutError, BrowserTimeout)) or (
+        isinstance(exc, BrowserError) and bool(re.search(
+            r"net::ERR_(?:CONNECTION_TIMED_OUT|CONNECTION_RESET|NETWORK_CHANGED|EMPTY_RESPONSE)(?:\b|$)",
+            str(exc))))
+
 
 
 def allowed_request(url: str, host: str) -> bool:
@@ -23,7 +33,9 @@ def check_response(status: int, body: str) -> None:
     soup=BeautifulSoup(body,'html.parser') if body.lstrip().startswith('<') else None
     headline=soup.title.get_text(' ',strip=True) if soup and soup.title else ''
     leading=soup.get_text(' ',strip=True)[:350] if soup else body[:350]
-    if BLOCKED.search(headline) or BLOCKED.search(leading):
+    if BLOCKED.search(headline) or BLOCKED.search(leading) or re.search(
+            r'доступ.{0,90}ограничен.{0,40}владельцем|доступ.{0,90}запрещ[её]н.{0,40}владельцем',
+            leading, re.I):
         raise RuntimeError('access_challenge')
 
 
@@ -41,6 +53,18 @@ class PublicSource:
         if self.context:await self.context.close()
 
     async def navigate(self, url: str) -> tuple[int, str]:
+        # Preserve the same anonymous context/URL. Only failed connections retry;
+        # actual HTTP refusals and access challenges remain terminal for this read.
+        for attempt in range(3):
+            try:
+                return await self._navigate_once(url)
+            except Exception as exc:
+                if not retryable_read_error(exc) or attempt == 2:
+                    raise
+                await asyncio.sleep(max(self.request_interval, 2 ** attempt))
+        raise AssertionError('unreachable navigation retry state')
+
+    async def _navigate_once(self, url: str) -> tuple[int, str]:
         """Observe the final main document; never click or solve access challenges."""
         if not allowed_request(url, self.host):
             raise RuntimeError('request_outside_public_source')
@@ -102,11 +126,17 @@ class PublicSource:
         # Only GETs / the validated read-only catalog POST reach this helper.
         # Never retry authorization, CAPTCHA or rate-limit responses.
         for attempt in range(3):
-            res=await self.context.request.fetch(url,timeout=20000,**kwargs)
+            try:
+                res=await self.context.request.fetch(url,timeout=20000,**kwargs)
+            except Exception as exc:
+                if not retryable_read_error(exc) or attempt == 2:
+                    raise
+                await asyncio.sleep(max(self.request_interval, 2 ** attempt))
+                continue
             if not allowed_request(res.url,self.host):raise RuntimeError('unexpected_redirect')
             if res.status not in (502,503,504) or attempt==2 or res.headers.get('retry-after'):
                 return res
-            await asyncio.sleep(2**attempt)
+            await asyncio.sleep(max(self.request_interval, 2**attempt))
         raise AssertionError('unreachable retry state')
 
     async def read(self,url: str,*,render=False) -> str:

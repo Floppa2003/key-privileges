@@ -46,13 +46,14 @@ CARDS = 'main [class*="__promos__"] a.promo-card-v2__link'
 
 def dom_snapshot(raw, profile, payment, number):
     soup=BeautifulSoup(raw,'html.parser');items=[]
+    native_ids={x['url']:x.get('xml_id') for x in profile.get('items',[])}
     for card in soup.select(CARDS):
         url=card.get('href','');parts=urlsplit(url)
         if parts.scheme or parts.netloc or parts.query or not parts.path.startswith('/promo/'):
             raise ValueError('invalid_public_card_url')
         owner=card.select_one('.promo-card-v2-owner__name')
         if owner is None:raise ValueError('public_card_partner_missing')
-        items.append({'xml_id':None,'url':url,'name':owner.get_text(' ',strip=True)})
+        items.append({'xml_id':native_ids.get(url),'url':url,'name':owner.get_text(' ',strip=True)})
     if not items or len(items)>50:raise ValueError('unexpected_visible_card_count')
     return {'payment_type':payment,'page':number,'items':items,'expected':profile['expected'],
             'page_title':profile['page_title']}
@@ -103,6 +104,7 @@ class BrowserResponses:
     async def capture(self, response):
         try:
             if response.status != 200:
+                self.errors.append({'phase':'public_response','reason':f'http_{response.status}'})
                 return
             raw=await response.text()
             if len(raw.encode()) > 6000000:
@@ -134,8 +136,50 @@ class BrowserResponses:
         if self.pending:await asyncio.gather(*list(self.pending),return_exceptions=True)
 
 
+async def read_matching_detail(client, captured, url, now, *, expected_id=None,
+                               deadline=float('inf'), wait_timeout=15):
+    """One repeat for a missing browser-owned response, within the source budget.
+
+    The offset is reset before each navigation. Old observations cannot satisfy a
+    new read. Authentication, rate limits and malformed responses do not retry.
+    """
+    for attempt in range(2):
+        if time.monotonic() >= deadline:
+            raise RuntimeError('source_time_budget_reached')
+        offset=len(captured.details); error_offset=len(captured.errors)
+        try:
+            async with asyncio.timeout(max(.001,deadline-time.monotonic())):
+                await client.read(url,render=True)
+                data=await captured.wait(captured.details,offset,
+                    lambda x:urlsplit(x['data']['content']['promoDetail']['promo']['promoAction']['url']).path==urlsplit(url).path,
+                    timeout=min(wait_timeout,max(.001,deadline-time.monotonic())))
+            obj=data['data']['content']['promoDetail']['promo']['promoAction']
+            if expected_id is not None and str(obj['xml_id']) != str(expected_id):
+                raise RuntimeError('catalog_detail_identity_mismatch')
+            rs=mir_detail(data,url,now)
+            if len(rs)!=1 or urlsplit(rs[0]['source_url']).path!=urlsplit(url).path:
+                raise RuntimeError('catalog_detail_identity_mismatch')
+            record=rs[0]
+            record['details']['retrieval_attempts']=attempt+1
+            record['content_sha256']=content_hash(record)
+            return record
+        except TimeoutError as exc:
+            raise RuntimeError('source_time_budget_reached') from exc
+        except RuntimeError as exc:
+            if str(exc)!='expected_public_response_not_observed':
+                raise
+            response_errors=captured.errors[error_offset:]
+            if response_errors:
+                raise RuntimeError(response_errors[-1]['reason']) from exc
+            if attempt==1:
+                raise
+            await asyncio.sleep(max(.5,client.request_interval))
+    raise AssertionError('unreachable detail retry state')
+
+
 async def collect_mir(client,cfg,report,now,limit):
-    deadline=time.monotonic()+cfg.get("timeout_seconds",900)-50
+    deadline=min(time.monotonic()+cfg.get("timeout_seconds",900)-50,
+                 getattr(client,"deadline",float("inf"))-5)
     page=client.page; captured=BrowserResponses(page,client.host)
     page.on('response',captured.observe)
     candidates={}; memberships={}; summaries=[]; records=[]
@@ -185,15 +229,11 @@ async def collect_mir(client,cfg,report,now,limit):
             if time.monotonic()>=deadline:
                 report['errors'].append({'phase':'detail','reason':'source_time_budget_reached','remaining':len(candidates)-len(records)})
                 break
-            url=urljoin(cfg['url'],item['url']); offset=len(captured.details)
+            url=urljoin(cfg['url'],item['url'])
             try:
-                await client.read(url,render=True)
-                data=await captured.wait(captured.details,offset,
-                    lambda x:urlsplit(x['data']['content']['promoDetail']['promo']['promoAction']['url']).path==urlsplit(url).path)
-                rs=mir_detail(data,url,now)
-                if len(rs)!=1 or urlsplit(rs[0]['source_url']).path!=urlsplit(url).path:
-                    raise RuntimeError('catalog_detail_identity_mismatch')
-                record=rs[0];record['details'].update(catalog_profiles=memberships[identity],
+                record=await read_matching_detail(client,captured,url,now,
+                    expected_id=item.get('xml_id'),deadline=deadline)
+                record['details'].update(catalog_profiles=memberships[identity],
                     catalog_region=report['region'],retrieval_method='anonymous_browser_response_no_API_replay')
                 record['content_sha256']=content_hash(record);records.append(record)
             except Exception as exc:
