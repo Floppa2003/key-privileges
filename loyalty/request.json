@@ -1,4 +1,4 @@
 {
-  "request_id": "2026-09-13-regional-catalogs-v2.4.0",
-  "reason": "Run the existing public source set with verified T2 and Mir Moscow/Saint Petersburg catalogue unions. Preserve native IDs, exact-term comparisons, per-region listing evidence and explicit partial/conflict reports. Publish only managed parser tabs and independently verify every written value plus unchanged unrelated sheets/manual columns. Use the bounded 500-record source limit; no new credentials, network service or periodic schedule activation."
+  "request_id": "2026-09-13-public-tiers-v2.5.0",
+  "reason": "Run all 48 configured public sources including matched Selection preview popups and Utair/Wings tier rules. Preserve incomplete personalized-catalogue scope, source contradictions, exact qualifications and nested restrictions. Publish only parser_offers and parser_coverage, retain old observations and manual columns, then independently verify the actual main payload against Google Sheets. No private-code activation, network infrastructure, credential changes or periodic schedule activation."
 }
