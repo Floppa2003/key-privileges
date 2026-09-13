@@ -26,7 +26,7 @@ def dump(value) -> str:
 def prepare(bundle: dict) -> dict[str,list[list[str]]]:
     if bundle.get('schema_version')!=2 or not isinstance(bundle.get('run_id'),str) or not bundle['run_id'] or len(bundle['run_id'])>100:
         raise ValueError('Invalid normalized bundle identity')
-    if not bundle.get('sources') or len(bundle['sources'])>50 or len(bundle.get('records',[]))>3000:
+    if not bundle.get('sources') or len(bundle['sources'])>128 or len(bundle.get('records',[]))>3000:
         raise ValueError('Bundle outside publication bounds')
     sources={r['source_id']:r for r in bundle['sources']}
     if len(sources)!=len(bundle['sources']):

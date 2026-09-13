@@ -13,7 +13,7 @@ from model import clean_url
 from promo_codes import extract_promocodes
 from table_benefits import extract_table_benefits
 
-VERSION = '2.5.0'
+VERSION = '2.6.0'
 HOSTS = {
  'moskvich': ['moskvichmag.ru'], 'noname': ['nonameburo.com'],
  's7': ['marketplace.s7.ru'], 'ural': ['www.uralairlines.ru'],
@@ -25,6 +25,9 @@ HOSTS = {
 }
 # Checked-in public page configuration is trusted code, never scraped configuration.
 for _key,_cfg in json.loads(Path(__file__).with_name('partner_pages.json').read_text(encoding='utf8')).items():
+    HOSTS[_key]=[urlsplit(_cfg['url']).hostname]
+KNOWN_RULES=json.loads(Path(__file__).with_name('known_rules.json').read_text(encoding='utf8'))
+for _key,_cfg in KNOWN_RULES.items():
     HOSTS[_key]=[urlsplit(_cfg['url']).hostname]
 HOSTS['utair_media']=['media.utair.ru']
 HOSTS['ekp_announcements']=['t.me']
@@ -210,6 +213,12 @@ def validate_offer(r: dict) -> None:
         raise ValueError('Promo code evidence mismatch')
     if r.get('details',{}).get('table_benefits')!=extract_table_benefits(r.get('tables',[])):
         raise ValueError('Table benefit evidence mismatch')
+    if r['source_id'] in KNOWN_RULES:
+        cfg=KNOWN_RULES[r['source_id']]
+        allowed_kinds=('program_rules','membership_plan') if r['source_id']=='smartavia_rules' else ('program_rules',)
+        if (r['record_kind'] not in allowed_kinds or canonical_url(r['source_url'])!=canonical_url(cfg['url'])
+            or r['details'].get('evidence_role')!='supplementary_rules_not_incremental_discount'):
+            raise ValueError('Known rules cannot be relabelled as new verified partner offers')
     if r['source_id']=='t2_selection_public':
         if r['record_kind']!='tier_benefit' or r['link_kind']!='page_block' or r['source_status']!='public_preview_requires_login' or r['benefit_url'] is not None or urlsplit(r['source_url']).path!='/bolshe/selection':
             raise ValueError('Selection preview cannot certify private catalogue eligibility')
