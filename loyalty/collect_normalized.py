@@ -21,6 +21,7 @@ from reviewed_pdf import extract_rgo_pdf
 from t2_source import collect_t2
 from ural_ui import collect_ural
 from announcements import collect_announcements
+from read_budget import within_source_budget, stops_catalog
 
 
 def error_record(exc,phase,url=''):
@@ -31,14 +32,14 @@ def error_record(exc,phase,url=''):
 
 
 async def collect_s7(client,cfg,report,now,limit):
-    raw=await client.read(cfg['url'])
-    if 'initialState' not in raw:raw=await client.read(cfg['url'],render=True)
+    raw=await within_source_budget(client,lambda:client.read(cfg['url']))
+    if 'initialState' not in raw:raw=await within_source_budget(client,lambda:client.read(cfg['url'],render=True))
     candidates=s7_catalog(next_state(raw));report['discovered']=len(candidates)
     report['coverage']='all_unique_codes_in_public_initialState' if len(candidates)<=limit else 'detail_limit_reached'
     records=[]
-    for entry in candidates[:limit]:
+    for index,entry in enumerate(candidates[:limit]):
         try:
-            state=next_state(await client.read(entry['url']))
+            state=next_state(await within_source_budget(client,lambda:client.read(entry['url'])))
             rs=s7_detail(state,entry['url'],now)
             for r in rs:
                 r['details']['catalog_benefit']=entry['catalog_benefit']
@@ -47,7 +48,11 @@ async def collect_s7(client,cfg,report,now,limit):
                     r['warnings'].append('catalog_and_detail_wording_differ_preserved_separately')
                 r['content_sha256']=content_hash(r)
             records.extend(rs)
-        except Exception as exc:report['errors'].append(error_record(exc,'detail',entry['url']))
+        except Exception as exc:
+            report['errors'].append(error_record(exc,'detail',entry['url']))
+            if stops_catalog(exc):
+                report['errors'][-1]['remaining']=len(candidates[:limit])-index
+                break
     return records
 
 
@@ -65,13 +70,17 @@ async def collect_rgo(client,cfg,report,now,limit):
     urls=list(dict.fromkeys(urljoin(cfg['url'],x['href']) for x in soup.select('.loyalty-card__link[href]')))
     report['discovered']=len(urls);report['coverage']='load_more_exhausted' if exhausted else 'pagination_not_exhausted'
     records=[]
-    for url in urls[:limit]:
+    for index,url in enumerate(urls[:limit]):
         try:
             if urlsplit(url).path.lower().endswith('.pdf'):
-                records.extend(extract_rgo_pdf(await client.read_pdf(url),url,now))
+                records.extend(extract_rgo_pdf(await within_source_budget(client,lambda:client.read_pdf(url)),url,now))
             else:
-                records.extend(extract('rgo',await client.read(url),url,now))
-        except Exception as exc:report['errors'].append(error_record(exc,'detail',url))
+                records.extend(extract('rgo',await within_source_budget(client,lambda:client.read(url)),url,now))
+        except Exception as exc:
+            report['errors'].append(error_record(exc,'detail',url))
+            if stops_catalog(exc):
+                report['errors'][-1]['remaining']=len(urls[:limit])-index
+                break
     if len(urls)>limit:report['coverage']='detail_limit_reached'
     return records
 

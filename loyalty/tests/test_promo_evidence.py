@@ -172,3 +172,10 @@ class RoundtripNoiseTests(unittest.TestCase):
     def test_counted_brand_coupons_are_not_literal_codes(self):
         r = record('Один абонент может получить и активировать два промокода «Чиббис» за весь период акции.')
         self.assertEqual(r['promo_codes'],[])
+
+class CouponTableInstructionTests(unittest.TestCase):
+ def test_get_code_instruction_is_not_the_code_itself(self):
+  from promo_codes import extract_promocodes
+  result=extract_promocodes('',[[['Промокод'],['Получить в приложении']]])
+  self.assertEqual(result['codes'],[])
+  self.assertEqual(result['status'],'mentioned_not_extracted')

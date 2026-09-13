@@ -11,8 +11,9 @@ from urllib.parse import urlsplit
 from bs4 import BeautifulSoup
 from model import clean_url
 from promo_codes import extract_promocodes
+from table_benefits import extract_table_benefits
 
-VERSION = '2.3.2'
+VERSION = '2.3.3'
 HOSTS = {
  'moskvich': ['moskvichmag.ru'], 'noname': ['nonameburo.com'],
  's7': ['marketplace.s7.ru'], 'ural': ['www.uralairlines.ru'],
@@ -172,7 +173,8 @@ def make_offer(source_id: str, native_id: str, program: str, partner_name: str |
          'link_kind':link_kind,'locator':locator,'tables':tables or [],
          'details':{**(details or {}),'lexical_conditions':lexical_conditions(all_text),
                     'promo_code_evidence':promo['evidence'],'promo_code_delivery':promo['delivery'],
-                    'promo_code_status':promo['status']},
+                    'promo_code_status':promo['status'],
+                    'table_benefits':extract_table_benefits(tables or [])},
          'normalization_status':'source_fields_extracted',
          'warnings':list(warnings or []),'observed_at':observed_at}
     if promo['status']=='mentioned_not_extracted':
@@ -202,6 +204,8 @@ def validate_offer(r: dict) -> None:
         or r.get('details',{}).get('promo_code_delivery')!=promo['delivery']
         or r.get('details',{}).get('promo_code_status')!=promo['status']):
         raise ValueError('Promo code evidence mismatch')
+    if r.get('details',{}).get('table_benefits')!=extract_table_benefits(r.get('tables',[])):
+        raise ValueError('Table benefit evidence mismatch')
     if r['source_id'] in ('ekp_announcements','rzd_announcements') or r['link_kind']=='source_post':
         channel={'ekp_announcements':'ekpcard','rzd_announcements':'fpcrussia'}.get(r['source_id'])
         if r['link_kind']!='source_post' or not channel or not re.fullmatch('/'+channel+r'/[0-9]+',urlsplit(r['source_url']).path) or r['benefit_url'] is not None or r['record_kind']!='announcement' or r['source_status']!='announced_unverified':
