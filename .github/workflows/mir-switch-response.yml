@@ -31,12 +31,12 @@ jobs:
           async def main():
               async with async_playwright() as p:
                   browser=await p.chromium.launch()
-                  async with PublicSource(browser,'https://vamprivet.ru/') as client:
+                  async with PublicSource(browser,'https://vamprivet.ru/promo/') as client:
                       captured=BrowserResponses(client.page,client.host)
                       client.page.on('response',captured.observe)
                       report={}
                       try:
-                          await client.robots();await client.read('https://vamprivet.ru/',render=True)
+                          await client.robots();await client.read('https://vamprivet.ru/promo/',render=True)
                           first=await captured.wait(captured.catalogs,0,lambda x:x['page']==1)
                           yes=client.page.locator('.region-confirmation-modal__controls').get_by_role('button',name='Да',exact=True)
                           if await yes.count() and await yes.is_visible():await yes.click()
