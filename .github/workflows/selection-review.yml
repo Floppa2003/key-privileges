@@ -22,56 +22,64 @@ jobs:
       - run: python -m pip install -r loyalty/requirements.txt
       - run: python -m unittest discover -s loyalty/tests -v
       - run: python -m playwright install --with-deps chromium
-      - name: Read anonymous public catalogue content
+      - name: Inspect public details without sign-in or offer activation
         run: |
           mkdir -p selection-review
           python - <<'PY'
           import asyncio,json,re,sys
           from pathlib import Path
-          from urllib.parse import urlsplit
+          from urllib.parse import urlsplit,urljoin
           from bs4 import BeautifulSoup
           sys.path.insert(0,'loyalty')
           from public_transport import PublicSource
           from playwright.async_api import async_playwright
           OUT=Path('selection-review')
-          TARGETS=[('msk-selection','https://msk.t2.ru/bolshe/selection'),('spb-selection','https://spb.t2.ru/bolshe/selection'),('greatlist','https://t2selection.greatlist.ru/')]
-          async def probe(browser,key,url):
-              report={'source':key,'url':url,'network':[],'catalog_payloads':0};tasks=[]
+          def save_html(name,raw):
+              soup=BeautifulSoup(raw,'html.parser')
+              for n in soup.select('script,style,input,textarea,form'):n.decompose()
+              (OUT/(name+'.html')).write_text(str(soup.body or soup),encoding='utf8')
+          async def inspect(browser,key,url):
+              report={'source':key,'url':url,'network':[]};tasks=[]
               try:
-                  async with asyncio.timeout(150):
+                  async with asyncio.timeout(180):
                       async with PublicSource(browser,url) as c:
                           async def capture(resp):
                               u=urlsplit(resp.url)
-                              if u.hostname!=c.host or resp.request.method!='GET' or resp.request.resource_type not in ('xhr','fetch'):
-                                  return
+                              if u.hostname!=c.host or resp.request.method!='GET':return
+                              if '/api/loyalty/' not in u.path:return
                               report['network'].append({'path':u.path,'status':resp.status})
-                              if resp.status!=200 or not re.search('loyalty|selection|privileg|offers',u.path,re.I):return
                               try:
-                                  obj=await resp.json()
-                                  encoded=json.dumps(obj,ensure_ascii=False)
-                                  if len(encoded)>2500000 or not re.search('"(?:offers|privileges|partners|restaurants)"',encoded):return
-                                  if re.search('"(?:access_token|refresh_token|password|sessionId|phoneNumber)"',encoded):return
-                                  n=report['catalog_payloads'];report['catalog_payloads']+=1
-                                  (OUT/f'{key}-catalog-{n}.json').write_text(encoded,encoding='utf8')
+                                  value=await resp.json();encoded=json.dumps(value,ensure_ascii=False)
+                                  if resp.status==200 and len(encoded)<2500000 and not re.search('"(?:access_token|refresh_token|password|sessionId|phoneNumber)"',encoded):
+                                      n=len(report['network']);(OUT/f'{key}-public-{n}.json').write_text(encoded,encoding='utf8')
                               except Exception:pass
                           c.page.on('response',lambda r:tasks.append(asyncio.create_task(capture(r))))
-                          await c.robots();raw=await c.read(url,render=True);await c.page.wait_for_timeout(4000)
+                          await c.robots();await c.read(url,render=True);await c.page.wait_for_timeout(2500)
+                          save_html(key+'-landing',await c.page.content())
+                          if '.t2.ru' in url:
+                              scripts=await c.page.locator('script[src]').evaluate_all('(els)=>els.map(e=>e.src)')
+                              for src in scripts:
+                                  if urlsplit(src).hostname==c.host and re.search(r'/LoyaltySelection\.[a-z0-9]+\.mjs$',urlsplit(src).path):
+                                      code=await c.read(src);(OUT/f'{key}-LoyaltySelection.mjs').write_text(code,encoding='utf8')
+                              card=c.page.locator('.loyalty-short-offers-offer-card').filter(has_text='MILE·ON·AIR').first
+                              if await card.count():
+                                  await card.click();await c.page.wait_for_timeout(1800)
+                                  save_html(key+'-mile-detail',await c.page.content());report['detail_url']=c.page.url
+                              # Only the published catalogue URL is visited. No authentication form is submitted.
+                              await c.read(url,render=True)
+                              button=c.page.get_by_role('button',name='СМОТРЕТЬ ВСЕ ПРЕДЛОЖЕНИЯ',exact=True)
+                              if await button.count():
+                                  await button.click();await c.page.wait_for_timeout(1800)
+                                  save_html(key+'-all-offers',await c.page.content());report['all_offers_url']=c.page.url
                           if tasks:await asyncio.gather(*tasks,return_exceptions=True)
-                          soup=BeautifulSoup(await c.page.content(),'html.parser')
-                          report['title']=soup.title.get_text(' ',strip=True) if soup.title else ''
-                          report['scripts']=[s.get('src') for s in soup.select('script[src]')]
-                          for node in soup.select('script,style,input,textarea,form'):node.decompose()
-                          body=soup.body or soup
-                          (OUT/f'{key}.html').write_text(str(body),encoding='utf8')
-                          report['status']='read';report['text_length']=len(body.get_text())
+                          report['status']='read'
               except Exception as exc:
                   report['status']='failed';report['error']=str(exc)[:180] if isinstance(exc,RuntimeError) else type(exc).__name__
-              print(json.dumps(report,ensure_ascii=False),flush=True)
-              return report
+              print(json.dumps(report,ensure_ascii=False),flush=True);return report
           async def main():
               async with async_playwright() as p:
                   browser=await p.chromium.launch()
-                  try:results=[await probe(browser,k,u) for k,u in TARGETS]
+                  try:results=[await inspect(browser,k,u) for k,u in [('msk','https://msk.t2.ru/bolshe/selection'),('spb','https://spb.t2.ru/bolshe/selection'),('greatlist-msk','https://t2selection.greatlist.ru/msk'),('greatlist-spb','https://t2selection.greatlist.ru/spb')]]
                   finally:await browser.close()
               (OUT/'report.json').write_text(json.dumps(results,ensure_ascii=False,indent=2),encoding='utf8')
           asyncio.run(main())
