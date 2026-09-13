@@ -16,7 +16,7 @@ from playwright.async_api import async_playwright
 from adapters import extract,next_state,s7_catalog,s7_detail,mir_detail,PROGRAMS,node_text,ural_catalog,key_catalog,mir_page_url
 from normalized import VERSION,make_offer,content_hash,validate_offer,text
 from public_transport import PublicSource
-from mir_source import collect_mir
+from mir_regions import collect_mir
 from reviewed_pdf import extract_rgo_pdf
 from t2_regions import collect_t2
 from ural_ui import collect_ural

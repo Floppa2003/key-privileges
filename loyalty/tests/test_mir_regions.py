@@ -108,3 +108,24 @@ class SelectionTests(unittest.IsolatedAsyncioTestCase):
         fn=getattr(mir_ui,'select_listing_region',None);self.assertTrue(callable(fn),'No explicit region selector')
         page=Page();capture=Capture(page,{'page':1,'payment_type':'sbp','page_title':'Акции СБП в Москве и МО'})
         with self.assertRaises(RuntimeError):await fn(page,capture,capture.catalogs[0],'spb')
+
+class ProductionRoutingTests(unittest.IsolatedAsyncioTestCase):
+    async def test_main_dispatch_uses_both_region_reads_not_compatibility_alias(self):
+        import collect_normalized as production
+        self.assertIsNotNone(region)
+        seen=[]
+        class Source:
+            policy=None
+            def __init__(self,*args):pass
+            async def __aenter__(self):return self
+            async def __aexit__(self,*args):pass
+        async def read(client,cfg,key,now,limit):
+            seen.append(key)
+            return [offer()],{'errors':[],'discovered':1,'coverage':'fixture','discovered_urls':[URL]}
+        cfg={'id':'mir','mode':'mir','name':'Привет! / Мир / СБП','url':'https://vamprivet.ru/promo/'}
+        with patch.object(production,'PublicSource',Source),patch.object(region,'read_region',read):
+            report,rows=await production.one(None,cfg,NOW,500)
+        self.assertEqual(seen,['msk','spb'])
+        self.assertEqual(report['status'],'ok',report)
+        self.assertEqual(len(rows),1)
+        self.assertEqual(len(rows[0]['details']['catalog_listings']),2)
