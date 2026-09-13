@@ -1,0 +1,68 @@
+name: Review officially linked rule downloads
+on:
+  push:
+    branches: [loyalty/known-source-completion]
+    paths: [.github/workflows/public-rule-download-review.yml]
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - run: python -m pip install requests==2.32.5 pypdf==6.18.1
+      - name: Follow only explicit public shortlinks to the observed document host
+        run: |
+          mkdir -p rule-download-review
+          python - <<'PY'
+          import requests,time,json,hashlib,io,re
+          from pathlib import Path
+          from urllib.parse import urlsplit,parse_qs
+          from datetime import datetime,timezone
+          from pypdf import PdfReader
+          ids='wzqdRP JdyRTA pYGdKM gGliaq ZNxBpY yRBVmU yZhJLY cuOyfc uXoqHP uWpmkU qzWiWH TlYigt pNnqOk bFwqtV CpeHTa coHFJh yxouTP hXfkMF MvgoSB'.split()
+          out=Path('rule-download-review');rows=[]
+          for key in ids:
+              row={'public_url':'https://ut0.ru/'+key,'observed_at':datetime.now(timezone.utc).isoformat()}
+              try:
+                  first=requests.get(row['public_url'],timeout=(5,12),allow_redirects=False)
+                  row['shortlink_http']=first.status_code
+                  target=first.headers.get('Location','');u=urlsplit(target)
+                  if first.status_code not in (301,302,303,307,308) or u.scheme!='https' or u.hostname!='eu-s3.beelinecloud.ru' or u.username or u.password or u.port not in (None,443):
+                      raise ValueError('unreviewed_redirect')
+                  row['document_host']=u.hostname
+                  # The public server issued this download URL. Use it transiently,
+                  # never log/persist the URL, query, headers or HTTP exception text.
+                  data=bytearray()
+                  with requests.get(target,timeout=(5,15),allow_redirects=False,stream=True) as r:
+                      row['document_http']=r.status_code
+                      if r.status_code!=200:raise ValueError('document_not_success')
+                      for part in r.iter_content(65536):
+                          data.extend(part)
+                          if len(data)>5000000:raise ValueError('document_size_limit')
+                  if not data.startswith(b'%PDF-'):raise ValueError('not_pdf')
+                  reader=PdfReader(io.BytesIO(data),strict=True)
+                  if reader.is_encrypted or not 1<=len(reader.pages)<=100:raise ValueError('unsupported_pdf')
+                  texts=[]
+                  for page in reader.pages:
+                      stream=page.get_contents()
+                      if stream is None or len(stream.get_data())>5000000:raise ValueError('unsupported_stream')
+                      texts.append(page.extract_text() or '')
+                  if sum(map(len,texts))>300000:raise ValueError('text_limit')
+                  row.update(status='read',pages=len(texts),bytes=len(data),sha256=hashlib.sha256(data).hexdigest(),text_chars=sum(map(len,texts)))
+                  (out/(key+'.json')).write_text(json.dumps({'public_url':row['public_url'],'pages':texts},ensure_ascii=False),encoding='utf8')
+              except Exception as exc:
+                  row['status']='failed';row['error_type']=type(exc).__name__
+                  if isinstance(exc,ValueError):row['reason']=str(exc)
+              rows.append(row);print(json.dumps(row,ensure_ascii=False));time.sleep(0.5)
+          (out/'report.json').write_text(json.dumps(rows,ensure_ascii=False,indent=2),encoding='utf8')
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: public-rule-download-review-${{ github.run_id }}
+          path: rule-download-review/
+          retention-days: 7
