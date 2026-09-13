@@ -88,6 +88,12 @@ def scoped(source,raw,url):
         headings=[text(n.select_one('h2').get_text()) for n in nodes]
         if sorted(headings)!=sorted(['О партнёре','Как воспользоваться?','Условия предложения']):
             raise ValueError('x5_rule_sections_changed')
+    if handler=='gpb':
+        products=[n for n in nodes if any(re.fullmatch(r'TariffsMsbItemContent_root__(?!.*__)[A-Za-z0-9_-]+',c) for c in n.get('class',[]))]
+        titles=['Условия по карте','Условия программы лояльности «Аэрофлот Бонус»']
+        accordions=[n.parent.parent for n in nodes if text(n.get_text(' ',strip=True)) in titles]
+        if len(products)!=2 or len(accordions)!=2:raise ValueError('gpb_public_sections_ambiguous')
+        nodes=products+accordions
     terms=content(nodes)
     if any(x.casefold() not in flat(terms).casefold() for x in cfg['required']):
         raise ValueError('known_rule_required_evidence_missing')
@@ -102,7 +108,25 @@ def parse_known_rule(source,raw,url,observed_at):
         'scope':'reviewed_public_sections_only','linked_documents':linked_documents(nodes,url)}
     warnings=['user_eligibility_not_verified','rule_bundle_not_additive_discount']+cfg.get('warnings',[])
     benefit=terms;start=end=None;handler=cfg.get('handler')
-    if handler=='retail_miles':
+    if handler=='gpb':
+        options=[]
+        for node,label,paid in zip(nodes[:2],('Без Газпром Бонус «Плюс»','С Газпром Бонус «Плюс»'),(False,True)):
+            value=flat(node.get_text(' ',strip=True))
+            if not value.startswith(label):raise ValueError('gpb_subscription_label_mismatch')
+            rate=match(r'Мили «Аэрофлот Бонус» (\d+(?:[.,]\d+)?) мили за (\d+) ₽ покупок',value,'gpb_rate_missing')
+            cap=match(r'Максимум миль в месяц ('+NUM+r')(?= Переводы|$)',value,'gpb_cap_missing')
+            cost=match(r'далее [—-] (\d+) ₽ в месяц',value,'gpb_subscription_price_missing')[1] if paid else '0'
+            if not paid and 'Бесплатно' not in value:raise ValueError('gpb_free_option_missing')
+            options.append({'subscription':paid,'label':label,'miles':number(rate[1]),'basis_rub':rate[2],
+                'monthly_cap_miles':number(cap[1]),'monthly_subscription_rub':cost,'evidence':value})
+        minimum=match(r'Минимальная сумма покупок по карте в месяц [—–-] ('+NUM+r') ₽',terms,'gpb_minimum_missing')
+        service=match(r'Стоимость обслуживания (\d+) ₽',terms,'gpb_service_fee_missing')
+        notify=match(r'со 2 месяца [—–-] (\d+) ₽/мес',terms,'gpb_notification_fee_missing')
+        details.update(mileage_options=options,monthly_minimum_purchases_rub=number(minimum[1]),
+            minimum_evidence=minimum[0],fees={'card_service_rub':service[1],
+            'notifications_after_first_month_rub':notify[1],'evidence':notify[0]})
+        benefit='\n'.join(o['evidence'] for o in options)
+    elif handler=='retail_miles':
         earning=terms.split('Условия начислений:',1)[1].split('Условия списаний:',1)[0].strip()
         redemption=terms.split('Условия списаний:',1)[1].strip()
         rules=earning_rules(earning)

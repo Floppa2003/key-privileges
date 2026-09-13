@@ -33,7 +33,7 @@ def require(pattern,value):
     return found
 
 
-def pdf_pages(data: bytes,expected_pages: int) -> list[str]:
+def pdf_pages(data: bytes,expected_pages: int, *, short_pages: dict | None = None) -> list[str]:
     if not isinstance(data,bytes) or not data.startswith(b'%PDF-') or not 100<=len(data)<=3000000:
         raise ValueError('invalid_or_oversized_pdf')
     # Imported only in collection, never needed by the Google publisher.
@@ -42,13 +42,14 @@ def pdf_pages(data: bytes,expected_pages: int) -> list[str]:
     if reader.is_encrypted or len(reader.pages)!=expected_pages:
         raise ValueError('pdf_encrypted_or_page_count_changed')
     pages=[]
-    for page in reader.pages:
+    for page_number,page in enumerate(reader.pages,1):
         stream=page.get_contents()
         if stream is None or len(stream.get_data())>4000000:
             raise ValueError('pdf_content_stream_empty_or_oversized')
         value=page.extract_text()
         if not value or len(re.findall(r'[A-Za-zА-Яа-яЁё]',value))<80:
-            raise ValueError('pdf_missing_text_layer_review_required')
+            if not value or compact(value)!=(short_pages or {}).get(str(page_number)):
+                raise ValueError('pdf_missing_text_layer_review_required')
         pages.append(value)
     if sum(map(len,pages))>35000:
         raise ValueError('pdf_text_too_large_no_truncation')

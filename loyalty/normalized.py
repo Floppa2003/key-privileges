@@ -193,6 +193,9 @@ def make_offer(source_id: str, native_id: str, program: str, partner_name: str |
     return r
 
 
+UTAIR_DOCUMENT_IDS=set(json.loads(Path(__file__).with_name('utair_documents.json').read_text()))
+HOSTS['utair_rule_documents']=['ut0.ru']
+
 def validate_offer(r: dict) -> None:
     if r.get('schema_version')!=2 or r.get('adapter_version')!=VERSION:
         raise ValueError('Unexpected schema/adapter version')
@@ -213,6 +216,9 @@ def validate_offer(r: dict) -> None:
         raise ValueError('Promo code evidence mismatch')
     if r.get('details',{}).get('table_benefits')!=extract_table_benefits(r.get('tables',[])):
         raise ValueError('Table benefit evidence mismatch')
+    if r['source_id']=='utair_rule_documents':
+        if (r['record_kind']!='program_rules' or r['source_status']!='public_rules_text' or r['native_id'].removeprefix('document:') not in UTAIR_DOCUMENT_IDS or r['source_url']!='https://ut0.ru/'+r['native_id'].removeprefix('document:') or r['details'].get('evidence_role')!='supplementary_rules_not_incremental_discount'):
+            raise ValueError('Public rule documents cannot certify standalone partner offers')
     if r['source_id'] in KNOWN_RULES:
         cfg=KNOWN_RULES[r['source_id']]
         allowed_kinds=('program_rules','membership_plan') if r['source_id']=='smartavia_rules' else ('program_rules',)

@@ -485,5 +485,17 @@
     "name": "Аэрофлот Бонус → Банк Приморье — PDF",
     "url": "https://www.primbank.ru/d/tariffs-aeroflot-bonus",
     "mode": "known_rules"
+  },
+  {
+    "id": "af_gpb_rules",
+    "name": "Аэрофлот Бонус — условия карты Газпромбанка",
+    "url": "https://www.gazprombank.ru/personal/cards/7515685/",
+    "mode": "known_rules"
+  },
+  {
+    "id": "utair_rule_documents",
+    "name": "Utair Status — подробные PDF-правила привилегий",
+    "mode": "utair_documents",
+    "url": "https://media.utair.ru/status"
   }
 ]

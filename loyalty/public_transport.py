@@ -22,6 +22,8 @@ def retryable_read_error(exc: Exception) -> bool:
 def allowed_request(url: str, host: str) -> bool:
     try:
         u=urlsplit(clean_url(url))
+        if u.hostname==host=='www.gazprombank.ru' and u.path=='/personal/cards/7515685/' and not u.query:
+            return True  # Reviewed anonymous product page, not a personal account.
         return u.hostname==host and not re.search(r'/(?:auth|login|personal|register|accept|activate|participate)(?:/|$)',u.path,re.I)
     except (ValueError,TypeError):
         return False

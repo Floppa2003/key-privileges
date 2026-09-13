@@ -438,5 +438,29 @@
     "partner": "Банк Приморье",
     "title": "Тариф карты: начисление миль и ограничения",
     "format": "pdf"
+  },
+  "af_gpb_rules": {
+    "url": "https://www.gazprombank.ru/personal/cards/7515685/",
+    "program": "Аэрофлот Бонус",
+    "partner": "Газпромбанк",
+    "handler": "gpb",
+    "selectors": [
+      "div[class^=\"TariffsMsbItemContent_root__\"]",
+      "div[class*=\"Accordion_root__trigger_title__\"]"
+    ],
+    "single_selectors": false,
+    "render": false,
+    "required": [
+      "Без Газпром Бонус «Плюс»",
+      "С Газпром Бонус «Плюс»",
+      "Минимальная сумма покупок по карте в месяц",
+      "Стоимость обслуживания"
+    ],
+    "warnings": [
+      "bank_product_not_free_money",
+      "linked_complete_bank_documents_not_fetched"
+    ],
+    "title": "Карта Газпромбанка «Аэрофлот Бонус» — публичные условия",
+    "record_kind": "program_rules"
   }
 }
