@@ -1,4 +1,4 @@
 {
-  "request_id": "2026-09-13-promo-evidence-v2.3.2",
-  "reason": "Run all configured public sources with literal promo-code evidence and bounded Mir temporary-response recovery. Publish only existing normalized parser tabs, preserve prior observations and manual comments, and independently verify written fields. No change to Google authorization, inaccessible-source status or the disabled periodic schedule."
+  "request_id": "2026-09-13-scoped-tables-v2.3.3",
+  "reason": "Run the existing public source set with scoped table evidence and S7/RGO partial-read retention. Publish only parser_offers and parser_coverage, preserving existing manual columns and unrelated sheets. Verify normalized fields and independently read back the destination. No new credentials, network infrastructure, unverified source adapters or periodic schedule activation."
 }
