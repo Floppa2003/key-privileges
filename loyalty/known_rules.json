@@ -1,1 +1,442 @@
-{"af_bootwood_rules":{"url":"https://bootwood.com/afl_bonus/","program":"Аэрофлот Бонус","partner":"Bootwood","title":"Начисление и использование миль в Bootwood","selectors":[".afl"],"required":["Аэрофлот Бону","Условия начислений","Условия списаний"],"record_kind":"program_rules","handler":"retail_miles"},"af_wolford_rules":{"url":"https://wolford.ru/aeroflot_bonus/","program":"Аэрофлот Бонус","partner":"Wolford","title":"Начисление и использование миль в Wolford","selectors":["main.main > .container"],"required":["Аэрофлот Бонус","Условия начислений","Условия списаний"],"record_kind":"program_rules","handler":"retail_miles"},"af_iway_rules":{"url":"https://aeroflot.iway.ru/","program":"Аэрофлот Бонус","partner":"i’way","title":"Начисление и использование миль в i’way","selectors":["main .promo"],"required":["Аэрофлот","Накопить мили","Использовать мили"],"record_kind":"program_rules","handler":"iway"},"af_skyshop_rules":{"url":"https://skyshop.aeromar.ru/info/aeroflot-bonus/","program":"Аэрофлот Бонус","partner":"SkyShop","title":"Мили и премии SkyShop","selectors":[".wysiwyg-field"],"required":["Аэрофлот Бонус","Условия начислений","Условия получения премий"],"record_kind":"program_rules","handler":"skyshop"},"af_x5_rules":{"url":"https://x5club.ru/partners/202?redirectedFrom=landing","program":"Аэрофлот Бонус / X5 Клуб","partner":"X5 Клуб","title":"Обмен баллов X5 на мили","selectors":["main div.w-full:has(>h2)"],"required":["Аэрофлот Бонус","Как воспользоваться?","Условия предложения"],"record_kind":"program_rules","handler":"x5","single_selectors":false},"af_tripster_rules":{"url":"https://tripster.atlassian.net/wiki/spaces/affiliates/pages/3979739137","program":"Аэрофлот Бонус","partner":"Tripster","title":"Правила начисления миль за экскурсии","selectors":[".ak-renderer-document"],"required":["Аэрофлот","начисляются","экскурсий"],"record_kind":"program_rules","handler":"tripster","warnings":["documentation_page_not_current_booking_verification"]},"af_comfort_rules":{"url":"https://ru.comfort-pass.aero/","program":"Аэрофлот Бонус","partner":"Comfort Pass","title":"Опубликованная базовая ставка Comfort Pass","selectors":[".news-section"],"required":["Аэрофлот Бонус","Comfort Pass"],"record_kind":"program_rules","handler":"comfort","link_kind":"page_block","warnings":["undated_partner_news_not_full_rules"]},"af_vipzal_rules":{"url":"https://vip-zal.ru/aeroflot-bonus.php","program":"Аэрофлот Бонус","partner":"VIP-ZAL.RU","title":"Начисление и использование миль VIP-ZAL.RU","selectors":[".content_border"],"required":["Аэрофлот Бонус","Условия начислений","Условия использования"],"record_kind":"program_rules","handler":"vipzal","render":false},"rzd_student_rules":{"url":"https://www.hse.ru/scholarships/rzd_bonus","program":"РЖД Бонус","partner":"Студенческая программа — справка НИУ ВШЭ","title":"Студенческая скидка: условия и подключение","selectors":[".post__text"],"required":["РЖД Бонус","Студенты очной","Как подключить скидку"],"record_kind":"program_rules","handler":"students","warnings":["university_guidance_not_operator_complete_rules","student_status_not_verified"]},"ekp_sfera_rules":{"url":"https://sferakrasoti.ru/","program":"Единая карта петербуржца (ЕКП)","partner":"Сфера Красоты","title":"Скидка ЕКП на косметологию","selectors":[".n2-ss-slide-11"],"required":["Единая карта","косметология","10%"],"record_kind":"program_rules","link_kind":"page_block","handler":"sfera"},"rgo_headquarters_rules":{"url":"https://rgo.ru/activity/travel-list/excursions-and-routes/ekskursiya-po-istoricheskoy-shtab-kvartire-rgo-v-sankt-peterburge/","program":"РГО","partner":"Штаб-квартира РГО в Санкт-Петербурге","title":"Льготные условия экскурсии","selectors":[".accordion"],"required":["Перечень льготных категорий","скидку в 10%","члены Русского географического общества"],"record_kind":"program_rules","handler":"headquarters","single_selectors":false,"link_kind":"page_block"},"t2_magnit_rules":{"url":"https://msk.t2.ru/help/article/magnit-plus-premium","program":"MiXX","partner":"Магнит Плюс Премиум","title":"Активация Магнит Плюс Премиум через MiXX","selectors":[".support-article__article-title",".article-content"],"required":["Магнит Плюс Премиум","MiXX","Воспользоваться"],"record_kind":"program_rules","supplements":["t2_mixx"],"handler":"magnit"},"t2_sim_rules":{"url":"https://msk.t2.ru/help/article/recovery-sim","program":"T2 Selection","partner":"T2 — доставка и замена SIM","title":"Раздельные условия доставки и замены SIM","selectors":[".article-content"],"required":["Курьерская доставка SIM","T2 Selection","Дополнительно оплачивается"],"record_kind":"program_rules","handler":"sim","supplements":["t2_selection_public","t2_selection"]},"t2_registration_rules":{"url":"https://msk.t2.ru/journal/article/more-loyalty","program":"T2 «Больше»","partner":"T2","title":"Регистрация и получение бонусов «Больше»","selectors":[".journal-article__content"],"required":["Как стать участником","Как использовать бонусы","Как активировать предложения"],"record_kind":"program_rules","supplements":["t2_bolshe"],"handler":"registration"},"t2_mixx_rules":{"url":"https://msk.t2.ru/option/mixx-m","program":"MiXX M","partner":"T2","title":"Оплата, пробный период и ограничения MiXX M","selectors":[".option-detail-t2-header-card",".terms-of-service",".option-detail-t2-other-conditions-container"],"required":["MiXX M","Федеральный","549"],"record_kind":"program_rules","supplements":["t2_mixx"],"handler":"mixx"},"azimut_privilege_rules":{"url":"https://azimuthotels.com/ru/info/privileges-ab","program":"AZIMUT Bonus","partner":"AZIMUT Hotels","title":"Дополнительные условия привилегий AZIMUT Bonus","selectors":[".post-card .text-a"],"required":["Привилегии AZIMUT Bonus","свободного номера","личный кабинет"],"record_kind":"program_rules","supplements":["azimut"]},"azimut_earning_rules":{"url":"https://azimuthotels.com/ru/info/accumulate-points","program":"AZIMUT Bonus","partner":"AZIMUT Hotels","title":"База начисления баллов и примеры","selectors":["main.main-content"],"required":["Как накапливать баллы AZIMUT Bonus","НДС","Пример 1"],"record_kind":"program_rules","supplements":["azimut"],"handler":"azimut_earning"},"utair_family_rules":{"url":"https://media.utair.ru/status","program":"Utair Status","partner":"Utair — сервис Семья и использование миль","title":"Семейный счёт и ограничения оплаты милями","selectors":["#rec774881902","#rec774882054"],"required":["Семья","до 7 счетов","Как минимум 299"],"record_kind":"program_rules","supplements":["utair_tiers"],"handler":"family","link_kind":"page_block"},"utair_generations_rules":{"url":"https://media.utair.ru/wmiles","program":"Utair Status","partner":"Utair — Поколения","title":"Двойные мили: аудитории и условия","selectors":["#rec586475392","#rec586348980"],"required":["Поколения Utair","UYOUTHWM","UPENSWM","одном месяце"],"record_kind":"program_rules","handler":"generations","render":false,"supplements":["utair_tiers"]},"smartavia_rules":{"url":"https://cdn.flysmartavia.com/smartup/","program":"Подписка Smartavia","partner":"Smartavia","title":"Подписка Smartavia и скидка ЕКП","selectors":["#js-smartup-tariff-cardboard"],"required":["Подписку Smartavia","Единая карта","Выберите подходящий тариф"],"record_kind":"program_rules","handler":"smartavia","link_kind":"page_block"},"mir_101_rules":{"url":"https://101hotels.com/page/contacts/rules_mir_cashback/usloviya_akcii_cashback_mir_10_prosentov_1_06_2026","program":"Привет! / Мир","partner":"101HOTELS.COM","title":"Полные опубликованные правила кешбэка","selectors":[".page-content-wrap"],"required":["Бронируйте с умом","Срок проведения Акции","10 000"],"record_kind":"program_rules","handler":"mir101","supplements":["mir"]},"mir_aeroexpress_rules":{"url":"https://aeroexpress.ru/aero/press/news20101967.html","program":"Привет! / СБП","partner":"Аэроэкспресс","title":"Кешбэк СБП — официальная публикация","selectors":[".aeMobilePad.main"],"required":["Аэроэкспресс","СБП","5%"],"record_kind":"program_rules","handler":"aeroexpress","warnings":["official_news_not_full_rules"]},"promomiles_otello_rules":{"url":"https://promomiles.aeroflot.ru/act/march2026/partner-code-terms-use","program":"Аэрофлот Бонус — Promo Miles","partner":"Отелло","title":"Архивные правила промокода AF2026","selectors":[".terms-use"],"required":["AF2026","Отелло","2026"],"record_kind":"program_rules","handler":"otello","supplements":["promomiles"]}}
+{
+  "af_bootwood_rules": {
+    "url": "https://bootwood.com/afl_bonus/",
+    "program": "Аэрофлот Бонус",
+    "partner": "Bootwood",
+    "title": "Начисление и использование миль в Bootwood",
+    "selectors": [
+      ".afl"
+    ],
+    "required": [
+      "Аэрофлот Бону",
+      "Условия начислений",
+      "Условия списаний"
+    ],
+    "record_kind": "program_rules",
+    "handler": "retail_miles"
+  },
+  "af_wolford_rules": {
+    "url": "https://wolford.ru/aeroflot_bonus/",
+    "program": "Аэрофлот Бонус",
+    "partner": "Wolford",
+    "title": "Начисление и использование миль в Wolford",
+    "selectors": [
+      "main.main > .container"
+    ],
+    "required": [
+      "Аэрофлот Бонус",
+      "Условия начислений",
+      "Условия списаний"
+    ],
+    "record_kind": "program_rules",
+    "handler": "retail_miles"
+  },
+  "af_iway_rules": {
+    "url": "https://aeroflot.iway.ru/",
+    "program": "Аэрофлот Бонус",
+    "partner": "i’way",
+    "title": "Начисление и использование миль в i’way",
+    "selectors": [
+      "main .promo"
+    ],
+    "required": [
+      "Аэрофлот",
+      "Накопить мили",
+      "Использовать мили"
+    ],
+    "record_kind": "program_rules",
+    "handler": "iway"
+  },
+  "af_skyshop_rules": {
+    "url": "https://skyshop.aeromar.ru/info/aeroflot-bonus/",
+    "program": "Аэрофлот Бонус",
+    "partner": "SkyShop",
+    "title": "Мили и премии SkyShop",
+    "selectors": [
+      ".wysiwyg-field"
+    ],
+    "required": [
+      "Аэрофлот Бонус",
+      "Условия начислений",
+      "Условия получения премий"
+    ],
+    "record_kind": "program_rules",
+    "handler": "skyshop"
+  },
+  "af_x5_rules": {
+    "url": "https://x5club.ru/partners/202?redirectedFrom=landing",
+    "program": "Аэрофлот Бонус / X5 Клуб",
+    "partner": "X5 Клуб",
+    "title": "Обмен баллов X5 на мили",
+    "selectors": [
+      "main div.w-full:has(>h2)"
+    ],
+    "required": [
+      "Аэрофлот Бонус",
+      "Как воспользоваться?",
+      "Условия предложения"
+    ],
+    "record_kind": "program_rules",
+    "handler": "x5",
+    "single_selectors": false
+  },
+  "af_tripster_rules": {
+    "url": "https://tripster.atlassian.net/wiki/spaces/affiliates/pages/3979739137",
+    "program": "Аэрофлот Бонус",
+    "partner": "Tripster",
+    "title": "Правила начисления миль за экскурсии",
+    "selectors": [
+      ".ak-renderer-document"
+    ],
+    "required": [
+      "Аэрофлот",
+      "начисляются",
+      "экскурсий"
+    ],
+    "record_kind": "program_rules",
+    "handler": "tripster",
+    "warnings": [
+      "documentation_page_not_current_booking_verification"
+    ]
+  },
+  "af_comfort_rules": {
+    "url": "https://ru.comfort-pass.aero/",
+    "program": "Аэрофлот Бонус",
+    "partner": "Comfort Pass",
+    "title": "Опубликованная базовая ставка Comfort Pass",
+    "selectors": [
+      ".news-section"
+    ],
+    "required": [
+      "Аэрофлот Бонус",
+      "Comfort Pass"
+    ],
+    "record_kind": "program_rules",
+    "handler": "comfort",
+    "link_kind": "page_block",
+    "warnings": [
+      "undated_partner_news_not_full_rules"
+    ]
+  },
+  "af_vipzal_rules": {
+    "url": "https://vip-zal.ru/aeroflot-bonus.php",
+    "program": "Аэрофлот Бонус",
+    "partner": "VIP-ZAL.RU",
+    "title": "Начисление и использование миль VIP-ZAL.RU",
+    "selectors": [
+      ".content_border"
+    ],
+    "required": [
+      "Аэрофлот Бонус",
+      "Условия начислений",
+      "Условия использования"
+    ],
+    "record_kind": "program_rules",
+    "handler": "vipzal",
+    "render": false
+  },
+  "rzd_student_rules": {
+    "url": "https://www.hse.ru/scholarships/rzd_bonus",
+    "program": "РЖД Бонус",
+    "partner": "Студенческая программа — справка НИУ ВШЭ",
+    "title": "Студенческая скидка: условия и подключение",
+    "selectors": [
+      ".post__text"
+    ],
+    "required": [
+      "РЖД Бонус",
+      "Студенты очной",
+      "Как подключить скидку"
+    ],
+    "record_kind": "program_rules",
+    "handler": "students",
+    "warnings": [
+      "university_guidance_not_operator_complete_rules",
+      "student_status_not_verified"
+    ]
+  },
+  "ekp_sfera_rules": {
+    "url": "https://sferakrasoti.ru/",
+    "program": "Единая карта петербуржца (ЕКП)",
+    "partner": "Сфера Красоты",
+    "title": "Скидка ЕКП на косметологию",
+    "selectors": [
+      ".n2-ss-slide-11"
+    ],
+    "required": [
+      "Единая карта",
+      "косметология",
+      "10%"
+    ],
+    "record_kind": "program_rules",
+    "link_kind": "page_block",
+    "handler": "sfera"
+  },
+  "rgo_headquarters_rules": {
+    "url": "https://rgo.ru/activity/travel-list/excursions-and-routes/ekskursiya-po-istoricheskoy-shtab-kvartire-rgo-v-sankt-peterburge/",
+    "program": "РГО",
+    "partner": "Штаб-квартира РГО в Санкт-Петербурге",
+    "title": "Льготные условия экскурсии",
+    "selectors": [
+      ".accordion"
+    ],
+    "required": [
+      "Перечень льготных категорий",
+      "скидку в 10%",
+      "члены Русского географического общества"
+    ],
+    "record_kind": "program_rules",
+    "handler": "headquarters",
+    "single_selectors": false,
+    "link_kind": "page_block"
+  },
+  "t2_magnit_rules": {
+    "url": "https://msk.t2.ru/help/article/magnit-plus-premium",
+    "program": "MiXX",
+    "partner": "Магнит Плюс Премиум",
+    "title": "Активация Магнит Плюс Премиум через MiXX",
+    "selectors": [
+      ".support-article__article-title",
+      ".article-content"
+    ],
+    "required": [
+      "Магнит Плюс Премиум",
+      "MiXX",
+      "Воспользоваться"
+    ],
+    "record_kind": "program_rules",
+    "supplements": [
+      "t2_mixx"
+    ],
+    "handler": "magnit"
+  },
+  "t2_sim_rules": {
+    "url": "https://msk.t2.ru/help/article/recovery-sim",
+    "program": "T2 Selection",
+    "partner": "T2 — доставка и замена SIM",
+    "title": "Раздельные условия доставки и замены SIM",
+    "selectors": [
+      ".article-content"
+    ],
+    "required": [
+      "Курьерская доставка SIM",
+      "T2 Selection",
+      "Дополнительно оплачивается"
+    ],
+    "record_kind": "program_rules",
+    "handler": "sim",
+    "supplements": [
+      "t2_selection_public",
+      "t2_selection"
+    ],
+    "ready_text": "Дополнительно оплачивается замена SIM-карты"
+  },
+  "t2_registration_rules": {
+    "url": "https://msk.t2.ru/journal/article/more-loyalty",
+    "program": "T2 «Больше»",
+    "partner": "T2",
+    "title": "Регистрация и получение бонусов «Больше»",
+    "selectors": [
+      ".journal-article__content"
+    ],
+    "required": [
+      "Как стать участником",
+      "Как использовать бонусы",
+      "Как активировать предложения"
+    ],
+    "record_kind": "program_rules",
+    "supplements": [
+      "t2_bolshe"
+    ],
+    "handler": "registration"
+  },
+  "t2_mixx_rules": {
+    "url": "https://msk.t2.ru/option/mixx-m",
+    "program": "MiXX M",
+    "partner": "T2",
+    "title": "Оплата, пробный период и ограничения MiXX M",
+    "selectors": [
+      ".option-detail-t2-header-card",
+      ".terms-of-service",
+      ".option-detail-t2-other-conditions-container"
+    ],
+    "required": [
+      "MiXX M",
+      "Федеральный",
+      "549"
+    ],
+    "record_kind": "program_rules",
+    "supplements": [
+      "t2_mixx"
+    ],
+    "handler": "mixx"
+  },
+  "azimut_privilege_rules": {
+    "url": "https://azimuthotels.com/ru/info/privileges-ab",
+    "program": "AZIMUT Bonus",
+    "partner": "AZIMUT Hotels",
+    "title": "Дополнительные условия привилегий AZIMUT Bonus",
+    "selectors": [
+      ".post-card .text-a"
+    ],
+    "required": [
+      "Привилегии AZIMUT Bonus",
+      "свободного номера",
+      "личный кабинет"
+    ],
+    "record_kind": "program_rules",
+    "supplements": [
+      "azimut"
+    ]
+  },
+  "azimut_earning_rules": {
+    "url": "https://azimuthotels.com/ru/info/accumulate-points",
+    "program": "AZIMUT Bonus",
+    "partner": "AZIMUT Hotels",
+    "title": "База начисления баллов и примеры",
+    "selectors": [
+      "main.main-content"
+    ],
+    "required": [
+      "Как накапливать баллы AZIMUT Bonus",
+      "НДС",
+      "Пример 1"
+    ],
+    "record_kind": "program_rules",
+    "supplements": [
+      "azimut"
+    ],
+    "handler": "azimut_earning"
+  },
+  "utair_family_rules": {
+    "url": "https://media.utair.ru/status",
+    "program": "Utair Status",
+    "partner": "Utair — сервис Семья и использование миль",
+    "title": "Семейный счёт и ограничения оплаты милями",
+    "selectors": [
+      "#rec774881902",
+      "#rec774882054"
+    ],
+    "required": [
+      "Семья",
+      "до 7 счетов",
+      "Как минимум 299"
+    ],
+    "record_kind": "program_rules",
+    "supplements": [
+      "utair_tiers"
+    ],
+    "handler": "family",
+    "link_kind": "page_block"
+  },
+  "utair_generations_rules": {
+    "url": "https://media.utair.ru/wmiles",
+    "program": "Utair Status",
+    "partner": "Utair — Поколения",
+    "title": "Двойные мили: аудитории и условия",
+    "selectors": [
+      "#rec586475392",
+      "#rec586348980"
+    ],
+    "required": [
+      "Поколения Utair",
+      "UYOUTHWM",
+      "UPENSWM",
+      "одном месяце"
+    ],
+    "record_kind": "program_rules",
+    "handler": "generations",
+    "render": false,
+    "supplements": [
+      "utair_tiers"
+    ]
+  },
+  "smartavia_rules": {
+    "url": "https://cdn.flysmartavia.com/smartup/",
+    "program": "Подписка Smartavia",
+    "partner": "Smartavia",
+    "title": "Подписка Smartavia и скидка ЕКП",
+    "selectors": [
+      "#js-smartup-tariff-cardboard"
+    ],
+    "required": [
+      "Подписку Smartavia",
+      "Единая карта",
+      "Выберите подходящий тариф"
+    ],
+    "record_kind": "program_rules",
+    "handler": "smartavia",
+    "link_kind": "page_block"
+  },
+  "mir_101_rules": {
+    "url": "https://101hotels.com/page/contacts/rules_mir_cashback/usloviya_akcii_cashback_mir_10_prosentov_1_06_2026",
+    "program": "Привет! / Мир",
+    "partner": "101HOTELS.COM",
+    "title": "Полные опубликованные правила кешбэка",
+    "selectors": [
+      ".page-content-wrap"
+    ],
+    "required": [
+      "Бронируйте с умом",
+      "Срок проведения Акции",
+      "10 000"
+    ],
+    "record_kind": "program_rules",
+    "handler": "mir101",
+    "supplements": [
+      "mir"
+    ]
+  },
+  "mir_aeroexpress_rules": {
+    "url": "https://aeroexpress.ru/aero/press/news20101967.html",
+    "program": "Привет! / СБП",
+    "partner": "Аэроэкспресс",
+    "title": "Кешбэк СБП — официальная публикация",
+    "selectors": [
+      ".aeMobilePad.main"
+    ],
+    "required": [
+      "Аэроэкспресс",
+      "СБП",
+      "5%"
+    ],
+    "record_kind": "program_rules",
+    "handler": "aeroexpress",
+    "warnings": [
+      "official_news_not_full_rules"
+    ]
+  },
+  "promomiles_otello_rules": {
+    "url": "https://promomiles.aeroflot.ru/act/march2026/partner-code-terms-use",
+    "program": "Аэрофлот Бонус — Promo Miles",
+    "partner": "Отелло",
+    "title": "Архивные правила промокода AF2026",
+    "selectors": [
+      ".terms-use"
+    ],
+    "required": [
+      "AF2026",
+      "Отелло",
+      "2026"
+    ],
+    "record_kind": "program_rules",
+    "handler": "otello",
+    "supplements": [
+      "promomiles"
+    ]
+  },
+  "rzd_finuslugi_rules": {
+    "url": "https://assets.finuslugi.ru/sc-disclosure/293d2bf4-16c4-46c6-87a5-0a2d35d18ad8",
+    "program": "РЖД Бонус",
+    "partner": "Финуслуги",
+    "title": "Правила начисления баллов за первый вклад",
+    "format": "pdf"
+  },
+  "af_primbank_rules": {
+    "url": "https://www.primbank.ru/d/tariffs-aeroflot-bonus",
+    "program": "Аэрофлот Бонус",
+    "partner": "Банк Приморье",
+    "title": "Тариф карты: начисление миль и ограничения",
+    "format": "pdf"
+  }
+}

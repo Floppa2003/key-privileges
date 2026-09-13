@@ -473,5 +473,17 @@
     "url": "https://promomiles.aeroflot.ru/act/march2026/partner-code-terms-use",
     "mode": "known_rules",
     "timeout_seconds": 120
+  },
+  {
+    "id": "rzd_finuslugi_rules",
+    "name": "РЖД Бонус → Финуслуги — PDF",
+    "url": "https://assets.finuslugi.ru/sc-disclosure/293d2bf4-16c4-46c6-87a5-0a2d35d18ad8",
+    "mode": "known_rules"
+  },
+  {
+    "id": "af_primbank_rules",
+    "name": "Аэрофлот Бонус → Банк Приморье — PDF",
+    "url": "https://www.primbank.ru/d/tariffs-aeroflot-bonus",
+    "mode": "known_rules"
   }
 ]

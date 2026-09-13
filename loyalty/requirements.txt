@@ -2,3 +2,4 @@ requests==2.32.5
 playwright==1.57.0
 beautifulsoup4==4.14.3
 protego==0.6.2
+pypdf==6.18.1

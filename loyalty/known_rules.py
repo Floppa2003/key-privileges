@@ -252,8 +252,22 @@ def smartavia_records(cfg,nodes,terms,details,warnings,url,now):
 
 async def collect_known_rules(client,cfg,report,now,limit):
     settings=CONFIG[cfg['id']]
-    raw=await within_source_budget(client,lambda:client.read(cfg['url'],render=settings.get('render',True)))
-    rows=parse_known_rule(cfg['id'],raw,cfg['url'],now)
+    if settings.get('format')=='pdf':
+        from known_pdf import collect_pdf_rule
+        rows=await collect_pdf_rule(client,cfg,now)
+    else:
+        raw=await within_source_budget(client,lambda:client.read(cfg['url'],render=settings.get('render',True)))
+        if settings.get('ready_text'):
+            selector=settings['selectors'][0]
+            async def ready_article():
+                await client.page.wait_for_function(
+                    '(q)=>{const a=document.querySelectorAll(q.selector);return a.length===1 && a[0].innerText.includes(q.text)}',
+                    arg={'selector':selector,'text':settings['ready_text']},timeout=8000)
+                if canonical_url(client.page.url)!=canonical_url(cfg['url']):
+                    raise RuntimeError('known_rule_redirect_during_readiness')
+                return await client.page.content()
+            raw=await within_source_budget(client,ready_article)
+        rows=parse_known_rule(cfg['id'],raw,cfg['url'],now)
     report['discovered']=len(rows)
     report['coverage']='reviewed_known_public_rule_sections; supplementary evidence, not full programme catalogue'
     if len(rows)>limit:report['errors'].append({'phase':'rules','reason':'record_limit','limit':limit})
