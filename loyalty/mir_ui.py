@@ -104,7 +104,9 @@ class BrowserResponses:
     async def capture(self, response):
         try:
             if response.status != 200:
-                self.errors.append({'phase':'public_response','reason':f'http_{response.status}'})
+                self.errors.append({'phase':'public_response','reason':f'http_{response.status}',
+                    'status':response.status,'path':urlsplit(response.url).path,
+                    'retry_after':any(str(k).lower()=='retry-after' for k in (getattr(response,'headers',{}) or {}))})
                 return
             raw=await response.text()
             if len(raw.encode()) > 6000000:
@@ -138,11 +140,13 @@ class BrowserResponses:
 
 async def read_matching_detail(client, captured, url, now, *, expected_id=None,
                                deadline=float('inf'), wait_timeout=15):
-    """One repeat for a missing browser-owned response, within the source budget.
+    """One repeat for a missing or temporary-5xx browser-owned detail response.
 
     The offset is reset before each navigation. Old observations cannot satisfy a
-    new read. Authentication, rate limits and malformed responses do not retry.
+    new read. Authentication, rate limits, Retry-After and malformed responses do
+    not retry. Errors remain in the source report even when later recovered.
     """
+    recovered_errors=[]
     for attempt in range(2):
         if time.monotonic() >= deadline:
             raise RuntimeError('source_time_budget_reached')
@@ -161,6 +165,7 @@ async def read_matching_detail(client, captured, url, now, *, expected_id=None,
                 raise RuntimeError('catalog_detail_identity_mismatch')
             record=rs[0]
             record['details']['retrieval_attempts']=attempt+1
+            if recovered_errors:record['details']['retrieval_recovered_errors']=recovered_errors
             record['content_sha256']=content_hash(record)
             return record
         except TimeoutError as exc:
@@ -170,10 +175,14 @@ async def read_matching_detail(client, captured, url, now, *, expected_id=None,
                 raise
             response_errors=captured.errors[error_offset:]
             if response_errors:
-                raise RuntimeError(response_errors[-1]['reason']) from exc
-            if attempt==1:
+                terminal=next((e for e in response_errors if e.get('status') not in (502,503,504)
+                    or e.get('retry_after') or e.get('path','').rstrip('/')!='/api/configs/client'),None)
+                if terminal or attempt==1:
+                    raise RuntimeError((terminal or response_errors[-1])['reason']) from exc
+                recovered_errors.extend({**e,'attempt':attempt+1} for e in response_errors)
+            elif attempt==1:
                 raise
-            await asyncio.sleep(max(.5,client.request_interval))
+            await asyncio.sleep(max(2 if response_errors else .5,client.request_interval))
     raise AssertionError('unreachable detail retry state')
 
 
