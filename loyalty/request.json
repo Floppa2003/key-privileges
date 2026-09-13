@@ -1,4 +1,4 @@
 {
-  "request_id": "2026-09-13-read-recovery-v2.3.1",
-  "reason": "Collect all configured public sources with bounded transient recovery and exact Mir identity/deadline checks. Publish only existing normalized parser tabs, preserving old observations and manual comments. Keep inaccessible catalogues explicit and the periodic schedule disabled. Verify actual main payload and independently read back Sheets."
+  "request_id": "2026-09-13-promo-evidence-v2.3.2",
+  "reason": "Run all configured public sources with literal promo-code evidence and bounded Mir temporary-response recovery. Publish only existing normalized parser tabs, preserve prior observations and manual comments, and independently verify written fields. No change to Google authorization, inaccessible-source status or the disabled periodic schedule."
 }
