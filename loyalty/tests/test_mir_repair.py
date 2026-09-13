@@ -59,3 +59,26 @@ class MirRepairTests(unittest.IsolatedAsyncioTestCase):
             with self.assertRaisesRegex(RuntimeError,'expected_public_response_not_observed'):
                 await self.fn(c,self.capture,URL,NOW,wait_timeout=.01)
         self.assertEqual(len(c.calls),2)
+
+    async def test_in_flight_navigation_is_stopped_at_source_deadline(self):
+        import asyncio
+        stopped=asyncio.Event()
+        class StalledClient:
+            request_interval=0
+            async def read(self,*args,**kwargs):
+                try:await asyncio.Event().wait()
+                finally:stopped.set()
+        try:
+            await asyncio.wait_for(self.fn(StalledClient(),self.capture,URL,NOW,
+                deadline=time.monotonic()+.01),.1)
+        except RuntimeError as exc:self.assertIn('budget',str(exc))
+        except asyncio.TimeoutError:self.fail('In-flight read ignored its source deadline')
+        else:self.fail('Stalled read returned success')
+        self.assertTrue(stopped.is_set())
+
+class MirCatalogIdentityTests(unittest.TestCase):
+    def test_dom_validation_keeps_native_id_observed_in_same_catalogue(self):
+        html='<main><div class="x__promos__y"><a class="promo-card-v2__link" href="/promo/test/a/"><div class="promo-card-v2-owner__name">A</div></a></div></main>'
+        profile={'expected':1,'page_title':'Москва','items':[{'xml_id':'native-123','url':'/promo/test/a/','name':'A'}]}
+        result=mir_ui.dom_snapshot(html,profile,'mir',1)
+        self.assertEqual(result['items'][0]['xml_id'],'native-123')

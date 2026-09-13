@@ -46,13 +46,14 @@ CARDS = 'main [class*="__promos__"] a.promo-card-v2__link'
 
 def dom_snapshot(raw, profile, payment, number):
     soup=BeautifulSoup(raw,'html.parser');items=[]
+    native_ids={x['url']:x.get('xml_id') for x in profile.get('items',[])}
     for card in soup.select(CARDS):
         url=card.get('href','');parts=urlsplit(url)
         if parts.scheme or parts.netloc or parts.query or not parts.path.startswith('/promo/'):
             raise ValueError('invalid_public_card_url')
         owner=card.select_one('.promo-card-v2-owner__name')
         if owner is None:raise ValueError('public_card_partner_missing')
-        items.append({'xml_id':None,'url':url,'name':owner.get_text(' ',strip=True)})
+        items.append({'xml_id':native_ids.get(url),'url':url,'name':owner.get_text(' ',strip=True)})
     if not items or len(items)>50:raise ValueError('unexpected_visible_card_count')
     return {'payment_type':payment,'page':number,'items':items,'expected':profile['expected'],
             'page_title':profile['page_title']}
@@ -147,10 +148,11 @@ async def read_matching_detail(client, captured, url, now, *, expected_id=None,
             raise RuntimeError('source_time_budget_reached')
         offset=len(captured.details); error_offset=len(captured.errors)
         try:
-            await client.read(url,render=True)
-            data=await captured.wait(captured.details,offset,
-                lambda x:urlsplit(x['data']['content']['promoDetail']['promo']['promoAction']['url']).path==urlsplit(url).path,
-                timeout=min(wait_timeout,max(.001,deadline-time.monotonic())))
+            async with asyncio.timeout(max(.001,deadline-time.monotonic())):
+                await client.read(url,render=True)
+                data=await captured.wait(captured.details,offset,
+                    lambda x:urlsplit(x['data']['content']['promoDetail']['promo']['promoAction']['url']).path==urlsplit(url).path,
+                    timeout=min(wait_timeout,max(.001,deadline-time.monotonic())))
             obj=data['data']['content']['promoDetail']['promo']['promoAction']
             if expected_id is not None and str(obj['xml_id']) != str(expected_id):
                 raise RuntimeError('catalog_detail_identity_mismatch')
@@ -161,6 +163,8 @@ async def read_matching_detail(client, captured, url, now, *, expected_id=None,
             record['details']['retrieval_attempts']=attempt+1
             record['content_sha256']=content_hash(record)
             return record
+        except TimeoutError as exc:
+            raise RuntimeError('source_time_budget_reached') from exc
         except RuntimeError as exc:
             if str(exc)!='expected_public_response_not_observed':
                 raise
@@ -174,7 +178,8 @@ async def read_matching_detail(client, captured, url, now, *, expected_id=None,
 
 
 async def collect_mir(client,cfg,report,now,limit):
-    deadline=time.monotonic()+cfg.get("timeout_seconds",900)-50
+    deadline=min(time.monotonic()+cfg.get("timeout_seconds",900)-50,
+                 getattr(client,"deadline",float("inf"))-5)
     page=client.page; captured=BrowserResponses(page,client.host)
     page.on('response',captured.observe)
     candidates={}; memberships={}; summaries=[]; records=[]
