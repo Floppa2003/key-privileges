@@ -7,7 +7,7 @@ on:
     inputs:
       limit:
         description: Maximum detail pages per source (1-500; coverage reported separately)
-        default: "200"
+        default: "500"
         type: string
       publish:
         description: Publish normalized offers after Google authorization
@@ -38,7 +38,7 @@ jobs:
       - run: python -m playwright install --with-deps chromium
       - name: Collect public normalized offers (no Google credentials)
         env:
-          PAGE_LIMIT: ${{ inputs.limit || '200' }}
+          PAGE_LIMIT: ${{ inputs.limit || '500' }}
         run: python loyalty/collect_normalized.py --limit "$PAGE_LIMIT"
       - name: Validate publication payload without access to Google
         if: always()
