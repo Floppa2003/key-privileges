@@ -10,8 +10,9 @@ from pathlib import Path
 from urllib.parse import urlsplit
 from bs4 import BeautifulSoup
 from model import clean_url
+from promo_codes import extract_promocodes
 
-VERSION = '2.3.1'
+VERSION = '2.3.2'
 HOSTS = {
  'moskvich': ['moskvichmag.ru'], 'noname': ['nonameburo.com'],
  's7': ['marketplace.s7.ru'], 'ural': ['www.uralairlines.ru'],
@@ -155,17 +156,8 @@ def make_offer(source_id: str, native_id: str, program: str, partner_name: str |
     if any(len(s)>40000 for s in (benefit,conditions,redemption)):
         raise ValueError('Oversized text; refusing to truncate conditions')
     all_text = '\n'.join((benefit,conditions,redemption))
-    codes = []
-    pattern = r'промокод(?:у|ом|а)?\s*[:—–-]?\s*(?:[«"“]([^»"”\n]{2,60})[»"”]|([A-Za-zА-Яа-яЁё0-9][A-Za-zА-Яа-яЁё0-9_.-]{1,49})(?=\W|$))'
-    for m in re.finditer(pattern,all_text,re.I):
-        c=m[1] or m[2]
-        if m[2]:
-            c=c.rstrip('.')
-            tail=re.match(r'(?: +[A-ZА-ЯЁ0-9][A-ZА-ЯЁ0-9_.-]{1,30}){1,3}(?=\W|$)',all_text[m.end():])
-            if tail:
-                c+=tail[0]
-        if (c.isupper() or re.search(r'[A-Z0-9_.-]',c)) and c not in codes:
-            codes.append(c)
+    promo = extract_promocodes(all_text, tables)
+    codes = promo['codes']
     r = {'schema_version':2,'adapter_version':VERSION,
          'id':hashlib.sha256((source_id+'\n'+native_id).encode()).hexdigest(),
          'source_id':source_id,'native_id':native_id,'program':text(program),
@@ -178,9 +170,13 @@ def make_offer(source_id: str, native_id: str, program: str, partner_name: str |
          'source_status':source_status,'source_url':url,
          'benefit_url':url if link_kind in ('detail_page','page_anchor') else None,
          'link_kind':link_kind,'locator':locator,'tables':tables or [],
-         'details':{**(details or {}),'lexical_conditions':lexical_conditions(all_text)},
+         'details':{**(details or {}),'lexical_conditions':lexical_conditions(all_text),
+                    'promo_code_evidence':promo['evidence'],'promo_code_delivery':promo['delivery'],
+                    'promo_code_status':promo['status']},
          'normalization_status':'source_fields_extracted',
-         'warnings':warnings or [],'observed_at':observed_at}
+         'warnings':list(warnings or []),'observed_at':observed_at}
+    if promo['status']=='mentioned_not_extracted':
+        r['warnings'].append('promo_code_mentioned_not_extracted')
     if not r['partner_name']:
         r['warnings'].append('partner_display_name_not_resolved')
     r['content_sha256'] = content_hash(r)
@@ -200,6 +196,12 @@ def validate_offer(r: dict) -> None:
         raise ValueError('Evidence hash mismatch')
     if r.get('rates')!=normalize_rates(r.get('benefit_text','')):
         raise ValueError('Rate evidence mismatch')
+    promo=extract_promocodes('\n'.join(r.get(k,'') for k in ('benefit_text','conditions_text','redemption_text')),r.get('tables',[]))
+    if (r.get('promo_codes')!=promo['codes']
+        or r.get('details',{}).get('promo_code_evidence')!=promo['evidence']
+        or r.get('details',{}).get('promo_code_delivery')!=promo['delivery']
+        or r.get('details',{}).get('promo_code_status')!=promo['status']):
+        raise ValueError('Promo code evidence mismatch')
     if r['source_id'] in ('ekp_announcements','rzd_announcements') or r['link_kind']=='source_post':
         channel={'ekp_announcements':'ekpcard','rzd_announcements':'fpcrussia'}.get(r['source_id'])
         if r['link_kind']!='source_post' or not channel or not re.fullmatch('/'+channel+r'/[0-9]+',urlsplit(r['source_url']).path) or r['benefit_url'] is not None or r['record_kind']!='announcement' or r['source_status']!='announced_unverified':
