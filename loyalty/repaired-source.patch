@@ -1,0 +1,121 @@
+--- a/loyalty/normalized.py
++++ b/loyalty/normalized.py
+@@ -11,8 +11,9 @@
+ from bs4 import BeautifulSoup
+ from model import clean_url
+ from promo_codes import extract_promocodes
+-
+-VERSION = '2.3.2'
++from table_benefits import extract_table_benefits
++
++VERSION = '2.3.3'
+ HOSTS = {
+  'moskvich': ['moskvichmag.ru'], 'noname': ['nonameburo.com'],
+  's7': ['marketplace.s7.ru'], 'ural': ['www.uralairlines.ru'],
+@@ -172,7 +173,8 @@
+          'link_kind':link_kind,'locator':locator,'tables':tables or [],
+          'details':{**(details or {}),'lexical_conditions':lexical_conditions(all_text),
+                     'promo_code_evidence':promo['evidence'],'promo_code_delivery':promo['delivery'],
+-                    'promo_code_status':promo['status']},
++                    'promo_code_status':promo['status'],
++                    'table_benefits':extract_table_benefits(tables or [])},
+          'normalization_status':'source_fields_extracted',
+          'warnings':list(warnings or []),'observed_at':observed_at}
+     if promo['status']=='mentioned_not_extracted':
+@@ -202,6 +204,8 @@
+         or r.get('details',{}).get('promo_code_delivery')!=promo['delivery']
+         or r.get('details',{}).get('promo_code_status')!=promo['status']):
+         raise ValueError('Promo code evidence mismatch')
++    if r.get('details',{}).get('table_benefits')!=extract_table_benefits(r.get('tables',[])):
++        raise ValueError('Table benefit evidence mismatch')
+     if r['source_id'] in ('ekp_announcements','rzd_announcements') or r['link_kind']=='source_post':
+         channel={'ekp_announcements':'ekpcard','rzd_announcements':'fpcrussia'}.get(r['source_id'])
+         if r['link_kind']!='source_post' or not channel or not re.fullmatch('/'+channel+r'/[0-9]+',urlsplit(r['source_url']).path) or r['benefit_url'] is not None or r['record_kind']!='announcement' or r['source_status']!='announced_unverified':
+--- a/loyalty/promo_codes.py
++++ b/loyalty/promo_codes.py
+@@ -8,7 +8,7 @@
+ 
+ LABEL = re.compile(r'\bпромокод(?:а|у|ом|ы)?\b', re.I)
+ TOKEN = re.compile(r'[A-Za-zА-Яа-яЁё0-9][A-Za-zА-Яа-яЁё0-9_.-]*')
+-STOP = {'http', 'https', 'промокод', 'промокоды', 'акция', 'скидка', 'скидки', 'мир', 'синий', 'серебряный', 'золотой', 'получите', 'дополнительные'} | set(('в во на для по при с со из от до после перед к и или либо не нет '
++STOP = {'http', 'https', 'промокод', 'промокоды', 'акция', 'скидка', 'скидки', 'мир', 'синий', 'серебряный', 'золотой', 'получите', 'получить', 'дополнительные'} | set(('в во на для по при с со из от до после перед к и или либо не нет '
+             'составляет составит действует действителен действительны можно нужно '
+             'необходимо предоставляет суммируется является выдаётся выдается придёт '
+             'придет приходит активируется вводится будет будут уникальный персональный '
+--- a/loyalty/collect_normalized.py
++++ b/loyalty/collect_normalized.py
+@@ -21,6 +21,7 @@
+ from t2_source import collect_t2
+ from ural_ui import collect_ural
+ from announcements import collect_announcements
++from read_budget import within_source_budget, stops_catalog
+ 
+ 
+ def error_record(exc,phase,url=''):
+@@ -31,14 +32,14 @@
+ 
+ 
+ async def collect_s7(client,cfg,report,now,limit):
+-    raw=await client.read(cfg['url'])
+-    if 'initialState' not in raw:raw=await client.read(cfg['url'],render=True)
++    raw=await within_source_budget(client,lambda:client.read(cfg['url']))
++    if 'initialState' not in raw:raw=await within_source_budget(client,lambda:client.read(cfg['url'],render=True))
+     candidates=s7_catalog(next_state(raw));report['discovered']=len(candidates)
+     report['coverage']='all_unique_codes_in_public_initialState' if len(candidates)<=limit else 'detail_limit_reached'
+     records=[]
+-    for entry in candidates[:limit]:
++    for index,entry in enumerate(candidates[:limit]):
+         try:
+-            state=next_state(await client.read(entry['url']))
++            state=next_state(await within_source_budget(client,lambda:client.read(entry['url'])))
+             rs=s7_detail(state,entry['url'],now)
+             for r in rs:
+                 r['details']['catalog_benefit']=entry['catalog_benefit']
+@@ -47,7 +48,11 @@
+                     r['warnings'].append('catalog_and_detail_wording_differ_preserved_separately')
+                 r['content_sha256']=content_hash(r)
+             records.extend(rs)
+-        except Exception as exc:report['errors'].append(error_record(exc,'detail',entry['url']))
++        except Exception as exc:
++            report['errors'].append(error_record(exc,'detail',entry['url']))
++            if stops_catalog(exc):
++                report['errors'][-1]['remaining']=len(candidates[:limit])-index
++                break
+     return records
+ 
+ 
+@@ -65,13 +70,17 @@
+     urls=list(dict.fromkeys(urljoin(cfg['url'],x['href']) for x in soup.select('.loyalty-card__link[href]')))
+     report['discovered']=len(urls);report['coverage']='load_more_exhausted' if exhausted else 'pagination_not_exhausted'
+     records=[]
+-    for url in urls[:limit]:
++    for index,url in enumerate(urls[:limit]):
+         try:
+             if urlsplit(url).path.lower().endswith('.pdf'):
+-                records.extend(extract_rgo_pdf(await client.read_pdf(url),url,now))
++                records.extend(extract_rgo_pdf(await within_source_budget(client,lambda:client.read_pdf(url)),url,now))
+             else:
+-                records.extend(extract('rgo',await client.read(url),url,now))
+-        except Exception as exc:report['errors'].append(error_record(exc,'detail',url))
++                records.extend(extract('rgo',await within_source_budget(client,lambda:client.read(url)),url,now))
++        except Exception as exc:
++            report['errors'].append(error_record(exc,'detail',url))
++            if stops_catalog(exc):
++                report['errors'][-1]['remaining']=len(urls[:limit])-index
++                break
+     if len(urls)>limit:report['coverage']='detail_limit_reached'
+     return records
+ 
+--- a/loyalty/tests/test_promo_evidence.py
++++ b/loyalty/tests/test_promo_evidence.py
+@@ -172,3 +172,10 @@
+     def test_counted_brand_coupons_are_not_literal_codes(self):
+         r = record('Один абонент может получить и активировать два промокода «Чиббис» за весь период акции.')
+         self.assertEqual(r['promo_codes'],[])
++
++class CouponTableInstructionTests(unittest.TestCase):
++ def test_get_code_instruction_is_not_the_code_itself(self):
++  from promo_codes import extract_promocodes
++  result=extract_promocodes('',[[['Промокод'],['Получить в приложении']]])
++  self.assertEqual(result['codes'],[])
++  self.assertEqual(result['status'],'mentioned_not_extracted')
