@@ -110,7 +110,7 @@ async def one(browser,cfg,now,limit):
         else:
             async with PublicSource(browser,cfg['url']) as client:
                 client.deadline=deadline
-                if cfg['mode']!='t2':await client.robots()
+                if cfg['mode'] not in ('t2','mir'):await client.robots()
                 mode=cfg['mode']
                 if mode=='s7':records=await collect_s7(client,cfg,report,now,limit)
                 elif mode=='ural':records=await collect_ural(client,cfg,report,now,limit)
