@@ -114,7 +114,7 @@ class PublicSource:
             await self.page.wait_for_timeout(1200)
             # T2's ordinary page loader may replace an initial 503 with a successful
             # same-origin document. Waiting does not replay/solve its internal checks.
-            for _ in range(12 if self.host == 'msk.t2.ru' else 0):
+            for _ in range(12 if self.host in ('msk.t2.ru','spb.t2.ru') else 0):
                 if latest[-1].status != 503:
                     break
                 await self.page.wait_for_timeout(1000)

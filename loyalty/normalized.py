@@ -13,7 +13,7 @@ from model import clean_url
 from promo_codes import extract_promocodes
 from table_benefits import extract_table_benefits
 
-VERSION = '2.3.4'
+VERSION = '2.4.0'
 HOSTS = {
  'moskvich': ['moskvichmag.ru'], 'noname': ['nonameburo.com'],
  's7': ['marketplace.s7.ru'], 'ural': ['www.uralairlines.ru'],
@@ -31,6 +31,7 @@ HOSTS['ekp_announcements']=['t.me']
 HOSTS['rzd_announcements']=['t.me']
 for _source in ('t2_bolshe','t2_mixx','t2_selection','t2_mixx_s','t2_powerbank'):
     HOSTS[_source]=['msk.t2.ru']
+HOSTS['t2_bolshe'].append('spb.t2.ru')
 BLOCKED = re.compile(r'access denied|just a moment|captcha|доступ к сайту временно ограничен|проверка безопасности|доступ запрещ[её]н', re.I)
 NUMBER = r'\d+(?:[ .,\u00a0]\d{3})*(?:[.,]\d+)?'
 TYPES = {'discount': r'[сc]кидк', 'cashback': r'к[еэ]шб[еэ]к', 'miles':r'мил[ьяиюе]',

@@ -31,7 +31,7 @@ class RequestTests(unittest.TestCase):
     def test_valid_configuration_dispatches_only_target_workflow_on_main(self):
         result, args = self.run_script()
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(args, ['workflow','run','loyalty.yml','--repo','Floppa2003/key-privileges','--ref','main','-f','limit=200','-f','publish=true'])
+        self.assertEqual(args, ['workflow','run','loyalty.yml','--repo','Floppa2003/key-privileges','--ref','main','-f','limit=500','-f','publish=true'])
         self.assertNotIn('private-destination-do-not-print', result.stdout+result.stderr)
         self.assertNotIn('synthetic-token-do-not-print', result.stdout+result.stderr)
 

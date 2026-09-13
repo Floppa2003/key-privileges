@@ -186,6 +186,31 @@ async def read_matching_detail(client, captured, url, now, *, expected_id=None,
     raise AssertionError('unreachable detail retry state')
 
 
+LISTING_REGIONS = {
+    'msk': {'label':'Москва и МО','title_suffix':'в Москве и МО'},
+    'spb': {'label':'Санкт-Петербург и ЛО','title_suffix':'в Санкт-Петербурге и ЛО'},
+}
+
+
+async def select_listing_region(page,captured,first,key):
+    """Use the actual public selector; a previous-region response is not evidence."""
+    if key not in LISTING_REGIONS:raise ValueError('unknown_mir_region')
+    region=LISTING_REGIONS[key]
+    def matches(item):
+        return item['page']==1 and str(item.get('page_title','')).endswith(region['title_suffix'])
+    selected=(await page.locator('.region-button__title').inner_text()).strip()
+    if selected==region['label']:
+        if not matches(first):raise RuntimeError('mir_region_response_mismatch')
+        return first
+    yes=page.locator('.region-confirmation-modal__controls').get_by_role('button',name='Да',exact=True)
+    if await yes.count() and await yes.is_visible():await yes.click(timeout=5000)
+    offset=len(captured.catalogs)
+    await page.locator('button.region-button').click(timeout=5000)
+    await page.locator('.region-menu__link').get_by_text(region['label'],exact=True).click(timeout=5000)
+    await page.wait_for_function("label=>document.querySelector('.region-button__title')?.textContent.trim()===label",arg=region['label'],timeout=15000)
+    return await captured.wait(captured.catalogs,offset,matches)
+
+
 async def collect_mir(client,cfg,report,now,limit):
     deadline=min(time.monotonic()+cfg.get("timeout_seconds",900)-50,
                  getattr(client,"deadline",float("inf"))-5)
@@ -195,6 +220,8 @@ async def collect_mir(client,cfg,report,now,limit):
     try:
         await client.read(cfg['url'],render=True)
         first=await captured.wait(captured.catalogs,0,lambda x:x['page']==1)
+        if cfg.get('listing_region'):
+            first=await select_listing_region(page,captured,first,cfg['listing_region'])
         default=first['payment_type']
         for payment in (default,'mir' if default=='sbp' else 'sbp'):
             if payment != default:
@@ -231,6 +258,7 @@ async def collect_mir(client,cfg,report,now,limit):
             for identity,item in items.items():
                 candidates[identity]=item; memberships.setdefault(identity,[]).append(payment)
         report['discovered']=len(candidates)
+        report['discovered_urls']=[urljoin(cfg['url'],path) for path in candidates]
         report['region']='; '.join(str(x['page_title']) for x in summaries)
         report['coverage']=json.dumps({'method':'anonymous_browser_UI_no_API_replay','catalogs':summaries,
             'unique_discovered':len(candidates),'detail_limit':limit},ensure_ascii=False)
