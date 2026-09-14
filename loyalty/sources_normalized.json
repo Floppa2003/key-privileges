@@ -162,8 +162,10 @@
   {
     "id": "loyals",
     "name": "Loyals",
-    "mode": "probe",
-    "url": "https://loyals.ru/"
+    "mode": "recovered",
+    "url": "http://loyals.ru/",
+    "access_profile": "loyals_public_http_explicit_2026_09_14",
+    "timeout_seconds": 240
   },
   {
     "id": "af_medsi",
@@ -575,5 +577,29 @@
     "mode": "announcements",
     "lookback_days": 180,
     "max_pages": 60
+  },
+  {
+    "id": "af_vtb_rules",
+    "name": "ВТБ — карта Привилегия Аэрофлот",
+    "mode": "recovered",
+    "url": "https://www.vtb.ru/privilegia/karty/debetovye/privilegiya-aeroflot/",
+    "access_profile": "russian_nuc_pinned_2026_09",
+    "timeout_seconds": 240
+  },
+  {
+    "id": "nspk_ekp_rules",
+    "name": "НСПК — объявление о кешбэке ЕКП",
+    "mode": "recovered",
+    "url": "https://www.nspk.ru/press-center/details/00d06ff9-ac6f-41fd-9aad-39965b9762cd",
+    "access_profile": "russian_nuc_pinned_2026_09",
+    "timeout_seconds": 240
+  },
+  {
+    "id": "uralsib_rzd_rules",
+    "name": "Уралсиб — архивные правила акции РЖД",
+    "mode": "recovered",
+    "url": "https://uralsib.ru/aktsii/privetstvennye-bally-rzhd-za-oformlenie-karty",
+    "access_profile": "russian_nuc_pinned_2026_09",
+    "timeout_seconds": 240
   }
 ]
