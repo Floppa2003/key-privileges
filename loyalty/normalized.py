@@ -14,7 +14,7 @@ from promo_codes import extract_promocodes
 from table_benefits import extract_table_benefits
 from recovered_contract import SOURCES as RECOVERED_SOURCES, http_url, validate_recovered
 
-VERSION = '2.9.1'
+VERSION = '2.9.2'
 HOSTS = {
  'moskvich': ['moskvichmag.ru'], 'noname': ['nonameburo.com'],
  's7': ['marketplace.s7.ru'], 'ural': ['www.uralairlines.ru'],
@@ -200,7 +200,7 @@ def make_offer(source_id: str, native_id: str, program: str, partner_name: str |
     return r
 
 
-HOSTS['utair_rule_documents']=['ut0.ru']
+HOSTS['utair_rule_documents']=['ut0.ru','media.utair.ru']
 
 def validate_offer(r: dict) -> None:
     if r.get('schema_version')!=2 or r.get('adapter_version')!=VERSION:
@@ -233,12 +233,8 @@ def validate_offer(r: dict) -> None:
         from document_text import validate_document_record
         validate_document_record(r)
     if r['source_id']=='utair_rule_documents':
-        key=r['native_id'].removeprefix('document:').split(':part:')[0]
-        if (not re.fullmatch(r'[A-Za-z0-9_-]{1,80}',key)
-            or r['source_url']!='https://ut0.ru/'+key
-            or not r['details'].get('live_document_text')
-            or r['details'].get('parent_source')!='https://media.utair.ru/status'):
-            raise ValueError('Public document must originate from the live Utair listing')
+        from utair_document_routes import validate_utair_document
+        validate_utair_document(r)
     if r['source_id'] in KNOWN_RULES:
         cfg=KNOWN_RULES[r['source_id']]
         allowed_kinds=('program_rules','membership_plan') if r['source_id']=='smartavia_rules' else ('program_rules',)
