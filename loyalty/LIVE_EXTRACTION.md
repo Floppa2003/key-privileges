@@ -88,3 +88,7 @@ contracts. Unsupported semantic/layout changes still require a code change and
 are reported, not filled with yesterday's values. New websites and unknown storage
 hosts are not automatically authorized. A finite test suite is not a proof that
 all future layouts will be parsed correctly.
+
+Utair and the generic PDF extractor share a 20 MB document-byte bound; page,
+text and OCR-work bounds remain independent. Exceeding a resource bound is a
+reported ingestion limit, not an access refusal or permission to reuse old data.

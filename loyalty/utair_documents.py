@@ -8,7 +8,7 @@ import re
 from urllib.parse import urljoin,urlsplit
 import requests
 from bs4 import BeautifulSoup
-from document_text import extract_pdf,document_records
+from document_text import extract_pdf,document_records,MAX_BYTES
 from normalized import content_hash,text
 from read_budget import within_source_budget
 
@@ -62,7 +62,7 @@ def fetch_document(entry,observed_at,parent_sha256):
                 raise RuntimeError('document_http_'+str(response.status_code))
             for block in response.iter_content(65536):
                 data.extend(block)
-                if len(data)>5_000_000:raise ValueError('document_size_limit')
+                if len(data)>MAX_BYTES:raise ValueError('document_size_limit')
         doc=extract_pdf(bytes(data))
         rows=document_records('utair_rule_documents','document:'+key,'Utair Status','Utair',
             public,observed_at,doc,parent_source=ROOT,parent_sha256=parent_sha256,

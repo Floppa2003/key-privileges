@@ -3,7 +3,7 @@ import copy,hashlib,io,sys,unittest
 from pathlib import Path
 from unittest.mock import patch
 sys.path.insert(0,str(Path(__file__).parents[1]))
-from document_text import extract_pdf,document_records,page_groups,validate_document_record
+from document_text import extract_pdf,document_records,page_groups,validate_document_record,MAX_BYTES
 from normalized import validate_offer,content_hash
 NOW='2026-09-14T15:00:00+00:00'
 
@@ -61,7 +61,7 @@ class GenericPdfTests(unittest.TestCase):
   self.assertEqual(''.join(p['text'] for g in groups for p in g),value)
  def test_non_pdf_and_oversized_fail(self):
   with self.assertRaises(ValueError):extract_pdf(b'<html>Blocked</html>')
-  with self.assertRaises(ValueError):extract_pdf(b'%PDF-'+b'0'*5_000_000)
+  with self.assertRaises(ValueError):extract_pdf(b'%PDF-'+b'0'*MAX_BYTES)
  def test_historical_manual_profile_is_evidence_only_in_common_projection(self):
   from unified_normalization import normalize_record
   raw={'id':'x','program':'RGO','partner':'Example','title':'Legacy review','kind':'partner_offer','origin':'parser_offers','privacy':'public',

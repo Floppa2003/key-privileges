@@ -14,7 +14,7 @@ import tempfile
 from pathlib import Path
 
 MAX_PAGES=80
-MAX_BYTES=5_000_000
+MAX_BYTES=20_000_000
 MAX_TEXT=240_000
 PART_CHARS=14_000
 
