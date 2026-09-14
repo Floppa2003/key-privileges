@@ -24,6 +24,8 @@ from announcements import collect_announcements
 from selection_source import collect_selection
 from tier_sources import collect_utair_tiers, collect_ural_tiers
 from read_budget import within_source_budget, stops_catalog
+from known_rules import collect_known_rules
+from utair_documents import collect_documents
 
 
 def error_record(exc,phase,url=''):
@@ -123,6 +125,8 @@ async def one(browser,cfg,now,limit):
                 elif mode=='selection':records=await collect_selection(client,cfg,report,now,limit)
                 elif mode=='utair_tiers':records=await collect_utair_tiers(client,cfg,report,now,limit)
                 elif mode=='ural_tiers':records=await collect_ural_tiers(client,cfg,report,now,limit)
+                elif mode=='known_rules':records=await collect_known_rules(client,cfg,report,now,limit)
+                elif mode=='utair_documents':records=await collect_documents(client,cfg,report,now,limit)
                 elif mode=='html':
                     raw=await client.read(cfg['url'],render=True)
                     records=extract(cfg['id'],raw,cfg['url'],now)

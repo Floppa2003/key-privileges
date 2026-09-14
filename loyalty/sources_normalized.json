@@ -312,5 +312,190 @@
     "name": "Крылья — уровни",
     "url": "https://www.uralairlines.ru/wings_rules/",
     "mode": "ural_tiers"
+  },
+  {
+    "id": "af_bootwood_rules",
+    "name": "Аэрофлот Бонус — Начисление и использование миль в Bootwood",
+    "url": "https://bootwood.com/afl_bonus/",
+    "mode": "known_rules",
+    "timeout_seconds": 120
+  },
+  {
+    "id": "af_wolford_rules",
+    "name": "Аэрофлот Бонус — Начисление и использование миль в Wolford",
+    "url": "https://wolford.ru/aeroflot_bonus/",
+    "mode": "known_rules",
+    "timeout_seconds": 120
+  },
+  {
+    "id": "af_iway_rules",
+    "name": "Аэрофлот Бонус — Начисление и использование миль в i’way",
+    "url": "https://aeroflot.iway.ru/",
+    "mode": "known_rules",
+    "timeout_seconds": 120
+  },
+  {
+    "id": "af_skyshop_rules",
+    "name": "Аэрофлот Бонус — Мили и премии SkyShop",
+    "url": "https://skyshop.aeromar.ru/info/aeroflot-bonus/",
+    "mode": "known_rules",
+    "timeout_seconds": 120
+  },
+  {
+    "id": "af_x5_rules",
+    "name": "Аэрофлот Бонус / X5 Клуб — Обмен баллов X5 на мили",
+    "url": "https://x5club.ru/partners/202?redirectedFrom=landing",
+    "mode": "known_rules",
+    "timeout_seconds": 120
+  },
+  {
+    "id": "af_tripster_rules",
+    "name": "Аэрофлот Бонус — Правила начисления миль за экскурсии",
+    "url": "https://tripster.atlassian.net/wiki/spaces/affiliates/pages/3979739137",
+    "mode": "known_rules",
+    "timeout_seconds": 120
+  },
+  {
+    "id": "af_comfort_rules",
+    "name": "Аэрофлот Бонус — Опубликованная базовая ставка Comfort Pass",
+    "url": "https://ru.comfort-pass.aero/",
+    "mode": "known_rules",
+    "timeout_seconds": 120
+  },
+  {
+    "id": "af_vipzal_rules",
+    "name": "Аэрофлот Бонус — Начисление и использование миль VIP-ZAL.RU",
+    "url": "https://vip-zal.ru/aeroflot-bonus.php",
+    "mode": "known_rules",
+    "timeout_seconds": 120
+  },
+  {
+    "id": "rzd_student_rules",
+    "name": "РЖД Бонус — Студенческая скидка: условия и подключение",
+    "url": "https://www.hse.ru/scholarships/rzd_bonus",
+    "mode": "known_rules",
+    "timeout_seconds": 120
+  },
+  {
+    "id": "ekp_sfera_rules",
+    "name": "Единая карта петербуржца (ЕКП) — Скидка ЕКП на косметологию",
+    "url": "https://sferakrasoti.ru/",
+    "mode": "known_rules",
+    "timeout_seconds": 120
+  },
+  {
+    "id": "rgo_headquarters_rules",
+    "name": "РГО — Льготные условия экскурсии",
+    "url": "https://rgo.ru/activity/travel-list/excursions-and-routes/ekskursiya-po-istoricheskoy-shtab-kvartire-rgo-v-sankt-peterburge/",
+    "mode": "known_rules",
+    "timeout_seconds": 120
+  },
+  {
+    "id": "t2_magnit_rules",
+    "name": "MiXX — Активация Магнит Плюс Премиум через MiXX",
+    "url": "https://msk.t2.ru/help/article/magnit-plus-premium",
+    "mode": "known_rules",
+    "timeout_seconds": 120
+  },
+  {
+    "id": "t2_sim_rules",
+    "name": "T2 Selection — Раздельные условия доставки и замены SIM",
+    "url": "https://msk.t2.ru/help/article/recovery-sim",
+    "mode": "known_rules",
+    "timeout_seconds": 120
+  },
+  {
+    "id": "t2_registration_rules",
+    "name": "T2 «Больше» — Регистрация и получение бонусов «Больше»",
+    "url": "https://msk.t2.ru/journal/article/more-loyalty",
+    "mode": "known_rules",
+    "timeout_seconds": 120
+  },
+  {
+    "id": "t2_mixx_rules",
+    "name": "MiXX M — Оплата, пробный период и ограничения MiXX M",
+    "url": "https://msk.t2.ru/option/mixx-m",
+    "mode": "known_rules",
+    "timeout_seconds": 120
+  },
+  {
+    "id": "azimut_privilege_rules",
+    "name": "AZIMUT Bonus — Дополнительные условия привилегий AZIMUT Bonus",
+    "url": "https://azimuthotels.com/ru/info/privileges-ab",
+    "mode": "known_rules",
+    "timeout_seconds": 120
+  },
+  {
+    "id": "azimut_earning_rules",
+    "name": "AZIMUT Bonus — База начисления баллов и примеры",
+    "url": "https://azimuthotels.com/ru/info/accumulate-points",
+    "mode": "known_rules",
+    "timeout_seconds": 120
+  },
+  {
+    "id": "utair_family_rules",
+    "name": "Utair Status — Семейный счёт и ограничения оплаты милями",
+    "url": "https://media.utair.ru/status",
+    "mode": "known_rules",
+    "timeout_seconds": 120
+  },
+  {
+    "id": "utair_generations_rules",
+    "name": "Utair Status — Двойные мили: аудитории и условия",
+    "url": "https://media.utair.ru/wmiles",
+    "mode": "known_rules",
+    "timeout_seconds": 120
+  },
+  {
+    "id": "smartavia_rules",
+    "name": "Подписка Smartavia — Подписка Smartavia и скидка ЕКП",
+    "url": "https://cdn.flysmartavia.com/smartup/",
+    "mode": "known_rules",
+    "timeout_seconds": 120
+  },
+  {
+    "id": "mir_101_rules",
+    "name": "Привет! / Мир — Полные опубликованные правила кешбэка",
+    "url": "https://101hotels.com/page/contacts/rules_mir_cashback/usloviya_akcii_cashback_mir_10_prosentov_1_06_2026",
+    "mode": "known_rules",
+    "timeout_seconds": 120
+  },
+  {
+    "id": "mir_aeroexpress_rules",
+    "name": "Привет! / СБП — Кешбэк СБП — официальная публикация",
+    "url": "https://aeroexpress.ru/aero/press/news20101967.html",
+    "mode": "known_rules",
+    "timeout_seconds": 120
+  },
+  {
+    "id": "promomiles_otello_rules",
+    "name": "Аэрофлот Бонус — Promo Miles — Архивные правила промокода AF2026",
+    "url": "https://promomiles.aeroflot.ru/act/march2026/partner-code-terms-use",
+    "mode": "known_rules",
+    "timeout_seconds": 120
+  },
+  {
+    "id": "rzd_finuslugi_rules",
+    "name": "РЖД Бонус → Финуслуги — PDF",
+    "url": "https://assets.finuslugi.ru/sc-disclosure/293d2bf4-16c4-46c6-87a5-0a2d35d18ad8",
+    "mode": "known_rules"
+  },
+  {
+    "id": "af_primbank_rules",
+    "name": "Аэрофлот Бонус → Банк Приморье — PDF",
+    "url": "https://www.primbank.ru/d/tariffs-aeroflot-bonus",
+    "mode": "known_rules"
+  },
+  {
+    "id": "af_gpb_rules",
+    "name": "Аэрофлот Бонус — условия карты Газпромбанка",
+    "url": "https://www.gazprombank.ru/personal/cards/7515685/",
+    "mode": "known_rules"
+  },
+  {
+    "id": "utair_rule_documents",
+    "name": "Utair Status — подробные PDF-правила привилегий",
+    "mode": "utair_documents",
+    "url": "https://media.utair.ru/status"
   }
 ]
