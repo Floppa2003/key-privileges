@@ -1,0 +1,71 @@
+name: Review recovered public sources
+on:
+  push:
+    branches: [loyalty/recovered-public-sources]
+    paths: ["loyalty/**", ".github/workflows/recovery-review.yml"]
+permissions:
+  contents: write
+concurrency:
+  group: recovered-review-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  review:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -r loyalty/requirements.txt
+      - name: Apply exact tested registration and remove one-time helper
+        run: |
+          if test -f loyalty/register_recovered.py; then
+            python loyalty/register_recovered.py
+            git rm loyalty/register_recovered.py
+            python -m unittest discover -s loyalty/tests -v
+            node --test key/refresh.test.mjs
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git commit -m 'chore: materialize checksum-verified recovered-source registration'
+            git push origin HEAD:loyalty/recovered-public-sources
+          fi
+      - run: python -m unittest discover -s loyalty/tests -v
+      - run: node --test key/refresh.test.mjs
+      - name: Test actual recovered-source entrypoints
+        run: |
+          mkdir -p recovered-review
+          python - <<'PY'
+          import asyncio,hashlib,json,os,sys
+          from pathlib import Path
+          from datetime import datetime,timezone
+          sys.path.insert(0,'loyalty')
+          from collect_normalized import one
+          from recovered_contract import SOURCES
+          from sheets_normalized import prepare
+          async def run():
+              now=datetime.now(timezone.utc).isoformat()
+              cfgs=[c for c in json.loads(Path('loyalty/sources_normalized.json').read_text()) if c['id'] in SOURCES]
+              results=await asyncio.gather(*(one(None,c,now,500) for c in cfgs))
+              bundle={'schema_version':2,'run_id':os.environ['GITHUB_RUN_ID']+':1','observed_at':now,'records':[r for _,rows in results for r in rows],'sources':[s for s,_ in results]}
+              Path('recovered-review/normalized.json').write_text(json.dumps(bundle,ensure_ascii=False,indent=2))
+              prepare(bundle)
+              print(json.dumps({'records':len(bundle['records']),'source_reports':bundle['sources']},ensure_ascii=False))
+          asyncio.run(run())
+          manifest={str(p):hashlib.sha256(p.read_bytes()).hexdigest() for p in Path('loyalty').rglob('*') if p.suffix in ('.py','.json')}
+          Path('recovered-review/code_hashes.json').write_text(json.dumps(manifest,indent=2))
+          PY
+      - name: Archive exact executed code
+        if: always()
+        run: |
+          mkdir -p recovered-review
+          git archive --format=tar HEAD > recovered-review/code.tar
+          git rev-parse HEAD > recovered-review/commit.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: recovered-review-${{ github.run_id }}
+          path: recovered-review/
+          retention-days: 7
