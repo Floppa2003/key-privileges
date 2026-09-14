@@ -12,8 +12,9 @@ from bs4 import BeautifulSoup
 from model import clean_url
 from promo_codes import extract_promocodes
 from table_benefits import extract_table_benefits
+from recovered_contract import SOURCES as RECOVERED_SOURCES, http_url, validate_recovered
 
-VERSION = '2.7.0'
+VERSION = '2.8.0'
 HOSTS = {
  'moskvich': ['moskvichmag.ru'], 'noname': ['nonameburo.com'],
  's7': ['marketplace.s7.ru'], 'ural': ['www.uralairlines.ru'],
@@ -40,6 +41,8 @@ HOSTS['t2_bolshe'].append('spb.t2.ru')
 HOSTS['t2_selection_public']=['msk.t2.ru','spb.t2.ru']
 HOSTS['utair_tiers']=['media.utair.ru']
 HOSTS['ural_tiers']=['www.uralairlines.ru']
+for _sid,_spec in RECOVERED_SOURCES.items():
+    HOSTS[_sid]=[urlsplit(_spec['url']).hostname]
 BLOCKED = re.compile(r'access denied|just a moment|captcha|доступ к сайту временно ограничен|проверка безопасности|доступ запрещ[её]н', re.I)
 NUMBER = r'\d+(?:[ .,\u00a0]\d{3})*(?:[.,]\d+)?'
 TYPES = {'discount': r'[сc]кидк', 'cashback': r'к[еэ]шб[еэ]к', 'miles':r'мил[ьяиюе]',
@@ -61,6 +64,8 @@ def text(value) -> str:
 def canonical_url(value: str) -> str:
     # Keep a real page fragment; unlike tracking parameters it can identify a card.
     fragment = urlsplit(value).fragment
+    if urlsplit(value).scheme == 'http':
+        return http_url(value)
     return clean_url(value) + ('#' + fragment if fragment else '')
 
 
@@ -204,6 +209,13 @@ def validate_offer(r: dict) -> None:
     if r.get('source_id') not in HOSTS or urlsplit(r.get('source_url','')).hostname not in HOSTS[r['source_id']]:
         raise ValueError('Unexpected source URL')
     canonical_url(r['source_url'])
+    validate_recovered(r)
+    if r['source_id']=='loyals':
+        post=r['details']['public_post']
+        if (r['benefit_text'] != text(post['content']['rendered'])
+                or r['title'] != text(post['title']['rendered'])
+                or r['conditions_text'] != (r['benefit_text'] or r['title'])):
+            raise ValueError('Loyals post text evidence mismatch')
     if r.get('id')!=hashlib.sha256((r['source_id']+'\n'+r['native_id']).encode()).hexdigest():
         raise ValueError('Stable ID mismatch')
     if r.get('content_sha256')!=content_hash(r):
