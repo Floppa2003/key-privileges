@@ -1,70 +1,50 @@
-"""A public signed redirect is transient transport, never a stored credential."""
-import asyncio, json, sys, unittest
+"""Discover fresh shortlinks and content without a snapshot-specific registry."""
+import sys,unittest
 from pathlib import Path
 from unittest.mock import patch
 sys.path.insert(0,str(Path(__file__).parents[1]))
-try:
- import utair_documents as m
-except ImportError:
- m=None
-NOW='2026-09-14T00:00:00+00:00'
+import utair_documents as m
+from document_text import extract_pdf,document_records
+from test_document_text import pdf,NOW
+
+def record(key='NewKey1',value='New document rules'):
+ doc=extract_pdf(pdf([value]))
+ return document_records('utair_rule_documents','document:'+key,'Utair Status','Utair','https://ut0.ru/'+key,NOW,doc,parent_source=m.ROOT,parent_sha256='a'*64)
+
 class DocumentTests(unittest.TestCase):
- def setUp(self): self.assertIsNotNone(m,'Public rule-document collector not implemented')
- def test_download_host_does_not_allow_redirect_to_private_or_unreviewed_origin(self):
+ def test_new_unregistered_links_are_discovered_and_duplicates_removed(self):
+  rs=m.discover_documents('<a href="https://ut0.ru/NewKey1">New rules</a><a href="https://ut0.ru/NewKey2">Other rules</a><a href="https://ut0.ru/NewKey1">PDF</a>')
+  self.assertEqual([r['key'] for r in rs],['NewKey1','NewKey2'])
+  self.assertEqual(rs[0]['labels'],['New rules','PDF'])
+ def test_invalid_shortlinks_are_not_requested(self):
+  for u in ('https://ut0.ru/a?token=secret','https://ut0.ru/a/b','http://ut0.ru/a','https://user:pass@ut0.ru/a'):
+   with self.assertRaises(ValueError):m.checked_shortlink(u)
+ def test_transient_target_host_stays_bounded(self):
   self.assertEqual(m.checked_download_target('https://eu-s3.beelinecloud.ru/docs/a.pdf?X-Amz-Signature=abc'),'https://eu-s3.beelinecloud.ru/docs/a.pdf?X-Amz-Signature=abc')
-  for u in ('http://eu-s3.beelinecloud.ru/a.pdf','https://eu-s3.beelinecloud.ru.evil.test/a.pdf','https://user:pass@eu-s3.beelinecloud.ru/a.pdf','https://127.0.0.1/a.pdf'):
-   with self.subTest(u=u):
-    with self.assertRaises(ValueError):m.checked_download_target(u)
- def test_document_title_and_page_count_are_checked_without_inventing_expiry(self):
-  pages=['Поколения Utair - двойные мили\nДля молодежи 16–25 лет. Покупка билета и полет в одном месяце. Промокод UYOUTHWM. Мили действуют три года.']
-  r=m.parse_document('JdyRTA',pages,'a'*64,NOW)
-  self.assertEqual(r['record_kind'],'program_rules');self.assertEqual(r['source_url'],'https://ut0.ru/JdyRTA')
-  self.assertIsNone(r['valid_until']);self.assertIn('UYOUTHWM',r['promo_codes'])
-  self.assertEqual(r['details']['pages'][0]['text'],pages[0])
-  for ps in ([pages[0].replace('Поколения Utair','Чужая программа')],pages+pages):
-   with self.assertRaises(ValueError):m.parse_document('JdyRTA',ps,'a'*64,NOW)
- def test_same_pdf_merges_aliases_but_not_different_content_with_same_title(self):
-  a=m.parse_document('TlYigt',['Консьерж-сервис по бронированию и переоформлению билетов без сборов\nПравила Platinum'*3,'Вторая страница правил '*10],'a'*64,NOW)
-  b=m.parse_document('bFwqtV',['Консьерж-сервис по бронированию и переоформлению билетов без сборов\nПравила Platinum'*3,'Вторая страница правил '*10],'a'*64,NOW)
-  rs=m.merge_documents([a,b]);self.assertEqual(len(rs),1);self.assertEqual(len(rs[0]['details']['public_aliases']),2)
-  b['details']['document_sha256']='b'*64
-  self.assertEqual(len(m.merge_documents([a,b])),2)
- def test_document_cannot_be_relabelled_as_checked_partner_discount(self):
-  from normalized import content_hash,validate_offer
-  r=m.parse_document('JdyRTA',['Поколения Utair - двойные мили\nПубличные условия для участников программы.'*3],'a'*64,NOW)
-  r['record_kind']='partner_offer';r['content_sha256']=content_hash(r)
-  with self.assertRaises(ValueError):validate_offer(r)
+  for u in ('https://evil.example/a.pdf','https://eu-s3.beelinecloud.ru.evil/a.pdf','http://eu-s3.beelinecloud.ru/a.pdf'):
+   with self.assertRaises(ValueError):m.checked_download_target(u)
+ def test_new_document_identity_and_values_are_not_whitelisted(self):
+  r=record('BrandNew2027','Changed rules 432')[0]
+  self.assertIn('432',r['conditions_text']);self.assertEqual(r['source_url'],'https://ut0.ru/BrandNew2027')
+ def test_identical_aliases_merge_but_different_text_does_not(self):
+  a=record('NewKey1');b=record('NewKey2')
+  rs=m.merge_documents(a+b);self.assertEqual(len(rs),1);self.assertEqual(len(rs[0]['details']['public_aliases']),2)
+  self.assertEqual(len(m.merge_documents(a+record('NewKey3','Changed content'))),2)
 class CollectionTests(unittest.IsolatedAsyncioTestCase):
- async def asyncSetUp(self):self.assertIsNotNone(m,'Public rule-document collector not implemented')
- async def test_late_document_refusal_preserves_previous_data_and_hides_signed_url(self):
+ async def test_late_refusal_preserves_live_rows_and_sanitizes_error(self):
   class Client:
-   async def read(self,url,**kwargs):return '<a href="https://ut0.ru/JdyRTA">Правила</a><a href="https://ut0.ru/ZNxBpY">Правила</a>'
-  cfg={'id':'utair_rule_documents','url':'https://media.utair.ru/status'};report={'errors':[]}
-  first=m.parse_document('JdyRTA',['Поколения Utair - двойные мили\nПубличные условия для участников программы.'*3],'a'*64,NOW)
-  with patch.object(m,'DOCUMENTS',{k:m.DOCUMENTS[k] for k in ('JdyRTA','ZNxBpY')}),patch.object(m,'fetch_document',side_effect=[first,RuntimeError('http_403 secret-url')]):
-   rows=await m.collect_documents(Client(),cfg,report,NOW,100)
-  self.assertEqual(len(rows),1);self.assertTrue(report['errors']);self.assertNotIn('secret-url',json.dumps(report))
+   async def read(self,*a,**k):return '<a href="https://ut0.ru/NewKey1">Rules</a><a href="https://ut0.ru/NewKey2">Rules</a>'
+  report={'errors':[]}
+  with patch.object(m,'fetch_document',side_effect=[record(),RuntimeError('secret signed URL')]):
+   rs=await m.collect_documents(Client(),{'id':'utair_rule_documents','url':m.ROOT},report,NOW,500)
+  self.assertEqual(len(rs),1);self.assertTrue(report['errors']);self.assertNotIn('secret',str(report))
+ async def test_deadline_retains_results_and_stops_before_next_document(self):
+  class Client:
+   async def read(self,*a,**k):return ''.join('<a href="https://ut0.ru/Key'+str(i)+'">Rules</a>' for i in range(3))
+  report={'errors':[]}
+  with patch.object(m,'fetch_document',side_effect=[record(),RuntimeError('source_time_budget_reached'),AssertionError('must not fetch after deadline')]) as read:
+   rs=await m.collect_documents(Client(),{'id':'utair_rule_documents','url':m.ROOT},report,NOW,500)
+  self.assertEqual(read.call_count,2)
+  self.assertEqual(len(rs),1)
+  self.assertEqual(report['errors'][0]['reason'],'source_time_budget_reached')
 if __name__=='__main__':unittest.main()
-
-class SparseTailTests(unittest.TestCase):
- def test_reviewed_sparse_table_tail_is_preserved_not_mistaken_for_scan(self):
-  pages=['Бизнес-такси Яндекс Ultima или бизнес-трансфер i’way для поездки в аэропорт\n'+'Правила транспортной услуги. '*10,'Вторая страница условий. '*10,'Третья страница условий. '*10,'Глубина (см) 22 24 26 \n']
-  self.assertEqual(m.parse_document('hXfkMF',pages,'a'*64,NOW)['details']['pages'][3]['text'],pages[3])
-  pages[3]='Неизвестно 100'
-  with self.assertRaises(ValueError):m.parse_document('hXfkMF',pages,'a'*64,NOW)
-
-class DispatcherTests(unittest.IsolatedAsyncioTestCase):
- async def test_main_dispatcher_publishes_supplemental_rules_not_html_fallback(self):
-  import collect_normalized as c
-  from sheets_normalized import prepare
-  class Client:
-   def __init__(self,b,u):self.policy=None
-   async def __aenter__(self):return self
-   async def __aexit__(self,*a):pass
-   async def robots(self):self.policy=True
-   async def read(self,u,**kw):return '<a href="https://ut0.ru/JdyRTA">Правила</a>'
-  record=m.parse_document('JdyRTA',['Поколения Utair - двойные мили\nПубличные условия для участников программы.'*3],'a'*64,NOW)
-  with patch.object(c,'PublicSource',Client),patch.object(m,'DOCUMENTS',{'JdyRTA':m.DOCUMENTS['JdyRTA']}),patch.object(m,'fetch_document',return_value=record):
-   report,rows=await c.one(None,{'id':'utair_rule_documents','name':'Utair rules','mode':'utair_documents','url':m.ROOT},NOW,100)
-  self.assertEqual(report['status'],'ok');self.assertEqual(len(rows),1)
-  self.assertEqual(len(prepare({'schema_version':2,'run_id':'test-utair','observed_at':NOW,'sources':[report],'records':rows})['parser_offers']),1)

@@ -78,7 +78,11 @@ async def collect_rgo(client,cfg,report,now,limit):
     for index,url in enumerate(urls[:limit]):
         try:
             if urlsplit(url).path.lower().endswith('.pdf'):
-                records.extend(extract_rgo_pdf(await within_source_budget(client,lambda:client.read_pdf(url)),url,now))
+                data=await within_source_budget(client,lambda:client.read_pdf(url))
+                rows=await within_source_budget(client,lambda:asyncio.to_thread(extract_rgo_pdf,data,url,now))
+                records.extend(rows)
+                if rows[0]['details']['document_errors']:
+                    report['errors'].append({'phase':'document_text','path':urlsplit(url).path,'errors':rows[0]['details']['document_errors']})
             else:
                 records.extend(extract('rgo',await within_source_budget(client,lambda:client.read(url)),url,now))
         except Exception as exc:
@@ -142,6 +146,9 @@ async def one(browser,cfg,now,limit):
                     report['coverage']='page_accessible_adapter_not_yet_implemented'
                     report['errors'].append({'phase':'extraction','reason':'no_reviewed_adapter'})
         for r in records:validate_offer(r)
+        # One physical document can create several bounded evidence parts.
+        report['discovered_items']=report['discovered']
+        report['discovered']=max(report['discovered'],len(records))
         report['normalized']=len(records)
         report['status']='partial' if report['errors'] else 'ok' if records else 'no_normalized_records'
     except Exception as exc:

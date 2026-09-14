@@ -78,3 +78,5 @@ python loyalty/sheets_normalized.py --input loyalty-output/normalized.json
 The last command is a dry run. Actual publication additionally uses `--publish` and the existing short-lived token environment. A skipped publish job is not successful synchronization.
 
 Tests combine reviewed source-block fixtures with synthetic negative canaries: shifted brands, ambiguous No Name geometry, mileage units/denominators, purchase thresholds, scoped clauses, explicit expiry, archived campaigns, null public responses, DOM pagination, count reconciliation, same-ID Ural fallback, duplicate/tampered rows and preservation of manual columns. Unit tests do not prove live accessibility or complete coverage. Verify concrete Actions artifacts, then independently read every published field and compare all untouched sheets after each production change.
+
+Live PDF extraction and generic album ownership supersede the historical visual-review profile; see LIVE_EXTRACTION.md.
