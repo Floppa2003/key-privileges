@@ -7,6 +7,7 @@ from __future__ import annotations
 import csv
 import hashlib
 import io
+import os
 import re
 import shutil
 import subprocess
@@ -23,30 +24,53 @@ def sha(data):
     return hashlib.sha256(data).hexdigest()
 
 
-def ocr_page(pdf_path, number, temp):
-    """One bounded rus+eng pass; keep the actual OCR output, not a transcription."""
+def ocr_pages(pdf_path, numbers, temp):
+    """One bounded OCR invocation per document, preserving page identities."""
     if not shutil.which('pdftoppm') or not shutil.which('tesseract'):
         raise RuntimeError('pdf_ocr_engine_unavailable')
-    image=Path(temp)/f'page-{number}'
-    subprocess.run(['pdftoppm','-f',str(number),'-l',str(number),'-r','180',
-        '-scale-to','2400','-singlefile','-png',str(pdf_path),str(image)],
-        check=True,stdout=subprocess.DEVNULL,stderr=subprocess.PIPE,timeout=25)
-    image=image.with_suffix('.png')
-    output=subprocess.run(['tesseract',str(image),'stdout','-l','rus+eng','--psm','3','tsv'],
-        check=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=30).stdout
-    lines={}; confidences=[]; numeric=[]
+    if not numbers or numbers!=sorted(set(numbers)) or not 1<=numbers[0]<=numbers[-1]<=MAX_PAGES:
+        raise ValueError('invalid_ocr_page_selection')
+    prefix=Path(temp)/'ocr'
+    # Render the bounded page interval once, then OCR only the selected images.
+    subprocess.run(['pdftoppm','-f',str(numbers[0]),'-l',str(numbers[-1]),'-r','180',
+        '-scale-to','2400','-png',str(pdf_path),str(prefix)],
+        check=True,stdout=subprocess.DEVNULL,stderr=subprocess.PIPE,timeout=60)
+    images={int(p.stem.split('-')[-1]):p for p in Path(temp).glob('ocr-*.png')}
+    if set(numbers)-set(images):raise RuntimeError('pdf_rendered_page_missing')
+    if sum(p.stat().st_size for p in images.values())>180_000_000:
+        raise RuntimeError('pdf_rendered_image_size_limit')
+    selected=Path(temp)/'images.txt'
+    selected.write_text('\n'.join(str(images[n]) for n in numbers)+'\n',encoding='utf8')
+    # Single-threaded workers avoid OpenMP oversubscription on shared runners.
+    output=subprocess.run(['tesseract',str(selected),'stdout','-l','rus+eng','--psm','3','tsv'],
+        check=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=180,
+        env={**os.environ,'OMP_THREAD_LIMIT':'1'}).stdout
+    if len(output)>20_000_000:raise RuntimeError('pdf_ocr_output_size_limit')
+    groups={n:{'lines':{},'conf':[],'numeric':[]} for n in numbers};observed=set()
     for word in csv.DictReader(io.StringIO(output.decode('utf-8')),delimiter='\t'):
+        index=int(word['page_num'])-1
+        if not 0<=index<len(numbers):raise ValueError('ocr_page_identity_mismatch')
+        n=numbers[index]
+        if word.get('level')=='1':observed.add(n)
         if word.get('level')!='5' or not word.get('text','').strip():continue
-        confidence=float(word['conf']);confidences.append(confidence)
-        if re.search(r'\d',word['text']):numeric.append(confidence)
+        confidence=float(word['conf'])
+        if not 0<=confidence<=100:raise ValueError('invalid_ocr_confidence')
+        group=groups[n];group['conf'].append(confidence)
+        if re.search(r'\d',word['text']):group['numeric'].append(confidence)
         key=tuple(word[k] for k in ('block_num','par_num','line_num'))
-        lines.setdefault(key,[]).append(word['text'])
-    value='\n'.join(' '.join(words) for words in lines.values())
-    return value,{'engine':'tesseract','languages':'rus+eng','psm':3,
-        'image_sha256':sha(image.read_bytes()),'tsv_sha256':sha(output),
-        'words':len(confidences),'low_confidence_words':sum(x<80 for x in confidences),
-        'minimum_numeric_confidence':min(numeric) if numeric else None,
-        'mean_word_confidence':round(sum(confidences)/len(confidences),2) if confidences else None}
+        group['lines'].setdefault(key,[]).append(word['text'])
+    if observed!=set(numbers):raise RuntimeError('ocr_page_count_mismatch')
+    result={}
+    for n,group in groups.items():
+        confidences=group['conf'];numeric=group['numeric']
+        value='\n'.join(' '.join(words) for words in group['lines'].values())
+        result[n]=(value,{'engine':'tesseract','languages':'rus+eng','psm':3,
+            'image_sha256':sha(images[n].read_bytes()),'tsv_sha256':sha(output),
+            'batch_page_number':numbers.index(n)+1,'batch_pages':len(numbers),'omp_thread_limit':1,
+            'words':len(confidences),'low_confidence_words':sum(x<80 for x in confidences),
+            'minimum_numeric_confidence':min(numeric) if numeric else None,
+            'mean_word_confidence':round(sum(confidences)/len(confidences),2) if confidences else None})
+    return result
 
 
 def needs_page_ocr(native_text, image_count):
@@ -66,40 +90,41 @@ def extract_pdf(data, *, allow_ocr=True):
     reader=PdfReader(io.BytesIO(data),strict=True)
     if reader.is_encrypted or not 1<=len(reader.pages)<=MAX_PAGES:
         raise ValueError('pdf_encrypted_or_page_limit')
-    pages=[];errors=[];ocr_count=0;ocr_attempted=0;total=0
+    pages=[];errors=[];ocr_count=0;total=0;needed=[]
     with tempfile.TemporaryDirectory() as temp:
         pdf_path=Path(temp)/'document.pdf';pdf_path.write_bytes(data)
         for number,page in enumerate(reader.pages,1):
             stream=page.get_contents()
             if stream is not None and len(stream.get_data())>4_000_000:
                 raise ValueError('pdf_content_stream_limit')
-            value=(page.extract_text() or '').strip();method='native_pdf_text';metrics=None
+            value=(page.extract_text() or '').strip()
             resources=page.get('/Resources',{})
             if hasattr(resources,'get_object'):resources=resources.get_object()
             xobjects=resources.get('/XObject',{})
             if hasattr(xobjects,'get_object'):xobjects=xobjects.get_object()
             images=sum(x.get_object().get('/Subtype')=='/Image' for x in xobjects.values())
-            native=value
-            needs_ocr=needs_page_ocr(value,images)
-            if needs_ocr:
-                if allow_ocr and ocr_attempted<10:
-                    ocr_attempted+=1
-                    try:
-                        value,metrics=ocr_page(pdf_path,number,temp)
-                        method='ocr_unverified';ocr_count+=1
-                    except (RuntimeError,subprocess.SubprocessError,OSError,ValueError) as exc:
-                        errors.append({'page':number,'reason':str(exc) if isinstance(exc,RuntimeError) else type(exc).__name__})
-                        method='missing_text'
-                else:
-                    method='missing_text';errors.append({'page':number,'reason':'ocr_disabled_or_page_limit'})
-            if not value:
-                errors.append({'page':number,'reason':'empty_page_no_inferred_text'})
+            item={'number':number,'text':value,'sha256':sha(value.encode()),'method':'native_pdf_text'}
+            if needs_page_ocr(value,images):
+                needed.append(number);item['native_text']=value;item['method']='missing_text'
             total+=len(value)
             if total>MAX_TEXT:raise ValueError('pdf_total_text_limit')
-            item={'number':number,'text':value,'sha256':sha(value.encode()),'method':method}
-            if needs_ocr:item['native_text']=native
-            if metrics:item['ocr']=metrics
             pages.append(item)
+        if needed:
+            if allow_ocr:
+                try:
+                    found=ocr_pages(pdf_path,needed,temp)
+                    if set(found)!=set(needed):raise RuntimeError('ocr_page_count_mismatch')
+                    for n in needed:
+                        value,metrics=found[n];item=pages[n-1]
+                        item.update(text=value,sha256=sha(value.encode()),method='ocr_unverified',ocr=metrics)
+                        ocr_count+=1
+                except (RuntimeError,subprocess.SubprocessError,OSError,ValueError) as exc:
+                    reason=str(exc) if isinstance(exc,RuntimeError) else type(exc).__name__
+                    errors.extend({'page':n,'reason':reason} for n in needed)
+            else:errors.extend({'page':n,'reason':'ocr_disabled'} for n in needed)
+        for page in pages:
+            if not page['text']:errors.append({'page':page['number'],'reason':'empty_page_no_inferred_text'})
+        if sum(len(p['text']) for p in pages)>MAX_TEXT:raise ValueError('pdf_total_text_limit')
     title=str(reader.metadata.title or '') if reader.metadata else ''
     return {'document_sha256':sha(data),'page_count':len(pages),'pages':pages,
             'title':title[:300],'errors':errors,'ocr_pages':ocr_count}

@@ -16,7 +16,7 @@ class SparseNativeTests(unittest.TestCase):
  def test_ocr_preserves_native_layer_separately(self):
   from document_text import extract_pdf
   native='Contact person and contact@example.invalid. Click here.'
-  with patch('document_text.needs_page_ocr',return_value=True),patch('document_text.ocr_page',return_value=('Fresh image text 173',{'words':4})):
+  with patch('document_text.needs_page_ocr',return_value=True),patch('document_text.ocr_pages',return_value={1:('Fresh image text 173',{'words':4})}):
    doc=extract_pdf(pdf([native]))
   self.assertEqual(doc['pages'][0]['native_text'],native)
   self.assertEqual(doc['pages'][0]['text'],'Fresh image text 173')

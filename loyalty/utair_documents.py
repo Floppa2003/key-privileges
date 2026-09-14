@@ -112,12 +112,12 @@ async def collect_documents(client,cfg,report,now,limit):
             # strings can contain temporary signed download URLs.
             safe_codes={'unreviewed_document_redirect','unreviewed_public_shortlink',
                         'document_size_limit','invalid_or_oversized_pdf','pdf_encrypted_or_page_limit',
-                        'pdf_content_stream_limit','pdf_text_limit'}
+                        'pdf_content_stream_limit','pdf_total_text_limit'}
             reason=str(exc) if ((isinstance(exc,RuntimeError) and re.fullmatch(
-                r'(?:shortlink_http_\d+|document_http_\d+|public_document_transport_failed|source_budget_exhausted|record_limit)',str(exc)))
+                r'(?:shortlink_http_\d+|document_http_\d+|public_document_transport_failed|source_time_budget_reached|record_limit)',str(exc)))
                 or str(exc) in safe_codes) else type(exc).__name__
             report['errors'].append({'phase':'document','key':entry['key'],'reason':reason})
-            if reason.endswith('_429') or reason in ('source_budget_exhausted','record_limit'):break
+            if reason.endswith('_429') or reason in ('source_time_budget_reached','record_limit'):break
         await asyncio.sleep(0.5)
     rows=merge_documents(records)
     report['discovered']=len(entries)

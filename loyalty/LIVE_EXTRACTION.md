@@ -56,8 +56,11 @@ a security control, not pinning source answers.
 
 ## PDF method and uncertainty
 
-Native text is preferred. Only pages lacking usable native text invoke one bounded
-Tesseract rus+eng OCR pass via Poppler. Exact machine output, method, confidence
+Native text is preferred. Pages lacking usable native text are rendered by Poppler
+and passed together to one bounded Tesseract rus+eng invocation per document.
+Page identities are retained; OpenMP is limited to one thread to avoid CPU
+oversubscription. The document-wide limits are 80 pages, 60 seconds for rendering
+and 180 seconds for OCR, without a ten-page scan cutoff. Exact machine output, method, confidence
 summary and hashes are retained; OCR numbers are not manually corrected. Missing
 text is explicit. No deleted manual transcription serves as fallback.
 
@@ -92,3 +95,7 @@ all future layouts will be parsed correctly.
 Utair and the generic PDF extractor share a 20 MB document-byte bound; page,
 text and OCR-work bounds remain independent. Exceeding a resource bound is a
 reported ingestion limit, not an access refusal or permission to reuse old data.
+
+Utair reuses the common source-deadline error contract: a deadline stops further
+document requests and retains previously read records, rather than hiding the
+reason behind a generic exception class.

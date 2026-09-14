@@ -38,4 +38,13 @@ class CollectionTests(unittest.IsolatedAsyncioTestCase):
   with patch.object(m,'fetch_document',side_effect=[record(),RuntimeError('secret signed URL')]):
    rs=await m.collect_documents(Client(),{'id':'utair_rule_documents','url':m.ROOT},report,NOW,500)
   self.assertEqual(len(rs),1);self.assertTrue(report['errors']);self.assertNotIn('secret',str(report))
+ async def test_deadline_retains_results_and_stops_before_next_document(self):
+  class Client:
+   async def read(self,*a,**k):return ''.join('<a href="https://ut0.ru/Key'+str(i)+'">Rules</a>' for i in range(3))
+  report={'errors':[]}
+  with patch.object(m,'fetch_document',side_effect=[record(),RuntimeError('source_time_budget_reached'),AssertionError('must not fetch after deadline')]) as read:
+   rs=await m.collect_documents(Client(),{'id':'utair_rule_documents','url':m.ROOT},report,NOW,500)
+  self.assertEqual(read.call_count,2)
+  self.assertEqual(len(rs),1)
+  self.assertEqual(report['errors'][0]['reason'],'source_time_budget_reached')
 if __name__=='__main__':unittest.main()
