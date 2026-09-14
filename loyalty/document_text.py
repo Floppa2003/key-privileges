@@ -152,7 +152,7 @@ def page_text(pages):
     return '\n\n'.join(f"[Страница {p['number']}; позиция {p.get('text_offset',0)}]\n{p['text']}" for p in pages)
 
 
-def document_records(source_id,native_prefix,program,partner,url,observed_at,doc,*,parent_source,label='',parent_sha256=None,extra_details=None):
+def document_records(source_id,native_prefix,program,partner,url,observed_at,doc,*,parent_source,label='',parent_sha256=None,extra_details=None,link_kind='detail_page',locator=''):
     from normalized import make_offer
     groups=page_groups(doc['pages']);rows=[]
     title=doc['title'].strip() or next((p['text'].split('\n')[0].strip() for p in doc['pages'] if p['text'].strip()),label or 'Документ источника')
@@ -161,6 +161,7 @@ def document_records(source_id,native_prefix,program,partner,url,observed_at,doc
         has_text=any(p['text'].strip() for p in pages)
         warnings=['rule_bundle_not_additive_discount','user_eligibility_not_verified',
                   'pdf_table_relationships_not_inferred','document_dates_not_automatically_offer_validity']
+        if link_kind=='page_block':warnings.append('temporary_document_url_not_persisted_use_parent_locator')
         if doc['ocr_pages']:warnings.append('ocr_text_unverified_no_manual_corrections')
         if doc['errors']:warnings.append('document_text_extraction_partial')
         details={'evidence_role':'supplementary_rules_not_incremental_discount',
@@ -168,13 +169,13 @@ def document_records(source_id,native_prefix,program,partner,url,observed_at,doc
             'parent_source':parent_source,'parent_response_sha256':parent_sha256,
             'discovery_label':label,'page_count':doc['page_count'],'pages':pages,
             'document_part':{'number':index,'total':len(groups)},'document_errors':doc['errors'],
-            'public_aliases':[url],'ocr_pages':doc['ocr_pages'],'live_document_text':True}
+            'public_aliases':[url] if link_kind=='detail_page' else [],'ocr_pages':doc['ocr_pages'],'live_document_text':True}
         details={**(extra_details or {}),**details}
         rows.append(make_offer(source_id,native_prefix+(f':part:{index}' if len(groups)>1 else ''),
             program,partner,title[:300] if has_text else '',url,observed_at,title=title[:300],
             conditions=full,record_kind='program_rules' if has_text else 'source_observation',
             source_status='public_rules_ocr_unverified' if doc['ocr_pages'] else 'public_rules_text',
-            locator='PDF '+','.join(str(p['number']) for p in pages),details=details,warnings=warnings))
+            link_kind=link_kind,locator=(locator+'; ' if locator else '')+'PDF '+','.join(str(p['number']) for p in pages),details=details,warnings=warnings))
     return rows
 
 
