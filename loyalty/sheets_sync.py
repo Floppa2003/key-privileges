@@ -54,6 +54,7 @@ def prepare(bundle: dict) -> dict[str, list[list[str]]]:
 
 class Sheets:
     schemas = SCHEMAS
+    max_rows = 5000
 
     def __init__(self, spreadsheet_id: str, token: str):
         if not spreadsheet_id or not token or any(x not in 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_' for x in spreadsheet_id):
@@ -79,7 +80,7 @@ class Sheets:
     def values(self, title: str, props: dict) -> list[list]:
         n = props['gridProperties']['rowCount']
         width = len(self.schemas[title])
-        if n > 5000 or props['gridProperties']['columnCount'] < width:
+        if n > self.max_rows or props['gridProperties']['columnCount'] < width:
             raise ValueError('Managed sheet outside safe dimensions')
         col, index = "", width
         while index:
@@ -124,7 +125,7 @@ class Sheets:
         if not changes:
             return 0
         end = max(n for n, _ in changes) + 1
-        if end > 5000:
+        if end > self.max_rows:
             raise ValueError('Managed sheet row bound exceeded')
         if self.values(title, props) != before:
             raise ValueError('Concurrent edit detected; refusing stale write')
