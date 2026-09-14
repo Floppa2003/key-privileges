@@ -497,5 +497,83 @@
     "name": "Utair Status — подробные PDF-правила привилегий",
     "mode": "utair_documents",
     "url": "https://media.utair.ru/status"
+  },
+  {
+    "id": "ural_ramada_rules",
+    "name": "Рамада Екатеринбург — подробные условия «Крыльев»",
+    "url": "https://ramadayekaterinburg.com/wings/",
+    "mode": "known_rules"
+  },
+  {
+    "id": "ural_seagalaxy_rules",
+    "name": "Sea Galaxy Hotel Congress & Spa — подробные условия «Крыльев»",
+    "url": "https://seagalaxy.com/spec/programma-loyalnosti-krylya-offer",
+    "mode": "known_rules"
+  },
+  {
+    "id": "ural_smart_rules",
+    "name": "Smart — подробные условия «Крыльев»",
+    "url": "https://online.smart-inc.ru/smartmedia/partner-projects/smart-ural-airlines",
+    "mode": "known_rules"
+  },
+  {
+    "id": "ural_airharbour_rules",
+    "name": "Воздушная гавань — подробные условия «Крыльев»",
+    "url": "https://hotel.iktport.ru/ru/akcii/drugie.html",
+    "mode": "known_rules"
+  },
+  {
+    "id": "ural_carsgo_rules",
+    "name": "Cars&GO — подробные условия «Крыльев»",
+    "url": "https://sykt.arendacar.ru/news/novyj-partnjor-kompanii-uralskie-avialinii/",
+    "mode": "known_rules"
+  },
+  {
+    "id": "ural_gloria_rules",
+    "name": "GLORIA — подробные условия «Крыльев»",
+    "url": "https://hotelamur.com/partners-bonus-ural-airlines/",
+    "mode": "known_rules"
+  },
+  {
+    "id": "ural_triangle_rules",
+    "name": "Золотой Треугольник — подробные условия «Крыльев»",
+    "url": "https://gthotel.ru/offers/uralskie-avialinii/",
+    "mode": "known_rules"
+  },
+  {
+    "id": "ural_visotsky_rules",
+    "name": "Высоцкий — подробные условия «Крыльев»",
+    "url": "https://visotsky-hotel.ru/special-offers",
+    "mode": "known_rules"
+  },
+  {
+    "id": "ural_angara_rules",
+    "name": "Ангара — подробные условия «Крыльев»",
+    "url": "https://angarahotel.ru/stock/skidki-dlya-uchastnikov-programmy-krylya/",
+    "mode": "known_rules"
+  },
+  {
+    "id": "ural_ecospa_rules",
+    "name": "EcoSpa Высоцкий — подробные условия «Крыльев»",
+    "url": "https://ecospa-visotsky.ru/about/actions/item/154-programma-loyalnosti-krylya-ot-aviakompanii-uralskie-avialinii",
+    "mode": "known_rules"
+  },
+  {
+    "id": "mir_announcements",
+    "channel": "promomir",
+    "name": "Платёжная система «Мир» — официальные объявления",
+    "url": "https://t.me/s/promomir",
+    "mode": "announcements",
+    "lookback_days": 180,
+    "max_pages": 60
+  },
+  {
+    "id": "bspb_announcements",
+    "channel": "mybspb",
+    "name": "Банк «Санкт-Петербург» — объявления о привилегиях",
+    "url": "https://t.me/s/mybspb",
+    "mode": "announcements",
+    "lookback_days": 180,
+    "max_pages": 60
   }
 ]

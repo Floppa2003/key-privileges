@@ -240,10 +240,13 @@ def parse_known_rule(source,raw,url,observed_at):
         if not start or not end:raise ValueError('otello_activation_period_missing')
         details.update(validity_evidence=[a,b],validity_scope='promo_activation_window')
     if handler=='smartavia':return smartavia_records(cfg,nodes,terms,details,warnings,url,observed_at)
+    # Opt-in native tables from already scoped sections, never a fabricated table.
+    tables=[[[text(cell.get_text(' ',strip=True)) for cell in row.find_all(['th','td'],recursive=False)]
+             for row in table.select('tr')] for node in nodes for table in node.select('table')] if cfg.get('capture_tables') else []
     return [make_offer(source,'rules:page',cfg['program'],cfg['partner'],benefit,url,observed_at,
         title=cfg['title'],conditions=terms,link_kind=cfg.get('link_kind','detail_page'),
         record_kind=cfg['record_kind'],locator=' + '.join(cfg['selectors']),details=details,
-        warnings=warnings,valid_from=start,valid_until=end)]
+        warnings=warnings,valid_from=start,valid_until=end,tables=tables)]
 
 
 def smartavia_records(cfg,nodes,terms,details,warnings,url,now):

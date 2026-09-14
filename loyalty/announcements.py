@@ -12,7 +12,8 @@ from urllib.parse import urljoin, urlsplit, parse_qs
 from bs4 import BeautifulSoup
 from normalized import canonical_url, make_offer
 
-CHANNELS = {'ekp_announcements': 'ekpcard', 'rzd_announcements': 'fpcrussia'}
+CHANNELS = {'ekp_announcements':'ekpcard', 'rzd_announcements':'fpcrussia',
+            'mir_announcements':'promomir', 'bspb_announcements':'mybspb'}
 LOYALTY = re.compile(r'\bЕКП\b|един\w*\s+карт\w*\s+петербуржц', re.I)
 RZD = re.compile(r'РЖД[\s«»"-]*Бонус', re.I)
 NUMERIC_BENEFIT = re.compile(r'\d\s*%|промокод|скидк\w*\s+(?:до\s+)?\d|\d+\s+(?:бонус\w*|балл\w*|мил[ьяиюе]\w*)', re.I)
@@ -35,6 +36,12 @@ def relevant(body, cfg, cards):
     if cfg['id'] == 'rzd_announcements':
         without_footer = GENERIC_RZD_FOOTER.sub('', body)
         return bool(RZD.search(without_footer) and NUMERIC_BENEFIT.search(without_footer))
+    if cfg['id'] in ('mir_announcements','bspb_announcements'):
+        # A bank's interest rate or a channel's audience statistics is not a perk.
+        reward=re.search(r'скидк|к[еэ]шб[еэ]к|промокод|подар',body,re.I)
+        context=(cfg['id']=='mir_announcements' or bool(re.search(r'ЯРКО|ЕКП|лояльност|един\w*\s+карт',body,re.I)))
+        return bool(context and reward and NUMERIC_BENEFIT.search(body)
+                    and not re.search(r'опрос|голосован|мониторинг\s+активност',body,re.I))
     if cards:
         return True
     if re.search(r'опрос|голосован|мониторинг\s+активност',body,re.I):
@@ -75,6 +82,8 @@ def parse_feed(html: str, cfg: dict, observed_at: str) -> dict:
                 outgoing.append(link)
             u=urlsplit(url)
             if u.hostname in ('ekp.spb.ru','www.ekp.spb.ru') and re.fullmatch(r'/capabilities/loyalty/tiles/[0-9]+/?',u.path):
+                cards.append(link)
+            elif cfg['id']=='mir_announcements' and u.hostname in ('vamprivet.ru','privetmir.ru'):
                 cards.append(link)
             elif u.hostname in ('rzd-bonus.ru','www.rzd-bonus.ru'):
                 cards.append(link)
