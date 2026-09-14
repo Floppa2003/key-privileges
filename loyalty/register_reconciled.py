@@ -9,7 +9,6 @@ p=root/'announcements.py';s=p.read_text();old="                  and not n.find_
 assert s.count(old)==1
 p.write_text(s.replace(old,"                  and not n.find_parent(class_='tgme_widget_message_link_preview')\n                  and not n.find_parent(class_='tgme_widget_message_text')]"))
 p=root/'tests/test_more_announcements.py';p.write_text(p.read_text()+'''
-
 class NestedMessageTests(unittest.TestCase):
  def test_nested_native_text_wrapper_is_one_message_not_ambiguous(self):
   cfg=config('mir_announcements','promomir')
