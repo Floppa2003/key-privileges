@@ -1,4 +1,4 @@
 {
-  "request_id": "2026-09-14-known-source-rules-v2.6.0",
-  "reason": "Run all 75 configured public sources with reviewed supplementary programme rules and linked Utair PDFs. Preserve direct-source provenance, signed-download redaction, mileage/redemption distinctions, costs, conditional eligibility and explicit source failures. Publish only parser_offers and parser_coverage, preserve all other tabs and manual columns, and independently compare the actual main payload to Google Sheets. No credentials, paid network service, private-code activation or periodic schedule changes."
+  "request_id": "2026-09-14-source-reconciliation-v2.7.0",
+  "reason": "Run all 87 configured public routes after finite stored-reference reconciliation. Publish evidence-scoped supplementary partner rules and official announcements, preserving source statuses, unknown eligibility, exact links and partial failures. Refresh existing private unified views through the established publisher. Independently read back parser and unified fields; preserve original manual/source sheets and comment columns. No new permissions, paid network service, private-code activation or schedule changes."
 }
