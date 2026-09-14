@@ -68,7 +68,8 @@ def parse_feed(html: str, cfg: dict, observed_at: str) -> dict:
         own_text=[n for n in node.select('.tgme_widget_message_text')
                   if 'js-message_reply_text' not in n.get('class',[])
                   and not n.find_parent(class_='tgme_widget_message_reply')
-                  and not n.find_parent(class_='tgme_widget_message_link_preview')]
+                  and not n.find_parent(class_='tgme_widget_message_link_preview')
+                  and not n.find_parent(class_='tgme_widget_message_text')]
         if len(own_text)>1:
             result['errors'].append({'phase':'post','native_id':native,'reason':'ambiguous_message_text'})
         content=own_text[0] if len(own_text)==1 else None
