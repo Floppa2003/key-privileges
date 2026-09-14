@@ -29,3 +29,63 @@ class PublicProductTests(unittest.TestCase):
    with self.subTest(raw=raw[:40]):
     with self.assertRaises(ValueError):parse_known_rule('af_gpb_rules',raw,URL,NOW)
 if __name__=='__main__':unittest.main()
+
+class ProductTransportTests(unittest.IsolatedAsyncioTestCase):
+ def old_refused_context(self):
+  from types import SimpleNamespace
+  async def fetch(*args,**kwargs):raise RuntimeError('http_403')
+  return SimpleNamespace(request=SimpleNamespace(fetch=fetch))
+ async def test_actual_rules_collector_uses_reviewed_anonymous_http_read(self):
+  from unittest.mock import patch
+  import requests
+  from protego import Protego
+  from public_transport import PublicSource
+  from known_rules import collect_known_rules
+  class Response:
+   status_code=200
+   headers={'Content-Type':'text/html; charset=utf-8'}
+   def __enter__(self):return self
+   def __exit__(self,*args):pass
+   def iter_content(self,size):yield sample().encode('utf8')
+  client=PublicSource(None,URL);client.policy=Protego.parse('');client.request_interval=0;client.context=self.old_refused_context()
+  report={'errors':[]}
+  with patch.object(requests,'get',return_value=Response()) as get:
+   try:rows=await collect_known_rules(client,{'id':'af_gpb_rules','url':URL},report,NOW,100)
+   except Exception as exc:self.fail('Expected reviewed anonymous HTTP product content, got '+type(exc).__name__)
+  self.assertEqual(len(rows),1)
+  get.assert_called_once_with(URL,headers={'User-Agent':'Mozilla/5.0'},timeout=(5,15),allow_redirects=False,stream=True)
+  self.assertEqual(rows[0]['details']['mileage_options'][1]['miles'],'2.5')
+ async def test_http_refusal_is_not_retried_or_reported_as_a_product(self):
+  from unittest.mock import patch
+  import requests
+  from protego import Protego
+  from public_transport import PublicSource
+  from known_rules import collect_known_rules
+  class Response:
+   headers={'Content-Type':'text/html'}
+   def __init__(self,status):self.status_code=status
+   def __enter__(self):return self
+   def __exit__(self,*args):pass
+  for status in (302,403,429):
+   with self.subTest(status=status):
+    client=PublicSource(None,URL);client.policy=Protego.parse('');client.request_interval=0;client.context=self.old_refused_context()
+    with patch.object(requests,'get',return_value=Response(status)) as get:
+     with self.assertRaises(RuntimeError):await collect_known_rules(client,{'id':'af_gpb_rules','url':URL},{'errors':[]},NOW,100)
+     get.assert_called_once()
+ async def test_reviewed_transport_still_obeys_source_policy(self):
+  from unittest.mock import patch
+  import requests
+  from protego import Protego
+  from public_transport import PublicSource
+  from known_rules import collect_known_rules
+  client=PublicSource(None,URL);client.policy=Protego.parse('User-agent: *\nDisallow: /')
+  with patch.object(requests,'get') as get:
+   with self.assertRaises(RuntimeError):await collect_known_rules(client,{'id':'af_gpb_rules','url':URL},{'errors':[]},NOW,100)
+   get.assert_not_called()
+
+class ProductMileageEvidenceTests(unittest.TestCase):
+ def test_transfer_commission_is_not_extracted_as_a_loyalty_benefit(self):
+  r=parse_known_rule('af_gpb_rules',sample(),URL,NOW)[0]
+  self.assertNotIn('комиссия',r['benefit_text'])
+  self.assertIn('комиссия 1,5%',r['conditions_text'])
+  self.assertEqual(r['details']['mileage_options'][0]['miles'],'1.5')

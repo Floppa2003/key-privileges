@@ -4,7 +4,8 @@ Selectors and identities are checked-in code. Scraped links are evidence only;
 this adapter neither follows them nor submits forms/activates an entitlement.
 """
 from __future__ import annotations
-import json,re
+import asyncio,json,re
+import requests
 from pathlib import Path
 from datetime import date
 from urllib.parse import urljoin,urlsplit,parse_qsl
@@ -109,12 +110,13 @@ def parse_known_rule(source,raw,url,observed_at):
     warnings=['user_eligibility_not_verified','rule_bundle_not_additive_discount']+cfg.get('warnings',[])
     benefit=terms;start=end=None;handler=cfg.get('handler')
     if handler=='gpb':
-        options=[]
+        options=[];benefit_clauses=[]
         for node,label,paid in zip(nodes[:2],('Без Газпром Бонус «Плюс»','С Газпром Бонус «Плюс»'),(False,True)):
             value=flat(node.get_text(' ',strip=True))
             if not value.startswith(label):raise ValueError('gpb_subscription_label_mismatch')
             rate=match(r'Мили «Аэрофлот Бонус» (\d+(?:[.,]\d+)?) мили за (\d+) ₽ покупок',value,'gpb_rate_missing')
             cap=match(r'Максимум миль в месяц ('+NUM+r')(?= Переводы|$)',value,'gpb_cap_missing')
+            benefit_clauses.append(label+': '+rate[0]+'; '+cap[0])
             cost=match(r'далее [—-] (\d+) ₽ в месяц',value,'gpb_subscription_price_missing')[1] if paid else '0'
             if not paid and 'Бесплатно' not in value:raise ValueError('gpb_free_option_missing')
             options.append({'subscription':paid,'label':label,'miles':number(rate[1]),'basis_rub':rate[2],
@@ -125,7 +127,7 @@ def parse_known_rule(source,raw,url,observed_at):
         details.update(mileage_options=options,monthly_minimum_purchases_rub=number(minimum[1]),
             minimum_evidence=minimum[0],fees={'card_service_rub':service[1],
             'notifications_after_first_month_rub':notify[1],'evidence':notify[0]})
-        benefit='\n'.join(o['evidence'] for o in options)
+        benefit='\n'.join(benefit_clauses)
     elif handler=='retail_miles':
         earning=terms.split('Условия начислений:',1)[1].split('Условия списаний:',1)[0].strip()
         redemption=terms.split('Условия списаний:',1)[1].strip()
@@ -277,13 +279,46 @@ def smartavia_records(cfg,nodes,terms,details,warnings,url,now):
 ARTICLE_READY_JS=r"(q)=>{const a=document.querySelectorAll(q.selector);const n=(s)=>s.replace(/\s+/g,' ').replace(/‑/g,'-');return a.length===1 && n(a[0].innerText).includes(n(q.text))}"
 
 
+def fetch_public_product(url):
+    """The one reviewed public bank product; no redirect, login or refusal retry."""
+    if url!='https://www.gazprombank.ru/personal/cards/7515685/':
+        raise ValueError('unreviewed_public_product')
+    from public_transport import check_response
+    data=bytearray()
+    try:
+        with requests.get(url,headers={'User-Agent':'Mozilla/5.0'},timeout=(5,15),
+                          allow_redirects=False,stream=True) as response:
+            if response.status_code!=200:
+                raise RuntimeError('http_'+str(response.status_code))
+            if 'text/html' not in response.headers.get('Content-Type','').lower():
+                raise RuntimeError('public_product_not_html')
+            for block in response.iter_content(65536):
+                data.extend(block)
+                if len(data)>6000000:raise RuntimeError('source_response_too_large')
+    except requests.RequestException:
+        raise RuntimeError('public_product_transport_failed') from None
+    body=data.decode('utf-8')
+    check_response(200,body)
+    return body
+
+
+async def read_public_product(client,url):
+    client.check_url(url)
+    async with client.lock:
+        await asyncio.sleep(client.request_interval)
+        return await asyncio.to_thread(fetch_public_product,url)
+
+
 async def collect_known_rules(client,cfg,report,now,limit):
     settings=CONFIG[cfg['id']]
     if settings.get('format')=='pdf':
         from known_pdf import collect_pdf_rule
         rows=await collect_pdf_rule(client,cfg,now)
     else:
-        raw=await within_source_budget(client,lambda:client.read(cfg['url'],render=settings.get('render',True)))
+        if settings.get('handler')=='gpb':
+            raw=await within_source_budget(client,lambda:read_public_product(client,cfg['url']))
+        else:
+            raw=await within_source_budget(client,lambda:client.read(cfg['url'],render=settings.get('render',True)))
         if settings.get('ready_text'):
             selector=settings['selectors'][0]
             async def ready_article():
