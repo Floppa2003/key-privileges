@@ -62,7 +62,7 @@ jobs:
       vars.LOYALTY_SHEETS_SYNC == 'true' &&
       (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.publish))
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 10
     permissions:
       contents: read
       id-token: write
@@ -94,4 +94,6 @@ jobs:
         env:
           GOOGLE_ACCESS_TOKEN: ${{ steps.google.outputs.access_token }}
           DISCOUNTS_SPREADSHEET_ID: ${{ secrets.DISCOUNTS_SPREADSHEET_ID }}
-        run: python loyalty/sheets_normalized.py --input loyalty-output/normalized.json --publish
+        run: |
+          python loyalty/sheets_normalized.py --input loyalty-output/normalized.json --publish
+          python loyalty/unified_publish.py --publish
