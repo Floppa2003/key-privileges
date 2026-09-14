@@ -50,6 +50,53 @@ def relevant(body, cfg, cards):
     return bool(LOYALTY.search(body) and role and NUMERIC_BENEFIT.search(body))
 
 
+def own_message_parts(node, channel):
+    """Read one caption or a structurally identified album, never arbitrary siblings.
+
+    The enclosing data-post owns each caption. Album member identity comes from
+    Telegram's own ?single permalink, not numbers/titles embedded in this parser.
+    """
+    texts=[]
+    for n in node.select('.tgme_widget_message_text'):
+        if (n.find_parent(class_='tgme_widget_message') is not node
+                or 'js-message_reply_text' in n.get('class', [])
+                or n.find_parent(class_='tgme_widget_message_reply')
+                or n.find_parent(class_='tgme_widget_message_link_preview')
+                or n.find_parent(class_='tgme_widget_message_text')):
+            continue
+        texts.append(n)
+    if len(texts)<=1:
+        return [(node.get('data-post'), n) for n in texts]
+    parts=[]; seen=set()
+    for n in texts:
+        media=n.find_parent(class_='tgme_widget_message_one_media')
+        if media is None or media.find_parent(class_='tgme_widget_message') is not node:
+            raise ValueError('ambiguous_message_text')
+        # Each caption must belong to its own media, with one consistent ID.
+        if sum(x.find_parent(class_='tgme_widget_message_one_media') is media for x in texts)!=1:
+            raise ValueError('ambiguous_message_text')
+        identities=set()
+        for a in media.select('a[href]'):
+            u=urlsplit(a['href']); q=parse_qs(u.query,keep_blank_values=True)
+            if (u.scheme=='https' and u.netloc=='t.me' and not u.fragment
+                    and re.fullmatch('/'+re.escape(channel)+r'/[0-9]+',u.path)
+                    and q=={'single':['']}):
+                identities.add(u.path.lstrip('/'))
+        if len(identities)!=1 or identities & seen:
+            raise ValueError('ambiguous_album_member_identity')
+        native=identities.pop();seen.add(native);parts.append((native,n))
+    return parts
+
+
+def caption_text(content):
+    # Copy the element: never mutate DOM ownership while inspecting neighbours.
+    copy=BeautifulSoup(str(content),'html.parser')
+    for n in copy.select('script,style,.tgme_widget_message_reply,.tgme_widget_message_link_preview'):
+        n.decompose()
+    for br in copy.select('br'):br.replace_with('\n')
+    return copy.get_text('',strip=False).strip()
+
+
 def parse_feed(html: str, cfg: dict, observed_at: str) -> dict:
     checked_config(cfg)
     now = datetime.fromisoformat(observed_at)
@@ -65,19 +112,16 @@ def parse_feed(html: str, cfg: dict, observed_at: str) -> dict:
         if not re.fullmatch(re.escape(cfg['channel'])+r'/[0-9]+', native) or native in seen:
             continue
         seen.add(native); ids.append(int(native.split('/')[-1])); result['scanned'] += 1
-        own_text=[n for n in node.select('.tgme_widget_message_text')
-                  if 'js-message_reply_text' not in n.get('class',[])
-                  and not n.find_parent(class_='tgme_widget_message_reply')
-                  and not n.find_parent(class_='tgme_widget_message_link_preview')
-                  and not n.find_parent(class_='tgme_widget_message_text')]
-        if len(own_text)>1:
-            result['errors'].append({'phase':'post','native_id':native,'reason':'ambiguous_message_text'})
-        content=own_text[0] if len(own_text)==1 else None
-        if content is None:
+        try:
+            parts=own_message_parts(node,cfg['channel'])
+        except ValueError as exc:
+            result['errors'].append({'phase':'post','native_id':native,'reason':str(exc)})
             continue
-        for br in content.select('br'):
-            br.replace_with('\n')
-        body = content.get_text('',strip=False).strip()
+        if not parts:
+            continue
+        part_texts=[{'native_id':pid,'text':caption_text(content)} for pid,content in parts]
+        body='\n\n'.join(p['text'] for p in part_texts if p['text'])
+        content=BeautifulSoup(''.join(str(n) for _,n in parts),'html.parser')
         outgoing, cards = [], []
         for a in content.select('a[href]'):
             try:
@@ -94,6 +138,11 @@ def parse_feed(html: str, cfg: dict, observed_at: str) -> dict:
                 cards.append(link)
             elif u.hostname in ('rzd-bonus.ru','www.rzd-bonus.ru'):
                 cards.append(link)
+        if cfg['id']=='mir_announcements':
+            for link in outgoing:
+                if (re.search(r'к[еэ]шб[еэ]к|скидк|промокод',link['label'],re.I)
+                        and urlsplit(link['url']).hostname not in ('t.me','telegram.me')):
+                    if link not in cards:cards.append(link)
         clock=node.select_one('.tgme_widget_message_date time[datetime]')
         try:
             published=datetime.fromisoformat(clock['datetime'].replace('Z','+00:00'))
@@ -113,7 +162,8 @@ def parse_feed(html: str, cfg: dict, observed_at: str) -> dict:
         warnings=['announcement_not_full_partner_rules','eligibility_and_current_offer_not_verified','outgoing_links_not_fetched']
         detail={'channel':cfg['channel'], 'published_at':published.isoformat(),
                 'feed_url':cfg['url'], 'outgoing_links':outgoing, 'linked_cards':cards,
-                'scope':'one_public_announcement', 'validity_extraction':'not_inferred_from_publication_date'}
+                'scope':'one_public_announcement', 'message_parts':part_texts,
+                'text_extraction':'owned_caption_or_permalink_identified_album', 'validity_extraction':'not_inferred_from_publication_date'}
         result['records'].append(make_offer(cfg['id'],native,cfg['name'],None,body,
             'https://t.me/'+native,observed_at,title=next((line.strip() for line in body.split('\n') if len(re.findall(r'[A-Za-zА-Яа-яЁё]',line))>=5),body)[:300],
             record_kind='announcement',link_kind='source_post',locator='data-post='+native,

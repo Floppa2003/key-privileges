@@ -15,11 +15,11 @@ PDF_RULES={
  'rzd_finuslugi_rules':{
   'url':'https://assets.finuslugi.ru/sc-disclosure/293d2bf4-16c4-46c6-87a5-0a2d35d18ad8',
   'program':'РЖД Бонус','partner':'Финуслуги','title':'Правила начисления баллов за первый вклад',
-  'pages':3,'required':['Финуслугах','РЖД Бонус','7.1.10.','Заключительные положения']},
+  'required':['Финуслугах','РЖД Бонус','7.1.10.','Заключительные положения']},
  'af_primbank_rules':{
   'url':'https://www.primbank.ru/d/tariffs-aeroflot-bonus',
   'program':'Аэрофлот Бонус','partner':'Банк Приморье','title':'Тариф карты: начисление миль и ограничения',
-  'pages':4,'required':['Аэрофлот Бонус','Мир Продвинутая','ОБЩИЕ УСЛОВИЯ','Приветственные мили']},
+  'required':['Аэрофлот Бонус','Мир Продвинутая','ОБЩИЕ УСЛОВИЯ','Приветственные мили']},
 }
 
 
@@ -33,23 +33,22 @@ def require(pattern,value):
     return found
 
 
-def pdf_pages(data: bytes,expected_pages: int, *, short_pages: dict | None = None) -> list[str]:
+def pdf_pages(data: bytes) -> list[str]:
     if not isinstance(data,bytes) or not data.startswith(b'%PDF-') or not 100<=len(data)<=3000000:
         raise ValueError('invalid_or_oversized_pdf')
     # Imported only in collection, never needed by the Google publisher.
     from pypdf import PdfReader
     reader=PdfReader(io.BytesIO(data),strict=True)
-    if reader.is_encrypted or len(reader.pages)!=expected_pages:
-        raise ValueError('pdf_encrypted_or_page_count_changed')
+    if reader.is_encrypted or not 1<=len(reader.pages)<=80:
+        raise ValueError('pdf_encrypted_or_page_limit')
     pages=[]
     for page_number,page in enumerate(reader.pages,1):
         stream=page.get_contents()
         if stream is None or len(stream.get_data())>4000000:
             raise ValueError('pdf_content_stream_empty_or_oversized')
         value=page.extract_text()
-        if not value or len(re.findall(r'[A-Za-zА-Яа-яЁё]',value))<80:
-            if not value or compact(value)!=(short_pages or {}).get(str(page_number)):
-                raise ValueError('pdf_missing_text_layer_review_required')
+        if not value or not value.strip():
+            raise ValueError('pdf_missing_text_layer_review_required')
         pages.append(value)
     if sum(map(len,pages))>35000:
         raise ValueError('pdf_text_too_large_no_truncation')
@@ -58,7 +57,7 @@ def pdf_pages(data: bytes,expected_pages: int, *, short_pages: dict | None = Non
 
 def parse_pdf_pages(source: str,pages: list[str],observed_at: str,*,document_sha256: str) -> dict:
     cfg=PDF_RULES[source]
-    if len(pages)!=cfg['pages'] or not re.fullmatch('[0-9a-f]{64}',document_sha256):
+    if not 1<=len(pages)<=80 or not re.fullmatch('[0-9a-f]{64}',document_sha256):
         raise ValueError('invalid_pdf_pages_or_digest')
     full='\n\n'.join(f'[Страница {i}]\n{p.strip()}' for i,p in enumerate(pages,1))
     all_text=compact(full)
@@ -127,5 +126,5 @@ def parse_pdf_pages(source: str,pages: list[str],observed_at: str,*,document_sha
 
 async def collect_pdf_rule(client,cfg,now):
     data=await within_source_budget(client,lambda:client.read_pdf(cfg['url']))
-    pages=pdf_pages(data,PDF_RULES[cfg['id']]['pages'])
+    pages=pdf_pages(data)
     return [parse_pdf_pages(cfg['id'],pages,now,document_sha256=hashlib.sha256(data).hexdigest())]

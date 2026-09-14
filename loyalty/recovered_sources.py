@@ -14,8 +14,9 @@ import requests
 from bs4 import BeautifulSoup
 from protego import Protego
 from recovered_contract import (API, SOURCES, CA_FILES, HTTP_PROFILE, HTTP_WARNING,
-    collection_url, http_url, checked_config, transport_evidence)
-from normalized import make_offer, text, number
+    collection_url, http_url, checked_config, transport_evidence, linked_pdf_url)
+from normalized import make_offer, text, number, content_hash
+from document_text import extract_pdf, document_records
 from public_transport import check_response, robots_document
 from known_rules import linked_documents
 
@@ -36,6 +37,7 @@ class ScopedReader:
         self.policy = None
         self.interval = 1.0
         self.last_read = 0.0
+        self.document_urls = set()
 
     def __enter__(self):
         try:
@@ -73,9 +75,29 @@ class ScopedReader:
         if self.sid == 'loyals':
             return http_url(url)
         base = urlsplit(self.spec['url'])
-        if url not in (self.spec['url'], f'https://{base.netloc}/robots.txt'):
+        if url not in (self.spec['url'], f'https://{base.netloc}/robots.txt') and url not in self.document_urls:
             raise ValueError('request_outside_exact_recovered_source')
         return url
+
+    def bind_document_links(self, links):
+        """Only direct PDF links extracted from this run's reviewed page section."""
+        self.document_urls=set()
+        for link in links:
+            try:url=linked_pdf_url(link['url'].strip(),self.sid)
+            except ValueError:continue
+            self.document_urls.add(url)
+        if len(self.document_urls)>30:raise RuntimeError('linked_document_count_limit')
+
+    def read_document(self,url):
+        if url not in self.document_urls:raise ValueError('document_not_in_live_source_listing')
+        # Direct user-authorized file downloads, not a site-wide crawl. Record the
+        # robots rule separately; it is not proof of a target HTTP access refusal.
+        status,headers,raw=self._get(url)
+        if status!=200:raise RuntimeError('document_http_'+str(status))
+        if not raw.startswith(b'%PDF-'):raise RuntimeError('linked_resource_not_pdf')
+        return raw,{'robots_allows_crawling':self.policy.can_fetch(url,'LoyaltyCatalogResearchBot'),
+            'mode':'direct_advertised_public_file_download','http_status':status}
+
 
     def _get(self, url, *, ca_download=False):
         if ca_download:
@@ -316,9 +338,44 @@ def _collect(cfg, report, now, limit):
         if cfg['id']=='loyals':
             return collect_loyals(reader,cfg,report,now,limit)
         _, raw=reader.read(cfg['url'])
-        records=[parse_bank_page(cfg['id'],raw.decode('utf-8'),now)]
-        report['discovered']=len(records)
-        report['coverage']='exact_reviewed_public_page; scoped_CA_verified_TLS; supplementary_rules'
+        parent=parse_bank_page(cfg['id'],raw.decode('utf-8'),now)
+        records=[parent];inventory=[];seen=set()
+        links=parent['details']['linked_documents'];reader.bind_document_links(links)
+        for link in links:
+            url=link['url'].strip()
+            if url in seen:continue
+            seen.add(url)
+            item={'url':url,'label':link['label'],'status':'outside_direct_PDF_scope'}
+            inventory.append(item)
+            if url not in reader.document_urls:continue
+            try:
+                if len(records)>=limit:raise RuntimeError('record_limit')
+                data,transport=reader.read_document(url)
+                doc=extract_pdf(data)
+                children=document_records(cfg['id'],'linked-pdf:'+hashlib.sha256(url.encode()).hexdigest()[:32],
+                    parent['program'],parent['partner_name'],url,now,doc,
+                    parent_source=cfg['url'],parent_sha256=hashlib.sha256(raw).hexdigest(),label=link['label'],
+                    extra_details={'transport':transport_evidence(cfg['id']),'document_download':transport,
+                        'parent_record_id':parent['id']})
+                if len(records)+len(children)>limit:raise RuntimeError('record_limit')
+                records.extend(children)
+                item.update(status='read',record_ids=[r['id'] for r in children],**transport)
+                if doc['errors']:
+                    report['errors'].append({'phase':'document_text','path':urlsplit(url).path,'errors':doc['errors']})
+            except Exception as exc:
+                reason=str(exc)[:160] if isinstance(exc,(RuntimeError,ValueError)) else type(exc).__name__
+                item.update(status='failed',reason=reason)
+                report['errors'].append({'phase':'document','path':urlsplit(url).path,'reason':reason})
+                if reason in ('source_rate_limited','source_time_budget_exhausted','record_limit'):break
+        parent['details']['linked_document_inventory']=inventory
+        parent['details']['linked_documents_discovery']='live_parent_page_direct_PDFs_only'
+        parent['warnings']=[w for w in parent['warnings'] if w!='linked_full_documents_not_fetched']
+        parent['warnings'].append('only_direct_public_PDF_links_followed')
+        parent['content_sha256']=content_hash(parent)
+        report['discovered']=1+len(reader.document_urls)
+        report['coverage']=json.dumps({'kind':'live_page_and_discovered_direct_PDFs',
+            'pdf_candidates':len(reader.document_urls),'pdfs_read':sum(x['status']=='read' for x in inventory),
+            'page_records':len(records),'recursive_links_followed':False},ensure_ascii=False)
         return records
 
 

@@ -49,6 +49,16 @@ def ocr_page(pdf_path, number, temp):
         'mean_word_confidence':round(sum(confidences)/len(confidences),2) if confidences else None}
 
 
+def needs_page_ocr(native_text, image_count):
+    """Image-heavy pages may expose only native contact/footer fragments.
+
+    This layout heuristic uses no document name, ID, hash or expected wording.
+    Sparse numeric native-only pages do not need OCR.
+    """
+    characters=len(re.findall(r'\w',native_text))
+    return not native_text or (image_count>0 and characters<40) or (image_count>=10 and characters<500)
+
+
 def extract_pdf(data, *, allow_ocr=True):
     if not isinstance(data,bytes) or not data.startswith(b'%PDF-') or not 100<=len(data)<=MAX_BYTES:
         raise ValueError('invalid_or_oversized_pdf')
@@ -56,7 +66,7 @@ def extract_pdf(data, *, allow_ocr=True):
     reader=PdfReader(io.BytesIO(data),strict=True)
     if reader.is_encrypted or not 1<=len(reader.pages)<=MAX_PAGES:
         raise ValueError('pdf_encrypted_or_page_limit')
-    pages=[];errors=[];ocr_count=0;total=0
+    pages=[];errors=[];ocr_count=0;ocr_attempted=0;total=0
     with tempfile.TemporaryDirectory() as temp:
         pdf_path=Path(temp)/'document.pdf';pdf_path.write_bytes(data)
         for number,page in enumerate(reader.pages,1):
@@ -68,10 +78,12 @@ def extract_pdf(data, *, allow_ocr=True):
             if hasattr(resources,'get_object'):resources=resources.get_object()
             xobjects=resources.get('/XObject',{})
             if hasattr(xobjects,'get_object'):xobjects=xobjects.get_object()
-            images=any(x.get_object().get('/Subtype')=='/Image' for x in xobjects.values())
-            needs_ocr=(not value or (images and len(re.findall(r'[\w]',value))<40))
+            images=sum(x.get_object().get('/Subtype')=='/Image' for x in xobjects.values())
+            native=value
+            needs_ocr=needs_page_ocr(value,images)
             if needs_ocr:
-                if allow_ocr and ocr_count<10:
+                if allow_ocr and ocr_attempted<10:
+                    ocr_attempted+=1
                     try:
                         value,metrics=ocr_page(pdf_path,number,temp)
                         method='ocr_unverified';ocr_count+=1
@@ -85,6 +97,7 @@ def extract_pdf(data, *, allow_ocr=True):
             total+=len(value)
             if total>MAX_TEXT:raise ValueError('pdf_total_text_limit')
             item={'number':number,'text':value,'sha256':sha(value.encode()),'method':method}
+            if needs_ocr:item['native_text']=native
             if metrics:item['ocr']=metrics
             pages.append(item)
     title=str(reader.metadata.title or '') if reader.metadata else ''
@@ -142,11 +155,12 @@ def document_records(source_id,native_prefix,program,partner,url,observed_at,doc
 
 def validate_document_record(record):
     """Publisher verifies source-text bindings too, not just the final row hash."""
+    from normalized import text
     d=record['details'];pages=d.get('pages',[])
     if (record['record_kind'] not in ('program_rules','source_observation')
         or d.get('evidence_role')!='supplementary_rules_not_incremental_discount'
         or not re.fullmatch('[a-f0-9]{64}',d.get('document_sha256',''))
-        or not pages or record['conditions_text']!=__import__('normalized').text(page_text(pages))):
+        or not pages or record['conditions_text']!=text(page_text(pages))):
         raise ValueError('live_document_identity_or_text_mismatch')
     for page in pages:
         if (type(page.get('number')) is not int or not 1<=page['number']<=d['page_count']

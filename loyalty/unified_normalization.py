@@ -17,7 +17,7 @@ from urllib.parse import urlsplit, urlunsplit, parse_qsl, urlencode
 from normalized import normalize_rates
 from promo_codes import extract_promocodes
 
-VERSION = '1.0.0'
+VERSION = '1.0.1'
 GROUPS = ('benefits', 'conditions', 'costs', 'codes')
 INPUT_TABS = {
     'parser_offers': (1, 26), 'loyalty_partner_benefits': (4, 13),
@@ -214,8 +214,8 @@ def normalize_record(raw, *, as_of):
            relationships=[])
     if n['validity']['until']:n['validity']['status']='expired' if n['validity']['until']<as_of else 'within_stated_period'
     if n['validity']['from'] and n['validity']['from']>as_of:n['validity']['status']='not_started'
-    if raw['kind']=='raw_page':
-        n['quality']['level']='evidence_only';n['quality']['issues'].append('raw_page_may_include_other_offers')
+    if raw['kind'] in ('raw_page','source_observation') or raw.get('details',{}).get('extraction_method')=='digest_bound_visual_review':
+        n['quality']['level']='evidence_only';n['quality']['issues'].append('evidence_only_no_automatic_benefits')
         validate_normalized(n);return n
     d=raw.get('details',{})
     n['availability']={k:d.get(k) for k in ('source_is_started','source_prize_suspended')}

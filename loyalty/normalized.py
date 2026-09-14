@@ -14,7 +14,7 @@ from promo_codes import extract_promocodes
 from table_benefits import extract_table_benefits
 from recovered_contract import SOURCES as RECOVERED_SOURCES, http_url, validate_recovered
 
-VERSION = '2.8.0'
+VERSION = '2.9.0'
 HOSTS = {
  'moskvich': ['moskvichmag.ru'], 'noname': ['nonameburo.com'],
  's7': ['marketplace.s7.ru'], 'ural': ['www.uralairlines.ru'],
@@ -200,7 +200,6 @@ def make_offer(source_id: str, native_id: str, program: str, partner_name: str |
     return r
 
 
-UTAIR_DOCUMENT_IDS=set(json.loads(Path(__file__).with_name('utair_documents.json').read_text()))
 HOSTS['utair_rule_documents']=['ut0.ru']
 
 def validate_offer(r: dict) -> None:
@@ -230,9 +229,16 @@ def validate_offer(r: dict) -> None:
         raise ValueError('Promo code evidence mismatch')
     if r.get('details',{}).get('table_benefits')!=extract_table_benefits(r.get('tables',[])):
         raise ValueError('Table benefit evidence mismatch')
+    if r['details'].get('live_document_text'):
+        from document_text import validate_document_record
+        validate_document_record(r)
     if r['source_id']=='utair_rule_documents':
-        if (r['record_kind']!='program_rules' or r['source_status']!='public_rules_text' or r['native_id'].removeprefix('document:') not in UTAIR_DOCUMENT_IDS or r['source_url']!='https://ut0.ru/'+r['native_id'].removeprefix('document:') or r['details'].get('evidence_role')!='supplementary_rules_not_incremental_discount'):
-            raise ValueError('Public rule documents cannot certify standalone partner offers')
+        key=r['native_id'].removeprefix('document:').split(':part:')[0]
+        if (not re.fullmatch(r'[A-Za-z0-9_-]{1,80}',key)
+            or r['source_url']!='https://ut0.ru/'+key
+            or not r['details'].get('live_document_text')
+            or r['details'].get('parent_source')!='https://media.utair.ru/status'):
+            raise ValueError('Public document must originate from the live Utair listing')
     if r['source_id'] in KNOWN_RULES:
         cfg=KNOWN_RULES[r['source_id']]
         allowed_kinds=('program_rules','membership_plan') if r['source_id']=='smartavia_rules' else ('program_rules',)

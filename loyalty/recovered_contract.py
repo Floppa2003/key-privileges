@@ -46,6 +46,19 @@ def collection_url(page: int) -> str:
         'orderby':'id','order':'asc','_fields':WP_FIELDS}))
 
 
+def linked_pdf_url(url: str, source_id: str) -> str:
+    """An advertised file on the already trusted source host, not arbitrary HTTP."""
+    from urllib.parse import unquote
+    if source_id not in SOURCES or source_id=='loyals':
+        raise ValueError('source_has_no_verified_document_profile')
+    u=urlsplit(url);base=urlsplit(SOURCES[source_id]['url'])
+    if (u.scheme!='https' or u.netloc!=base.netloc or u.fragment or u.query
+            or not unquote(u.path).lower().endswith('.pdf')
+            or '..' in unquote(u.path).split('/') or '\\' in unquote(u.path)):
+        raise ValueError('linked_document_outside_public_file_scope')
+    return url
+
+
 def checked_config(cfg: dict) -> dict:
     spec = SOURCES.get(cfg.get('id'))
     if not spec or cfg.get('url') != spec['url'] or cfg.get('access_profile') != spec['profile']:
@@ -73,6 +86,12 @@ def validate_recovered(r: dict) -> None:
     if r['details'].get('transport') != transport_evidence(sid):
         raise ValueError('recovered_source_transport_evidence_mismatch')
     if sid != 'loyals':
+        if r['details'].get('live_document_text'):
+            linked_pdf_url(r['source_url'],sid)
+            if (r['details'].get('parent_source')!=SOURCES[sid]['url']
+                    or not re.fullmatch('[a-f0-9]{64}',r['details'].get('parent_response_sha256',''))):
+                raise ValueError('linked_document_parent_evidence_missing')
+            return
         if (r['source_url'] != SOURCES[sid]['url'] or r['record_kind'] != 'program_rules'
                 or r['details'].get('evidence_role') != 'supplementary_rules_not_incremental_discount'
                 or r['source_status'] != ('public_announcement_not_full_rules' if sid == 'nspk_ekp_rules' else 'public_rules_text')):

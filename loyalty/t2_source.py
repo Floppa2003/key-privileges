@@ -74,7 +74,8 @@ def page_records(source,raw,observed_at):
         article=soup.select_one('.article-content')
         if not article:raise ValueError('t2_mixx_article_missing')
         terms=content([article]);lists=article.find_all('ul',recursive=False)
-        if len(lists)!=2 or '6 настраиваемых' not in terms:raise ValueError('t2_mixx_section_contract_changed')
+        slots=re.search(r'\b(\d+)\s+настраиваем',terms,re.I)
+        if len(lists)!=2 or not slots:raise ValueError('t2_mixx_section_contract_changed')
         mapping=[('+50 ГБ','Трафик 50 ГБ'),('Яндекс Плюс','Яндекс Плюс'),('от X5','X5 «Пакет»'),('Wink','Wink'),('PREMIER','PREMIER'),('VK Музыка','VK Музыка'),('Выгодно вместе','Выгодно вместе'),('КИОН','КИОН'),('RUTUBE','RUTUBE'),('Ozon Premium','Ozon Premium'),('Магнит Плюс Премиум','Магнит Плюс Премиум'),('Литрес','Литрес'),('Юрент','Юрент'),('GPTMobile','GPTMobile'),('Kaspersky Standard','Kaspersky Standard')]
         fixed=[]
         for n,ul in enumerate(lists):
@@ -86,7 +87,7 @@ def page_records(source,raw,observed_at):
                 if len(matched)!=1:raise ValueError('t2_mixx_unrecognized_service:'+claim[:60])
                 component='included_automatically' if matched[0]=='Wink' else 'prepared_selection' if n==0 else 'selectable_replacement'
                 add(matched[0],matched[0],claim,terms,link_kind='page_block',locator='.article-content li = '+claim,
-                    details={'membership_component':component,'selection_slots':6},warnings=['not_all_optional_services_are_included_simultaneously'])
+                    details={'membership_component':component,'selection_slots':int(slots[1])},warnings=['not_all_optional_services_are_included_simultaneously'])
         if len(fixed)!=1:raise ValueError('t2_mixx_fixed_services_contract_changed')
         patterns=[('Lamoda',r'скидка\s+\d+%\s+на\s+Lamoda'),('Флаувау',r'скидка\s+\d+\s+руб\.\s+на\s+Флаувау'),('Финсервисы',r'скидки и кешбэк в финансовых сервисах'),('Обмен минут и ГБ',r'уникальные предложения при обмене минут и ГБ'),('Гигабэк',r'\+\d+ категории Гигабэка')]
         for name,pattern in patterns:

@@ -1,3 +1,5 @@
+> Historical 2.8.0 contract; live linked-PDF discovery and extraction are described in LIVE_EXTRACTION.md (2.9.0).
+
 # Recovered public sources — adapter 2.8.0
 
 The user approved integrating the demonstrated public routes from diagnostic PR17. This release adds repo-native adapters, registry wiring, schema checks and tests. It does not merge diagnostic workflows or alter Google permissions, the production job graph, KEY or schedule flags.
