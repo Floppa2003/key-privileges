@@ -13,7 +13,7 @@ from model import clean_url
 from promo_codes import extract_promocodes
 from table_benefits import extract_table_benefits
 
-VERSION = '2.6.0'
+VERSION = '2.7.0'
 HOSTS = {
  'moskvich': ['moskvichmag.ru'], 'noname': ['nonameburo.com'],
  's7': ['marketplace.s7.ru'], 'ural': ['www.uralairlines.ru'],
@@ -32,6 +32,8 @@ for _key,_cfg in KNOWN_RULES.items():
 HOSTS['utair_media']=['media.utair.ru']
 HOSTS['ekp_announcements']=['t.me']
 HOSTS['rzd_announcements']=['t.me']
+HOSTS['mir_announcements']=['t.me']
+HOSTS['bspb_announcements']=['t.me']
 for _source in ('t2_bolshe','t2_mixx','t2_selection','t2_mixx_s','t2_powerbank'):
     HOSTS[_source]=['msk.t2.ru']
 HOSTS['t2_bolshe'].append('spb.t2.ru')
@@ -228,8 +230,8 @@ def validate_offer(r: dict) -> None:
     if r['source_id']=='t2_selection_public':
         if r['record_kind']!='tier_benefit' or r['link_kind']!='page_block' or r['source_status']!='public_preview_requires_login' or r['benefit_url'] is not None or urlsplit(r['source_url']).path!='/bolshe/selection':
             raise ValueError('Selection preview cannot certify private catalogue eligibility')
-    if r['source_id'] in ('ekp_announcements','rzd_announcements') or r['link_kind']=='source_post':
-        channel={'ekp_announcements':'ekpcard','rzd_announcements':'fpcrussia'}.get(r['source_id'])
+    if r['source_id'] in ('ekp_announcements','rzd_announcements','mir_announcements','bspb_announcements') or r['link_kind']=='source_post':
+        channel={'ekp_announcements':'ekpcard','rzd_announcements':'fpcrussia','mir_announcements':'promomir','bspb_announcements':'mybspb'}.get(r['source_id'])
         if r['link_kind']!='source_post' or not channel or not re.fullmatch('/'+channel+r'/[0-9]+',urlsplit(r['source_url']).path) or r['benefit_url'] is not None or r['record_kind']!='announcement' or r['source_status']!='announced_unverified':
             raise ValueError('Invalid announcement identity or evidence status')
     if r['link_kind']=='page_block' and r['benefit_url'] is not None:

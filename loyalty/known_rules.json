@@ -462,5 +462,213 @@
     ],
     "title": "Карта Газпромбанка «Аэрофлот Бонус» — публичные условия",
     "record_kind": "program_rules"
+  },
+  "ural_ramada_rules": {
+    "url": "https://ramadayekaterinburg.com/wings/",
+    "program": "Уральские авиалинии — «Крылья»",
+    "partner": "Рамада Екатеринбург",
+    "title": "Рамада Екатеринбург — подробные условия «Крыльев»",
+    "selectors": [
+      ".dop-inner__info"
+    ],
+    "required": [
+      "Крылья",
+      "Рамада Екатеринбург",
+      "не распространяется на специальные предложения"
+    ],
+    "record_kind": "program_rules",
+    "supplements": [
+      "ural"
+    ]
+  },
+  "ural_seagalaxy_rules": {
+    "url": "https://seagalaxy.com/spec/programma-loyalnosti-krylya-offer",
+    "program": "Уральские авиалинии — «Крылья»",
+    "partner": "Sea Galaxy Hotel Congress & Spa",
+    "title": "Sea Galaxy Hotel Congress & Spa — подробные условия «Крыльев»",
+    "selectors": [
+      ".section.m-70.mt-20"
+    ],
+    "required": [
+      "Крылья",
+      "предъявлении карты"
+    ],
+    "record_kind": "program_rules",
+    "supplements": [
+      "ural"
+    ],
+    "warnings": [
+      "tier_labels_in_images_not_structurally_verified",
+      "partnership_start_is_not_offer_expiry"
+    ]
+  },
+  "ural_smart_rules": {
+    "url": "https://online.smart-inc.ru/smartmedia/partner-projects/smart-ural-airlines",
+    "program": "Уральские авиалинии — «Крылья»",
+    "partner": "Smart",
+    "title": "Smart — подробные условия «Крыльев»",
+    "selectors": [
+      "#rec754529990 [data-elem-id=\"1716884715199\"]",
+      "#rec754529990 [data-elem-id=\"1716885536547\"]",
+      "#rec754529990 [data-elem-id=\"1716885536523\"]",
+      "#rec754529990 [data-elem-id=\"1716885722000\"]",
+      "#rec754529990 [data-elem-id=\"1716885767656\"]",
+      "#rec754529990 [data-elem-id=\"1716885817793\"]",
+      "#rec754529990 [data-elem-id=\"1716885817771\"]",
+      "#rec754529990 [data-elem-id=\"1716885851111\"]",
+      "#rec754529990 [data-elem-id=\"1716885851096\"]"
+    ],
+    "required": [
+      "Крылья",
+      "От Smart",
+      "Синей",
+      "Серебряной",
+      "Золотой"
+    ],
+    "record_kind": "program_rules",
+    "supplements": [
+      "ural"
+    ]
+  },
+  "ural_airharbour_rules": {
+    "url": "https://hotel.iktport.ru/ru/akcii/drugie.html",
+    "program": "Уральские авиалинии — «Крылья»",
+    "partner": "Воздушная гавань",
+    "title": "Воздушная гавань — подробные условия «Крыльев»",
+    "selectors": [
+      ".item-page [itemprop='articleBody'] > p:not(hr ~ p)"
+    ],
+    "required": [
+      "Крылья",
+      "Синей",
+      "Серебряной",
+      "Золотой"
+    ],
+    "record_kind": "program_rules",
+    "supplements": [
+      "ural"
+    ],
+    "single_selectors": false,
+    "link_kind": "page_block"
+  },
+  "ural_carsgo_rules": {
+    "url": "https://sykt.arendacar.ru/news/novyj-partnjor-kompanii-uralskie-avialinii/",
+    "program": "Уральские авиалинии — «Крылья»",
+    "partner": "Cars&GO",
+    "title": "Cars&GO — подробные условия «Крыльев»",
+    "selectors": [
+      ".ft.offset__24"
+    ],
+    "required": [
+      "Крылья",
+      "Крылья5",
+      "Крылья10",
+      "Крылья15"
+    ],
+    "record_kind": "program_rules",
+    "supplements": [
+      "ural"
+    ]
+  },
+  "ural_gloria_rules": {
+    "url": "https://hotelamur.com/partners-bonus-ural-airlines/",
+    "program": "Уральские авиалинии — «Крылья»",
+    "partner": "GLORIA",
+    "title": "GLORIA — подробные условия «Крыльев»",
+    "selectors": [
+      ".spb-asset-content:-soup-contains(\"Бизнес отель GLORIA\")",
+      ".spb-asset-content:-soup-contains(\"Как получить скидку:\")",
+      ".spb-asset-content:has(table)"
+    ],
+    "required": [
+      "GLORIA",
+      "Крылья",
+      "Вид карты"
+    ],
+    "record_kind": "program_rules",
+    "supplements": [
+      "ural"
+    ],
+    "capture_tables": true,
+    "warnings": [
+      "partner_name_taken_from_page_not_domain"
+    ]
+  },
+  "ural_triangle_rules": {
+    "url": "https://gthotel.ru/offers/uralskie-avialinii/",
+    "program": "Уральские авиалинии — «Крылья»",
+    "partner": "Золотой Треугольник",
+    "title": "Золотой Треугольник — подробные условия «Крыльев»",
+    "selectors": [
+      ".content.-detail .ustyle"
+    ],
+    "required": [
+      "Крылья",
+      "URALAIRLINES"
+    ],
+    "record_kind": "program_rules",
+    "supplements": [
+      "ural"
+    ]
+  },
+  "ural_visotsky_rules": {
+    "url": "https://visotsky-hotel.ru/special-offers",
+    "program": "Уральские авиалинии — «Крылья»",
+    "partner": "Высоцкий",
+    "title": "Высоцкий — подробные условия «Крыльев»",
+    "selectors": [
+      "li.b-special-offers-list__item:has(h2:-soup-contains(\"Программа лояльности «Крылья»\"))"
+    ],
+    "required": [
+      "Крылья",
+      "Silver",
+      "Gold",
+      "Делюкс"
+    ],
+    "record_kind": "program_rules",
+    "supplements": [
+      "ural"
+    ],
+    "link_kind": "page_block",
+    "warnings": [
+      "rates_are_room_categories_not_card_tiers"
+    ]
+  },
+  "ural_angara_rules": {
+    "url": "https://angarahotel.ru/stock/skidki-dlya-uchastnikov-programmy-krylya/",
+    "program": "Уральские авиалинии — «Крылья»",
+    "partner": "Ангара",
+    "title": "Ангара — подробные условия «Крыльев»",
+    "selectors": [
+      ".stock-detail__content"
+    ],
+    "required": [
+      "Крылья",
+      "Ангара",
+      "синей",
+      "серебряной",
+      "золотой"
+    ],
+    "record_kind": "program_rules",
+    "supplements": [
+      "ural"
+    ]
+  },
+  "ural_ecospa_rules": {
+    "url": "https://ecospa-visotsky.ru/about/actions/item/154-programma-loyalnosti-krylya-ot-aviakompanii-uralskie-avialinii",
+    "program": "Уральские авиалинии — «Крылья»",
+    "partner": "EcoSpa Высоцкий",
+    "title": "EcoSpa Высоцкий — подробные условия «Крыльев»",
+    "selectors": [
+      ".itemFullText"
+    ],
+    "required": [
+      "Крылья",
+      "акционные"
+    ],
+    "record_kind": "program_rules",
+    "supplements": [
+      "ural"
+    ]
   }
 }

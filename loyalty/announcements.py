@@ -12,7 +12,8 @@ from urllib.parse import urljoin, urlsplit, parse_qs
 from bs4 import BeautifulSoup
 from normalized import canonical_url, make_offer
 
-CHANNELS = {'ekp_announcements': 'ekpcard', 'rzd_announcements': 'fpcrussia'}
+CHANNELS = {'ekp_announcements':'ekpcard', 'rzd_announcements':'fpcrussia',
+            'mir_announcements':'promomir', 'bspb_announcements':'mybspb'}
 LOYALTY = re.compile(r'\bЕКП\b|един\w*\s+карт\w*\s+петербуржц', re.I)
 RZD = re.compile(r'РЖД[\s«»"-]*Бонус', re.I)
 NUMERIC_BENEFIT = re.compile(r'\d\s*%|промокод|скидк\w*\s+(?:до\s+)?\d|\d+\s+(?:бонус\w*|балл\w*|мил[ьяиюе]\w*)', re.I)
@@ -35,6 +36,12 @@ def relevant(body, cfg, cards):
     if cfg['id'] == 'rzd_announcements':
         without_footer = GENERIC_RZD_FOOTER.sub('', body)
         return bool(RZD.search(without_footer) and NUMERIC_BENEFIT.search(without_footer))
+    if cfg['id'] in ('mir_announcements','bspb_announcements'):
+        # A bank's interest rate or a channel's audience statistics is not a perk.
+        reward=re.search(r'скидк|к[еэ]шб[еэ]к|промокод|подар',body,re.I)
+        context=(cfg['id']=='mir_announcements' or bool(re.search(r'ЯРКО|ЕКП|лояльност|един\w*\s+карт',body,re.I)))
+        return bool(context and reward and (cards or re.search(r'\d\s*%|\d+\s+(?:бонус\w*|балл\w*|мил[ьяиюе]\w*)',body,re.I))
+                    and not re.search(r'опрос|голосован|мониторинг\s+активност',body,re.I))
     if cards:
         return True
     if re.search(r'опрос|голосован|мониторинг\s+активност',body,re.I):
@@ -58,7 +65,14 @@ def parse_feed(html: str, cfg: dict, observed_at: str) -> dict:
         if not re.fullmatch(re.escape(cfg['channel'])+r'/[0-9]+', native) or native in seen:
             continue
         seen.add(native); ids.append(int(native.split('/')[-1])); result['scanned'] += 1
-        content = node.select_one('.tgme_widget_message_text')
+        own_text=[n for n in node.select('.tgme_widget_message_text')
+                  if 'js-message_reply_text' not in n.get('class',[])
+                  and not n.find_parent(class_='tgme_widget_message_reply')
+                  and not n.find_parent(class_='tgme_widget_message_link_preview')
+                  and not n.find_parent(class_='tgme_widget_message_text')]
+        if len(own_text)>1:
+            result['errors'].append({'phase':'post','native_id':native,'reason':'ambiguous_message_text'})
+        content=own_text[0] if len(own_text)==1 else None
         if content is None:
             continue
         for br in content.select('br'):
@@ -75,6 +89,8 @@ def parse_feed(html: str, cfg: dict, observed_at: str) -> dict:
                 outgoing.append(link)
             u=urlsplit(url)
             if u.hostname in ('ekp.spb.ru','www.ekp.spb.ru') and re.fullmatch(r'/capabilities/loyalty/tiles/[0-9]+/?',u.path):
+                cards.append(link)
+            elif cfg['id']=='mir_announcements' and u.hostname in ('vamprivet.ru','privetmir.ru'):
                 cards.append(link)
             elif u.hostname in ('rzd-bonus.ru','www.rzd-bonus.ru'):
                 cards.append(link)
