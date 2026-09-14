@@ -72,3 +72,19 @@ The normal Actions collector and publisher are reused. No new private source,
 Google permission, account authentication, proxy, paid service or schedule change.
 The previously retained manual RGO row remains historical evidence only; it is not
 refreshed from canned text. Current and historical observation times stay distinct.
+
+## Additional anti-staleness regression checks
+
+The separate T2 powerbank session limit was a fixed three-day field. It now comes
+from the current duration clause with exact evidence; absence becomes null, not
+three. Numeric session limits changed in tests produce changed output.
+Financial PDF tier counts are no longer fixed at three: repeated earning clauses
+are parsed completely up to a resource bound, with duplicate/unrecognized tiers
+rejected. A changed page break does not confine the reward table to page one.
+
+This does not make every site template schema-free. Source-specific section names,
+DOM selectors, eligibility interpretation and network allowlists remain explicit
+contracts. Unsupported semantic/layout changes still require a code change and
+are reported, not filled with yesterday's values. New websites and unknown storage
+hosts are not automatically authorized. A finite test suite is not a proof that
+all future layouts will be parsed correctly.

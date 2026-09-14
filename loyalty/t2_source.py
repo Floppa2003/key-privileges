@@ -106,8 +106,14 @@ def page_records(source,raw,observed_at):
         if not article:raise ValueError('t2_product_article_missing')
         terms=content([article]);start,end,evidence=period(terms)
         if source=='t2_powerbank':
+            durations=list(re.finditer(r'Период\s+одной\s+аренды\s+не\s+более\s+(\d+)\s+(?:суток|дней|дня)',terms,re.I))
+            if len(durations)>1:raise ValueError('t2_session_limit_ambiguous')
+            duration=durations[0] if durations else None
             add('stayin-touch-2025-2026','StayInTouch',terms,terms,valid_from=start,valid_until=end,
-                details={'validity_evidence':evidence,'max_session_duration_days':3},record_kind='campaign',locator='.product-article')
+                details={'validity_evidence':evidence,
+                         'max_session_duration_days':int(duration[1]) if duration else None,
+                         'session_duration_evidence':duration[0] if duration else None},
+                record_kind='campaign',locator='.product-article')
         else:
             flat=re.sub(r'\s+',' ',terms)
             matches=re.findall(r'при покупке подписки MiXX S на (\d+) месяц\w*\s*[-–—]\s*(скидку \d+% на Яндекс Станцию (?:Мини 3|Лайт 2 без часов))',flat,re.I)

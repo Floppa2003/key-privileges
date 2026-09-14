@@ -2,20 +2,21 @@ name: Review live structure extraction
 on:
   push:
     branches: [loyalty/live-documents-and-generic-text]
-    paths: [loyalty/**, .github/materialize-live.py, .github/live-runtime-edits.json, .github/workflows/live-extraction-review.yml]
+    paths: [loyalty/**, .github/workflows/live-extraction-review.yml]
 permissions:
-  contents: write
+  contents: read
 jobs:
   review:
     runs-on: ubuntu-24.04
     timeout-minutes: 18
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with:
           python-version: '3.12'
-      - name: Materialize reviewed code changes
-        run: mkdir -p review-output && python .github/materialize-live.py
+      - run: mkdir -p review-output
       - run: python -m pip install -r loyalty/requirements.txt jsonschema==4.25.1
       - name: Run complete regression suite
         run: |
@@ -46,7 +47,7 @@ jobs:
               (out/'pdf'/(hashlib.sha256(data).hexdigest()+'.pdf')).write_bytes(data)
               return original(data,**kwargs)
           for module in (document_text,recovered_sources,utair_documents,reviewed_pdf):module.extract_pdf=observed
-          cfgs=[c for c in json.loads(Path('loyalty/sources_normalized.json').read_text()) if c['id'] in ('rgo','mir_announcements','utair_rule_documents','af_vtb_rules','nspk_ekp_rules','uralsib_rzd_rules')]
+          cfgs=[c for c in json.loads(Path('loyalty/sources_normalized.json').read_text()) if c['id'] in ('rgo','mir_announcements','utair_rule_documents','af_vtb_rules','nspk_ekp_rules','uralsib_rzd_rules','t2_powerbank','t2_mixx','rzd_finuslugi_rules','af_primbank_rules')]
           now=datetime.now(timezone.utc).isoformat()
           async def run():
               async with async_playwright() as p:
@@ -60,19 +61,7 @@ jobs:
           for row in records:validate(row,schema)
           prepare(bundle)
           print(json.dumps({'records':len(records),'sources':[{'id':r['source_id'],'status':r['status'],'count':r['normalized'],'errors':r['errors']} for r in reports]},ensure_ascii=False))
-          # Inspect only newly rejected shortlinks; never export signed query strings.
-          diagnostics=[]
-          for report in reports:
-              if report['source_id']!='utair_rule_documents':continue
-              for err in report['errors']:
-                  key=err.get('key')
-                  if not key or err.get('reason')!='ValueError':continue
-                  try:
-                      r=requests.get('https://ut0.ru/'+key,timeout=(5,12),allow_redirects=False)
-                      u=urlsplit(r.headers.get('Location',''))
-                      diagnostics.append({'key':key,'status':r.status_code,'target_scheme':u.scheme,'target_host':u.hostname,'target_path':u.path,'query_redacted':bool(u.query)})
-                  except requests.RequestException:diagnostics.append({'key':key,'error':'transport'})
-          (out/'shortlink-diagnostics.json').write_text(json.dumps(diagnostics,ensure_ascii=False,indent=2))
+
           PY
       - name: Preserve exact code and offline test dependency
         if: always()
@@ -85,16 +74,6 @@ jobs:
           paths=list(Path('loyalty').glob('*.py'))+list(Path('loyalty/tests').glob('*.py'))
           Path('review-output/code-hashes.json').write_text(json.dumps({str(p):hashlib.sha256(p.read_bytes()).hexdigest() for p in paths},indent=2))
           PY
-      - name: Persist validated materialized code on this branch
-        if: success()
-        run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add loyalty .github
-          if ! git diff --cached --quiet; then
-            git commit -m 'refactor: materialize tested live extraction without snapshot answers'
-            git push origin HEAD:loyalty/live-documents-and-generic-text
-          fi
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:

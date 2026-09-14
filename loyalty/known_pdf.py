@@ -74,7 +74,7 @@ def parse_pdf_pages(source: str,pages: list[str],observed_at: str,*,document_sha
     if source=='rzd_finuslugi_rules':
         section=all_text.split('7.1.10.',1)[1].split('7.1.11.',1)[0]
         clauses=[x.strip() for x in section.split('•')[1:]]
-        if len(clauses)!=3:raise ValueError('deposit_tier_count_changed')
+        if not 1<=len(clauses)<=50 or any(not x for x in clauses):raise ValueError('deposit_tiers_missing_or_unbounded')
         tiers=[]
         for clause in clauses:
             reward=require(r'(\d+) баллов только за первый вклад',clause)
@@ -86,7 +86,7 @@ def parse_pdf_pages(source: str,pages: list[str],observed_at: str,*,document_sha
             tiers.append({'points':number(reward[1]),'deposit_min_rub':lo,'deposit_max_rub':hi,
                           'term_min_months':int(months[1]),'reward_unit':'RZD_Bonus_points',
                           'evidence':clause})
-        if len({t['deposit_min_rub'] for t in tiers})!=3:raise ValueError('duplicate_deposit_tier')
+        if len({t['deposit_min_rub'] for t in tiers})!=len(tiers):raise ValueError('duplicate_deposit_tier')
         period=require(r'Акция проводится в рамках срока с (\d{2}\.\d{2}\.\d{4}) г\. по (\d{2}\.\d{2}\.\d{4}) г\.',all_text)
         start,end=[datetime.strptime(s,'%d.%m.%Y').date().isoformat() for s in period.groups()]
         credit=require(r'в течение (\d+) календарных дней после истечения Периода охлаждения',all_text)
@@ -97,7 +97,7 @@ def parse_pdf_pages(source: str,pages: list[str],observed_at: str,*,document_sha
         benefit=section
         warnings.append('loyalty_account_number_is_not_a_public_promocode')
     else:
-        p=compact(pages[0])
+        p=compact(' '.join(pages))
         section=p.split('За каждые потраченные на покупки',1)[1].split('Дополнительные привилегии',1)[0]
         section='За каждые потраченные на покупки'+section
         basis=require(r'За каждые потраченные на покупки (\d+) руб',section)
@@ -107,8 +107,12 @@ def parse_pdf_pages(source: str,pages: list[str],observed_at: str,*,document_sha
             if int(lo)>=int(hi):raise ValueError('invalid_card_spend_interval')
             tiers.append({'miles':m[1],'monthly_spend_from_rub':lo,'monthly_spend_to_rub':hi,
                           'lower_inclusive':None,'upper_inclusive':None,'evidence':m[0]})
-        if len(tiers)!=3 or len({t['monthly_spend_from_rub'] for t in tiers})!=3:
-            raise ValueError('card_tier_count_changed')
+        # Every earning-tier clause must be recognized, including newly added tiers.
+        # No fixed number of rows and no silent dropping of unsupported rows.
+        expected=len(re.findall(r'\bпри сумме покупок по карте в месяц\b',section,re.I))
+        if (not 1<=len(tiers)<=50 or len(tiers)!=expected
+                or len({t['monthly_spend_from_rub'] for t in tiers})!=len(tiers)):
+            raise ValueError('card_tiers_missing_duplicate_or_unparsed')
         cap=require(r'Максимальный лимит выплаты кешбэк/миль в месяц[^\d]*([\d ]+) миль',section)
         welcome=require(r'(\d+) приветственных миль',section)
         service=p.split('Обслуживание карты',1)[1].split('Обслуживание платежного стикера',1)[0] if 'Обслуживание платежного стикера' in p else p.split('Обслуживание карты',1)[1].split('Начисление кешбэк/миль',1)[0]
