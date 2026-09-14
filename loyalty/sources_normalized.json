@@ -471,7 +471,7 @@
   },
   {
     "id": "promomiles_otello_rules",
-    "name": "Аэрофлот Бонус — Promo Miles — Архивные правила промокода AF2026",
+    "name": "Отелло — правила промокода Аэрофлот Бонус",
     "url": "https://promomiles.aeroflot.ru/act/march2026/partner-code-terms-use",
     "mode": "known_rules",
     "timeout_seconds": 120

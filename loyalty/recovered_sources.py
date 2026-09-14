@@ -274,7 +274,7 @@ def scoped_bank_sections(sid, raw):
     selected=[]
     for n in candidates:
         body=text(n.get_text(' ',strip=True))
-        if (n.get('id') in ('how','widget-panel') or body.startswith('1000 Бесплатно')):
+        if (n.get('id') in ('how','widget-panel') or n.select_one('[class*="Container-footer-new"]') is not None):
             continue
         if body:
             selected.append(n)

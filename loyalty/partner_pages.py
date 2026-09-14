@@ -72,9 +72,14 @@ def extract_partner_page(source,soup,url,observed_at):
             warnings=warnings.copy(),details={**details,**kwargs.pop('details',{})},**kwargs)
     if source=='af_askona':
         # A finite multiplier is not the ongoing base accrual rate.
-        base=re.search(r'(?:Участники[^.]*?)?1 мил[ьяю][^.]*?за каждые 100 рублей[^.]*\.',flat,re.I)
+        # Identify the undated accrual clause by its role, not today's rate.
+        # Dated campaign sentences cannot supply a fallback base rate.
+        rate_pattern=r'\d+(?:[.,]\d+)?\s+мил[ьяюие]\w*.*?за каждые\s+\d[\d \u00a0\u202f]*(?:[.,]\d+)?\s+(?:руб\w*|₽)'
+        period_pattern=r'\b(?:период|акци\w*|срок)\b|(?<!\d)\d{1,2}[./]\d{1,2}[./]\d{4}'
+        base=[sentence for sentence in re.split(r'(?<=[.!?])\s+',flat)
+              if re.search(rate_pattern,sentence,re.I) and not re.search(period_pattern,sentence,re.I)]
         promo=re.search(r'В период с (\d{2}\.\d{2}\.\d{4}) по (\d{2}\.\d{2}\.\d{4}) (.*?начисляется \d+(?:[.,]\d+)? мил[ьяюи][^.]*\.)',flat,re.I)
-        if not base:raise ValueError('Askona base accrual sentence changed; review required')
+        if len(base)!=1:raise ValueError('Askona undated base accrual missing or ambiguous')
         rows=[make('base',base[0],details={'rate_scope':'base','has_separate_dated_promotion':bool(promo)})]
         if promo:
             start,end=(datetime.strptime(s,'%d.%m.%Y').date().isoformat() for s in (promo[1],promo[2]))

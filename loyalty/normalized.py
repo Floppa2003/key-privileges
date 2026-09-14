@@ -14,7 +14,7 @@ from promo_codes import extract_promocodes
 from table_benefits import extract_table_benefits
 from recovered_contract import SOURCES as RECOVERED_SOURCES, http_url, validate_recovered
 
-VERSION = '2.9.0'
+VERSION = '2.9.1'
 HOSTS = {
  'moskvich': ['moskvichmag.ru'], 'noname': ['nonameburo.com'],
  's7': ['marketplace.s7.ru'], 'ural': ['www.uralairlines.ru'],
