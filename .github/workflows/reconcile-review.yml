@@ -22,15 +22,13 @@ jobs:
       - run: python -m pip install -r loyalty/requirements.txt jsonschema==4.26.0
       - run: python -m unittest discover -s loyalty/tests -v
       - run: node --test key/refresh.test.mjs
-      - name: Preserve public code and run bounded public inspection
+      - name: Preserve public code and inspect remaining exact references
         run: |
           mkdir -p reconcile-output
           git archive --format=tar --output=reconcile-output/code.tar HEAD
           python -m pip download --no-deps protego==0.6.2 pypdf==6.18.1 -d reconcile-output
-          if test -f loyalty/reconcile_probe.py; then
-            python -m playwright install --with-deps chromium
-            python loyalty/reconcile_probe.py
-          fi
+          python -m playwright install --with-deps chromium
+          python loyalty/reconcile_extra.py
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
