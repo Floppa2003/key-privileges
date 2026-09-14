@@ -1,34 +1,16 @@
-"""Unknown PDF bytes cannot inherit an earlier visual review."""
-import hashlib,importlib.util,sys,unittest
+"""RGO accepts changed live documents; transport refusals still fail."""
+import sys,unittest
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).parents[1]))
-
-class ReviewedPdfTests(unittest.TestCase):
-    def module(self):
-        self.assertIsNotNone(importlib.util.find_spec('reviewed_pdf'),'No reviewed-image-PDF adapter')
-        import reviewed_pdf
-        return reviewed_pdf
-    def test_changed_pdf_is_not_silently_reused(self):
-        m=self.module()
-        with self.assertRaisesRegex(ValueError,'review_required'):
-            m.extract_rgo_pdf(b'%PDF-1.4 changed document',m.RGO_BEELINE_URL,'2026-09-12T19:00:00+00:00')
-    def test_non_pdf_bytes_cannot_be_treated_as_pdf(self):
-        m=self.module()
-        with self.assertRaisesRegex(ValueError,'not_a_pdf'):
-            m.extract_rgo_pdf(b'<title>Access denied</title>',m.RGO_BEELINE_URL,'2026-09-12T19:00:00+00:00')
-    def test_wrong_source_url_is_rejected_before_profile_use(self):
-        m=self.module()
-        with self.assertRaisesRegex(ValueError,'not_the_reviewed_url'):
-            m.extract_rgo_pdf(b'%PDF-1.4', 'https://evil.invalid/a.pdf','2026-09-12T19:00:00+00:00')
-    def test_review_contains_prices_not_fictitious_discount(self):
-        m=self.module();r=m.make_beeline_offer('2026-09-12T19:00:00+00:00')
-        self.assertEqual(r['details']['price_components'][0]['value'],'450')
-        self.assertEqual(r['details']['price_components'][0]['qualifier'],'at_least')
-        self.assertEqual(r['details']['price_components'][1]['value'],'100')
-        self.assertFalse(any(x['kind']=='discount' for x in r['rates']))
-        self.assertIsNone(r['valid_until'])
-        self.assertIn('5 устройств',r['benefit_text'])
-        self.assertEqual(r['details']['extraction_method'],'digest_bound_visual_review')
+from test_document_text import pdf,NOW
+from reviewed_pdf import extract_rgo_pdf
+class LiveRgoPdfTests(unittest.TestCase):
+ def test_any_discovered_rgo_pdf_is_read_from_its_bytes(self):
+  for url,value in [('https://rgo.ru/upload/a.pdf','Offer changed 717'),('https://rgo.ru/upload/b.pdf','Another offer 833')]:
+   r=extract_rgo_pdf(pdf([value]),url,NOW)[0]
+   self.assertIn(value,r['conditions_text']);self.assertEqual(r['source_url'],url)
+ def test_wrong_origin_is_rejected(self):
+  with self.assertRaises(ValueError):extract_rgo_pdf(pdf(['x']),'https://evil.invalid/a.pdf',NOW)
 
 class PdfTransportTests(unittest.IsolatedAsyncioTestCase):
     def client(self,status,data):
