@@ -1,4 +1,4 @@
 {
-  "request_id": "2026-09-14-live-document-extraction-v2.9.0",
-  "reason": "Run all configured public sources with fresh document discovery and generic caption/PDF extraction. Do not substitute manual answers or replay source snapshots. Preserve OCR uncertainty, supported-structure limits, source identity, per-document provenance, old observation timestamps and explicit failures. Publish through the established parser and normalized views; independently verify actual output and preserve manual/source sheets and comment columns. No private-source collection, new Google permissions, paid infrastructure or schedule changes."
+  "request_id": "2026-09-14-live-value-guards-v2.9.1",
+  "reason": "Run current public sources with live PDF/caption discovery and source-identity guards independent of changing prices, rates, codes and plan counts. Do not load manual source answers or replay review artifacts. Preserve real response provenance, OCR/HTTP uncertainty, historical observations and remaining failures. Publish through established parser and normalized views; independently verify final output and original Sheet/comment preservation. No private-source retrieval, new permissions, paid infrastructure or schedule changes."
 }
