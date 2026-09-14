@@ -27,8 +27,17 @@ def fetch(session,url,verify=True):
  return r,b''.join(chunks)
 
 
+def project_post(post):
+ if type(post.get('id')) is not int or post.get('status')!='publish' or post.get('type')!='post' or post.get('content',{}).get('protected') is not False:
+  raise RuntimeError('not_an_unprotected_public_post')
+ title=text(post['title']['rendered']);content=text(post['content']['rendered'])
+ warnings=['transport_unencrypted_and_unauthenticated','current_eligibility_and_validity_unknown','historical_publication_date_not_offer_expiry']
+ if not title or not content:warnings.append('empty_title_or_text_not_a_verified_offer')
+ return {'native_id':str(post['id']),'program':'Loyals','partner_name':title or None,'source_url':API+'/'+str(post['id']),'publisher_canonical_url':post['link'],'source_published_at_gmt':post.get('date_gmt'),'source_modified_at_gmt':post.get('modified_gmt'),'observed_at':datetime.now(timezone.utc).isoformat(),'source_status':'public_http_observation_not_current_offer_verification','rates':normalize_rates(content),'conditions':lexical_conditions(content),'source_text':content,'raw':post,'warnings':warnings}
+
+
 def loyals():
- report={'source':'loyals','transport':'http_unencrypted_and_unauthenticated','complete_api_collection':False,'pages':[],'records':[],'errors':[]}
+ report={'source':'loyals','transport':'http_unencrypted_and_unauthenticated','complete_api_collection':False,'pages':[],'records':[],'errors':[],'projection_issues':[]}
  with requests.Session() as s:
   s.trust_env=False
   r,raw=fetch(s,'http://loyals.ru/')
@@ -53,11 +62,10 @@ def loyals():
    report['pages'].append({'url':url,'status':r.status_code,'count':len(values),'total':total,'total_pages':pages,'sha256':hashlib.sha256(raw).hexdigest()})
    for post in values:
     if type(post.get('id')) is not int or post['id'] in seen:raise RuntimeError('invalid_or_duplicate_post_id')
-    if post.get('status')!='publish' or post.get('type')!='post' or post.get('content',{}).get('protected') is not False:raise RuntimeError('not_an_unprotected_public_post')
-    seen.add(post['id']);title=text(post['title']['rendered']);content=text(post['content']['rendered'])
-    if not title or not content:raise RuntimeError('empty_post_identity_or_text')
-    actual=API+'/'+str(post['id'])
-    report['records'].append({'native_id':str(post['id']),'program':'Loyals','partner_name':title,'source_url':actual,'publisher_canonical_url':post['link'],'source_published_at_gmt':post.get('date_gmt'),'source_modified_at_gmt':post.get('modified_gmt'),'observed_at':datetime.now(timezone.utc).isoformat(),'source_status':'public_http_observation_not_current_offer_verification','rates':normalize_rates(content),'conditions':lexical_conditions(content),'source_text':content,'raw':post,'warnings':['transport_unencrypted_and_unauthenticated','current_eligibility_and_validity_unknown','historical_publication_date_not_offer_expiry']})
+    record=project_post(post);seen.add(post['id'])
+    record['linked_from_homepage']=post['id'] in catalog_ids
+    if not record['partner_name'] or not record['source_text']:report['projection_issues'].append({'native_id':post['id'],'reason':'empty_title_or_text_not_a_verified_offer'})
+    report['records'].append(record)
    if page==pages:
     report['complete_api_collection']=len(seen)==total;break
   report['api_total']=total;report['accepted_posts']=len(seen)
@@ -87,7 +95,22 @@ def uralsib():
  return report
 
 
+def fixture_checks():
+ p={'id':1,'title':{'rendered':'Example'},'content':{'rendered':'','protected':False},'status':'publish','type':'post','link':'https://loyals.ru/example/'}
+ r=project_post(p)
+ assert r['rates']==[] and r['source_text']=='' and 'empty_title_or_text_not_a_verified_offer' in r['warnings']
+ p['content']['rendered']='<p>Скидка 15% на меню.</p>';r=project_post(p)
+ assert r['rates'][0]['value']=='15' and r['rates'][0]['evidence'] in r['source_text']
+ assert r['source_published_at_gmt'] is None
+ p['content']['protected']=True
+ try:project_post(p)
+ except RuntimeError:pass
+ else:raise AssertionError('protected content accepted')
+ print('Empty/nonempty/protected diagnostic fixtures passed')
+
+
 def main():
+ fixture_checks()
  report={'purpose':'verify_structured_public_access_not_production_integration','observed_at':datetime.now(timezone.utc).isoformat(),'results':{}}
  for name,func in [('loyals',loyals),('uralsib',uralsib)]:
   try:report['results'][name]=func()
