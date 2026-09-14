@@ -58,9 +58,9 @@ class PdfRuleTests(unittest.TestCase):
   with self.assertRaises(ValueError):self.parse('rzd_finuslugi_rules',PRIM[:3])
  def test_pdf_bytes_must_be_real_and_no_image_only_success(self):
   from pypdf import PdfWriter
-  with self.assertRaises(ValueError):known_pdf.pdf_pages(b'<html>200</html>',3)
+  with self.assertRaises(ValueError):known_pdf.pdf_pages(b'<html>200</html>')
   w=PdfWriter();[w.add_blank_page(200,200) for _ in range(3)];b=io.BytesIO();w.write(b)
-  with self.assertRaises(ValueError):known_pdf.pdf_pages(b.getvalue(),3)
+  with self.assertRaises(ValueError):known_pdf.pdf_pages(b.getvalue())
  def test_pdf_source_cannot_be_promoted_into_partner_offer(self):
   from normalized import validate_offer,content_hash
   r=self.parse('rzd_finuslugi_rules',FIN);r['record_kind']='partner_offer';r['content_sha256']=content_hash(r)
