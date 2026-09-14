@@ -1,4 +1,4 @@
 {
-  "request_id": "2026-09-14-recovered-public-sources-v2.8.0",
-  "reason": "Run all 90 configured public sources with the approved Loyals HTTP-only public API profile and exact VTB/NSPK/Uralsib pinned-CA rules. Preserve HTTP transport warnings, empty-post evidence, historical validity, source identity and explicit remaining failures. Publish through the established parser and private normalized views, independently read back actual output, and preserve manual/source sheets and comment columns. No Google permissions, private source collection, paid network infrastructure or schedule changes."
+  "request_id": "2026-09-14-live-document-extraction-v2.9.0",
+  "reason": "Run all configured public sources with fresh document discovery and generic caption/PDF extraction. Do not substitute manual answers or replay source snapshots. Preserve OCR uncertainty, supported-structure limits, source identity, per-document provenance, old observation timestamps and explicit failures. Publish through the established parser and normalized views; independently verify actual output and preserve manual/source sheets and comment columns. No private-source collection, new Google permissions, paid infrastructure or schedule changes."
 }
