@@ -2,7 +2,7 @@ name: Review live structure extraction
 on:
   push:
     branches: [loyalty/live-documents-and-generic-text]
-    paths: [loyalty/**, .github/live-runtime-edits.json, .github/workflows/live-extraction-review.yml]
+    paths: [loyalty/**, .github/materialize-live.py, .github/live-runtime-edits.json, .github/workflows/live-extraction-review.yml]
 permissions:
   contents: write
 jobs:
@@ -15,39 +15,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: Materialize reviewed code changes
-        run: |
-          mkdir -p review-output
-          python - <<'PY'
-          import hashlib,json
-          from pathlib import Path
-          patches=Path('.github/live-runtime-edits.json')
-          if patches.exists():
-              replacements={}
-              for name,spec in json.loads(patches.read_text()).items():
-                  path=Path(name);old=path.read_text() if path.exists() else None
-                  actual=hashlib.sha256(old.encode()).hexdigest() if old is not None else None
-                  if actual!=spec['old_sha256']:raise ValueError('code baseline changed: '+name)
-                  value=spec.get('write',old)
-                  for start,size,new in reversed(spec.get('edits',[])):
-                      if name=='loyalty/announcements.py':
-                          new=new.replace("'\n\n'","'\\n\\n'").replace("'\n'","'\\n'")
-                      value=value[:start]+new+value[start+size:]
-                  actual=hashlib.sha256(value.encode()).hexdigest() if value is not None else None
-                  if actual!=spec['new_sha256']:raise ValueError('code result hash mismatch: '+name)
-                  replacements[path]=value
-              for path,value in replacements.items():
-                  if value is None:path.unlink()
-                  else:path.write_text(value,encoding='utf8')
-              patches.unlink()
-              doc=Path('loyalty/document_text.py');s=doc.read_text()
-              s=s.replace('ocr_count=0;total=0','ocr_count=0;ocr_attempted=0;total=0')
-              s=s.replace('if allow_ocr and ocr_count<10:', 'if allow_ocr and ocr_attempted<10:\n                    ocr_attempted+=1')
-              s=s.replace("    d=record['details'];pages=d.get('pages',[])","    from normalized import text\n    d=record['details'];pages=d.get('pages',[])")
-              s=s.replace("__import__('normalized').text(page_text(pages))",'text(page_text(pages))')
-              doc.write_text(s)
-              p=Path('loyalty/NORMALIZED.md');s=p.read_text();s+='\nLive PDF extraction and generic album ownership supersede the historical visual-review profile; see LIVE_EXTRACTION.md.\n';p.write_text(s)
-              p=Path('loyalty/RECOVERED_SOURCES.md');s=p.read_text();p.write_text('> Historical 2.8.0 contract; live linked-PDF discovery and extraction are described in LIVE_EXTRACTION.md (2.9.0).\n\n'+s)
-          PY
+        run: mkdir -p review-output && python .github/materialize-live.py
       - run: python -m pip install -r loyalty/requirements.txt jsonschema==4.25.1
       - name: Run complete regression suite
         run: |
@@ -62,9 +30,10 @@ jobs:
       - name: Fetch live sources through production entrypoints
         run: |
           python - <<'PY'
-          import sys,asyncio,json,os,hashlib
+          import sys,asyncio,json,os,hashlib,requests
           from pathlib import Path
           from datetime import datetime,timezone
+          from urllib.parse import urlsplit
           sys.path.insert(0,'loyalty')
           import document_text,recovered_sources,utair_documents,reviewed_pdf
           from collect_normalized import one,source_budget,bounded_source
@@ -91,6 +60,19 @@ jobs:
           for row in records:validate(row,schema)
           prepare(bundle)
           print(json.dumps({'records':len(records),'sources':[{'id':r['source_id'],'status':r['status'],'count':r['normalized'],'errors':r['errors']} for r in reports]},ensure_ascii=False))
+          # Inspect only newly rejected shortlinks; never export signed query strings.
+          diagnostics=[]
+          for report in reports:
+              if report['source_id']!='utair_rule_documents':continue
+              for err in report['errors']:
+                  key=err.get('key')
+                  if not key or err.get('reason')!='ValueError':continue
+                  try:
+                      r=requests.get('https://ut0.ru/'+key,timeout=(5,12),allow_redirects=False)
+                      u=urlsplit(r.headers.get('Location',''))
+                      diagnostics.append({'key':key,'status':r.status_code,'target_scheme':u.scheme,'target_host':u.hostname,'target_path':u.path,'query_redacted':bool(u.query)})
+                  except requests.RequestException:diagnostics.append({'key':key,'error':'transport'})
+          (out/'shortlink-diagnostics.json').write_text(json.dumps(diagnostics,ensure_ascii=False,indent=2))
           PY
       - name: Preserve exact code and offline test dependency
         if: always()
