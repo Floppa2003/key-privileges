@@ -1,0 +1,93 @@
+name: Review live direct document discovery
+on:
+  push:
+    branches: [loyalty/public-crawl-expansion]
+    paths: [.github/workflows/direct-documents-review.yml]
+permissions:
+  contents: write
+jobs:
+  review:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r loyalty/requirements.txt
+      - name: Materialize exact reviewed wiring and delete temporary patch
+        shell: bash
+        run: |
+          python - <<'PY'
+          import hashlib, subprocess
+          from pathlib import Path
+          pairs={
+            'loyalty/document_text.py':('3e429c5ca19e3fe51d13e199c2ef1012d957b2b51644c8e814b886e36189ee55','f32085174fe22c379e6bbd761867b5bb2534156cb262235ef40ed696d8069476'),
+            'loyalty/normalized.py':('19d2d41a686447da7158e3571503705050004ecb58a62198c3581ec57412ffea','b36fa38efd6a0d7e97b90685245c3a733783c57c9962aa4260a8db15921aa2a9')}
+          for p,(before,after) in pairs.items():assert hashlib.sha256(Path(p).read_bytes()).hexdigest()==before,p
+          subprocess.run(['git','apply','--check','diagnostics/direct-route-wiring.patch'],check=True)
+          subprocess.run(['git','apply','diagnostics/direct-route-wiring.patch'],check=True)
+          for p,(before,after) in pairs.items():assert hashlib.sha256(Path(p).read_bytes()).hexdigest()==after,p
+          Path('diagnostics/direct-route-wiring.patch').unlink()
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add loyalty/document_text.py loyalty/normalized.py diagnostics/direct-route-wiring.patch
+          git commit -m 'build: materialize reviewed direct-document wiring; remove development patch'
+          git push origin HEAD:loyalty/public-crawl-expansion
+      - name: Regression tests
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p direct-review-output
+          python -m unittest discover -s loyalty/tests -v 2>&1 | tee direct-review-output/python-tests.log
+          node --test key/refresh.test.mjs 2>&1 | tee direct-review-output/key-tests.log
+      - run: python -m playwright install --with-deps chromium
+      - name: Exercise current source through production dispatcher
+        shell: bash
+        run: |
+          python - <<'PY'
+          import asyncio,hashlib,json,os,sys
+          from pathlib import Path
+          from datetime import datetime,timezone
+          sys.path.insert(0,'loyalty')
+          from collect_normalized import one
+          from playwright.async_api import async_playwright
+          from sheets_normalized import prepare
+          async def main():
+            cfg=next(c for c in json.loads(Path('loyalty/sources_normalized.json').read_text()) if c['id']=='utair_rule_documents')
+            now=datetime.now(timezone.utc).isoformat()
+            async with async_playwright() as p:
+              browser=await p.chromium.launch()
+              try:report,rows=await one(browser,cfg,now,200)
+              finally:await browser.close()
+            bundle={'schema_version':2,'run_id':os.environ['GITHUB_RUN_ID']+':1','observed_at':now,'records':rows,'sources':[report]}
+            prepare(bundle)
+            Path('direct-review-output/normalized.json').write_text(json.dumps(bundle,ensure_ascii=False,indent=2))
+            assert report['status']=='ok',report['errors']
+            coverage=json.loads(report['coverage'])
+            assert coverage['direct_links_discovered']>0
+            assert coverage['links_read']==coverage['discovered_links']
+            assert any(r['native_id'].startswith('direct-document:') for r in rows)
+            assert all('X-Amz-' not in json.dumps(r) for r in rows)
+          asyncio.run(main())
+          PY
+      - name: Archive actual executed code
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p direct-review-output
+          git rev-parse HEAD > direct-review-output/execution-commit.txt
+          tar --exclude='__pycache__' -cf direct-review-output/code.tar loyalty key
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          hashes={str(p):hashlib.sha256(p.read_bytes()).hexdigest() for p in Path('loyalty').rglob('*') if p.is_file() and '__pycache__' not in str(p)}
+          Path('direct-review-output/code-hashes.json').write_text(json.dumps(hashes,indent=2))
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: direct-documents-review-${{ github.run_id }}
+          path: direct-review-output/
+          retention-days: 7
