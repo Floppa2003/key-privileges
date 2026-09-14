@@ -30,3 +30,16 @@ class MoreAnnouncementsTests(unittest.TestCase):
   r.update(link_kind='detail_page',record_kind='partner_offer',source_status='published',benefit_url=r['source_url']);r['content_sha256']=content_hash(r)
   with self.assertRaises(ValueError):validate_offer(r)
   with self.assertRaises(ValueError):parse_feed('',config('mir_announcements','evil'),NOW)
+
+class ReplyAndNavigationTests(unittest.TestCase):
+ def test_reply_excerpt_does_not_become_new_posts_offer(self):
+  cfg=config('mir_announcements','promomir')
+  html='<div class="tgme_widget_message" data-post="promomir/1927"><a class="tgme_widget_message_reply"><div class="tgme_widget_message_text js-message_reply_text">Скидка 10% по карте Мир</div></a><div class="tgme_widget_message_text js-message_text">Завтра пойду кататься.</div><a class="tgme_widget_message_date"><time datetime="2026-09-04T14:37:01+00:00"></time></a></div>'
+  self.assertEqual(parse_feed(html,cfg,NOW)['records'],[])
+ def test_channel_directory_does_not_count_as_a_coupon_offer(self):
+  cfg=config('mir_announcements','promomir')
+  self.assertEqual(parse_feed(post('promomir',1866,'Четыре канала: здесь акции, скидки, промокоды и кешбэк.'),cfg,NOW)['records'],[])
+ def test_actual_nonnumeric_offer_with_card_link_remains_evidence(self):
+  cfg=config('mir_announcements','promomir')
+  body='Скидка на анализы у партнера <a href="https://vamprivet.ru/promo/clinic">Правила</a>'
+  self.assertEqual(len(parse_feed(post('promomir',10,body),cfg,NOW)['records']),1)

@@ -40,7 +40,7 @@ def relevant(body, cfg, cards):
         # A bank's interest rate or a channel's audience statistics is not a perk.
         reward=re.search(r'скидк|к[еэ]шб[еэ]к|промокод|подар',body,re.I)
         context=(cfg['id']=='mir_announcements' or bool(re.search(r'ЯРКО|ЕКП|лояльност|един\w*\s+карт',body,re.I)))
-        return bool(context and reward and NUMERIC_BENEFIT.search(body)
+        return bool(context and reward and (cards or re.search(r'\d\s*%|\d+\s+(?:бонус\w*|балл\w*|мил[ьяиюе]\w*)',body,re.I))
                     and not re.search(r'опрос|голосован|мониторинг\s+активност',body,re.I))
     if cards:
         return True
@@ -65,7 +65,13 @@ def parse_feed(html: str, cfg: dict, observed_at: str) -> dict:
         if not re.fullmatch(re.escape(cfg['channel'])+r'/[0-9]+', native) or native in seen:
             continue
         seen.add(native); ids.append(int(native.split('/')[-1])); result['scanned'] += 1
-        content = node.select_one('.tgme_widget_message_text')
+        own_text=[n for n in node.select('.tgme_widget_message_text')
+                  if 'js-message_reply_text' not in n.get('class',[])
+                  and not n.find_parent(class_='tgme_widget_message_reply')
+                  and not n.find_parent(class_='tgme_widget_message_link_preview')]
+        if len(own_text)>1:
+            result['errors'].append({'phase':'post','native_id':native,'reason':'ambiguous_message_text'})
+        content=own_text[0] if len(own_text)==1 else None
         if content is None:
             continue
         for br in content.select('br'):
