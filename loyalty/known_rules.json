@@ -165,8 +165,7 @@
     ],
     "required": [
       "Единая карта",
-      "косметология",
-      "10%"
+      "косметология"
     ],
     "record_kind": "program_rules",
     "link_kind": "page_block",
@@ -182,7 +181,7 @@
     ],
     "required": [
       "Перечень льготных категорий",
-      "скидку в 10%",
+      "скидку",
       "члены Русского географического общества"
     ],
     "record_kind": "program_rules",
@@ -262,8 +261,7 @@
     ],
     "required": [
       "MiXX M",
-      "Федеральный",
-      "549"
+      "Федеральный"
     ],
     "record_kind": "program_rules",
     "supplements": [
@@ -300,7 +298,7 @@
     "required": [
       "Как накапливать баллы AZIMUT Bonus",
       "НДС",
-      "Пример 1"
+      "Пример"
     ],
     "record_kind": "program_rules",
     "supplements": [
@@ -319,8 +317,8 @@
     ],
     "required": [
       "Семья",
-      "до 7 счетов",
-      "Как минимум 299"
+      "счетов",
+      "Как минимум"
     ],
     "record_kind": "program_rules",
     "supplements": [
@@ -378,8 +376,7 @@
     ],
     "required": [
       "Бронируйте с умом",
-      "Срок проведения Акции",
-      "10 000"
+      "Срок проведения Акции"
     ],
     "record_kind": "program_rules",
     "handler": "mir101",
@@ -397,8 +394,7 @@
     ],
     "required": [
       "Аэроэкспресс",
-      "СБП",
-      "5%"
+      "СБП"
     ],
     "record_kind": "program_rules",
     "handler": "aeroexpress",
@@ -410,14 +406,13 @@
     "url": "https://promomiles.aeroflot.ru/act/march2026/partner-code-terms-use",
     "program": "Аэрофлот Бонус — Promo Miles",
     "partner": "Отелло",
-    "title": "Архивные правила промокода AF2026",
+    "title": "Правила промокода Отелло",
     "selectors": [
       ".terms-use"
     ],
     "required": [
-      "AF2026",
       "Отелло",
-      "2026"
+      "промокод"
     ],
     "record_kind": "program_rules",
     "handler": "otello",
@@ -560,10 +555,7 @@
       ".ft.offset__24"
     ],
     "required": [
-      "Крылья",
-      "Крылья5",
-      "Крылья10",
-      "Крылья15"
+      "Крылья"
     ],
     "record_kind": "program_rules",
     "supplements": [

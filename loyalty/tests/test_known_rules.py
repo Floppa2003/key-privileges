@@ -108,5 +108,5 @@ class SmartaviaTests(unittest.TestCase):
   self.assertEqual(rs[-1]['details']['discount_basis'],'annual_subscription_not_air_ticket')
   self.assertIsNone(rs[0]['valid_until'])
  def test_missing_duplicate_or_unknown_plan_label_rejected(self):
-  for a,b in [('Тариф 1+2','Тариф 1+3'),('Тариф 1+2','Тариф 1+7')]:
+  for a,b in [('Тариф 1+2','Тариф 1+3'),('Тариф 1+2','Тариф X+2')]:
    with self.assertRaises(ValueError):parse('smartavia_rules',self.fixture().replace(a,b))

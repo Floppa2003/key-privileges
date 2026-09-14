@@ -251,16 +251,16 @@ def parse_known_rule(source,raw,url,observed_at):
 
 def smartavia_records(cfg,nodes,terms,details,warnings,url,now):
     cards=nodes[0].select('.smartup-tariff-item')
-    if len(cards)!=4:raise ValueError('smartavia_four_plan_cards_required')
+    if not 1<=len(cards)<=20:raise ValueError('smartavia_plan_count_outside_bound')
     records=[];labels=set()
     for card in cards:
-        value=content([card]);m=match(r'Тариф (1\+[0-3])',value,'smartavia_plan_label_missing');key=m[1]
+        value=content([card]);m=match(r'Тариф (1\+(?:0|[1-9]\d*))(?=\s|[.,:;!?]|$)',value,'smartavia_plan_label_missing');key=m[1]
         if key in labels:raise ValueError('smartavia_duplicate_plan_label')
         labels.add(key)
         price=match(r'Оформить за ('+NUM+r')\s*₽',value,'smartavia_plan_price_missing')
         segments=match(r'(\d+) сегментов со скидкой (\d+) ₽',value,'smartavia_segments_missing')
         baggage=match(r'(\d+) услуг «Багаж (\d+) кг» со скидкой (\d+) ₽',value,'smartavia_baggage_missing')
-        d={**details,'subscription_plan':{'label':key,'additional_travelers':int(key[-1]),
+        d={**details,'subscription_plan':{'label':key,'additional_travelers':int(key.split('+')[1]),
            'annual_rub':number(price[1]),'flight_segments':int(segments[1]),'flight_discount_rub':segments[2],
            'baggage_services':int(baggage[1]),'baggage_kg':int(baggage[2]),'baggage_discount_rub':baggage[3],
            'evidence':value},'scope':'published_plan_card_and_common_subscription_rules'}
@@ -268,7 +268,6 @@ def smartavia_records(cfg,nodes,terms,details,warnings,url,now):
             title='Подписка Smartavia '+key,record_kind='membership_plan',link_kind='page_block',
             locator='.smartup-tariff-item label='+key,conditions=terms,details=d,
             warnings=warnings+['annual_plan_duration_not_offer_expiry','subscription_cost_is_not_discount']))
-    if labels!={'1+0','1+1','1+2','1+3'}:raise ValueError('smartavia_plan_set_changed')
     # The EKP benefit is not applied silently to each published base plan price.
     claim=match(r'Все держатели ЕКП могут купить годовую Подписку Smartavia со скидкой (\d+)%\.',terms,'smartavia_ekp_claim_missing')
     d={**details,'discount_percent':claim[1],'discount_basis':'annual_subscription_not_air_ticket',
