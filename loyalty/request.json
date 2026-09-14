@@ -1,4 +1,4 @@
 {
-  "request_id": "2026-09-13-public-tiers-v2.5.0",
-  "reason": "Run all 48 configured public sources including matched Selection preview popups and Utair/Wings tier rules. Preserve incomplete personalized-catalogue scope, source contradictions, exact qualifications and nested restrictions. Publish only parser_offers and parser_coverage, retain old observations and manual columns, then independently verify the actual main payload against Google Sheets. No private-code activation, network infrastructure, credential changes or periodic schedule activation."
+  "request_id": "2026-09-14-known-source-rules-v2.6.0",
+  "reason": "Run all 75 configured public sources with reviewed supplementary programme rules and linked Utair PDFs. Preserve direct-source provenance, signed-download redaction, mileage/redemption distinctions, costs, conditional eligibility and explicit source failures. Publish only parser_offers and parser_coverage, preserve all other tabs and manual columns, and independently compare the actual main payload to Google Sheets. No credentials, paid network service, private-code activation or periodic schedule changes."
 }
