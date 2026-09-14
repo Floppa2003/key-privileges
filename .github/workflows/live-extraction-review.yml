@@ -29,7 +29,6 @@ jobs:
                   if actual!=spec['old_sha256']:raise ValueError('code baseline changed: '+name)
                   value=spec.get('write',old)
                   for start,size,new in reversed(spec.get('edits',[])):
-                      # Repair only JSON transport escaping; final code hash is authoritative.
                       if name=='loyalty/announcements.py':
                           new=new.replace("'\n\n'","'\\n\\n'").replace("'\n'","'\\n'")
                       value=value[:start]+new+value[start+size:]
@@ -46,13 +45,10 @@ jobs:
               s=s.replace("    d=record['details'];pages=d.get('pages',[])","    from normalized import text\n    d=record['details'];pages=d.get('pages',[])")
               s=s.replace("__import__('normalized').text(page_text(pages))",'text(page_text(pages))')
               doc.write_text(s)
-              p=Path('loyalty/tests/test_known_pdf.py');s=p.read_text();s=s.replace('pdf_pages(b\'%PDF-small\',3)', 'pdf_pages(b\'%PDF-small\')')
-              s=s.replace("pdf_pages(b'<html>challenge</html>',3)","pdf_pages(b'<html>challenge</html>')")
-              p.write_text(s)
               p=Path('loyalty/NORMALIZED.md');s=p.read_text();s+='\nLive PDF extraction and generic album ownership supersede the historical visual-review profile; see LIVE_EXTRACTION.md.\n';p.write_text(s)
               p=Path('loyalty/RECOVERED_SOURCES.md');s=p.read_text();p.write_text('> Historical 2.8.0 contract; live linked-PDF discovery and extraction are described in LIVE_EXTRACTION.md (2.9.0).\n\n'+s)
           PY
-      - run: python -m pip install -r loyalty/requirements.txt
+      - run: python -m pip install -r loyalty/requirements.txt jsonschema==4.25.1
       - name: Run complete regression suite
         run: |
           set -o pipefail
