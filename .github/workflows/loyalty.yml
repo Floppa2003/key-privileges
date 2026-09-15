@@ -14,7 +14,7 @@ on:
         default: false
         type: boolean
   schedule:
-    - cron: "23 5 * * 1"
+    - cron: "23 5 * * *"
 permissions:
   contents: read
 concurrency:
@@ -22,7 +22,9 @@ concurrency:
   cancel-in-progress: false
 jobs:
   collect:
-    if: github.event_name != 'schedule' || vars.LOYALTY_SCHEDULE_ENABLED == 'true'
+    # Recurring collection was explicitly authorized on 2026-09-15.
+    # Forks do not inherit scheduled crawling; manual/branch checks still work.
+    if: github.event_name != 'schedule' || github.repository == 'Floppa2003/key-privileges'
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
