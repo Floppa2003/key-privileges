@@ -9,6 +9,12 @@ function cards(){const found=new Map();for(const a of document.querySelectorAll(
  const url=cardURL(a.href),box=a.closest('.v-card'),title=box?.querySelector('.v-card-title')?.innerText.trim();
  if(url&&box&&title&&a.innerText.trim()==='Подробнее')found.set(url,{url,title,loginNotice:box.innerText.includes('Требуется авторизация')});}
  return [...found.values()];}
+function resources(){const found=new Map();for(const r of performance.getEntriesByType('resource')){
+ const u=new URL(r.name);if(u.origin!==location.origin||!u.pathname.startsWith('/api/portal/')||
+ /auth|user|profile|cabinet|session|token|metrics/i.test(u.pathname))continue;
+ const q=[...u.searchParams];const safe=q.every(([k,v])=>/^(region|regionId|page|pageSize|size|limit|offset|count|categoryId|skip|take)$/i.test(k)&&/^\d{1,8}$/.test(v));
+ const value={path:u.pathname,queryKeys:q.map(x=>x[0]),url:safe?u.href:null};found.set(JSON.stringify(value),value);
+ }return [...found.values()].slice(0,100);}
 function restricted(){return /access denied|captcha|проверка безопасности|доступ к сайту временно ограничен/i.test(document.title+' '+document.body.innerText.slice(0,800));}
 function owner(entry){const id=new URL(entry.url).pathname.match(/\/(\d+)\/?$/)[1];return document.getElementById('partner.'+id);}
 function ready(entry){const n=owner(entry);if(!n||cardURL(location.href)!==entry.url)return false;
@@ -21,7 +27,7 @@ function clean(node){const copy=node.cloneNode(true);for(const n of copy.querySe
 try{
  while(!cards().length&&Date.now()<deadline-32000&&!restricted())await sleep(300);
  if(restricted())throw Error('restriction_document');
- result.initialCards=cards();if(!result.initialCards.length)throw Error('cards_missing');
+ result.initialResources=resources();result.initialCards=cards();if(!result.initialCards.length)throw Error('cards_missing');
  const publicCards=result.initialCards.filter(x=>!x.loginNotice),locked=result.initialCards.filter(x=>x.loginNotice);
  const selected=[...publicCards.slice(0,1),...locked.slice(0,1),...publicCards.slice(1,8)];result.selected=selected;
  for(const entry of selected){
@@ -44,5 +50,5 @@ try{
  }
  result.stopReason=result.stopReason||'selected_batch_finished';
 }catch(e){result.error=/^[a-z_]+$/.test(e.message)?e.message:e.name;}
-result.finishedAt=new Date().toISOString();result.finalPath=location.pathname;
+result.finalResources=resources();result.finishedAt=new Date().toISOString();result.finalPath=location.pathname;
 const pre=document.createElement('pre');pre.id='loyalty-inline-evidence';pre.textContent=JSON.stringify(result);document.body.replaceChildren(pre);

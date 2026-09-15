@@ -14,6 +14,7 @@ from bs4 import BeautifulSoup
 from free_residential_comparison import ComparisonReader, ProbeError, now
 from ekp_detail_probe import card_url
 from free_access_probe import free_plan
+from ekp_owned_terms import extract, selfcheck as terms_selfcheck
 
 ROOT='https://ekp.spb.ru/capabilities/loyalty/'
 PREFIX='/capabilities/loyalty/tiles'
@@ -65,10 +66,12 @@ def checked_details(result,policy):
         value=owners[0].get_text('\n',strip=True);check_response(200,value)
         locked='Для просмотра подробной информации о программе лояльности авторизуйтесь' in value
         if not locked and 'Программа лояльности' not in value:raise ProbeError('detail_terms_missing')
+        try: parsed={'owned_terms':extract(item['html'],url,item['title'])}
+        except ValueError as exc: parsed={'parse_error':str(exc)}
         data=item['html'].encode();name='partner-'+ident+'.html'
         rows.append({k:v for k,v in item.items() if k!='html'}|{'file':name,'html':item['html'],
             'sha256':hashlib.sha256(data).hexdigest(),'access':'login_required' if locked else 'public_terms',
-            'full_terms_verified':False})
+            'full_terms_verified':False,**parsed})
         seen.add(url)
     if len(rows)>9:raise ProbeError('batch_size_exceeded')
     return rows
@@ -96,8 +99,9 @@ def main():
         if status!=200:raise ProbeError('root_http_'+str(status))
         node=BeautifulSoup(raw,'html.parser').select_one('#loyalty-inline-evidence')
         if node is None:raise ProbeError('inline_marker_missing')
-        result=json.loads(node.get_text());rows=checked_details(result,policy)
+        result=json.loads(node.get_text())
         report['ui']={k:v for k,v in result.items() if k!='details'}
+        rows=checked_details(result,policy)
         for item in rows:
             (OUT/item['file']).write_text(item.pop('html'));report['details'].append(item)
     except Exception as exc:
@@ -114,6 +118,7 @@ def main():
 
 
 def selfcheck():
+    terms_selfcheck()
     namespace_allowed('User-agent: *\nDisallow: /cabinet\nDisallow: /docs')
     for rules in ('Disallow: /','Disallow: /capabilities','Disallow: /capabilities/loyalty/tiles/5','Disallow: /*'):
         try:namespace_allowed(rules)
