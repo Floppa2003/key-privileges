@@ -175,6 +175,10 @@ def sanitized_page(raw, requested_url):
                                  'https://ekp.spb.ru/capabilities/loyalty/tiles/'))
         if not equivalent:
             raise ProbeError('final_location_missing_or_changed')
+    base_tag = soup.select_one('base[href]')
+    base_url = public_url(urljoin(actual, base_tag['href'])) if base_tag else actual
+    if not base_url or urlsplit(base_url).netloc != urlsplit(actual).netloc:
+        raise ProbeError('untrusted_document_base')
     for node in soup.select('script,style,noscript,form,input,textarea,iframe,[hidden],[aria-hidden="true"]'):
         node.decompose()
     for node in soup.find_all(True):
@@ -182,13 +186,13 @@ def sanitized_page(raw, requested_url):
             if key not in ('id', 'class', 'href', 'title', 'role'):
                 del node.attrs[key]
         if node.has_attr('href'):
-            link = public_url(urljoin(actual, node['href']))
+            link = public_url(urljoin(base_url, node['href']))
             if link:
                 node['href'] = link
             else:
                 del node.attrs['href']
     text = soup.get_text(' ', strip=True)
-    return str(soup), {'final_url': actual, 'text_chars': len(text),
+    return str(soup), {'final_url': actual, 'document_base_url': base_url, 'text_chars': len(text),
                        'links': len(soup.select('a[href]')),
                        'classification': 'public_document_candidate_not_verified',
                        'detail_pages_read': 0, 'catalogue_complete': False}
