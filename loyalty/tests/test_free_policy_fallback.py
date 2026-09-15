@@ -71,3 +71,18 @@ class PolicyFallbackTests(unittest.TestCase):
         self.assertNotIn(ROOTS[0]['url'],[x.kwargs['params'].get('url') for x in get.call_args_list])
 
 if __name__=='__main__':unittest.main()
+
+class DocumentBaseTests(unittest.TestCase):
+    def test_actual_browser_base_resolves_relative_catalogue_links(self):
+        url='https://coralbonus.ru/klub-privilegii/'
+        raw=document(url).replace('<head>','<head><base href="https://coralbonus.ru/">').replace('/partner/123','katalog/')
+        cleaned,meta=p.sanitized_page(raw,url)
+        self.assertIn('href="https://coralbonus.ru/katalog/"',cleaned)
+        self.assertNotIn('klub-privilegii/katalog',cleaned)
+        self.assertEqual(meta['document_base_url'],'https://coralbonus.ru/')
+
+    def test_foreign_or_unsafe_base_is_not_silently_followed(self):
+        for base in ('https://foreign.example/','http://coralbonus.ru/','javascript:alert(1)'):
+            raw=document('https://coralbonus.ru/klub-privilegii/').replace('<head>','<head><base href="'+base+'">')
+            with self.subTest(base=base),self.assertRaises(p.ProbeError):
+                p.sanitized_page(raw,'https://coralbonus.ru/klub-privilegii/')
