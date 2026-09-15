@@ -59,6 +59,13 @@ class NormalizedSheets(Sheets):
     schemas=SCHEMAS
 
 
+class CoverageSheets(Sheets):
+    # One report per source per run accumulates faster than stable offer IDs.
+    # Keep the larger history bound local to this append-only public journal.
+    schemas={'parser_coverage':SCHEMAS['parser_coverage']}
+    max_rows=100000
+
+
 def main():
     p=argparse.ArgumentParser();p.add_argument('--input',default='loyalty-output/normalized.json');p.add_argument('--publish',action='store_true');args=p.parse_args()
     path=Path(args.input)
@@ -67,8 +74,9 @@ def main():
     rows=prepare(json.loads(path.read_text()))
     if not args.publish:
         print(dump({'mode':'normalized_dry_run','rows':{k:len(v) for k,v in rows.items()}}));return
-    client=NormalizedSheets(os.environ.get('DISCOUNTS_SPREADSHEET_ID',''),os.environ.get('GOOGLE_ACCESS_TOKEN',''))
-    counts={name:client.upsert(name,values) for name,values in rows.items()}
+    args=(os.environ.get('DISCOUNTS_SPREADSHEET_ID',''),os.environ.get('GOOGLE_ACCESS_TOKEN',''))
+    clients={'parser_offers':NormalizedSheets(*args),'parser_coverage':CoverageSheets(*args)}
+    counts={name:clients[name].upsert(name,values) for name,values in rows.items()}
     print(dump({'mode':'normalized_published_readback_verified','changed_rows':counts}))
 
 if __name__=='__main__':
