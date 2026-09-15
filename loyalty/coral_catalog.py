@@ -183,12 +183,15 @@ def validate_record(row):
         raise ValueError('coral_source_evidence_mismatch')
 
 
-def collect(root_report, folder, key, observed_at, *, get=None, sleep=time.sleep):
+def collect(root_report, folder, key, observed_at, *, get=None, sleep=time.sleep, other_half=False):
     """Full promo index + alternating category halves; failed pages remain explicit."""
+    if type(other_half) is not bool:
+        raise ValueError('invalid_coral_half_selection')
     from public_transport import robots_document, check_response
     from protego import Protego
     path = Path(folder); out = path / 'coral-details'; out.mkdir(exist_ok=True)
     day = date.fromisoformat(observed_at[:10]).toordinal()
+    shard = (day + int(other_half)) % 2
     observations = {r['source_id']: r for r in root_report['sources']}
     results = {}; pages = []
     kwargs = {'get': get} if get else {}
@@ -252,11 +255,11 @@ def collect(root_report, folder, key, observed_at, *, get=None, sleep=time.sleep
                     groups = [(None, targets)]
                 else:
                     ordered = sorted(entries, key=lambda e: e['url'])
-                    selected = ordered[day % 2::2]
+                    selected = ordered[shard::2]
                     k = (day//2) % len(selected) if selected else 0
                     selected = selected[k:]+selected[:k]
                     result['meta'].update(scope='alternating_category_half_public_referral_offers',
-                        category_shard=day % 2, category_shards=2, selected_categories=[e['url'] for e in selected],
+                        category_shard=shard, category_shards=2, selection_mode='complementary_half' if other_half else 'utc_day_half', selected_categories=[e['url'] for e in selected],
                         categories_read=0, excluded_non_referral_products=0, discovered_details=0)
                     groups = [(e, None) for e in selected]
                 for category, targets in groups:
