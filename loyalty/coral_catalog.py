@@ -51,7 +51,8 @@ def listing(raw, sid):
     return list(result.values())
 
 
-def category_cards(raw, entry):
+def category_cards(raw, entry, categories=None):
+    categories = categories or {entry["url"]: entry["title"]}
     soup = BeautifulSoup(raw, 'html.parser')
     headings = soup.select('h1'); grids = soup.select('#categoryProductsList')
     if len(headings) != 1 or text(headings[0].get_text(' ', strip=True)) != entry['title'] or len(grids) != 1:
@@ -61,11 +62,14 @@ def category_cards(raw, entry):
         if 'referal' not in box.get('class', []):
             excluded += 1
             continue
-        urls = {checked_url(a['href'], urlsplit(entry['url']).path, 3) for a in box.select('a[href]')}
+        urls = {checked_url(a['href'], '/klub-privilegii/', 3) for a in box.select('a[href]')}
         if len(urls) != 1:
             raise ValueError('coral_card_identity')
         url = urls.pop()
-        result[url] = {'url': url, 'category': entry['title'], 'parent_url': entry['url']}
+        parent = url.rsplit('/', 2)[0]+'/'
+        if parent not in categories:
+            raise ValueError('coral_card_unknown_category')
+        result[url] = {'url': url, 'category': categories[parent], 'parent_url': entry['url']}
     section = headings[0].find_parent('section')
     if section is None or '{{' in section.get_text(' ', strip=True):
         raise ValueError('coral_category_not_rendered')
@@ -96,10 +100,20 @@ def detail(raw, sid, entry, observed_at, retrieval):
         raise ValueError('coral_detail_not_ready')
     if sid == 'coral':
         purchase = section.select('.product-purchase-box.referal')
-        if len(purchase) != 1 or 'order-lg-2' not in h.parent.get('class', []):
+        ticket = (not purchase and 'col-lg' in h.parent.get('class', [])
+                  and len(h.parent.select('.order-canvas')) == 1
+                  and len(h.parent.select('.order-autorize')) == 1)
+        if ticket:
+            auth = h.parent.select_one('.order-autorize')
+            auth_title = auth.select_one('h3')
+            if not auth_title or not re.fullmatch(r'Чтобы купить билеты нужно авторизоваться на сайте',
+                                                  text(auth_title.get_text(' ', strip=True))):
+                raise ValueError('coral_ticket_identity_not_supported')
+        elif len(purchase) == 1 and 'order-lg-2' in h.parent.get('class', []):
+            auth = purchase[0].select_one('.order-autorize')
+        else:
             raise ValueError('coral_detail_not_referral')
         content = h.parent
-        auth = purchase[0].select_one('.order-autorize')
         # Plain HTML can contain both Angular branches. Read only the explicit
         # authorization notice, never hidden generated coupon/account branches.
         auth_heading = auth.select_one('h3') if auth else None
@@ -111,7 +125,7 @@ def detail(raw, sid, entry, observed_at, retrieval):
             raise ValueError('coral_promotion_title_changed')
         content = section; auth_text = ''
     copy = BeautifulSoup(str(content), 'html.parser')
-    for node in copy.select('script,style,form,input,textarea,iframe,button,.modal,.product-purchase-box'):
+    for node in copy.select('script,style,form,input,textarea,iframe,button,.modal,.product-purchase-box,.order-canvas,.order-autorize'):
         node.decompose()
     body = own_text(copy)
     if len(body) < len(title) + 50 or '{{' in body:
@@ -126,8 +140,9 @@ def detail(raw, sid, entry, observed_at, retrieval):
     for p in copy.select('p,h2,h3,h4'):
         if re.fullmatch(r'Как воспользоваться предложением\s*:?', text(p.get_text(' ', strip=True)), re.I):
             nxt = p.find_next_sibling()
-            if nxt is not None and nxt.name in ('ul', 'ol'):
+            while nxt is not None and nxt.name in ('ul', 'ol'):
                 redemption.append(own_text(nxt))
+                nxt = nxt.find_next_sibling()
     if auth_text:
         redemption.append(auth_text)
     links = [{'label': text(a.get_text(' ', strip=True)), 'url': a['href']} for a in copy.select('a[href]')]
@@ -138,11 +153,13 @@ def detail(raw, sid, entry, observed_at, retrieval):
         None, title, url, observed_at, title=title, conditions=body, redemption=block['redemption'],
         category=entry.get('category'), tables=tables, valid_until=block['valid_until'],
         record_kind='partner_offer' if sid == 'coral' else 'campaign',
-        source_status='public_conditions_coupon_requires_login' if auth_text else 'public_source_terms',
+        source_status=('public_conditions_purchase_requires_login' if sid == 'coral' and ticket else
+                       'public_conditions_coupon_requires_login') if auth_text else 'public_source_terms',
         locator='h1 parent offer column' if sid == 'coral' else 'section.article',
         details={'public_coral_block': block, 'source_document_sha256': hashlib.sha256(raw.encode()).hexdigest(),
                  'discovered_from': entry.get('parent_url', PROMO), 'retrieval': retrieval,
                  'private_coupon_issued': False, 'full_program_catalog': False,
+                 'redemption_mode': 'ticket_purchase' if sid == 'coral' and ticket else 'partner_code_or_link',
                  'partner_identity': 'not_inferred_from_campaign_title'}, warnings=WARNINGS)
 
 
@@ -158,7 +175,7 @@ def validate_record(row):
         or row['benefit_url'] != row['source_url']
         or row['record_kind'] != ('partner_offer' if sid == 'coral' else 'campaign')
         or row['program'] != ('CoralBonus — Клуб' if sid == 'coral' else 'CoralBonus — Акции')
-        or row['source_status'] != ('public_conditions_coupon_requires_login' if b.get('authentication_notice') else 'public_source_terms')
+        or row['source_status'] != (('public_conditions_purchase_requires_login' if row['details'].get('redemption_mode') == 'ticket_purchase' else 'public_conditions_coupon_requires_login') if b.get('authentication_notice') else 'public_source_terms')
         or not re.fullmatch('[a-f0-9]{64}', row['details'].get('source_document_sha256', ''))
         or row['details'].get('private_coupon_issued') is not False
         or row['details'].get('full_program_catalog') is not False
@@ -214,6 +231,9 @@ def collect(root_report, folder, key, observed_at, *, get=None, sleep=time.sleep
             result = {'records': [], 'errors': [], 'meta': {'full_program_catalog': False}}
             results[sid] = result
             try:
+                seen_details = set()
+                result['meta']['detail_pages_attempted'] = 0
+                result['meta']['duplicate_detail_links'] = 0
                 obs = observations.get(sid, {})
                 if obs.get('status') != 'candidate_requires_review': raise ValueError('root_not_read')
                 raw = (path / (sid+'.html')).read_bytes()
@@ -221,6 +241,7 @@ def collect(root_report, folder, key, observed_at, *, get=None, sleep=time.sleep
                     or hashlib.sha256(raw).hexdigest() != obs.get('sanitized_dom_sha256')):
                     raise ValueError('root_identity_or_hash')
                 entries = listing(raw.decode(), sid)
+                categories = {e['url']: e['title'] for e in entries}
                 result['meta']['index_entries'] = len(entries)
                 result['meta']['index_sha256'] = obs['sanitized_dom_sha256']
                 if sid == 'coral_promo':
@@ -243,15 +264,20 @@ def collect(root_report, folder, key, observed_at, *, get=None, sleep=time.sleep
                     if category:
                         try:
                             cat, _ = read(category['url'], True)
-                            targets, excluded = category_cards(cat, category)
+                            targets, excluded = category_cards(cat, category, categories)
                             result['meta']['categories_read'] += 1
                             result['meta']['excluded_non_referral_products'] += excluded
-                            result['meta']['discovered_details'] += len(targets)
+                            result['meta']['discovered_details'] = len(seen_details | {e['url'] for e in targets})
                         except Exception as exc:
                             result['errors'].append({'phase': 'category', 'path': urlsplit(category['url']).path, 'reason': safe_error(exc)})
                             if reader.halted or str(exc) == 'per_run_limit': break
                             continue
                     for entry in targets:
+                        if entry['url'] in seen_details:
+                            result['meta']['duplicate_detail_links'] += 1
+                            continue
+                        seen_details.add(entry['url'])
+                        result['meta']['detail_pages_attempted'] += 1
                         try:
                             page, identity = read(entry['url'], False)
                             result['records'].append(detail(page, sid, entry, observed_at, identity))

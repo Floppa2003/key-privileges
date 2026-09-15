@@ -90,7 +90,7 @@ def main():
         bundle = build(report, configured_roots(Path(__file__).with_name('sources_normalized.json')),
                        args.input, run_id=os.getenv('GITHUB_RUN_ID'), attempt=os.getenv('GITHUB_RUN_ATTEMPT'),
                        commit=os.getenv('GITHUB_SHA'), clock=datetime.now(timezone.utc))
-        if args.collect:
+        if args.collect and report.get('status') != 'stopped':
             from coral_catalog import collect as collect_coral
             additional = collect_coral(report, args.input, os.environ.get('SCRAPINGANT_API_KEY', ''), bundle['observed_at'])
             for source in bundle['sources']:
