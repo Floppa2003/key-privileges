@@ -44,6 +44,17 @@ def card_url(value):
     return value
 
 
+
+def index_url(value):
+    u = urlsplit(value)
+    q = parse_qsl(u.query, keep_blank_values=True)
+    if (u.scheme != 'https' or u.netloc != 'ekp.spb.ru' or u.fragment
+        or u.path not in ('/capabilities/loyalty/tiles', '/capabilities/loyalty/tiles/')
+        or (q and (len(q) != 1 or q[0][0] != 'region' or not q[0][1].isdigit()))):
+        raise ProbeError('catalogue_location_changed')
+    return value
+
+
 def catalogue_cards(raw):
     soup = BeautifulSoup(raw, 'html.parser'); found = {}
     for a in soup.select('main a[href]'):
@@ -144,7 +155,8 @@ def main():
         result=json.loads(node.get_text());report['catalogue']={k:v for k,v in result.items() if k not in ('snapshots','publicResponses')}
         snaps=result.get('snapshots',[]);snap=next((x for x in reversed(snaps) if x['label']=='expanded'),None)
         if snap is None:raise ProbeError('expanded_snapshot_missing')
-        if snap['url'] not in (ROOT+'tiles',ROOT+'tiles/'):raise ProbeError('catalogue_location_changed')
+        index_url(snap['url'])
+        if not policy.can_fetch(snap['url'], AGENT):raise ProbeError('robots_disallow')
         data=snap['html'].encode();cards=catalogue_cards(snap['html'])
         if {x['url'] for x in cards}!={x['url'] for x in snap['cards']}:raise ProbeError('card_inventory_mismatch')
         report['catalogue'].update(cards=len(cards),sha256=hashlib.sha256(data).hexdigest(),observed_at=snap['observedAt'])
@@ -190,6 +202,12 @@ def safe_error(exc):
 
 def selfcheck():
     card_url(ROOT+'tiles/123?region=98')
+    index_url(ROOT+'tiles?region=98')
+    index_url(ROOT+'tiles/')
+    for bad in (ROOT+'tiles?token=secret',ROOT+'tiles?region=98&region=1','https://evil.test/capabilities/loyalty/tiles'):
+        try:index_url(bad)
+        except ProbeError:pass
+        else:raise AssertionError('unsafe index URL accepted')
     for bad in ('https://other.test/123',ROOT+'tiles/123?token=secret',ROOT+'tiles/123?region=98&region=1'):
         try:card_url(bad)
         except ProbeError:pass
