@@ -114,6 +114,11 @@ async def read_article(client):
                     try:raw=await asyncio.wait_for(page.content(),5)
                     except Exception:
                         await asyncio.sleep(.5);continue
+                    # DOM extraction awaits the renderer; recheck identity after it.
+                    if responses[-1] is not last:
+                        continue
+                    if clean_url(page.url)!=ROOT:
+                        raise RuntimeError('utair_unexpected_redirect')
                     check_response(last.status,raw)
                     if len(raw.encode())>6000000:raise RuntimeError('source_response_too_large')
                     try:article_blocks(raw)
