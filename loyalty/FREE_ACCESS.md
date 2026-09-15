@@ -1,48 +1,56 @@
 # Free-only retrieval and publication — 2026-09-15
 
-## User requirement and owner setup
+## Objective and owner setup
 
-No rental, subscription payment, maintained server or always-on laptop. Free API accounts are allowed. ScrapingAnt advertises a recurring Free plan with10,000 monthly credits and no payment card; its documented country selection includes RU. Actual site responses, not provider marketing, determine source availability.
+No rental, subscription payment, maintained server or always-on laptop. Free API accounts are allowed. The owner added `SCRAPINGANT_API_KEY` as a repository secret. No further owner setup is needed for the currently connected anonymous route. Keep the account on Free; do not add payment details or upgrade. The key must never appear in repository files, workflow inputs, logs, Sheets or public artifacts.
 
-The owner has now added `SCRAPINGANT_API_KEY` as a repository secret. No key appears in code, workflow inputs, logs, the spreadsheet or public artifacts. Future reconnection uses Settings → Secrets and variables → Actions; remain on Free, without payment details or paid upgrades. The connected GitHub app cannot administer repository secrets.
+Actual source responses and final destination readback, not provider marketing, define restored coverage. The user's existing CoralBonus registration does not supply an authenticated session to these jobs; no re-registration, coupon issuance or payment is requested.
 
-## Runtime
+## Daily runtime
 
-- The original `loyalty.yml` still runs at05:23 UTC.
-- `loyalty-free-access.yml` runs at06:03 UTC and supports manual dispatch. The trusted main job calls `free_catalog_bundle.py --collect`: fresh public API observations are mapped only by reviewed source adapters.
-- Current supported mapping: Nordwind's source-owned partner accordions, including complete on-page conditions and separately scoped earning clauses. No fixed partner inventory or rates. Outgoing hotel websites and user eligibility are not verified.
-- Other roots are not automatically promoted to offers. Coral's category landing page is not a collected partner catalogue; promo titles alone are not complete campaign conditions.
-- Only freshly accepted same-run/same-attempt/current-commit records produce a publication payload. Old diagnostics, changed HTML digests, missing identity and stale observations are rejected.
-- The separate publisher reuses the existing two managed public tabs and common private normalization. It requires trusted main, accepted records and `LOYALTY_SHEETS_SYNC=true`; existing WIF/scopes are reused. Both workflows share a concurrency group so writers do not overlap. No Google credential enters the public collector.
-- `free_access_probe.py` itself does not publish; its `published_records=0` field describes that stage, not the later publisher. Final source success requires actual fresh records and independent destination readback after the final write.
+- Original `loyalty.yml`:05:23 UTC, unchanged.
+- `loyalty-free-access.yml`:06:03 UTC, trusted-main collection through `free_catalog_bundle.py --collect`, followed by the existing two-tab writer and common private normalization. Both workflows share the publisher concurrency group; the existing WIF/scopes/destination are reused. No Google authorization enters the public collector.
+- Nordwind: all source-owned accordions on the observed partner page, complete on-page conditions and separately scoped earning formulas. Outgoing partner sites and user eligibility are not certified.
+- Coral promotions: discover the current root index and attempt every linked detail, with rotating priority. Conditions, tables and surrounding context are retained. Some index entries are information/program rules, not separate discounts.
+- Coral club: discover current categories, sort them and alternate even/odd category halves by UTC calendar day. Rotate priority within the half. With20 categories this selects10 per day. A complete two-day cycle is a target, not a guarantee when transport, quota, layout or pagination fails. Each report records the selected/read categories and actual detail counts.
+- Referral offer cards are distinguished from store merchandise/digital-product cards. The latter are excluded and counted, so this does not claim the whole club or store. Cross-category links must point into a category present in the fresh root inventory. Repeated detail URLs are requested once within the run.
+- Public ticket-offer terms are readable without operating the purchase widget. Such records require login/purchase; they are not free coupons. No form, purchase, bonus spending or coupon issuance occurs.
+- Partial results survive later page failures. Prior Sheet records are retained with their original observation time, never relabelled as freshly read. An absent result is not proof of no discount.
 
-## Free budget and source safety
+Only fresh, same-attempt, current-commit root evidence is accepted. The Coral traversal receives that in-memory run and discovers every request from its current pages. Old diagnostic HTML is test/review evidence only, not a runtime fallback. Collection-stage `published_records=0` is not the status of the later publisher. End-to-end release requires actual accepted output and independent Sheet readback after the last write.
 
-Preflight `/v2/usage` must report a recognized Free plan, at most10,000 total credits and at least115 remaining. Unknown/paid plans stop before source requests. Maximum16 requests and115 estimated/reserved credits per full attempt: five1-credit plain robots reads, up to five10-credit browser robots fallbacks, and six10-credit rendered roots. With no fallbacks, the original65-credit maximum still applies.
+## Free-credit bounds
 
-One daily attempt has an upper documented estimate of115×31=3,565 credits/month before other account usage. This is not a budget for full multi-page catalogue extraction. Missing or excessive reported charges, quota/auth/rate errors, transport exceptions and the overall deadline stop further work. There is no paid upgrade, residential mode, automatic purchase or unlimited retry loop. Keep the account on Free; code cannot make an externally changed billing policy free.
+`/v2/usage` must confirm a recognized Free plan with at most10,000 total credits and adequate remaining balance. Unknown/paid plans are rejected. These safeguards cannot make an externally changed provider tariff free.
 
-`known_charged_credits` sums validated cost headers from successful provider envelopes. Charges, if any, for failed provider calls are not included; `reserved_credits` remains a separate conservative request-budget figure. Neither is a independently reconciled account statement.
+The root reader retains its115-credit/16-request maximum: five1-credit policy reads, up to five10-credit browser-policy fallbacks and six10-credit rendered roots. Coral detail traversal has a separate175-credit/100-request maximum, checked against current balance again. Categories need10-credit rendered requests; accepted static details use1-credit HTTP requests. The combined bound is290 reserved credits per daily run, or8,990 for31 runs. This excludes manual reruns, diagnostics, other account usage and any provider-side change in charging. Finite credit exhaustion must stop work, not buy a plan.
 
-Provider404 is documented as an unreachable requested URL, **not** an origin404. For a plain robots read only, one browser-mode read of the exact same policy URL is now allowed. It must return a current final-location marker and usable rules before the target may be fetched. Explicit robots disallow, source HTTP refusal, provider423 challenge detection, authentication and rate limits are not bypassed or retried by this fallback.
+Provider-wide quota/auth/rate/transport stops prevent starting another collector in the same chain; earlier accepted records can still publish. Missing/excessive cost headers and deadlines stop further requests. Ordinary source failures remain explicit and do not erase other successes. `known_charged_credits` sums validated successful response cost headers; charges for failed envelopes are not reconciled by that sum. Reservation is a separate upper request budget, not an account statement.
 
-Origin status is taken from `Ant-page-status-code`, not the provider envelope. The exact target final location is checked; known EKP SPA transition remains the only root equivalence. Browser policy responses must match their exact policy URL. TLS remains enabled for API access; the provider's entire internal TLS/redirect chain is not independently observed.
+One-shot network comparisons are separate unscheduled diagnostic workflows, never a silent expansion of daily cost. The browser-source comparison uses at most36 credits. The alternate residential-pool comparison uses the same Free account, at most150 per source and450 total, with a fresh Free/balance check per source. It does not purchase a proxy subscription, upgrade the account, or enter production automatically. Any useful result still needs source mapping, recurring-budget review and destination verification.
 
-Relative links are resolved against the actual HTML `<base href>` when it exists, as in CoralBonus. A foreign or unsafe base is rejected. Forms, scripts, hidden fields, event attributes, query/fragment values and extended cookie/XHR payloads are excluded from public output. No source account session is transmitted. Public page text is data, never instructions or executable repository configuration.
+## Source identity, restrictions and privacy
 
-## Evidence and current limits
+Provider404 means requested-route unreachable, not target404. Only a plain policy request with that error permits one browser read of the exact policy URL. Policy disallow, explicit refusal, challenge, auth and rate-limit responses are not treated as successful content. The main source identity is checked before parsing. Known EKP SPA redirection is the only configured root equivalence.
 
-First real key-backed run35008135019 attempt2 read Nordwind's seven actual cards and Coral's20 category boxes. A later new run35016757882 stopped Nordwind at a plain policy request, so it correctly produced no offer payload and skipped publication; it did read Coral's promotion index. This proved intermittent policy transport and exposed incorrect relative link resolution in the old sanitizer. Historical sanitizations must not be used as authoritative new link inventories.
+For static Coral details, one exact source canonical URL is mandatory. This is recorded as `source_canonical_url`, explicitly not an observed browser final location. Rendered category/root reads keep actual browser-location evidence. The origin status comes from the provider's origin-status header, not the provider envelope. API TLS validation remains enabled; the provider's complete internal connection chain and actual exit geography are not independently observed.
 
-The bounded browser-policy fallback and base-URL repair are tested separately. A successful future live request is not preclaimed here. A new source is considered released only after its fresh output, repeated read behavior and actual publication/readback are recorded in the corresponding PR. The user's existing CoralBonus account remains unused by this anonymous API route; no re-registration or coupon issuance is requested.
+Resolve relative links against the page's same-origin HTML base. Reject foreign/unsafe bases. Remove scripts, forms, hidden fields, events and authentication material. No source account cookie is supplied. The public ticket extractor additionally drops order widgets/account placeholders. Source text and outgoing links remain untrusted data, never executable instructions.
+
+Explicit unambiguous `Срок действия предложения до DD.MM.YYYY` supplies an end date. Other booking/travel/certificate-relative periods remain separate source text, not an invented single interval. Existing expired pages remain marked by their published end. Partner display names are not guessed from campaign headlines; titles and full conditions remain searchable, and unresolved identity is explicit. Image-only wording and unread outgoing/PDF rules are not transcribed or certified.
+
+## Verified checkpoints and remaining scope
+
+Nordwind was independently published/read back in35018777242. PR29's first live run35023971363 published43 new Coral records (22 club,21 promo) plus7 Nordwind updates. All50 source records re-parsed exactly from their live artifact bytes and matched native Sheet hashes. Its final normalization manifest was verified/current. PR30 repairs the actual cross-category and ticket-layout failures; its separate new live run must be evaluated on its own results.
+
+EKP, RZD and Aeroflot are not restored merely because a policy response or provider envelope succeeded. The browser-source comparison35024053713 read usable RZD rules but the root still failed with provider423; EKP policy returned provider500, and Aeroflot policy content was unreadable. No records from those diagnostic paths were published.
+
+Full latest run results and continuation are recorded in PR29/PR30 and OPERATIONS.md. A scheduled future run is never claimed as already observed. All source counts are bounded to the actual index/category/detail scope, not an original-source coverage percentage. Public artifacts expire after seven days; private inputs, manual comments and credentials are not exported.
 
 Official references:
 - https://scrapingant.com/
 - https://docs.scrapingant.com/api-credits-usage
 - https://docs.scrapingant.com/credits-cost
 - https://docs.scrapingant.com/errors
-- https://docs.scrapingant.com/custom-headers
 - https://docs.scrapingant.com/proxy-settings
 - https://docs.scrapingant.com/request-response-format
-
-Previously verified public OpenAPI fetches: run35007046678 and35007883389. Offline/regression tests validate contracts but do not certify live source reachability. Public artifacts expire after seven days; private source exports and credentials are excluded.
