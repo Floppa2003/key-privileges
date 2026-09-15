@@ -36,7 +36,22 @@ def sanitize(html,url):
     return str(soup)
 
 
+def freeze_capture(row):
+    # Event callbacks may still hold a mutable dictionary after the observation.
+    # Archive a value snapshot; later navigations cannot rewrite earlier results.
+    return json.loads(json.dumps(row))
+
+
+def selfcheck():
+    row={'navigation_responses':[{'status':200,'url':'https://first.example/'}]}
+    captured=freeze_capture(row)
+    row['navigation_responses'].append({'status':403,'url':'https://second.example/'})
+    assert len(captured['navigation_responses'])==1
+    assert sanitize('<script>private()</script><p>Public</p>','https://example.com')=='<p>Public</p>'
+
+
 async def main():
+    selfcheck()
     OUT.mkdir(exist_ok=True)
     sources=json.loads(Path('loyalty/sources_normalized.json').read_text())
     targets={s['id']:s['url'] for s in sources if s['id'] in IDS}
@@ -66,6 +81,11 @@ async def main():
                 context=browser.contexts[0]
                 for key in IDS:
                     try:
+                        # A fresh tab also prevents a timed-out target from inheriting
+                        # previous-page DOM or previous response event listeners.
+                        fresh=await context.new_page()
+                        for old in list(context.pages):
+                            if old!=fresh:await old.close()
                         row=await observe(context,targets[key],'external_chrome_cdp')
                         row['id']=key
                         last=row['snapshots'][-1].get('document',{}) if row['snapshots'] else {}
@@ -75,7 +95,7 @@ async def main():
                             name=key+'-public-dom.html';(OUT/name).write_bytes(public)
                             row['public_dom']={'file':name,'sha256':hashlib.sha256(public).hexdigest(),
                                                'note':'sanitized_DOM_not_original_response_bytes'}
-                        report['results'].append(row)
+                        report['results'].append(freeze_capture(row))
                     except Exception as exc:report['results'].append({'id':key,'error_type':type(exc).__name__})
                     (OUT/'report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf8')
                     print(json.dumps({'id':key,'completed':True}),flush=True)
