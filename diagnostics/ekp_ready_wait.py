@@ -87,4 +87,4 @@ def main():
         (OUT/'executed.py').write_bytes(Path(__file__).read_bytes())
 
 
-if __name__=='__main__':main()"}
+if __name__=='__main__':main()
