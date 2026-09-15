@@ -20,7 +20,8 @@ from bs4 import BeautifulSoup
 SOURCE_IDS = ('ekp', 'nordwind', 'coral', 'coral_promo', 'rzd', 'aeroflot')
 API = 'https://api.scrapingant.com/v2/'
 MAX_BYTES = 6_000_000
-MAX_CREDITS = 65  # Five plain robots reads + six 10-credit browser reads.
+MAX_CREDITS = 115  # Five plain policies + up to five browser policies + six roots.
+MAX_REQUESTS = 16
 LOCATION_JS = base64.b64encode(b"document.documentElement.setAttribute('data-loyalty-probe-location', location.href);").decode()
 
 
@@ -80,6 +81,7 @@ class FreeReader:
         self.ready = False
         self.reserved = 0
         self.calls = 0
+        self.known_charged_credits = 0
         self.halted = False
         self.deadline = time.monotonic() + 780
 
@@ -131,10 +133,10 @@ class FreeReader:
             raise ProbeError('probe_time_budget')
         if not self.ready or self.halted:
             raise ProbeError('reader_not_ready_or_stopped')
-        if url not in self.allowed or (browser and url not in self.roots):
+        if url not in self.allowed:
             raise ProbeError('request_outside_configured_roots')
         cost = 10 if browser else 1
-        if self.reserved + cost > MAX_CREDITS or self.calls >= 11:
+        if self.reserved + cost > MAX_CREDITS or self.calls >= MAX_REQUESTS:
             raise ProbeError('per_run_limit')
         self.reserved += cost  # Reserve even on failure; no retries.
         self.calls += 1
@@ -148,6 +150,7 @@ class FreeReader:
         if charged is None or not re.fullmatch(r'\d+', str(charged)) or int(charged) > cost:
             self.halted = True
             raise ProbeError('credit_cost_contract_unconfirmed')
+        self.known_charged_credits += int(charged)
         value = meta['Ant-page-status-code']
         if value is None or not re.fullmatch(r'[1-5][0-9]{2}', str(value)):
             raise ProbeError('origin_status_missing')
@@ -172,6 +175,10 @@ def sanitized_page(raw, requested_url):
                                  'https://ekp.spb.ru/capabilities/loyalty/tiles/'))
         if not equivalent:
             raise ProbeError('final_location_missing_or_changed')
+    base_tag = soup.select_one('base[href]')
+    base_url = public_url(urljoin(actual, base_tag['href'])) if base_tag else actual
+    if not base_url or urlsplit(base_url).netloc != urlsplit(actual).netloc:
+        raise ProbeError('untrusted_document_base')
     for node in soup.select('script,style,noscript,form,input,textarea,iframe,[hidden],[aria-hidden="true"]'):
         node.decompose()
     for node in soup.find_all(True):
@@ -179,16 +186,36 @@ def sanitized_page(raw, requested_url):
             if key not in ('id', 'class', 'href', 'title', 'role'):
                 del node.attrs[key]
         if node.has_attr('href'):
-            link = public_url(urljoin(actual, node['href']))
+            link = public_url(urljoin(base_url, node['href']))
             if link:
                 node['href'] = link
             else:
                 del node.attrs['href']
     text = soup.get_text(' ', strip=True)
-    return str(soup), {'final_url': actual, 'text_chars': len(text),
+    return str(soup), {'final_url': actual, 'document_base_url': base_url, 'text_chars': len(text),
                        'links': len(soup.select('a[href]')),
                        'classification': 'public_document_candidate_not_verified',
                        'detail_pages_read': 0, 'catalogue_complete': False}
+
+
+
+def read_policy(reader, url, info):
+    """Try the browser once only when the provider reports HTTP-route unreachable.
+
+    Provider404 is not an origin404 or permission to ignore robots. The fallback
+    must return a real identified document, then normal robots parsing still runs.
+    Provider auth/quota/challenge errors are never retried by this helper.
+    """
+    info['method'] = 'http'
+    try:
+        return reader.read(url, browser=False)
+    except ProbeError as exc:
+        if str(exc) != 'provider_http_404' or reader.halted:
+            raise
+    info.update(method='browser_after_unreachable_http', initial_error='provider_http_404')
+    status, raw, credits = reader.read(url, browser=True)
+    sanitized_page(raw, url)  # Require the current browser's exact policy URL.
+    return status, raw, credits
 
 
 def run(roots, key, out, *, get=requests.get, sleep=time.sleep):
@@ -229,7 +256,9 @@ def run(roots, key, out, *, get=requests.get, sleep=time.sleep):
             try:
                 if host not in policies:
                     policies[host] = None
-                    status, raw, _ = reader.read(f'https://{host}/robots.txt', browser=False)
+                    item['phase'] = 'robots'
+                    item['robots'] = {'state': 'fetching'}
+                    status, raw, _ = read_policy(reader, f'https://{host}/robots.txt', item['robots'])
                     last[host] = time.monotonic()
                     rules, state = robots_document(status, raw)
                     policy = Protego.parse(rules)
@@ -237,7 +266,7 @@ def run(roots, key, out, *, get=requests.get, sleep=time.sleep):
                     rate = policy.request_rate('LoyaltyCatalogResearchBot')
                     intervals[host] = max(1.0, policy.crawl_delay('LoyaltyCatalogResearchBot') or 0,
                                           rate.seconds / rate.requests if rate else 0)
-                    item['robots'] = {'state': state, 'origin_http_status': status}
+                    item['robots'].update(state=state, origin_http_status=status)
                 policy = policies[host]
                 if policy is None:
                     raise ProbeError('robots_unavailable')
@@ -247,6 +276,7 @@ def run(roots, key, out, *, get=requests.get, sleep=time.sleep):
                 if delay > 60:
                     raise ProbeError('crawl_delay_exceeds_probe_budget')
                 sleep(delay)
+                item['phase'] = 'root'
                 status, raw, credits = reader.read(url, browser=True)
                 last[host] = time.monotonic()
                 item['origin_http_status'] = status; item['credits'] = credits
@@ -278,6 +308,8 @@ def run(roots, key, out, *, get=requests.get, sleep=time.sleep):
         if reader:
             report['target_requests'] = reader.calls
             report['reserved_credits'] = reader.reserved
+            report['known_charged_credits'] = reader.known_charged_credits
+            report['failed_request_charges_not_included'] = True
         report['finished_at'] = now(); save()
     return report
 

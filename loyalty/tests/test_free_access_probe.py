@@ -65,7 +65,7 @@ class FreeAccessTests(unittest.TestCase):
     def test_free_plan_and_invalid_paid_exhausted_balances(self):
         self.assertEqual(p.free_plan(USAGE),9999)
         for update in ({'plan_name':'Enthusiast'},{'plan_name':'Trial'}, {'plan_total_credits':100000},
-                       {'remained_credits':64}, {'remained_credits':True}, {'remained_credits':10001},
+                       {'remained_credits':p.MAX_CREDITS-1}, {'remained_credits':True}, {'remained_credits':10001},
                        {'plan_name':None}):
             with self.subTest(update=update),self.assertRaises(p.ProbeError):p.free_plan({**USAGE,**update})
 
@@ -126,11 +126,11 @@ class FreeAccessTests(unittest.TestCase):
 
     def test_budget_and_request_cap(self):
         r=self.reader()
-        for _ in range(6):r.read(ROOTS[0]['url'],browser=True)
+        for _ in range(p.MAX_CREDITS//10):r.read(ROOTS[0]['url'],browser=True)
         with self.assertRaisesRegex(p.ProbeError,'per_run_limit'):r.read(ROOTS[0]['url'],browser=True)
-        self.assertEqual(r.reserved,60)
+        self.assertEqual(r.reserved,(p.MAX_CREDITS//10)*10)
         r=self.reader()
-        for _ in range(11):r.read('https://ekp.spb.ru/robots.txt',browser=False)
+        for _ in range(p.MAX_REQUESTS):r.read('https://ekp.spb.ru/robots.txt',browser=False)
         with self.assertRaisesRegex(p.ProbeError,'per_run_limit'):r.read('https://ekp.spb.ru/robots.txt',browser=False)
 
     def test_time_budget(self):

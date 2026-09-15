@@ -1,8 +1,8 @@
 name: Free original-source access check
 on:
   push:
-    branches: [main, 'loyalty/free-api-access-20260915', 'loyalty/free-nordwind-live-20260915']
-    paths: ['loyalty/free_access_probe.py', 'loyalty/tests/test_free_access_probe.py', 'loyalty/nordwind_catalog.py', 'loyalty/free_catalog_bundle.py', 'loyalty/tests/test_nordwind_catalog.py', 'loyalty/normalized.py', '.github/workflows/loyalty-free-access.yml']
+    branches: [main, 'loyalty/free-api-access-20260915', 'loyalty/free-nordwind-live-20260915', 'loyalty/free-browser-policy-20260915']
+    paths: ['loyalty/free_access_probe.py', 'loyalty/tests/test_free_access_probe.py', 'loyalty/tests/test_free_policy_fallback.py', 'loyalty/nordwind_catalog.py', 'loyalty/free_catalog_bundle.py', 'loyalty/tests/test_nordwind_catalog.py', 'loyalty/normalized.py', '.github/workflows/loyalty-free-access.yml']
   workflow_dispatch:
   schedule:
     - cron: '3 6 * * *'

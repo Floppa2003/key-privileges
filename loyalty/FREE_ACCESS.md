@@ -1,59 +1,48 @@
-# Free-only retrieval path — 2026-09-15
+# Free-only retrieval and publication — 2026-09-15
 
-## Scope and owner setup
+## User requirement and owner setup
 
-The user requires zero rental/subscription spending and no maintained server or always-on laptop. Free API accounts are permitted. The existing daily collector/publisher stays unchanged. This additional workflow checks all six unresolved original routes, not only CoralBonus.
+No rental, subscription payment, maintained server or always-on laptop. Free API accounts are allowed. ScrapingAnt advertises a recurring Free plan with10,000 monthly credits and no payment card; its documented country selection includes RU. Actual site responses, not provider marketing, determine source availability.
 
-Chosen candidate: ScrapingAnt's **recurring Free plan**, advertised as 10,000 credits each month without a payment card. Its API documents Russian country selection (`RU`) with standard datacenter proxies. These are vendor capability claims, **not a successful live test of our sources**.
+The owner has now added `SCRAPINGANT_API_KEY` as a repository secret. No key appears in code, workflow inputs, logs, the spreadsheet or public artifacts. Future reconnection uses Settings → Secrets and variables → Actions; remain on Free, without payment details or paid upgrades. The connected GitHub app cannot administer repository secrets.
 
-One-time setup:
+## Runtime
 
-1. Register at https://app.scrapingant.com/ and stay on the Free plan. Do not enter payment details, purchase standalone proxies or activate paid upgrades. The API key is on the account dashboard.
-2. In this repository, open Settings → Secrets and variables → Actions → New repository secret. Save the key as **`SCRAPINGANT_API_KEY`**. Do not paste it in chat, a commit, an issue, a workflow input or the spreadsheet.
-3. The `Free original-source access check` workflow picks it up on its next daily 06:03 UTC run. It can also be run with `Run workflow`. The original 05:23 UTC data collection remains separate and unchanged.
+- The original `loyalty.yml` still runs at05:23 UTC.
+- `loyalty-free-access.yml` runs at06:03 UTC and supports manual dispatch. The trusted main job calls `free_catalog_bundle.py --collect`: fresh public API observations are mapped only by reviewed source adapters.
+- Current supported mapping: Nordwind's source-owned partner accordions, including complete on-page conditions and separately scoped earning clauses. No fixed partner inventory or rates. Outgoing hotel websites and user eligibility are not verified.
+- Other roots are not automatically promoted to offers. Coral's category landing page is not a collected partner catalogue; promo titles alone are not complete campaign conditions.
+- Only freshly accepted same-run/same-attempt/current-commit records produce a publication payload. Old diagnostics, changed HTML digests, missing identity and stale observations are rejected.
+- The separate publisher reuses the existing two managed public tabs and common private normalization. It requires trusted main, accepted records and `LOYALTY_SHEETS_SYNC=true`; existing WIF/scopes are reused. Both workflows share a concurrency group so writers do not overlap. No Google credential enters the public collector.
+- `free_access_probe.py` itself does not publish; its `published_records=0` field describes that stage, not the later publisher. Final source success requires actual fresh records and independent destination readback after the final write.
 
-Repository connection used in ChatGPT cannot create repository secrets; its documented API excludes secret administration. The owner setup above is not a server-management requirement. No additional service account, Google permission or laptop connection is required for this public probe.
+## Free budget and source safety
 
-## What the implementation does
+Preflight `/v2/usage` must report a recognized Free plan, at most10,000 total credits and at least115 remaining. Unknown/paid plans stop before source requests. Maximum16 requests and115 estimated/reserved credits per full attempt: five1-credit plain robots reads, up to five10-credit browser robots fallbacks, and six10-credit rendered roots. With no fallbacks, the original65-credit maximum still applies.
 
-- Resolve the six IDs `ekp`, `nordwind`, `coral`, `coral_promo`, `rzd`, `aeroflot` from the existing reviewed registry. No new target sources or literal offer answers.
-- Without the new secret: write `not_configured` and make zero provider/site requests.
-- First read `/v2/usage`. Require a recognized Free plan, at most 10,000 total credits and at least 65 remaining. A paid/unknown plan or insufficient balance stops before all target reads. The exact free plan name still requires live confirmation; unknown names do not silently enable collection.
-- Make sequential HTTPS `/v2/general` requests with `proxy_country=RU`, `proxy_type=datacenter`; no residential mode, paid purchase call or automatic upgrade exists.
-- Maximum eleven target reads and 65 **estimated/reserved** credits: five plain robots documents at one credit and six JS-rendered roots at ten credits. Validate `Ant-credits-cost` after every response. Stop on a missing/higher cost, quota/auth/rate failure, or timeout. There are no automatic retries or country/IP-rotation loops.
-- Reuse the production `robots_document`, robots parser and source-refusal checks. Read a root only after policy permits it. Origin status comes from `Ant-page-status-code`, not the provider's HTTP envelope. Provider failures are not missing robots documents.
-- A fixed read-only JavaScript snippet records the browser's final location. Reject missing/unexpected destinations; retain only the already observed EKP SPA transition as an equivalent path. This does not independently audit the provider's complete redirect/TLS chain.
-- Do not request the extended session/XHR payload. Discard all but three needed response-header fields, and remove forms, scripts, hidden fields, event attributes and URL query/fragment data from artifacts. No account session is sent. Source output is untrusted data; it never changes code, configuration or output targets.
-- Return sanitized root documents as **unverified candidates**, with counts, checksums and fresh observation times. No partner details or pagination are claimed. `published_records=0` is deliberate. A candidate page is not automatically a valid discount or eligible benefit.
+One daily attempt has an upper documented estimate of115×31=3,565 credits/month before other account usage. This is not a budget for full multi-page catalogue extraction. Missing or excessive reported charges, quota/auth/rate errors, transport exceptions and the overall deadline stop further work. There is no paid upgrade, residential mode, automatic purchase or unlimited retry loop. Keep the account on Free; code cannot make an externally changed billing policy free.
 
-The key is passed only over verified HTTPS to the provider using its documented query parameter. Requests, raw exceptions and raw provider errors are never logged. Keys must not be prefixed with `ant-` (which would forward a header to the target). The wrapper rejects a credential echo rather than saving it. Secret masking is not the privacy control. No Google token, spreadsheet ID, source account cookie or private spreadsheet row enters this workflow.
+`known_charged_credits` sums validated cost headers from successful provider envelopes. Charges, if any, for failed provider calls are not included; `reserved_credits` remains a separate conservative request-budget figure. Neither is a independently reconciled account statement.
 
-At one run per day the documented upper estimate is 65 × 31 = **2,015 credits/month**, before any other use of the same account. This is an estimate for **root access checks**, not for full catalogue extraction. A changed provider billing policy or later paid account upgrade is not made free by a code cap; do not add payment details and retain Free status. The API's usage/charge checks additionally stop unexpected configurations. No signup occurred and no real API key was obtained in preparing the code.
+Provider404 is documented as an unreachable requested URL, **not** an origin404. For a plain robots read only, one browser-mode read of the exact same policy URL is now allowed. It must return a current final-location marker and usable rules before the target may be fetched. Explicit robots disallow, source HTTP refusal, provider423 challenge detection, authentication and rate limits are not bypassed or retried by this fallback.
 
-## Why this candidate and not another generic cloud
+Origin status is taken from `Ant-page-status-code`, not the provider envelope. The exact target final location is checked; known EKP SPA transition remains the only root equivalence. Browser policy responses must match their exact policy URL. TLS remains enabled for API access; the provider's entire internal TLS/redirect chain is not independently observed.
 
-Prior GitHub, Jina and Microlink experiments failed before useful catalogue content. Prior independent measurements made a controlled Russian exit a relevant hypothesis. ScrapingAnt offers this selection inside a recurring free allowance, unlike an unverified arbitrary free browser in another foreign region. This is still a hypothesis until a real key is connected.
+Relative links are resolved against the actual HTML `<base href>` when it exists, as in CoralBonus. A foreign or unsafe base is rejected. Forms, scripts, hidden fields, event attributes, query/fragment values and extended cookie/XHR payloads are excluded from public output. No source account session is transmitted. Public page text is data, never instructions or executable repository configuration.
 
-Browserless (1,000 units/month) and Cloudflare Browser Run (10 minutes/day on Workers Free) have recurring free offers, but their basic free plans do not by themselves prove suitable network access to these six sites. Do not request several unnecessary accounts before testing this one.
+## Evidence and current limits
 
-## Continuation / acceptance
+First real key-backed run35008135019 attempt2 read Nordwind's seven actual cards and Coral's20 category boxes. A later new run35016757882 stopped Nordwind at a plain policy request, so it correctly produced no offer payload and skipped publication; it did read Coral's promotion index. This proved intermittent policy transport and exposed incorrect relative link resolution in the old sanitizer. Historical sanitizations must not be used as authoritative new link inventories.
 
-This is the ready-to-connect **access probe**, not restoration of six production sources. Before routing provider responses into the normal publisher: inspect actual current cards, source ownership and conditions, traverse relevant catalogue pages, preserve incomplete/authenticated boundaries, verify repeat reads, then separately verify Sheets publication/readback. Reuse existing source adapters where their contracts fit. EKP draft PR23 is not implicitly merged or certified by this workflow.
+The bounded browser-policy fallback and base-URL repair are tested separately. A successful future live request is not preclaimed here. A new source is considered released only after its fresh output, repeated read behavior and actual publication/readback are recorded in the corresponding PR. The user's existing CoralBonus account remains unused by this anonymous API route; no re-registration or coupon issuance is requested.
 
-CoralBonus registration was already completed by the user. Do not ask them to register again. Their authorized session is not part of this public provider probe; an authenticated path needs private handling, and code issuance remains a separate operation from reading offers.
+Official references:
+- https://scrapingant.com/
+- https://docs.scrapingant.com/api-credits-usage
+- https://docs.scrapingant.com/credits-cost
+- https://docs.scrapingant.com/errors
+- https://docs.scrapingant.com/custom-headers
+- https://docs.scrapingant.com/proxy-settings
+- https://docs.scrapingant.com/request-response-format
 
-## Official documentation checked
-
-- Recurring Free allowance and no-card requirement: https://scrapingant.com/
-- Country and proxy type: https://docs.scrapingant.com/proxy-settings
-- Charge table and credit response header: https://docs.scrapingant.com/credits-cost
-- Usage response: https://docs.scrapingant.com/api-credits-usage
-- Origin status / response headers: https://docs.scrapingant.com/custom-headers
-- Parameters: https://docs.scrapingant.com/request-response-format
-- GitHub key setup: https://docs.scrapingant.com/github-action
-- Browserless comparison: https://cloud.browserless.io/pricing
-- Cloudflare comparison: https://developers.cloudflare.com/browser-run/limits/
-
-## Contract check during implementation
-
-The public OpenAPI document was actually retrieved from GitHub Actions in run `35007046678` (HTTP200, digest `1b43ea963d17e7f91b2cc3c58e49d9e76c4b31c3d6ce644b6632f84165bdd6d6`). It confirms that `/v2/usage` requires the query-key form. The published extended endpoint was not present in that schema; omission alone does not prove it is unavailable. The final probe uses the simpler documented general HTML endpoint plus origin-status/credit headers, avoiding the extended session payload entirely. The changed mock HTTP contract failed before adapting the reader and passed afterwards. Live authenticated behavior still awaits a real owner key.
+Previously verified public OpenAPI fetches: run35007046678 and35007883389. Offline/regression tests validate contracts but do not certify live source reachability. Public artifacts expire after seven days; private source exports and credentials are excluded.
