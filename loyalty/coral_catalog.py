@@ -92,9 +92,16 @@ def detail(raw, sid, entry, observed_at, retrieval):
     prefix, depth = ('/klub-privilegii/', 3) if sid == 'coral' else ('/promo/', 2)
     url = checked_url(entry['url'], prefix, depth)
     soup = BeautifulSoup(raw, 'html.parser'); headings = soup.select('h1')
+    editorial = False
     if len(headings) != 1:
-        raise ValueError('coral_detail_heading')
-    h = headings[0]; title = text(h.get_text(' ', strip=True))
+        candidates = [h for h in headings if 'order-lg-2' in h.parent.get('class', [])]
+        if (sid != 'coral' or len(candidates) != 1
+            or any(h not in candidates[0].parent.descendants for h in headings)):
+            raise ValueError('coral_detail_heading')
+        h = candidates[0]; editorial = True
+    else:
+        h = headings[0]
+    title = text(h.get_text(' ', strip=True))
     section = h.find_parent('section')
     if section is None or not title or '{{' in title:
         raise ValueError('coral_detail_not_ready')
@@ -103,7 +110,15 @@ def detail(raw, sid, entry, observed_at, retrieval):
         ticket = (not purchase and 'col-lg' in h.parent.get('class', [])
                   and len(h.parent.select('.order-canvas')) == 1
                   and len(h.parent.select('.order-autorize')) == 1)
-        if ticket:
+        purchase_request = (not purchase and not ticket and 'col-lg' in h.parent.get('class', [])
+                            and not h.parent.select('.order-canvas')
+                            and len(h.parent.select('.order-autorize')) == 1)
+        if purchase_request:
+            auth = h.parent.select_one('.order-autorize')
+            auth_title = auth.select_one('h3')
+            if not auth_title or text(auth_title.get_text(' ', strip=True)) != 'Чтобы совершить покупку нужно авторизоваться на сайте':
+                raise ValueError('coral_purchase_request_identity_not_supported')
+        elif ticket:
             auth = h.parent.select_one('.order-autorize')
             auth_title = auth.select_one('h3')
             if not auth_title or not re.fullmatch(r'Чтобы купить билеты нужно авторизоваться на сайте',
@@ -113,6 +128,8 @@ def detail(raw, sid, entry, observed_at, retrieval):
             auth = purchase[0].select_one('.order-autorize')
         else:
             raise ValueError('coral_detail_not_referral')
+        if editorial and (len(purchase) != 1 or auth is not None):
+            raise ValueError('coral_editorial_layout_not_supported')
         content = h.parent
         # Plain HTML can contain both Angular branches. Read only the explicit
         # authorization notice, never hidden generated coupon/account branches.
@@ -148,18 +165,22 @@ def detail(raw, sid, entry, observed_at, retrieval):
     links = [{'label': text(a.get_text(' ', strip=True)), 'url': a['href']} for a in copy.select('a[href]')]
     block = {'title': title, 'body': body, 'redemption': '\n'.join(redemption),
              'authentication_notice': auth_text, 'tables': tables, 'table_contexts': table_contexts,
-             'links': links, 'category': entry.get('category'), 'valid_until': explicit_end(body)}
+             'links': links, 'category': entry.get('category'), 'valid_until': explicit_end(body),
+             'public_editorial_information': editorial,
+             'redemption_mode': ('purchase_request' if purchase_request else 'ticket_purchase' if ticket else 'partner_code_or_link') if sid == 'coral' else 'partner_code_or_link'}
     return make_offer(sid, 'path:'+urlsplit(url).path, 'CoralBonus — Клуб' if sid == 'coral' else 'CoralBonus — Акции',
         None, title, url, observed_at, title=title, conditions=body, redemption=block['redemption'],
         category=entry.get('category'), tables=tables, valid_until=block['valid_until'],
-        record_kind='partner_offer' if sid == 'coral' else 'campaign',
-        source_status=('public_conditions_purchase_requires_login' if sid == 'coral' and ticket else
+        record_kind=('source_observation' if editorial else 'partner_offer') if sid == 'coral' else 'campaign',
+        source_status=('public_conditions_purchase_requires_login' if sid == 'coral' and (ticket or purchase_request) else
                        'public_conditions_coupon_requires_login') if auth_text else 'public_source_terms',
         locator='h1 parent offer column' if sid == 'coral' else 'section.article',
         details={'public_coral_block': block, 'source_document_sha256': hashlib.sha256(raw.encode()).hexdigest(),
                  'discovered_from': entry.get('parent_url', PROMO), 'retrieval': retrieval,
                  'private_coupon_issued': False, 'full_program_catalog': False,
-                 'redemption_mode': 'ticket_purchase' if sid == 'coral' and ticket else 'partner_code_or_link',
+                 'redemption_mode': ('purchase_request' if purchase_request else 'ticket_purchase' if ticket else 'partner_code_or_link') if sid == 'coral' else 'partner_code_or_link',
+                 'public_editorial_information': editorial,
+                 'coral_layout_revision': 2,
                  'partner_identity': 'not_inferred_from_campaign_title'}, warnings=WARNINGS)
 
 
@@ -171,11 +192,12 @@ def validate_record(row):
         or row['title'] != b.get('title') or row['benefit_text'] != b.get('title')
         or row['conditions_text'] != b.get('body') or row['redemption_text'] != b.get('redemption')
         or row['tables'] != b.get('tables') or row['valid_until'] != explicit_end(b.get('body', ''))
+        or (row['details'].get('coral_layout_revision') == 2 and (row['details'].get('public_editorial_information') != b.get('public_editorial_information') or row['details'].get('redemption_mode') != b.get('redemption_mode')))
         or row['category'] != b.get('category') or row['link_kind'] != 'detail_page'
         or row['benefit_url'] != row['source_url']
-        or row['record_kind'] != ('partner_offer' if sid == 'coral' else 'campaign')
+        or row['record_kind'] != (('source_observation' if row['details'].get('public_editorial_information') else 'partner_offer') if sid == 'coral' else 'campaign')
         or row['program'] != ('CoralBonus — Клуб' if sid == 'coral' else 'CoralBonus — Акции')
-        or row['source_status'] != (('public_conditions_purchase_requires_login' if row['details'].get('redemption_mode') == 'ticket_purchase' else 'public_conditions_coupon_requires_login') if b.get('authentication_notice') else 'public_source_terms')
+        or row['source_status'] != (('public_conditions_purchase_requires_login' if row['details'].get('redemption_mode') in ('ticket_purchase', 'purchase_request') else 'public_conditions_coupon_requires_login') if b.get('authentication_notice') else 'public_source_terms')
         or not re.fullmatch('[a-f0-9]{64}', row['details'].get('source_document_sha256', ''))
         or row['details'].get('private_coupon_issued') is not False
         or row['details'].get('full_program_catalog') is not False
