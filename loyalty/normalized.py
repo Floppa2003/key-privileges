@@ -14,7 +14,7 @@ from promo_codes import extract_promocodes
 from table_benefits import extract_table_benefits
 from recovered_contract import SOURCES as RECOVERED_SOURCES, http_url, validate_recovered
 
-VERSION = '2.9.2'
+VERSION = '2.9.3'
 HOSTS = {
  'moskvich': ['moskvichmag.ru'], 'noname': ['nonameburo.com'],
  's7': ['marketplace.s7.ru'], 'ural': ['www.uralairlines.ru'],
@@ -31,6 +31,7 @@ KNOWN_RULES=json.loads(Path(__file__).with_name('known_rules.json').read_text(en
 for _key,_cfg in KNOWN_RULES.items():
     HOSTS[_key]=[urlsplit(_cfg['url']).hostname]
 HOSTS['utair_media']=['media.utair.ru']
+HOSTS['utair']=['www.utair.ru']
 HOSTS['ekp_announcements']=['t.me']
 HOSTS['rzd_announcements']=['t.me']
 HOSTS['mir_announcements']=['t.me']
@@ -88,7 +89,7 @@ def normalize_rates(value: str) -> list[dict]:
         for m in re.finditer(r'(?:(?P<lo>\d+(?:[.,]\d+)?)\s*[–—-]\s*)?(?P<value>\d+(?:[.,]\d+)?)\s*%', clause):
             before = sorted((pos,k) for pos,k in labels if pos < m.start())
             after = next((k for k in ('discount','cashback') if re.match(r'\s*'+TYPES[k],clause[m.end():],re.I)),None)
-            if re.match(r'\s+милями\b',clause[m.end():],re.I):
+            if re.match(r'\s*мил(?:ями|и|ь)\b',clause[m.end():],re.I):
                 after='miles'
             if not before and not after:
                 continue
@@ -232,6 +233,9 @@ def validate_offer(r: dict) -> None:
     if r['details'].get('live_document_text'):
         from document_text import validate_document_record
         validate_document_record(r)
+    if r['source_id']=='utair':
+        from utair_support import validate_support_record
+        validate_support_record(r)
     if r['source_id']=='utair_rule_documents':
         from utair_document_routes import validate_utair_document
         validate_utair_document(r)
