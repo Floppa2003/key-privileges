@@ -41,7 +41,7 @@ jobs:
       - name: Collect public normalized offers (no Google credentials)
         env:
           PAGE_LIMIT: ${{ inputs.limit || '500' }}
-        run: python loyalty/collect_normalized.py --limit "$PAGE_LIMIT"
+        run: xvfb-run -a python loyalty/collect_normalized.py --limit "$PAGE_LIMIT"
       - name: Validate publication payload without access to Google
         if: always()
         run: |

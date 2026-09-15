@@ -1,0 +1,45 @@
+name: Utair support dispatcher integration
+on:
+  push:
+    branches: ["loyalty/utair-support-20260915"]
+    paths: ["loyalty/**", ".github/workflows/utair-support-check.yml"]
+permissions:
+  contents: read
+jobs:
+  verify:
+    strategy:
+      fail-fast: false
+      matrix:
+        replica: [1, 2]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r loyalty/requirements.txt
+      - name: All regression tests with pinned dependencies
+        run: |
+          mkdir -p utair-support-output
+          python -m unittest discover -s loyalty/tests -v > utair-support-output/python-tests.log 2>&1
+          node --test key/refresh.test.mjs > utair-support-output/key-tests.log 2>&1
+      - name: Live configured Utair source through actual dispatcher
+        env:
+          REPLICA: ${{ matrix.replica }}
+        run: timeout --signal=TERM --kill-after=5s 220s xvfb-run -a python loyalty/check_utair_support.py
+      - name: Archive exact public execution code
+        if: always()
+        run: |
+          mkdir -p utair-support-output
+          git archive HEAD > utair-support-output/code.tar
+      - name: Preserve public verification artifacts
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: utair-integration-${{ matrix.replica }}-${{ github.run_id }}
+          path: utair-support-output/
+          if-no-files-found: error
+          retention-days: 7
