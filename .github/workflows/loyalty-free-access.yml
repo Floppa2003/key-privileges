@@ -42,7 +42,7 @@ jobs:
               report['http_status']=r.status_code
               if r.status_code==200 and len(r.content)<2_000_000:
                   obj=r.json();report['sha256']=hashlib.sha256(r.content).hexdigest()
-                  report['paths']={path:obj.get('paths',{}).get(path) for path in ('/v2/usage','/v2/extended')}
+                  report['paths']={path:obj.get('paths',{}).get(path) for path in ('/v2/usage','/v2/general','/v2/extended')}
           except Exception as exc:report['error_type']=type(exc).__name__
           Path('free-access-tests/api-contract.json').write_text(json.dumps(report,indent=2))
           PY

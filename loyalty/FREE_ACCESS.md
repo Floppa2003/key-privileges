@@ -19,11 +19,11 @@ Repository connection used in ChatGPT cannot create repository secrets; its docu
 - Resolve the six IDs `ekp`, `nordwind`, `coral`, `coral_promo`, `rzd`, `aeroflot` from the existing reviewed registry. No new target sources or literal offer answers.
 - Without the new secret: write `not_configured` and make zero provider/site requests.
 - First read `/v2/usage`. Require a recognized Free plan, at most 10,000 total credits and at least 65 remaining. A paid/unknown plan or insufficient balance stops before all target reads. The exact free plan name still requires live confirmation; unknown names do not silently enable collection.
-- Make sequential HTTPS `/v2/extended` requests with `proxy_country=RU`, `proxy_type=datacenter`; no residential mode, paid purchase call or automatic upgrade exists.
+- Make sequential HTTPS `/v2/general` requests with `proxy_country=RU`, `proxy_type=datacenter`; no residential mode, paid purchase call or automatic upgrade exists.
 - Maximum eleven target reads and 65 **estimated/reserved** credits: five plain robots documents at one credit and six JS-rendered roots at ten credits. Validate `Ant-credits-cost` after every response. Stop on a missing/higher cost, quota/auth/rate failure, or timeout. There are no automatic retries or country/IP-rotation loops.
-- Reuse the production `robots_document`, robots parser and source-refusal checks. Read a root only after policy permits it. Origin status comes from `status_code`, not the provider's HTTP envelope. Provider failures are not missing robots documents.
+- Reuse the production `robots_document`, robots parser and source-refusal checks. Read a root only after policy permits it. Origin status comes from `Ant-page-status-code`, not the provider's HTTP envelope. Provider failures are not missing robots documents.
 - A fixed read-only JavaScript snippet records the browser's final location. Reject missing/unexpected destinations; retain only the already observed EKP SPA transition as an equivalent path. This does not independently audit the provider's complete redirect/TLS chain.
-- Discard cookies, XHRs, headers, iframe bodies, forms, scripts, hidden fields, event attributes and URL query/fragment data from artifacts. No account session is sent. Source output is untrusted data; it never changes code, configuration or output targets.
+- Do not request the extended session/XHR payload. Discard all but three needed response-header fields, and remove forms, scripts, hidden fields, event attributes and URL query/fragment data from artifacts. No account session is sent. Source output is untrusted data; it never changes code, configuration or output targets.
 - Return sanitized root documents as **unverified candidates**, with counts, checksums and fresh observation times. No partner details or pagination are claimed. `published_records=0` is deliberate. A candidate page is not automatically a valid discount or eligible benefit.
 
 The key is passed only over verified HTTPS to the provider using its documented query parameter. Requests, raw exceptions and raw provider errors are never logged. Keys must not be prefixed with `ant-` (which would forward a header to the target). The wrapper rejects a credential echo rather than saving it. Secret masking is not the privacy control. No Google token, spreadsheet ID, source account cookie or private spreadsheet row enters this workflow.
@@ -48,8 +48,12 @@ CoralBonus registration was already completed by the user. Do not ask them to re
 - Country and proxy type: https://docs.scrapingant.com/proxy-settings
 - Charge table and credit response header: https://docs.scrapingant.com/credits-cost
 - Usage response: https://docs.scrapingant.com/api-credits-usage
-- Extended response and origin status: https://docs.scrapingant.com/json-response
+- Origin status / response headers: https://docs.scrapingant.com/custom-headers
 - Parameters: https://docs.scrapingant.com/request-response-format
 - GitHub key setup: https://docs.scrapingant.com/github-action
 - Browserless comparison: https://cloud.browserless.io/pricing
 - Cloudflare comparison: https://developers.cloudflare.com/browser-run/limits/
+
+## Contract check during implementation
+
+The public OpenAPI document was actually retrieved from GitHub Actions in run `35007046678` (HTTP200, digest `1b43ea963d17e7f91b2cc3c58e49d9e76c4b31c3d6ce644b6632f84165bdd6d6`). It confirms that `/v2/usage` requires the query-key form. The published extended endpoint was not present in that schema; omission alone does not prove it is unavailable. The final probe uses the simpler documented general HTML endpoint plus origin-status/credit headers, avoiding the extended session payload entirely. The changed mock HTTP contract failed before adapting the reader and passed afterwards. Live authenticated behavior still awaits a real owner key.

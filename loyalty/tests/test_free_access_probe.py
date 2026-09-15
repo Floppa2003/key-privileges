@@ -22,11 +22,15 @@ USAGE = {'plan_name':'Free','plan_total_credits':10000,'remained_credits':9999}
 
 class Response:
     def __init__(self, body, status=200, cost='1', headers=None):
-        self.body=json.dumps(body).encode(); self.status_code=status
+        self.body=(body if isinstance(body,str) else json.dumps(body)).encode(); self.status_code=status
         self.headers={'Ant-credits-cost':cost, **(headers or {})}
     def __enter__(self):return self
     def __exit__(self,*_):pass
     def iter_content(self,_):yield self.body
+
+
+def page(body, origin=200, cost='10', headers=None):
+    return Response(body,cost=cost,headers={'Ant-page-status-code':str(origin),**(headers or {})})
 
 
 def document(url):
@@ -37,9 +41,9 @@ def response_for(url, **kwargs):
     if url.endswith('usage'):return Response(USAGE)
     params=kwargs['params']; target=params['url']
     if target.endswith('/robots.txt'):
-        return Response({'status_code':200,'html':'User-agent: *\nAllow: /','headers':[]})
-    return Response({'status_code':200,'html':document(target),'headers':[],
-                     'cookies':'PRIVATE_SESSION','xhrs':[{'body':'PRIVATE_XHR'}]},cost='10')
+        return page('User-agent: *\nAllow: /',cost='1')
+    return page(document(target),headers={'ant-original-header-set-cookie':'PRIVATE_SESSION',
+                                               'private-header':'PRIVATE_XHR'})
 
 
 class FreeAccessTests(unittest.TestCase):
@@ -76,7 +80,7 @@ class FreeAccessTests(unittest.TestCase):
         get=Mock(side_effect=response_for);r=self.reader(get)
         r.read(ROOTS[4]['url'],browser=True)
         url=get.call_args.args[0];kw=get.call_args.kwargs
-        self.assertEqual(url,p.API+'extended');self.assertEqual(kw['params']['url'],ROOTS[4]['url'])
+        self.assertEqual(url,p.API+'general');self.assertEqual(kw['params']['url'],ROOTS[4]['url'])
         self.assertEqual(kw['params']['proxy_country'],'RU');self.assertEqual(kw['params']['proxy_type'],'datacenter')
         self.assertEqual(kw['params']['x-api-key'],KEY);self.assertNotIn('cookies',kw)
         self.assertNotIn('cookies',kw['params']);self.assertNotIn('verify',kw)
@@ -90,7 +94,7 @@ class FreeAccessTests(unittest.TestCase):
         self.assertEqual(r.calls,0)
 
     def test_credit_cost_discrepancy_stops_further_calls(self):
-        get=Mock(side_effect=[Response(USAGE),Response({'status_code':200,'html':'x'},cost='125')])
+        get=Mock(side_effect=[Response(USAGE),page('x',cost='125')])
         r=self.reader(get)
         with self.assertRaisesRegex(p.ProbeError,'credit_cost'):r.read(ROOTS[0]['url'],browser=True)
         with self.assertRaises(p.ProbeError):r.read(ROOTS[1]['url'],browser=True)
@@ -104,8 +108,8 @@ class FreeAccessTests(unittest.TestCase):
             self.assertNotIn(KEY,str(caught.exception));self.assertEqual(get.call_count,2)
 
     def test_source_429_and_retry_after_stop(self):
-        for status,headers in ((429,[]),(200,[{'name':'Retry-After','value':'30'}])):
-            get=Mock(side_effect=[Response(USAGE),Response({'status_code':status,'html':'x','headers':headers},cost='10')])
+        for status,headers in ((429,{}),(200,{'ant-original-header-retry-after':'30'})):
+            get=Mock(side_effect=[Response(USAGE),page('x',origin=status,headers=headers)])
             r=self.reader(get)
             with self.assertRaisesRegex(p.ProbeError,'origin_rate_limit'):r.read(ROOTS[0]['url'],browser=True)
             self.assertTrue(r.halted)
@@ -117,7 +121,7 @@ class FreeAccessTests(unittest.TestCase):
             self.assertNotIn(KEY,str(caught.exception));self.assertTrue(r.halted)
 
     def test_missing_status_cannot_be_source_success(self):
-        get=Mock(side_effect=[Response(USAGE),Response({'html':'unlabelled body'},cost='10')]);r=self.reader(get)
+        get=Mock(side_effect=[Response(USAGE),Response('unlabelled body',cost='10')]);r=self.reader(get)
         with self.assertRaisesRegex(p.ProbeError,'origin_status_missing'):r.read(ROOTS[0]['url'],browser=True)
 
     def test_budget_and_request_cap(self):
@@ -171,9 +175,9 @@ class FreeAccessTests(unittest.TestCase):
         def get(url,**kw):
             target=kw['params'].get('url','')
             if target.endswith('ekp.spb.ru/robots.txt'):
-                return Response({'status_code':200,'html':'User-agent: *\nDisallow: /','headers':[]})
+                return page('User-agent: *\nDisallow: /',cost='1')
             if 'nordwind' in target and not target.endswith('robots.txt'):
-                return Response({'status_code':200,'html':'<title>Access denied</title>','headers':[]},cost='10')
+                return page('<title>Access denied</title>')
             return response_for(url,**kw)
         with tempfile.TemporaryDirectory() as tmp:
             report=p.run(ROOTS,KEY,tmp,get=get,sleep=lambda _:None)

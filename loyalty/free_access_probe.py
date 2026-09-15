@@ -1,6 +1,6 @@
 """Free-plan-only access probe; no Google credentials, accounts or publication.
 
-The provider's documented JSON/credit contract is checked before collecting the
+The provider's documented response/credit contract is checked before collecting the
 six configured public roots. This is a retrieval experiment, not an offer adapter.
 """
 from __future__ import annotations
@@ -83,12 +83,12 @@ class FreeReader:
         self.halted = False
         self.deadline = time.monotonic() + 780
 
-    def _json(self, endpoint, params):
-        # The query-key form is explicitly documented for /usage and /extended.
+    def _request(self, endpoint, params):
+        # The query-key form is documented and confirmed in the public API schema.
         # Never log requests, response headers, raw exceptions or provider errors.
         try:
             with self.get(API + endpoint, params={**params, 'x-api-key': self.key},
-                          headers={'Accept': 'application/json'}, timeout=(10, 75),
+                          headers={'Accept': 'application/json' if endpoint == 'usage' else 'text/html'}, timeout=(10, 75),
                           allow_redirects=False, stream=True) as r:
                 status = r.status_code
                 if status in (401, 402, 403, 409, 429) or r.headers.get('Retry-After'):
@@ -106,11 +106,14 @@ class FreeReader:
                 if self.key.encode() in raw:
                     self.halted = True
                     raise ProbeError('credential_echo_rejected')
-                payload = json.loads(raw)
-                if self.key in json.dumps(payload, ensure_ascii=False):
+                body = raw.decode('utf-8')
+                payload = json.loads(body) if endpoint == 'usage' else body
+                if self.key in (json.dumps(payload, ensure_ascii=False) if endpoint == 'usage' else payload):
                     self.halted = True
                     raise ProbeError('credential_echo_rejected')
-                return payload, r.headers.get('Ant-credits-cost')
+                meta = {name: r.headers.get(name) for name in (
+                    'Ant-credits-cost', 'Ant-page-status-code', 'ant-original-header-retry-after')}
+                return payload, meta
         except ProbeError:
             raise
         except Exception:
@@ -118,7 +121,7 @@ class FreeReader:
             raise ProbeError('provider_transport_or_json_error') from None
 
     def preflight(self):
-        payload, _ = self._json('usage', {})
+        payload, _ = self._request('usage', {})
         free_plan(payload)
         self.ready = True
 
@@ -140,25 +143,20 @@ class FreeReader:
         if browser:
             params['js_snippet'] = LOCATION_JS
             params['block_resource'] = ['image', 'media', 'font']
-        payload, charged = self._json('extended', params)
+        raw, meta = self._request('general', params)
+        charged = meta['Ant-credits-cost']
         if charged is None or not re.fullmatch(r'\d+', str(charged)) or int(charged) > cost:
             self.halted = True
             raise ProbeError('credit_cost_contract_unconfirmed')
-        if not isinstance(payload, dict) or type(payload.get('status_code')) is not int:
+        value = meta['Ant-page-status-code']
+        if value is None or not re.fullmatch(r'[1-5][0-9]{2}', str(value)):
             raise ProbeError('origin_status_missing')
-        status = payload['status_code']
-        if not 100 <= status <= 599:
-            raise ProbeError('origin_status_invalid')
-        raw = payload.get('html')
-        if not isinstance(raw, str):
-            raise ProbeError('origin_html_missing')
-        headers = payload.get('headers', [])
-        if not isinstance(headers, list):
-            raise ProbeError('origin_headers_invalid')
-        if status == 429 or any(isinstance(h, dict) and str(h.get('name', '')).lower() == 'retry-after' for h in headers):
+        status = int(value)
+        if status == 429 or meta['ant-original-header-retry-after'] is not None:
             self.halted = True
             raise ProbeError('origin_rate_limit_or_retry_after')
-        # Cookies, XHRs, response headers and iframe bodies are intentionally ignored.
+        # Only three non-sensitive metadata fields are read; all other headers,
+        # including Set-Cookie, are discarded. No extended XHR/session payload.
         return status, raw, int(charged)
 
 
