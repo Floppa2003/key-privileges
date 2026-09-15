@@ -1,4 +1,4 @@
-name: EKP preview candidate regression checks
+name: EKP preview candidate regression and live checks
 on:
   push:
     branches: ["loyalty/ekp-catalog-preview-20260915"]
@@ -22,18 +22,45 @@ jobs:
           mkdir -p ekp-check-output
           python -m unittest discover -s loyalty/tests -v > ekp-check-output/python-tests.log 2>&1
           node --test key/refresh.test.mjs > ekp-check-output/key-tests.log 2>&1
-      - name: Preserve exact execution code and pure Python policy dependency
+      - name: Preserve exact public execution code
         if: always()
         run: |
           mkdir -p ekp-check-output
           git archive HEAD > ekp-check-output/code.tar
-          python -m pip download --no-deps --only-binary=:all: protego==0.6.2 --dest ekp-check-output
-          sha256sum ekp-check-output/*.whl ekp-check-output/code.tar > ekp-check-output/SHA256SUMS
+          sha256sum ekp-check-output/code.tar > ekp-check-output/SHA256SUMS
       - name: Preserve public regression evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: ekp-check-${{ github.run_id }}
           path: ekp-check-output/
+          if-no-files-found: error
+          retention-days: 7
+  live:
+    needs: regressions
+    strategy:
+      fail-fast: false
+      matrix:
+        replica: [1, 2]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r loyalty/requirements.txt
+      - name: Real anonymous source through the normal dispatcher; no publication
+        env:
+          REPLICA: ${{ matrix.replica }}
+        run: timeout --signal=TERM --kill-after=5s 390s xvfb-run -a python loyalty/check_ekp_catalog.py
+      - name: Preserve live evidence even on failure
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ekp-live-${{ matrix.replica }}-${{ github.run_id }}
+          path: ekp-live-output/
           if-no-files-found: error
           retention-days: 7

@@ -28,6 +28,7 @@ from known_rules import collect_known_rules
 from utair_documents import collect_documents
 from recovered_sources import collect_recovered
 from utair_support import collect_utair
+from ekp_catalog import collect_ekp
 
 
 def error_record(exc,phase,url=''):
@@ -119,6 +120,7 @@ async def one(browser,cfg,now,limit):
         if cfg['mode']=='key':records=await collect_key(report,now)
         elif cfg['mode']=='recovered':records=await collect_recovered(cfg,report,now,limit)
         elif cfg['id']=='utair':records=await collect_utair(cfg,report,now,limit)
+        elif cfg['id']=='ekp':records=await collect_ekp(cfg,report,now,limit)
         else:
             async with PublicSource(browser,cfg['url']) as client:
                 client.deadline=deadline
