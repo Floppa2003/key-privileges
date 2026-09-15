@@ -70,20 +70,8 @@ try{
   result.actions.push({action:'load_more_once',before,after:cards().length});snapshot('expanded');
  }
  if(restricted())throw new Error('restriction_document');
- const selected=cards().find(x=>!x.login&&x.title);
- result.selected=selected||null;
- if(selected&&Date.now()<limit-3000){
-  const link=[...document.querySelectorAll('main a[href]')].find(a=>publicUrl(a.href)===selected.url&&visible(a));
-  if(link){
-   await sleep(1100);link.click();
-   while(Date.now()<limit){
-    await sleep(400);if(restricted())throw new Error('restriction_document');
-    const m=document.querySelector('main');
-    if(publicUrl(location.href)===selected.url&&m&&m.innerText.length>300&&!cards().length){result.detailChecked=true;break;}
-   }
-   snapshot('selected_detail');
-  }
- }
+ result.selected=cards().find(x=>!x.login&&x.title)||null;
+ result.detailNotOpened='separate_navigation_kept_out_of_in_page_capture';
 }catch(e){result.error=['snapshot_limit','restriction_document','cards_not_ready'].includes(e.message)?e.message:e.name;}
 finally{XMLHttpRequest.prototype.open=original;}
 result.finishedAt=new Date().toISOString();result.finalUrl=publicUrl(location.href);
