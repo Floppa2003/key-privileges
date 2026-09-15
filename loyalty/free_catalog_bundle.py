@@ -90,6 +90,19 @@ def main():
         bundle = build(report, configured_roots(Path(__file__).with_name('sources_normalized.json')),
                        args.input, run_id=os.getenv('GITHUB_RUN_ID'), attempt=os.getenv('GITHUB_RUN_ATTEMPT'),
                        commit=os.getenv('GITHUB_SHA'), clock=datetime.now(timezone.utc))
+        if args.collect:
+            from coral_catalog import collect as collect_coral
+            additional = collect_coral(report, args.input, os.environ.get('SCRAPINGANT_API_KEY', ''), bundle['observed_at'])
+            for source in bundle['sources']:
+                result = additional.get(source['source_id'])
+                if result is None:
+                    continue
+                rows = result['records']; errors = result['errors']; meta = result['meta']
+                bundle['records'].extend(rows)
+                source.update(normalized=len(rows), discovered=max(len(rows), meta.get('discovered_details', 0)),
+                    failed=len(errors), errors=errors, coverage=json.dumps(meta, ensure_ascii=False),
+                    status=('ok' if meta.get('all_observed_promo_details_read') else 'partial') if rows else 'failed')
+            prepare(bundle)
         count = len(bundle['records'])
         if count:
             (output/'normalized.json').write_text(json.dumps(bundle, ensure_ascii=False, indent=2))
