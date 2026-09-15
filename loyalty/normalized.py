@@ -14,7 +14,7 @@ from promo_codes import extract_promocodes
 from table_benefits import extract_table_benefits
 from recovered_contract import SOURCES as RECOVERED_SOURCES, http_url, validate_recovered
 
-VERSION = '2.9.4'
+VERSION = '2.9.5'
 HOSTS = {
  'moskvich': ['moskvichmag.ru'], 'noname': ['nonameburo.com'],
  's7': ['marketplace.s7.ru'], 'ural': ['www.uralairlines.ru'],
@@ -33,6 +33,8 @@ for _key,_cfg in KNOWN_RULES.items():
 HOSTS['utair_media']=['media.utair.ru']
 HOSTS['utair']=['www.utair.ru']
 HOSTS['nordwind']=['nordwindairlines.ru']
+HOSTS['coral']=['coralbonus.ru']
+HOSTS['coral_promo']=['coralbonus.ru']
 HOSTS['ekp_announcements']=['t.me']
 HOSTS['rzd_announcements']=['t.me']
 HOSTS['mir_announcements']=['t.me']
@@ -234,6 +236,9 @@ def validate_offer(r: dict) -> None:
     if r['details'].get('live_document_text'):
         from document_text import validate_document_record
         validate_document_record(r)
+    if r['source_id'] in ('coral','coral_promo'):
+        from coral_catalog import validate_record
+        validate_record(r)
     if r['source_id']=='nordwind':
         from nordwind_catalog import validate_catalog_record
         validate_catalog_record(r)
