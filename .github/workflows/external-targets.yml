@@ -1,0 +1,100 @@
+name: Remaining sources - external target confirmation
+on:
+  push:
+    branches: ['diagnostics/remaining-source-paths-20260915']
+    paths: ['.github/workflows/external-targets.yml']
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r loyalty/requirements.txt
+      - name: Two robots reads and three exact targets, no account or publication
+        run: |
+          python - <<'PY'
+          import hashlib,json,sys,time
+          from pathlib import Path
+          from urllib.parse import urlsplit
+          import requests
+          from protego import Protego
+          sys.path.insert(0,'diagnostics')
+          from remaining_paths import CONFIG,OUT,base,now,page_evidence,public_url,save
+          from public_transport import robots_document
+          assert robots_document(403,'Forbidden')==('','unavailable_4xx')
+          assert robots_document(404,'Not found')==('','unavailable_4xx')
+          try: robots_document(429,'slow down')
+          except RuntimeError: pass
+          else: raise AssertionError('429 must stop')
+          report={'run_id':__import__('os').environ['GITHUB_RUN_ID'],
+                  'commit':__import__('os').environ['GITHUB_SHA'],
+                  'started_at':now(),'publication':False,'secrets_used':False,
+                  'requests':[],'policy':{},'records_published':0}
+          quota=False
+          def read(url,label):
+              global quota
+              if quota: raise RuntimeError('provider_rate_limit')
+              item={'target_url':url,'started_at':now()};report['requests'].append(item);save('confirmation',report)
+              try:
+                  params={'url':url,'force':'true','data.markup.selector':'html','data.markup.attr':'html',
+                          'data.text.selector':'body','data.text.attr':'text'}
+                  with requests.get('https://api.microlink.io/',params=params,timeout=(10,65),stream=True,allow_redirects=False) as r:
+                      item['provider_http_status']=r.status_code
+                      item['cache_status']=r.headers.get('x-cache-status');item['pricing_plan']=r.headers.get('x-pricing-plan')
+                      if r.status_code==429 or r.headers.get('Retry-After'):
+                          quota=True;raise RuntimeError('provider_rate_limit')
+                      data=bytearray()
+                      for chunk in r.iter_content(65536):
+                          data.extend(chunk)
+                          if len(data)>6000000:raise RuntimeError('provider_size_limit')
+                  item['payload_sha256']=hashlib.sha256(data).hexdigest()
+                  obj=json.loads(data);item['provider_status']=obj.get('status');item['origin_status']=obj.get('statusCode')
+                  body=obj.get('data') or {};item['reported_url']=public_url(body.get('url'))
+                  if r.status_code!=200 or obj.get('status')!='success':raise RuntimeError('provider_read_failed')
+                  if item['cache_status']!='BYPASS':raise RuntimeError('fresh_response_not_confirmed')
+                  if item['reported_url']!=public_url(url):raise RuntimeError('reported_url_mismatch')
+                  status=item['origin_status']
+                  if type(status) is not int:raise RuntimeError('origin_status_unknown')
+                  html=body.get('markup')
+                  if not isinstance(html,str):raise RuntimeError('missing_html')
+                  item['page']=page_evidence(html,url,label)
+                  return status,html,body.get('text') or ''
+              except Exception as exc:
+                  item['error']=str(exc) if isinstance(exc,RuntimeError) else type(exc).__name__;raise
+              finally:item['finished_at']=now();save('confirmation',report);time.sleep(2)
+          policies={}
+          for sid in ('coral','coral_promo','rzd'):
+              cfg=CONFIG[sid];url=cfg['url'];host=urlsplit(url).hostname
+              try:
+                  if host not in policies:
+                      policies[host]=None
+                      status,html,text=read('https://'+host+'/robots.txt','policy-'+sid)
+                      rules,state=robots_document(status,text or html)
+                      policies[host]=Protego.parse(rules);report['policy'][host]={'state':state,'status':status}
+                  policy=policies[host]
+                  if policy is None or not policy.can_fetch(url,'LoyaltyCatalogResearchBot'):
+                      raise RuntimeError('policy_not_available_or_disallowed')
+                  status,html,text=read(url,'target-'+sid)
+                  report['requests'][-1]['source_id']=sid
+                  report['requests'][-1]['classification']='target_http_refusal' if status>=400 else (
+                      'target_restriction_document' if report['requests'][-1]['page']['restricted'] else 'public_candidate_requires_review')
+              except Exception as exc:
+                  report.setdefault('source_errors',{})[sid]=str(exc) if isinstance(exc,RuntimeError) else type(exc).__name__
+              save('confirmation',report)
+          report['finished_at']=now();report['provider_requests']=len(report['requests']);assert len(report['requests'])<=5
+          save('confirmation',report)
+          (OUT/'executed-workflow.yml').write_bytes(Path('.github/workflows/external-targets.yml').read_bytes())
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: external-target-confirmation-${{ github.run_id }}
+          path: remaining-paths-output/
+          retention-days: 7
