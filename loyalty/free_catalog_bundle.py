@@ -73,7 +73,7 @@ def build(report, roots, folder, *, run_id, attempt, commit, clock):
 
 def main():
     p = argparse.ArgumentParser(); p.add_argument('--input', default='free-access-output')
-    p.add_argument('--out', default='free-catalog-output'); p.add_argument('--collect', action='store_true'); args = p.parse_args()
+    p.add_argument('--out', default='free-catalog-output'); p.add_argument('--collect', action='store_true'); p.add_argument('--other-coral-half', action='store_true'); args = p.parse_args()
     output = Path(args.out); output.mkdir(exist_ok=True)
     (output/'normalized.json').unlink(missing_ok=True)
     if args.collect:
@@ -92,7 +92,7 @@ def main():
                        commit=os.getenv('GITHUB_SHA'), clock=datetime.now(timezone.utc))
         if args.collect and report.get('status') != 'stopped':
             from coral_catalog import collect as collect_coral
-            additional = collect_coral(report, args.input, os.environ.get('SCRAPINGANT_API_KEY', ''), bundle['observed_at'])
+            additional = collect_coral(report, args.input, os.environ.get('SCRAPINGANT_API_KEY', ''), bundle['observed_at'], other_half=args.other_coral_half)
             for source in bundle['sources']:
                 result = additional.get(source['source_id'])
                 if result is None:

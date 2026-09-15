@@ -1,8 +1,8 @@
 name: Free original-source access check
 on:
   push:
-    branches: [main, 'loyalty/free-api-access-20260915', 'loyalty/free-nordwind-live-20260915', 'loyalty/free-browser-policy-20260915', 'loyalty/coral-public-catalog-20260915', 'loyalty/coral-coverage-repair-20260915']
-    paths: ['loyalty/free_access_probe.py', 'loyalty/tests/test_free_access_probe.py', 'loyalty/tests/test_free_policy_fallback.py', 'loyalty/nordwind_catalog.py', 'loyalty/free_catalog_bundle.py', 'loyalty/coral_catalog.py', 'loyalty/tests/test_coral_catalog.py', 'loyalty/tests/test_coral_catalog_repair.py', 'loyalty/tests/test_nordwind_catalog.py', 'loyalty/normalized.py', '.github/workflows/loyalty-free-access.yml']
+    branches: [main, 'loyalty/free-api-access-20260915', 'loyalty/free-nordwind-live-20260915', 'loyalty/free-browser-policy-20260915', 'loyalty/coral-public-catalog-20260915', 'loyalty/coral-coverage-repair-20260915', 'loyalty/coral-cycle-20260916']
+    paths: ['loyalty/free_access_probe.py', 'loyalty/tests/test_free_access_probe.py', 'loyalty/tests/test_free_policy_fallback.py', 'loyalty/nordwind_catalog.py', 'loyalty/free_catalog_bundle.py', 'loyalty/coral_catalog.py', 'loyalty/tests/test_coral_catalog.py', 'loyalty/tests/test_coral_catalog_repair.py', 'loyalty/tests/test_coral_cycle.py', 'loyalty/tests/test_nordwind_catalog.py', 'loyalty/normalized.py', '.github/workflows/loyalty-free-access.yml']
   workflow_dispatch:
   schedule:
     - cron: '3 6 * * *'
@@ -79,7 +79,12 @@ jobs:
         id: collect
         env:
           SCRAPINGANT_API_KEY: ${{ secrets.SCRAPINGANT_API_KEY }}
-        run: python loyalty/free_catalog_bundle.py --collect
+        run: |
+          args=()
+          # A release-time crawl checks the complementary half without changing
+          # real observation time or the daily UTC-based rotation.
+          if [ "${{ github.event_name }}" = push ]; then args+=(--other-coral-half); fi
+          python loyalty/free_catalog_bundle.py --collect "${args[@]}"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
