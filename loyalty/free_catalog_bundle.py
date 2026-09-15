@@ -10,7 +10,7 @@ import json
 import os
 from datetime import datetime, timezone
 from pathlib import Path
-from free_access_probe import SOURCE_IDS, configured_roots
+from free_access_probe import SOURCE_IDS, configured_roots, run
 from nordwind_catalog import parse_catalog
 from normalized import validate_offer
 from sheets_normalized import prepare
@@ -73,10 +73,17 @@ def build(report, roots, folder, *, run_id, attempt, commit, clock):
 
 def main():
     p = argparse.ArgumentParser(); p.add_argument('--input', default='free-access-output')
-    p.add_argument('--out', default='free-catalog-output'); args = p.parse_args()
+    p.add_argument('--out', default='free-catalog-output'); p.add_argument('--collect', action='store_true'); args = p.parse_args()
     output = Path(args.out); output.mkdir(exist_ok=True)
     (output/'normalized.json').unlink(missing_ok=True)
-    report = json.loads((Path(args.input)/'report.json').read_text())
+    if args.collect:
+        roots = configured_roots(Path(__file__).with_name('sources_normalized.json'))
+        report = run(roots, os.environ.get('SCRAPINGANT_API_KEY', ''), args.input)
+        # Bind the freshly returned in-process observation, never a prior disk report.
+        report['run_attempt'] = os.getenv('GITHUB_RUN_ATTEMPT')
+        (Path(args.input)/'report.json').write_text(json.dumps(report, ensure_ascii=False, indent=2))
+    else:
+        report = json.loads((Path(args.input)/'report.json').read_text())
     if report.get('status') == 'not_configured' or not report.get('free_plan_confirmed'):
         count = 0
     else:
