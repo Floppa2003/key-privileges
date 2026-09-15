@@ -1,4 +1,4 @@
 {
-  "request_id": "2026-09-15-utair-support-v2.9.3",
-  "reason": "Run the existing normal public collector and publisher after verified PR22 integration. Read the configured Utair support article live through its source adapter; publish scoped partner leaves and supplementary rule leaves, never diagnostic snapshots or fixed answers. Preserve robots, TLS, refusal checks, all source coverage failures, existing records and manual columns. Verify parser output, normalized views and actual destination readback. Keep Google permissions, private-source boundaries, source registry and schedules unchanged."
+  "request_id": "2026-09-15-daily-original-source-coverage",
+  "reason": "Verify the existing full public collection and Sheets publication after PR24 enabled the user-authorized recurring schedule. Read all configured sources live; retain explicit failures, real observation times and manual fields. Publish through the unchanged main-only writer and verify destination readback. External-reader feasibility reports and archived EKP fixtures are not production offers. Do not change Google permissions, use paid services or alter private source tabs."
 }
