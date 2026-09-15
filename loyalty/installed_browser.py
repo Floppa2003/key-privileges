@@ -7,11 +7,21 @@ import asyncio
 import os
 import shutil
 import signal
+import socket
 import subprocess
 import tempfile
 import time
 from contextlib import asynccontextmanager
-from pathlib import Path
+
+
+def endpoint_ready(port):
+    import requests
+    try:
+        with requests.Session() as session:
+            session.trust_env=False
+            response=session.get(f'http://127.0.0.1:{port}/json/version',timeout=.7)
+            return response.status_code==200 and bool(response.json().get('webSocketDebuggerUrl'))
+    except (requests.RequestException,ValueError):return False
 
 
 @asynccontextmanager
@@ -24,19 +34,20 @@ async def installed_chrome():
     async with async_playwright() as p:
         with tempfile.TemporaryDirectory(prefix='loyalty-chrome-') as profile:
             try:
+                with socket.socket() as sock:
+                    sock.bind(('127.0.0.1',0));port=sock.getsockname()[1]
+                # Keep the launch mode used by the independently verified read.
                 proc=subprocess.Popen([executable,f'--user-data-dir={profile}',
-                    '--remote-debugging-port=0','--remote-debugging-address=127.0.0.1',
+                    f'--remote-debugging-port={port}','--remote-debugging-address=127.0.0.1',
                     '--no-first-run','--no-default-browser-check','--no-sandbox',
                     '--lang=ru-RU','--window-size=1365,900','about:blank'],
                     stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,start_new_session=True)
-                port_file=Path(profile)/'DevToolsActivePort';deadline=time.monotonic()+35
+                deadline=time.monotonic()+35
                 while time.monotonic()<deadline and proc.poll() is None:
-                    if port_file.exists():
-                        lines=port_file.read_text().splitlines()
-                        if lines and lines[0].isdigit() and 0<int(lines[0])<65536:break
+                    if await asyncio.to_thread(endpoint_ready,port):break
                     await asyncio.sleep(.2)
                 else:raise RuntimeError('installed_chrome_startup_timeout')
-                browser=await p.chromium.connect_over_cdp('http://127.0.0.1:'+lines[0],timeout=10000)
+                browser=await p.chromium.connect_over_cdp(f'http://127.0.0.1:{port}',timeout=10000)
                 context=browser.contexts[0]
                 page=await asyncio.wait_for(context.new_page(),10)
                 # Reject an unresponsive renderer before blaming the remote source.
