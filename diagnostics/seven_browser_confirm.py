@@ -11,9 +11,11 @@ import shutil
 import socket
 import subprocess
 import tempfile
+import time
 from datetime import datetime,timezone
 from pathlib import Path
-from urllib.parse import urljoin,urlsplit
+from urllib.parse import urljoin
+import requests
 from bs4 import BeautifulSoup
 from playwright.async_api import async_playwright
 from seven_routes_transport import safe_url
@@ -37,9 +39,16 @@ def sanitize(html,url):
 
 
 def freeze_capture(row):
-    # Event callbacks may still hold a mutable dictionary after the observation.
-    # Archive a value snapshot; later navigations cannot rewrite earlier results.
     return json.loads(json.dumps(row))
+
+
+def ready(port):
+    try:
+        with requests.Session() as s:
+            s.trust_env=False
+            r=s.get(f'http://127.0.0.1:{port}/json/version',timeout=.7)
+            return r.status_code==200 and bool(r.json().get('webSocketDebuggerUrl'))
+    except (requests.RequestException,ValueError):return False
 
 
 def selfcheck():
@@ -64,25 +73,32 @@ async def main():
             'scope':'seven_exact_public_routes_fresh_anonymous_browser_no_google_or_private_inputs',
             'results':[],'script_hashes':{n:hashlib.sha256((Path('diagnostics')/n).read_bytes()).hexdigest()
                   for n in ('seven_browser_confirm.py','utair_browser_lifecycle.py','seven_routes_transport.py')}}
+    def save():
+        (OUT/'report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf8')
+    save()
     async with async_playwright() as p:
-        with tempfile.TemporaryDirectory() as profile:
+        with tempfile.TemporaryDirectory() as profile, tempfile.TemporaryFile() as startup_log:
             with socket.socket() as s:s.bind(('127.0.0.1',0));port=s.getsockname()[1]
             proc=subprocess.Popen([exe,f'--user-data-dir={profile}',f'--remote-debugging-port={port}',
                 '--remote-debugging-address=127.0.0.1','--no-first-run','--no-default-browser-check',
                 '--no-sandbox','--lang=ru-RU','--window-size=1365,900','about:blank'],
-                stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+                stdout=subprocess.DEVNULL,stderr=startup_log)
             browser=None
             try:
-                for _ in range(30):
-                    try:
-                        with socket.create_connection(('127.0.0.1',port),timeout=.2):break
-                    except OSError:await asyncio.sleep(.2)
+                start=time.monotonic();cdp_ready=False
+                while time.monotonic()-start<40 and proc.poll() is None:
+                    if await asyncio.to_thread(ready,port):cdp_ready=True;break
+                    await asyncio.sleep(.3)
+                report['startup']={'cdp_ready':cdp_ready,'seconds':round(time.monotonic()-start,3),'process_returncode':proc.poll()}
+                if not cdp_ready:
+                    startup_log.seek(0)
+                    report['startup']['stderr_before_any_source_navigation']=startup_log.read(8192).decode('utf8','replace').replace(profile,'<temporary-profile>')
+                    raise RuntimeError('chrome_not_ready_before_source_navigation')
                 browser=await p.chromium.connect_over_cdp(f'http://127.0.0.1:{port}',timeout=10000)
+                report['startup']['cdp_attached']=True;save()
                 context=browser.contexts[0]
                 for key in IDS:
                     try:
-                        # A fresh tab also prevents a timed-out target from inheriting
-                        # previous-page DOM or previous response event listeners.
                         fresh=await context.new_page()
                         for old in list(context.pages):
                             if old!=fresh:await old.close()
@@ -97,16 +113,20 @@ async def main():
                                                'note':'sanitized_DOM_not_original_response_bytes'}
                         report['results'].append(freeze_capture(row))
                     except Exception as exc:report['results'].append({'id':key,'error_type':type(exc).__name__})
-                    (OUT/'report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf8')
-                    print(json.dumps({'id':key,'completed':True}),flush=True)
+                    save();print(json.dumps({'id':key,'completed':True}),flush=True)
                     await asyncio.sleep(1)
+            except Exception as exc:
+                report['harness_error']=type(exc).__name__
+                if not report.get('startup',{}).get('cdp_attached'):
+                    startup_log.seek(0)
+                    report.setdefault('startup',{})['stderr_before_any_source_navigation']=startup_log.read(8192).decode('utf8','replace').replace(profile,'<temporary-profile>')
             finally:
                 if browser:await browser.close()
                 if proc.poll() is None:proc.terminate()
                 try:proc.wait(timeout=5)
                 except subprocess.TimeoutExpired:proc.kill();proc.wait()
-    report['finished_at']=datetime.now(timezone.utc).isoformat()
-    (OUT/'report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf8')
+    report['finished_at']=datetime.now(timezone.utc).isoformat();save()
     for n in report['script_hashes']:(OUT/n).write_bytes((Path('diagnostics')/n).read_bytes())
+    if report.get('harness_error'):raise RuntimeError('browser_harness_failed_no_complete_target_result')
 
 if __name__=='__main__':asyncio.run(main())
