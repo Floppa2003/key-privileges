@@ -71,7 +71,10 @@ def free_plan(payload):
 
 
 class FreeReader:
-    def __init__(self, key, roots, *, get=requests.get):
+    def __init__(self, key, roots, *, get=requests.get, max_credits=MAX_CREDITS, max_requests=MAX_REQUESTS):
+        if type(max_credits) is not int or not 1 <= max_credits <= 175 or type(max_requests) is not int or not 1 <= max_requests <= 100:
+            raise ProbeError("invalid_reader_budget")
+        self.max_credits, self.max_requests = max_credits, max_requests
         if not isinstance(key, str) or not key.strip() or len(key) > 512 or any(c.isspace() for c in key):
             raise ProbeError('invalid_key_format')
         self.key = key
@@ -124,7 +127,8 @@ class FreeReader:
 
     def preflight(self):
         payload, _ = self._request('usage', {})
-        free_plan(payload)
+        if free_plan(payload) < self.max_credits:
+            raise ProbeError("insufficient_free_credits")
         self.ready = True
 
     def read(self, url, *, browser):
@@ -136,7 +140,7 @@ class FreeReader:
         if url not in self.allowed:
             raise ProbeError('request_outside_configured_roots')
         cost = 10 if browser else 1
-        if self.reserved + cost > MAX_CREDITS or self.calls >= MAX_REQUESTS:
+        if self.reserved + cost > self.max_credits or self.calls >= self.max_requests:
             raise ProbeError('per_run_limit')
         self.reserved += cost  # Reserve even on failure; no retries.
         self.calls += 1
@@ -163,11 +167,17 @@ class FreeReader:
         return status, raw, int(charged)
 
 
-def sanitized_page(raw, requested_url):
+def sanitized_page(raw, requested_url, *, canonical_identity=False):
     soup = BeautifulSoup(raw, 'html.parser')
     marker = soup.html.get('data-loyalty-probe-location') if soup.html else None
-    actual = public_url(marker)
     requested = public_url(requested_url)
+    if canonical_identity:
+        links = soup.select('link[rel="canonical"][href]')
+        if len(links) != 1 or links[0]['href'] != requested_url:
+            raise ProbeError('source_canonical_identity_missing_or_changed')
+        actual = requested
+    else:
+        actual = public_url(marker)
     if actual != requested:
         # The EKP root's SPA destination was observed in earlier live reads.
         equivalent = (requested == 'https://ekp.spb.ru/capabilities/loyalty/' and
@@ -192,7 +202,9 @@ def sanitized_page(raw, requested_url):
             else:
                 del node.attrs['href']
     text = soup.get_text(' ', strip=True)
-    return str(soup), {'final_url': actual, 'document_base_url': base_url, 'text_chars': len(text),
+    return str(soup), {'final_url': None if canonical_identity else actual,
+                       'canonical_url': actual if canonical_identity else None,
+                       'document_base_url': base_url, 'text_chars': len(text),
                        'links': len(soup.select('a[href]')),
                        'classification': 'public_document_candidate_not_verified',
                        'detail_pages_read': 0, 'catalogue_complete': False}
