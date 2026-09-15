@@ -1,4 +1,4 @@
 {
-  "request_id": "2026-09-15-public-crawl-expansion-v2.9.2",
-  "reason": "Run fresh public collection with current Utair shortlink and direct-PDF discovery. Discover current paths and use transient signatures only for download; do not replay diagnostic output or manually supplied text. Preserve verified source provenance, original document text, OCR/HTTP uncertainty and remaining source failures. Publish through the existing parser and normalized views and independently verify destination data, original/manual sheets and comments. No new permissions, private-source retrieval, infrastructure or schedule changes."
+  "request_id": "2026-09-15-utair-support-v2.9.3",
+  "reason": "Run the existing normal public collector and publisher after verified PR22 integration. Read the configured Utair support article live through its source adapter; publish scoped partner leaves and supplementary rule leaves, never diagnostic snapshots or fixed answers. Preserve robots, TLS, refusal checks, all source coverage failures, existing records and manual columns. Verify parser output, normalized views and actual destination readback. Keep Google permissions, private-source boundaries, source registry and schedules unchanged."
 }
