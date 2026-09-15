@@ -1,5 +1,11 @@
 # Regular collection and publication
 
+## Current checkpoint — 2026-09-15, after PR30
+
+**Read `COVERAGE_CURRENT.md` first for current source status, verified publication and exact next acceptance gates.** It supersedes the pre-Coral counts and diagnostic-only conclusions in the historical Nordwind checkpoint below. PR29/30 are merged: final run35025789983 published61 fresh records (7 Nordwind,31 Coral club,23 Coral promo), adding54 Coral records this continuation. Native final readback verified1066 retained public parser records and1714 total inputs. The other Coral category half and one promo remain incomplete.
+
+EKP's separate latest catalogue-only experiment35028374541 saved240 real cards after actual UI growth, but no detailed conditions or Sheet publication. RZD remains unreadable; the alternate Aeroflot policy disallows the requested root. The two regular schedules remain05:23 and06:03 UTC. The combined daily Free reservation bound is now290 credits; unscheduled diagnostics are additional Free usage, not paid services. See `FREE_ACCESS.md` and `COVERAGE_CURRENT.md` for costs, evidence and limits.
+
 ## User objective, clarified 2026-09-15
 
 Maximize useful, current extraction from the originally requested sources, with a recurring job controlled from GitHub. The execution engine is an implementation choice: Actions, a user-authorized external worker or an external reader can be used when it demonstrably improves coverage. A passing test suite, a diagnostic artifact or additional supplementary URLs is not itself an increase in original-source coverage. Do not substitute fixed answers, old page captures or unrelated sources for fresh extraction.
@@ -41,11 +47,13 @@ Update `loyalty/request.json` with a unique request ID on `main` to dispatch the
 
 The current Google project and Workload Identity provider are existing shared infrastructure, not resources to recreate. A dedicated service account targets this spreadsheet. The IAM subject binding selects this repository's `main` branch rather than an individual workflow; keep credential-bearing work in the reviewed publisher jobs.
 
-## Current coverage limits
+## Coverage interpretation
 
-The released Utair support adapter remains active. Nordwind's seven observed partner-list accordions are now mapped and published through the Free API path; this does not claim every page or external partner site in the program. EKP PR23 remains an unmerged candidate. EKP, Coral club/promo, RZD and Aeroflot remain incomplete: a category or promotion index is not a collected set of detailed benefits. Test a materially different retrieval path before repeating an unchanged failing probe.
+The released Utair support adapter remains active. Nordwind's seven observed partner-list accordions are mapped and published through the Free API path; this does not claim every page or external partner site in the program. Coral public terms are now partially published through PR29/30. EKP PR23 remains an unmerged candidate, and its newer diagnostics are not a production release. A category/index/preview is not a collected set of detailed benefits. Read `COVERAGE_CURRENT.md` for actual latest scope; test a materially different retrieval path before repeating an unchanged failing probe.
 
-## Verified Free API publication — 2026-09-15
+## Historical Nordwind Free API checkpoint — before PR29/30, 2026-09-15
+
+The following paragraphs preserve the earlier Nordwind release evidence. Their retained counts, then-current cost bounds and pre-Coral limits are historical, not the latest state.
 
 The owner added `SCRAPINGANT_API_KEY`; no further owner setup is currently needed for this public route. PR27 adds source-owned Nordwind mapping and the existing two-stage publisher; PR28 repairs a real unreachable-robots case with one separately identified browser read and honors the source HTML base URL. Both are merged.
 
@@ -57,6 +65,6 @@ The final full suite passed 561 Python and 7 KEY tests. Public artifact 10416807
 
 This final attempt made 10 provider source requests, reserving 55 credits and observing 42 credits in validated successful response headers. Failed-call charges are not included in that sum, so it is not a reconciled account debit. Worst-case code bounds remain 115 reserved credits and 16 requests, with Free-plan/balance checks; see `FREE_ACCESS.md`. No paid plan, billing details, source-account sessions or personal devices were used.
 
-Latest other-source evidence: Coral club 20 category boxes and Coral promo 24 linked headings read successfully but have no accepted detail adapter yet; EKP failed at policy transport (provider 404 then 500), RZD at policy with provider 423, and Aeroflot with unreadable policy content. Those outcomes do not establish impossible access. Next source work is fresh discovered Coral category/detail traversal within the Free budget, plus a distinct retrieval test for the three remaining transport failures. A source account remains an optional separate path, not a reason to ask the user to register at Coral again.
+Latest other-source evidence at that historical checkpoint: Coral club 20 category boxes and Coral promo 24 linked headings read successfully but had no accepted detail adapter yet; EKP failed at policy transport (provider 404 then 500), RZD at policy with provider 423, and Aeroflot with unreadable policy content. Those outcomes did not establish impossible access. The next work at that point was fresh discovered Coral category/detail traversal within the Free budget, plus a distinct retrieval test for the three remaining transport failures. A source account remains an optional separate path, not a reason to ask the user to register at Coral again.
 
 The independent readback was targeted to new public rows/reports, normalized mileage terms and the final audit state. The existing publisher runs its own full output/readback and input-fingerprint checks. No additional exhaustive comparison of every private cell or visual format was performed in this continuation. Repeated source phrasings and historical records remain separate evidence, not additive discounts.
