@@ -62,6 +62,29 @@ class Reader:
         except ProbeError:return None
 
 
+
+def read_policy(reader, audit):
+    """One paced retry only for the provider's documented unreachable-route404.
+
+    No target refusal, authentication, quota, challenge or malformed source
+    response is retried. Both attempts consume the same original per-run budget.
+    """
+    attempts=audit.setdefault('policy_attempts',[])
+    for number in range(2):
+        entry={'number':number+1,'started_at':now()};attempts.append(entry)
+        try:
+            raw=reader.read(POLICY)
+            entry.update(result='source_document_received',finished_at=now())
+            return raw
+        except ProbeError as exc:
+            entry.update(error=str(exc),finished_at=now())
+            if number or str(exc)!='provider_http_404' or getattr(getattr(reader,'http',None),'halted',False):
+                raise
+            entry['retry_delay_seconds']=10
+            reader.sleep(10)
+    raise ProbeError('ekp_policy_retry_exhausted')
+
+
 def collect(reader,out,*,run_id,observed_at,commit):
     from public_transport import robots_document
     from protego import Protego
@@ -77,7 +100,7 @@ def collect(reader,out,*,run_id,observed_at,commit):
         (out/'report.json').write_text(json.dumps(audit,ensure_ascii=False,indent=2))
     try:
         reader.preflight();audit['opening_balance']=reader.balance;save()
-        raw=reader.read(POLICY);rules,state=robots_document(200,raw);policy=Protego.parse(rules)
+        raw=read_policy(reader,audit);rules,state=robots_document(200,raw);policy=Protego.parse(rules)
         if not policy.can_fetch(API,'LoyaltyCatalogResearchBot') or not policy.can_fetch(ROOT,'LoyaltyCatalogResearchBot'):
             raise ProbeError('robots_disallow')
         rate=policy.request_rate('LoyaltyCatalogResearchBot')
