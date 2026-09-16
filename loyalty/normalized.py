@@ -243,7 +243,10 @@ def validate_offer(r: dict) -> None:
         from coral_catalog import validate_record
         validate_record(r)
     if r['source_id']=='aeroflot':
-        from aeroflot_import_catalog import validate_record
+        if r['native_id'].startswith('airline:'):
+            from aeroflot_airlines import validate_record
+        else:
+            from aeroflot_import_catalog import validate_record
         validate_record(r)
     if r['source_id']=='rzd':
         from rzd_import_catalog import validate_record

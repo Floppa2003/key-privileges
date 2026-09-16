@@ -15,6 +15,7 @@ from urllib.parse import parse_qsl,urlsplit
 from sheets_sync import Sheets
 from sheets_normalized import prepare
 import aeroflot_import_catalog as m
+import aeroflot_airlines as airlines
 
 STAGING_ID='1nIH7seMlDR_3Hw1iOMQ0bnrD-iWspj73zvqCVT4dxW8'
 SHEET_ID=2026091602
@@ -22,7 +23,7 @@ SHEET='af_public_fetch'
 MARKER='AEROFLOT_PUBLIC_IMPORT_V1'
 ROWS=4096
 MAX_DETAILS=260
-MAX_READS=263
+MAX_READS=324
 MAX_SECONDS=3000
 OUT=Path('aeroflot-import-output')
 
@@ -130,7 +131,7 @@ def policy(obs):
             'catalogue_read_basis':m.PERMISSION}
 
 
-def discovery(obs):
+def discovery(obs,scope='companies'):
     cells=m.checked_observation(obs)
     if obs['kind']!='discovery' or any(c['type']!='string' for c in cells):raise ValueError('af_discovery_shape')
     if not re.search('Партн[её]ры.*Аэрофлот',cells[0]['value'],re.I):raise ValueError('af_discovery_identity')
@@ -138,10 +139,12 @@ def discovery(obs):
     links=[urlsplit(c['value'].strip()) for c in cells[1:]]
     if not any(u.scheme in ('https','http') and u.netloc in allowed and u.path.rstrip('/') in ('/partners/partners','/ru-ru/partners') for u in links):
         raise ValueError('af_company_catalogue_link_not_observed')
+    if scope in ('airlines','all') and not any(u.scheme=='https' and u.netloc in allowed and u.path.rstrip('/')=='/partners/airlines' for u in links):
+        raise ValueError('af_airline_catalogue_link_not_observed')
     return True
 
 
-def report(observed_at,rows,partners,errors,pol=None):
+def report(observed_at,rows,partners,errors,pol=None,*,scope='companies',air_partners=None,air_roots=None):
     count=len(partners)
     coverage={'method':m.METHOD,'catalogue_root':m.ROOT,'catalogue_api':m.CATALOG,
       'scope':'all_partners_in_current_russian_company_category_response',
@@ -150,36 +153,70 @@ def report(observed_at,rows,partners,errors,pol=None):
       'airline_catalogue_read':False,'linked_rules_read':False,'source_account_used':False,
       'origin_http_status_exposed':False,'origin_cache_age_verified':False,'full_program_and_eligibility_verified':False,
       'permission_basis':m.PERMISSION,'permission_email_independently_read':False}
-    return {'source_id':'aeroflot','name':'Аэрофлот Бонус — компании-партнёры','root':m.ROOT,
+    name='Аэрофлот Бонус — компании-партнёры'
+    if scope!='companies':
+        air_partners=air_partners or {};air_roots=air_roots or set()
+        air_count=sum(r['native_id'].startswith('airline:') for r in rows)
+        company_count=len(rows)-air_count
+        coverage.update(scope=scope,discovered_company_partners=len(partners),accepted_company_details=company_count,
+            all_category_partners_read=bool(partners) and company_count==len(partners),
+            airline_catalogue_read=bool(air_roots),airline_catalogue_api=airlines.CATALOG,
+            discovered_root_airlines=len(air_roots),discovered_airlines_including_children=len(air_partners),
+            accepted_airline_details=air_count,all_discovered_airlines_read=bool(air_roots) and air_count==len(air_partners),
+            airline_table_coefficients_are_not_cash_discounts=True)
+        count=len(partners)+len(air_partners);name='Аэрофлот Бонус — '+('авиакомпании' if scope=='airlines' else 'компании и авиакомпании')
+    return {'source_id':'aeroflot','name':name,'root':m.ROOT,
       'status':('partial' if errors or len(rows)!=count else 'ok') if rows else 'failed',
       'discovered':count,'normalized':len(rows),'failed':len(errors),'errors':errors,
       'coverage':json.dumps(coverage,ensure_ascii=False),'region':'Источник: lang=ru; география применимости не проверена',
       'observed_at':observed_at,'robots':pol}
 
 
-def walk(reader,run_id,observed_at,*,checkpoint=lambda:None):
-    records=[];errors=[];partners={};pol=None
+def walk(reader,run_id,observed_at,*,checkpoint=lambda:None,scope='companies'):
+    if scope not in ('companies','airlines','all'):raise ValueError('af_scope_invalid')
+    records=[];errors=[];partners={};pol=None;root_seen=False;air_partners={};air_roots=set()
     try:
         pol=policy(reader.read(m.ROBOTS,'robots'));checkpoint()
-        discovery(reader.read(m.ROOT,'discovery'));checkpoint()
-        partners=m.catalog(reader.read(m.CATALOG,'catalog'));checkpoint()
-        selected=list(partners)
-        if len(selected)>MAX_DETAILS:
-            start=(int(m.instant(observed_at).timestamp())//604800*MAX_DETAILS)%len(selected)
-            selected=(selected[start:]+selected[:start])[:MAX_DETAILS]
-            errors.append({'phase':'details','reason':'af_rotating_detail_bound'})
-        consecutive=0
-        for pid in selected:
-            try:
-                obs=reader.read(m.detail_url(pid),'detail');checkpoint()
-                records.append(m.detail(obs,partners[pid],observed_at));consecutive=0
-            except Exception as exc:
-                errors.append({'phase':'detail','url':m.detail_url(pid),'reason':reason(exc)});consecutive+=1
-                if not getattr(reader,'cleanup_verified',True) or consecutive>=3 or reason(exc)=='af_collection_bound':
-                    errors.append({'phase':'details','reason':'af_consecutive_failure_or_budget_stop'});break
+        root_seen=discovery(reader.read(m.ROOT,'discovery'),scope);checkpoint()
+        if scope in ('companies','all'):
+            partners=m.catalog(reader.read(m.CATALOG,'catalog'));checkpoint()
+            selected=list(partners)
+            if len(selected)>MAX_DETAILS:
+                start=(int(m.instant(observed_at).timestamp())//604800*MAX_DETAILS)%len(selected)
+                selected=(selected[start:]+selected[:start])[:MAX_DETAILS]
+                errors.append({'phase':'details','reason':'af_rotating_detail_bound'})
+            consecutive=0
+            for pid in selected:
+                try:
+                    obs=reader.read(m.detail_url(pid),'detail');checkpoint()
+                    records.append(m.detail(obs,partners[pid],observed_at));consecutive=0
+                except Exception as exc:
+                    errors.append({'phase':'detail','url':m.detail_url(pid),'reason':reason(exc)});consecutive+=1
+                    if not getattr(reader,'cleanup_verified',True) or consecutive>=3 or reason(exc)=='af_collection_bound':
+                        errors.append({'phase':'details','reason':'af_consecutive_failure_or_budget_stop'});break
     except Exception as exc:errors.append({'phase':'discovery','reason':reason(exc)})
+    if root_seen and scope in ('airlines','all') and getattr(reader,'cleanup_verified',True):
+        try:
+            air_partners=airlines.catalog(reader.read(airlines.CATALOG,'airline_catalog'));air_roots=set(air_partners);checkpoint()
+            pending=list(air_partners);attempted=set();consecutive=0
+            while pending and len(attempted)<airlines.MAX_AIRLINES:
+                pid=pending.pop(0)
+                if pid in attempted:continue
+                attempted.add(pid)
+                try:
+                    obs=reader.read(airlines.detail_url(pid),'airline_detail');checkpoint()
+                    row=airlines.detail(obs,air_partners[pid],observed_at)
+                    airlines.add_children(air_partners,row['details']['public_airline'])
+                    records.append(row);consecutive=0
+                    pending.extend(i for i in air_partners if i not in attempted and i not in pending)
+                except Exception as exc:
+                    errors.append({'phase':'airline_detail','url':airlines.detail_url(pid),'reason':reason(exc)});consecutive+=1
+                    if not getattr(reader,'cleanup_verified',True) or consecutive>=3 or reason(exc)=='af_collection_bound':
+                        errors.append({'phase':'airline_details','reason':'af_consecutive_failure_or_budget_stop'});break
+            if pending and len(attempted)>=airlines.MAX_AIRLINES:errors.append({'phase':'airline_details','reason':'af_airline_detail_bound'})
+        except Exception as exc:errors.append({'phase':'airline_catalogue','reason':reason(exc)})
     return {'schema_version':2,'run_id':run_id,'observed_at':observed_at,'records':records,
-            'sources':[report(observed_at,records,partners,errors,pol)]}
+            'sources':[report(observed_at,records,partners,errors,pol,scope=scope,air_partners=air_partners,air_roots=air_roots)]}
 
 
 def validate_bundle(folder,*,run_id,commit,clock):
@@ -195,7 +232,9 @@ def validate_bundle(folder,*,run_id,commit,clock):
     if not start<=end<=clock or (clock-end).total_seconds()>900 or (end-start).total_seconds()>3300:raise ValueError('af_bundle_time')
     observations=audit.get('observations',[])
     if len(observations)>MAX_READS:raise ValueError('af_bundle_observation_bound')
-    partners={};expected=[];pol=None;root_seen=False;last=start;seen=set()
+    scope=audit.get('scope','companies')
+    if scope not in ('companies','airlines','all'):raise ValueError('af_scope_invalid')
+    partners={};air_partners={};air_roots=set();expected=[];pol=None;root_seen=False;last=start;seen=set()
     for obs in observations:
         m.checked_observation(obs)
         a,b=m.instant(obs['requested_at']),m.instant(obs['calculated_at'])
@@ -203,9 +242,9 @@ def validate_bundle(folder,*,run_id,commit,clock):
         last=b;seen.add(obs['url']);kind=obs['kind']
         if kind=='robots':pol=policy(obs);continue
         if pol is None:raise ValueError('af_bundle_policy_not_recorded')
-        if kind=='discovery':root_seen=discovery(obs)
+        if kind=='discovery':root_seen=discovery(obs,scope)
         elif kind=='catalog':
-            if not root_seen:raise ValueError('af_bundle_catalogue_not_discovered')
+            if not root_seen or scope=='airlines':raise ValueError('af_bundle_catalogue_not_discovered')
             try:partners=m.catalog(obs)
             except ValueError:continue
         elif kind=='detail':
@@ -213,29 +252,40 @@ def validate_bundle(folder,*,run_id,commit,clock):
             if pid not in partners:raise ValueError('af_bundle_undiscovered_partner')
             try:expected.append(m.detail(obs,partners[pid],bundle['observed_at']))
             except ValueError:continue
+        elif kind=='airline_catalog':
+            if not root_seen or scope=='companies':raise ValueError('af_bundle_airlines_not_discovered')
+            try:air_partners=airlines.catalog(obs);air_roots=set(air_partners)
+            except ValueError:continue
+        elif kind=='airline_detail':
+            pid=int(dict(parse_qsl(urlsplit(obs['url']).query))['id'])
+            if pid not in air_partners:raise ValueError('af_bundle_undiscovered_airline')
+            try:
+                row=airlines.detail(obs,air_partners[pid],bundle['observed_at'])
+                airlines.add_children(air_partners,row['details']['public_airline']);expected.append(row)
+            except ValueError:continue
     if expected!=bundle['records'] or len(bundle.get('sources',[]))!=1:raise ValueError('af_bundle_reconstruction')
     supplied=bundle['sources'][0]
-    if supplied!=report(bundle['observed_at'],expected,partners,supplied['errors'],pol):raise ValueError('af_bundle_coverage')
-    if len(expected)>MAX_DETAILS:raise ValueError('af_bundle_detail_bound')
+    if supplied!=report(bundle['observed_at'],expected,partners,supplied['errors'],pol,scope=scope,air_partners=air_partners,air_roots=air_roots):raise ValueError('af_bundle_coverage')
+    if sum(r['native_id'].startswith('partner:') for r in expected)>MAX_DETAILS or sum(r['native_id'].startswith('airline:') for r in expected)>airlines.MAX_AIRLINES:raise ValueError('af_bundle_detail_bound')
     prepare(bundle)
     return bundle
 
 
 def main():
-    parser=argparse.ArgumentParser();parser.add_argument('--out',default=str(OUT));args=parser.parse_args()
+    parser=argparse.ArgumentParser();parser.add_argument('--out',default=str(OUT));parser.add_argument('--scope',choices=('companies','airlines','all'),default='companies');args=parser.parse_args()
     out=Path(args.out);out.mkdir(exist_ok=True,parents=True)
     run_id=os.environ['GITHUB_RUN_ID']+':'+os.environ['GITHUB_RUN_ATTEMPT'];commit=os.environ['GITHUB_SHA']
     started=now();reader=None
     audit={'run_id':run_id,'commit':commit,'started_at':started,'source_accounts_used':False,
       'scrapingant_credits':0,'permission_basis':m.PERMISSION,'permission_email_independently_read':False,
       'staging_contains_only_public_source_data':True,'observations':[], 'cleanup_verified':False,
-      'origin_response_and_cache_age_not_exposed':True}
+      'origin_response_and_cache_age_not_exposed':True,'scope':args.scope}
     def checkpoint():
         if reader:audit['observations']=reader.observations
         save(out/'evidence.json',audit)
     try:
         reader=ImportReader(os.environ.get('GOOGLE_ACCESS_TOKEN',''),run_id)
-        bundle=walk(reader,run_id,started,checkpoint=checkpoint)
+        bundle=walk(reader,run_id,started,checkpoint=checkpoint,scope=args.scope)
         reader.close();audit['cleanup_verified']=reader.cleanup_verified
         audit['import_requests']=reader.calls;audit['finished_at']=now();checkpoint()
         prepare(bundle);save(out/'normalized.json',bundle)
