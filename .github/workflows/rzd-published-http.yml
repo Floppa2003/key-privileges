@@ -1,0 +1,106 @@
+name: RZD published HTTP alias comparison
+on:
+  push:
+    branches: ['diagnostics/last-catalogues-20260916']
+    paths: ['.github/workflows/rzd-published-http.yml']
+permissions:
+  contents: read
+jobs:
+  read:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - run: python -m pip install requests==2.32.5 beautifulsoup4==4.14.3 protego==0.6.2
+      - name: Read published non-TLS sitemap alias only - never an authenticated channel
+        run: |
+          python - <<'PY'
+          import hashlib,json,os,re,sys,time
+          from pathlib import Path
+          from urllib.parse import urlsplit,urljoin
+          import requests
+          from protego import Protego
+          sys.path.insert(0,'loyalty')
+          from public_transport import robots_document,check_response
+          from free_access_probe import now
+          out=Path('rzd-http-output');out.mkdir()
+          report={'run_id':os.environ['GITHUB_RUN_ID'],'commit':os.environ['GITHUB_SHA'],'started_at':now(),
+                  'source':'rzd','requests':[],'publication':False,'keys_used':False,'provider_credits':0,
+                  'transport':'HTTP_public_unauthenticated_only','source_integrity':'HTTP_is_not_TLS_verified',
+                  'basis':'HTTP Sitemap URL advertised by RZD robots retrieved 2026-09-15 in run35025862119'}
+          def save():
+              p=out/'report.tmp';p.write_text(json.dumps(report,ensure_ascii=False,indent=2));p.replace(out/'report.json')
+          def allowed(url):
+              u=urlsplit(url)
+              return u.scheme in ('http','https') and u.netloc=='rzd-bonus.ru' and u.path in ('/robots.txt','/sitemap.xml','/') and not u.query and not u.fragment
+          stopped=False
+          def read(url):
+              global stopped
+              if stopped or not allowed(url) or len(report['requests'])>=5:raise RuntimeError('read_bound')
+              item={'url':url,'started_at':now()};report['requests'].append(item);save()
+              try:
+                  with requests.get(url,headers={'User-Agent':'LoyaltyCatalogResearchBot/1.0'},timeout=(5,15),stream=True,allow_redirects=False) as r:
+                      item['status']=r.status_code
+                      location=urljoin(url,r.headers.get('Location','')) if r.headers.get('Location') else None
+                      item['location']=location if location and allowed(location) else None
+                      if r.status_code==429 or r.headers.get('Retry-After'):
+                          stopped=True;raise RuntimeError('rate_limit_or_retry_after')
+                      raw=bytearray()
+                      for block in r.iter_content(65536):
+                          raw.extend(block)
+                          if len(raw)>2000000:raise RuntimeError('body_size_bound')
+                  body=raw.decode('utf-8','replace');item.update(chars=len(body),sha256=hashlib.sha256(raw).hexdigest())
+                  return item['status'],body,item
+              except Exception as exc:
+                  item['error']=str(exc) if isinstance(exc,RuntimeError) else type(exc).__name__;raise
+              finally:item['finished_at']=now();save()
+          try:
+              status,raw,item=read('http://rzd-bonus.ru/robots.txt')
+              if status in (301,302,303,307,308):
+                  if not item['location']:raise RuntimeError('redirect_not_allowed')
+                  time.sleep(1);status,raw,item=read(item['location'])
+              rules,state=robots_document(status,raw);policy=Protego.parse(rules)
+              report['policy']={'state':state,'url':item['url'],'status':status}
+              (out/'robots.txt').write_text(rules)
+              # Use at least the source's previously published20s delay even if
+              # its current robots response is unavailable4xx. No stored rules
+              # are substituted as a new response or permission.
+              delay=max(20,policy.crawl_delay('LoyaltyCatalogResearchBot') or 0)
+              if delay>60:raise RuntimeError('delay_exceeds_budget')
+              for url in ('http://rzd-bonus.ru/sitemap.xml','http://rzd-bonus.ru/'):
+                  if not policy.can_fetch(url,'LoyaltyCatalogResearchBot'):
+                      report.setdefault('policy_disallow',[]).append(url);continue
+                  time.sleep(delay)
+                  status,raw,item=read(url)
+                  if status in (301,302,303,307,308):
+                      item['result']='redirect_not_followed_existing_https_failure_already_checked'
+                  elif status==200:
+                      check_response(status,raw)
+                      # Diagnostic only: never publish unauthenticated bytes as
+                      # current verified benefits. No account/forms are operated.
+                      if url.endswith('.xml'):
+                          import xml.etree.ElementTree as ET
+                          if '<!DOCTYPE' in raw.upper() or '<!ENTITY' in raw.upper():raise RuntimeError('xml_declaration')
+                          tree=ET.fromstring(raw);item['xml_root']=tree.tag.rsplit('}',1)[-1]
+                          item['public_links']=[n.text for n in tree.iter() if n.tag.rsplit('}',1)[-1]=='loc' and isinstance(n.text,str) and len(n.text)<500][:1000]
+                      else:
+                          from bs4 import BeautifulSoup
+                          soup=BeautifulSoup(raw,'html.parser');item['title']=soup.title.get_text(' ',strip=True) if soup.title else ''
+                          item['public_text_chars']=len(soup.get_text(' ',strip=True))
+                  save()
+          except Exception as exc:
+              report['error']=str(exc) if isinstance(exc,RuntimeError) else type(exc).__name__
+          report['finished_at']=now();save()
+          (out/'executed-workflow.yml').write_bytes(Path('.github/workflows/rzd-published-http.yml').read_bytes())
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: rzd-published-http-${{ github.run_id }}
+          path: rzd-http-output/
+          retention-days: 7
