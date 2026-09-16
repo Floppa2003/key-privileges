@@ -242,6 +242,25 @@ def normalize_record(raw, *, as_of):
         return add('codes','promo_code',path,value=value,scope=scope,delivery=delivery,fragment=fragment)
     # Existing structure is more precise than the legacy top-level lexical arrays.
     structured_evidence=set()
+    airline_rules=d.get('retrieval_method')=='aeroflot_airline_api_google_import_v1'
+    if airline_rules:
+        # These source coefficients use distance, not the ticket price. A fare
+        # exclusion mentioning a discount must not become a discount offer.
+        p=d['public_airline']
+        for i,row in enumerate(p['miles_table']):
+            benefit('earn_miles',f'/details/public_airline/miles_table/{i}',value=row['percent'],unit='percent_of_distance',
+                basis_value=100,basis_unit='distance_miles',reward_unit='miles',qualifier='source_table',
+                scope={'airline_id':p['id'],'iata':p['iata'],'cabin':row['cabin'],'tariff':row['tariff'],'codes':row['codes'],
+                       'qualifying_miles':True,'remaining_exclusions_require_review':True})
+        for i,row in enumerate(p['elite_coefficients']):
+            benefit('earn_miles',f'/details/public_airline/elite_coefficients/{i}',value=row['percent'],unit='percent_of_distance',
+                basis_value=100,basis_unit='distance_miles',reward_unit='miles',qualifier='source_table',
+                scope={'airline_id':p['id'],'tier':row['tier'],'qualifying_miles':False})
+        condition('airline_source_rules','/conditions',scope={'airline_id':p['id'],'table_exceptions_require_review':True})
+        condition('minimum_mileage_source','/details/public_airline/miles_minimum',value=p['miles_minimum'],unit='miles',
+            scope={'source_limitation_code':p['miles_limitation'],'applicability_not_inferred':True})
+        if p['parent']:condition('parent_airline_reference','/details/public_airline/parent',scope={'not_applied_as_child_table':True})
+
     for i,c in enumerate(d.get('table_benefits',{}).get('components',[])):
         p=f'/details/table_benefits/components/{i}';rate=c.get('rate');scope=c.get('scope',{})
         scope={scope['kind']:scope.get('value')} if scope.get('kind') else scope
@@ -328,7 +347,7 @@ def normalize_record(raw, *, as_of):
     # Lexical projections are attached to the full original clause, never to every
     # partner in a roundup or every price in a source table.
     numeric_pattern=re.compile(NUM)
-    for path,clause in _clauses(raw):
+    for path,clause in (() if airline_rules else _clauses(raw)):
         scope=_scope(clause);recognized=False
         # Do not derive benefits from unassigned raw PDF table text.
         rates=[] if d.get('pages') else normalize_rates(clause)

@@ -59,6 +59,14 @@ def checked_url(url,kind):
         pairs=parse_qsl(u.query,keep_blank_values=True);q=dict(pairs)
         if (len(pairs)==2 and set(q)=={'id','lang'} and q['lang']=='ru' and re.fullmatch('[1-9][0-9]{0,11}',q['id'])
             and url==detail_url(int(q['id']))):return url
+    if kind in ('airline_catalog','airline_detail'):
+        from aeroflot_airlines import CATALOG as AIRLINES,DETAIL as AIRLINE_DETAIL,detail_url as airline_url
+        if kind=='airline_catalog' and url==AIRLINES:return url
+        if kind=='airline_detail' and u.path==urlsplit(AIRLINE_DETAIL).path:
+            pairs=parse_qsl(u.query,keep_blank_values=True);q=dict(pairs)
+            if (len(pairs)==3 and set(q)=={'lang','id','returnFullParentInfo'} and q['lang']=='ru'
+                and q['returnFullParentInfo']=='1' and re.fullmatch('[1-9][0-9]{0,11}',q['id'])
+                and url==airline_url(int(q['id']))):return url
     raise ValueError('af_url_scope')
 
 
@@ -125,7 +133,7 @@ def envelope(obs):
         # No guessed punctuation or repaired values: use exactly the explicit
         # delimiter, dimensions, and fields returned by the current calculation.
         raw='}'.join('' if c['value']==EMPTY else c['value'] for c in fields)
-    elif obs['kind']=='detail':
+    elif obs['kind'] in ('detail','airline_catalog','airline_detail'):
         if len(cells)!=1 or cells[0]['type']!='string':raise ValueError('af_json_import_shape')
         raw=cells[0]['value']
     else:raise ValueError('af_not_json_observation')
