@@ -1,10 +1,13 @@
 """Provider quotas and UTC-date Coral rotation must agree with actual cron."""
 import re
+import sys
 import unittest
 from datetime import date,timedelta
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[2]
+sys.path.insert(0,str(ROOT/'loyalty'))
+from ekp_session_collect import MAX_CREDITS as EKP_CREDITS
 
 
 def weekdays(filename):
@@ -29,7 +32,7 @@ class FreeCalendarTests(unittest.TestCase):
             days=[base+timedelta(days=shift+i) for i in range(31)]
             n=sum(d.weekday() in source_days for d in days);m=sum(d.weekday() in ekp_days for d in days)
             self.assertLessEqual(n,19);self.assertLessEqual(m,5)
-            self.assertLessEqual(n*269+m*300,6611)
+            self.assertLessEqual(n*269+m*EKP_CREDITS,5986)
 
     def test_both_coral_halves_recur_without_even_day_starvation(self):
         source_days=weekdays('loyalty-free-access.yml')[2]
@@ -46,7 +49,7 @@ class FreeCalendarTests(unittest.TestCase):
         start=date(2026,9,17);end=date(2026,10,15)
         days=[start+timedelta(days=i) for i in range((end-start).days+1)]
         n=sum(d.weekday() in source_days for d in days);m=sum(d.weekday() in ekp_days for d in days)
-        self.assertEqual((n,m),(17,4));self.assertEqual(n*269+m*300,5773)
-        self.assertGreaterEqual(6346-300-269,n*269+m*300)
+        self.assertEqual((n,m),(17,4));self.assertEqual(n*269+m*EKP_CREDITS,5273)
+        self.assertGreaterEqual(6346-300-269,n*269+m*EKP_CREDITS)
 
 if __name__=='__main__':unittest.main()

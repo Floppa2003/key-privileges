@@ -1,8 +1,8 @@
 name: EKP public catalogue and Sheets sync
 on:
   push:
-    branches: [main, 'loyalty/ekp-api-release-20260916', 'loyalty/ekp-policy-retry-20260916', 'loyalty/ekp-page-recovery-20260916']
-    paths: [loyalty/ekp_catalog.py, loyalty/ekp_api_collect.py, loyalty/tests/test_ekp_api.py, loyalty/tests/test_ekp_policy_retry.py, loyalty/tests/test_ekp_page_recovery.py, .github/workflows/ekp-api.yml]
+    branches: [main, 'loyalty/ekp-api-release-20260916', 'loyalty/ekp-policy-retry-20260916', 'loyalty/ekp-page-recovery-20260916', 'loyalty/ekp-session-release-20260916']
+    paths: [loyalty/ekp_session_collect.py, loyalty/ekp_session_ui.js, loyalty/tests/test_ekp_session.py, loyalty/ekp_catalog.py, loyalty/ekp_api_collect.py, loyalty/tests/test_ekp_api.py, loyalty/tests/test_ekp_policy_retry.py, loyalty/tests/test_ekp_page_recovery.py, .github/workflows/ekp-api.yml]
   workflow_dispatch:
   schedule:
     - cron: '13 7 * * 1'
@@ -55,7 +55,7 @@ jobs:
         id: collect
         env:
           SCRAPINGANT_API_KEY: ${{ secrets.SCRAPINGANT_API_KEY }}
-        run: python loyalty/ekp_api_collect.py
+        run: python loyalty/ekp_session_collect.py
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
@@ -91,8 +91,8 @@ jobs:
           import os,sys
           from datetime import datetime,timezone
           sys.path.insert(0,'loyalty')
-          from ekp_catalog import validate_bundle
-          validate_bundle('ekp-source-evidence',run_id=os.environ['GITHUB_RUN_ID']+':'+os.environ['GITHUB_RUN_ATTEMPT'],commit=os.environ['GITHUB_SHA'],clock=datetime.now(timezone.utc))
+          from ekp_session_collect import validate_session_bundle
+          validate_session_bundle('ekp-source-evidence',run_id=os.environ['GITHUB_RUN_ID']+':'+os.environ['GITHUB_RUN_ATTEMPT'],commit=os.environ['GITHUB_SHA'],clock=datetime.now(timezone.utc))
           print('EKP source artifact reconstructed and validated')
           PY
           python loyalty/sheets_normalized.py --input ekp-source-evidence/normalized.json
