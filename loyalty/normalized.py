@@ -38,6 +38,7 @@ HOSTS['rzd']=['rzd-bonus.ru']
 HOSTS['aeroflot']=['www.aeroflot.ru']
 HOSTS['coral']=['coralbonus.ru']
 HOSTS['coral_promo']=['coralbonus.ru']
+HOSTS['coral_rule_documents']=['coralbonus.ru']
 HOSTS['ekp_announcements']=['t.me']
 HOSTS['rzd_announcements']=['t.me']
 HOSTS['mir_announcements']=['t.me']
@@ -239,6 +240,9 @@ def validate_offer(r: dict) -> None:
     if r['details'].get('live_document_text'):
         from document_text import validate_document_record
         validate_document_record(r)
+    if r['source_id']=='coral_rule_documents':
+        from coral_linked_rules import validate_record
+        validate_record(r)
     if r['source_id'] in ('coral','coral_promo'):
         from coral_catalog import validate_record
         validate_record(r)
