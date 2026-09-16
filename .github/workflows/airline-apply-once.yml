@@ -28,12 +28,13 @@ jobs:
               if hashlib.sha256(Path(path).read_bytes()).hexdigest()!=sha:raise ValueError('Unexpected original: '+path)
           PY
           python diagnostics/airline_extension.py
-      - name: Commit only the reviewed branch changes and remove temporary staging helpers
+      - name: Commit Python changes to the development branch only
         run: |
-          git rm diagnostics/airline_extension.py .github/workflows/airline-module-check.yml .github/workflows/airline-module-residential.yml .github/workflows/airline-apply-once.yml
-          git add .github/workflows/aeroflot-import.yml loyalty/aeroflot_import_catalog.py loyalty/aeroflot_import_collect.py loyalty/normalized.py loyalty/unified_normalization.py
+          git restore --source=HEAD --worktree --staged .github/workflows
+          git rm diagnostics/airline_extension.py
+          git add loyalty/aeroflot_import_catalog.py loyalty/aeroflot_import_collect.py loyalty/normalized.py loyalty/unified_normalization.py
           git diff --cached --check
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git commit -m 'Apply byte-verified airline extension to development branch; remove one-time diagnostics'
+          git commit -m 'Apply byte-verified airline Python extension to development branch'
           git push origin HEAD:refs/heads/loyalty/airline-coverage-20260916
