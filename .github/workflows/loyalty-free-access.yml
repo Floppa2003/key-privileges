@@ -62,7 +62,7 @@ jobs:
           retention-days: 7
   probe:
     needs: regression
-    if: github.repository == 'Floppa2003/key-privileges' && github.ref == 'refs/heads/main'
+    if: github.repository == 'Floppa2003/key-privileges' && github.ref == 'refs/heads/main' && github.event_name != 'push'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     outputs:
