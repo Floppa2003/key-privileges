@@ -1,3 +1,4 @@
+# Release verification: PR41 source run was cancelled before jobs by the shared pending-run queue.
 name: Aeroflot public catalogue via Google import
 on:
   push:
