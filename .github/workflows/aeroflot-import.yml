@@ -1,11 +1,11 @@
-name: RZD public catalogue via Google import
+name: Aeroflot public catalogue via Google import
 on:
   push:
-    branches: [main, 'loyalty/rzd-google-import-20260916']
-    paths: [loyalty/rzd_import_catalog.py, loyalty/rzd_import_collect.py, loyalty/tests/test_rzd_import.py, loyalty/normalized.py, .github/workflows/rzd-import.yml]
+    branches: [main, 'loyalty/aeroflot-google-import-20260916']
+    paths: [loyalty/aeroflot_import_catalog.py, loyalty/aeroflot_import_collect.py, loyalty/tests/test_aeroflot_import.py, loyalty/normalized.py, .github/workflows/aeroflot-import.yml]
   workflow_dispatch:
   schedule:
-    - cron: '37 8 * * 3'
+    - cron: '47 8 * * 4'
 permissions:
   contents: read
 concurrency:
@@ -25,20 +25,20 @@ jobs:
       - run: python -m pip install -r loyalty/requirements.txt
       - name: Complete regression and retain exact executed code
         run: |
-          mkdir -p rzd-tests
+          mkdir -p aeroflot-tests
           set -o pipefail
-          python -m unittest discover -s loyalty/tests -v 2>&1 | tee rzd-tests/python-tests.log
-          node --test key/refresh.test.mjs 2>&1 | tee rzd-tests/key-tests.log
-          tar -cf rzd-tests/code.tar loyalty key .github/workflows
+          python -m unittest discover -s loyalty/tests -v 2>&1 | tee aeroflot-tests/python-tests.log
+          node --test key/refresh.test.mjs 2>&1 | tee aeroflot-tests/key-tests.log
+          tar -cf aeroflot-tests/code.tar loyalty key .github/workflows
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
-          name: rzd-tests-${{ github.run_id }}-${{ github.run_attempt }}
-          path: rzd-tests/
+          name: aeroflot-tests-${{ github.run_id }}-${{ github.run_attempt }}
+          path: aeroflot-tests/
           retention-days: 7
   collect:
     needs: regression
-    if: github.repository == 'Floppa2003/key-privileges' && github.ref == 'refs/heads/main' && vars.LOYALTY_SHEETS_SYNC == 'true' && github.event_name != 'push'
+    if: github.repository == 'Floppa2003/key-privileges' && github.ref == 'refs/heads/main' && vars.LOYALTY_SHEETS_SYNC == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     permissions:
@@ -65,16 +65,16 @@ jobs:
           access_token_lifetime: 3600s
           create_credentials_file: false
           export_environment_variables: false
-      - name: Discover public RZD pages and read conditions without source accounts
+      - name: Discover public Aeroflot pages and read conditions without source accounts
         id: collect
         env:
           GOOGLE_ACCESS_TOKEN: ${{ steps.google.outputs.access_token }}
-        run: python loyalty/rzd_import_collect.py
+        run: python loyalty/aeroflot_import_collect.py
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
-          name: rzd-import-public-${{ github.run_id }}-${{ github.run_attempt }}
-          path: rzd-import-output/
+          name: aeroflot-import-public-${{ github.run_id }}-${{ github.run_attempt }}
+          path: aeroflot-import-output/
           retention-days: 7
   publish:
     needs: collect
@@ -97,19 +97,19 @@ jobs:
       - run: python -m pip install -r loyalty/requirements.txt
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
-          name: rzd-import-public-${{ github.run_id }}-${{ github.run_attempt }}
-          path: rzd-source-evidence
+          name: aeroflot-import-public-${{ github.run_id }}-${{ github.run_attempt }}
+          path: aeroflot-source-evidence
       - name: Reconstruct every public record before Google publication
         run: |
           python - <<'PY'
           import os,sys
           from datetime import datetime,timezone
           sys.path.insert(0,'loyalty')
-          from rzd_import_collect import validate_bundle
-          validate_bundle('rzd-source-evidence',run_id=os.environ['GITHUB_RUN_ID']+':'+os.environ['GITHUB_RUN_ATTEMPT'],commit=os.environ['GITHUB_SHA'],clock=datetime.now(timezone.utc))
-          print('RZD public import evidence reconstructed and validated')
+          from aeroflot_import_collect import validate_bundle
+          validate_bundle('aeroflot-source-evidence',run_id=os.environ['GITHUB_RUN_ID']+':'+os.environ['GITHUB_RUN_ATTEMPT'],commit=os.environ['GITHUB_SHA'],clock=datetime.now(timezone.utc))
+          print('Aeroflot public import evidence reconstructed and validated')
           PY
-          python loyalty/sheets_normalized.py --input rzd-source-evidence/normalized.json
+          python loyalty/sheets_normalized.py --input aeroflot-source-evidence/normalized.json
       - name: Existing short-lived authorization for the original destination
         id: google
         uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093
@@ -126,5 +126,5 @@ jobs:
           GOOGLE_ACCESS_TOKEN: ${{ steps.google.outputs.access_token }}
           DISCOUNTS_SPREADSHEET_ID: ${{ secrets.DISCOUNTS_SPREADSHEET_ID }}
         run: |
-          python loyalty/sheets_normalized.py --input rzd-source-evidence/normalized.json --publish
+          python loyalty/sheets_normalized.py --input aeroflot-source-evidence/normalized.json --publish
           python loyalty/unified_publish.py --publish

@@ -35,6 +35,7 @@ HOSTS['utair']=['www.utair.ru']
 HOSTS['nordwind']=['nordwindairlines.ru']
 HOSTS['ekp']=['ekp.spb.ru']
 HOSTS['rzd']=['rzd-bonus.ru']
+HOSTS['aeroflot']=['www.aeroflot.ru']
 HOSTS['coral']=['coralbonus.ru']
 HOSTS['coral_promo']=['coralbonus.ru']
 HOSTS['ekp_announcements']=['t.me']
@@ -240,6 +241,9 @@ def validate_offer(r: dict) -> None:
         validate_document_record(r)
     if r['source_id'] in ('coral','coral_promo'):
         from coral_catalog import validate_record
+        validate_record(r)
+    if r['source_id']=='aeroflot':
+        from aeroflot_import_catalog import validate_record
         validate_record(r)
     if r['source_id']=='rzd':
         from rzd_import_catalog import validate_record
