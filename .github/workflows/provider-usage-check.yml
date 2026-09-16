@@ -1,0 +1,53 @@
+name: Free provider balance and period check
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/provider-usage-check.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: loyalty-catalog-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  check:
+    if: github.repository == 'Floppa2003/key-privileges' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - run: python -m pip install requests==2.32.5 beautifulsoup4==4.14.3
+      - name: Read only the documented usage endpoint, never account identity or credentials
+        env:
+          SCRAPINGANT_API_KEY: ${{ secrets.SCRAPINGANT_API_KEY }}
+        run: |
+          python - <<'PY'
+          import os,sys,json,re
+          from pathlib import Path
+          sys.path.insert(0,'loyalty')
+          from free_access_probe import FreeReader,free_plan,now
+          result={'observed_at':now(),'run_id':os.environ['GITHUB_RUN_ID'],'source_requests':0,'publication':False}
+          try:
+              reader=FreeReader(os.environ.get('SCRAPINGANT_API_KEY',''),[])
+              raw,_=reader._request('usage',{})
+              result.update(plan='Free',remaining=free_plan(raw),total=raw['plan_total_credits'])
+              for k in ('start_date','end_date'):
+                  value=raw.get(k)
+                  result[k]=value if isinstance(value,str) and re.fullmatch(r'[0-9TZ.+:-]{10,40}',value) else None
+          except Exception:
+              result['error']='usage_not_verified'
+          Path('usage-output').mkdir(exist_ok=True)
+          Path('usage-output/usage.json').write_text(json.dumps(result,indent=2))
+          print(json.dumps(result))
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: free-usage-${{ github.run_id }}
+          path: usage-output/
+          retention-days: 7
