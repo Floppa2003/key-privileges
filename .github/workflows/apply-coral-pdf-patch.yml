@@ -68,16 +68,16 @@ jobs:
           set -o pipefail
           python -m unittest discover -s loyalty/tests -v 2>&1 | tee pdf-tests/python-tests.log
           node --test key/refresh.test.mjs 2>&1 | tee pdf-tests/key-tests.log
-      - name: Commit only the three reviewed deltas to the feature branch
+          tar -cf pdf-tests/code.tar loyalty key .github/workflows
+      - name: Commit Python integration only to the feature branch
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add loyalty/normalized.py loyalty/unified_normalization.py .github/workflows/coral-import.yml
+          git add loyalty/normalized.py loyalty/unified_normalization.py
           git diff --cached --stat
-          git commit -m 'Wire current-parent PDF documents into Coral collection and condition-only projection'
+          git commit -m 'Register source-linked PDF evidence and project contract clauses as conditions'
           git push origin HEAD:refs/heads/loyalty/coral-pdfs-20260917
-          git rev-parse HEAD > pdf-tests/tested-commit.txt
-          tar -cf pdf-tests/code.tar loyalty key .github/workflows
+          git rev-parse HEAD > pdf-tests/python-integration-commit.txt
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
