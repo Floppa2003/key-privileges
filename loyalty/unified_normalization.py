@@ -240,6 +240,17 @@ def normalize_record(raw, *, as_of):
     def condition(kind,path,**kw):return add('conditions',kind,path,**kw)
     def code(value,path,scope=None,delivery='literal',fragment=None):
         return add('codes','promo_code',path,value=value,scope=scope,delivery=delivery,fragment=fragment)
+    if raw['kind']=='program_rules' and d.get('retrieval_method')=='coral_source_linked_pdf_free_api_v1':
+        # The PDF is a contract, not a catalogue of extra discounts or codes.
+        if not d.get('live_document_text') or not d.get('parent_references'):
+            raise ValueError('Linked PDF provenance missing')
+        condition('linked_pdf_rules','/conditions',scope={'parent_references':d['parent_references'],
+                  'document_part':d['document_part'],'document_sha256':d['document_sha256'],
+                  'applicability_requires_parent_offer_review':True})
+        n['quality']['level']='structured_with_review'
+        n['quality']['issues'].append('linked_rules_no_automatic_benefits_or_codes')
+        n['content_sha256']=digest({k:v for k,v in n.items() if k!='content_sha256'})
+        validate_normalized(n);return n
     if raw['kind']=='program_rules' and d.get('retrieval_method')=='coral_linked_public_rules_google_import_v1':
         # Refund percentages, penalty amounts and illustrative codes in a
         # contract are not offers. Preserve the complete linked source text.
