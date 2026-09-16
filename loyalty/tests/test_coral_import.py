@@ -75,10 +75,71 @@ class Walk(unittest.TestCase):
         self.assertEqual(len(b['records']),1);self.assertEqual(b['sources'][0]['status'],'failed');self.assertEqual(b['sources'][1]['status'],'ok');g.prepare(b)
     def test_bundle_reconstruction_and_omission(self):
         reader=Source();b=g.collect(reader,'1:1',NOW)
-        a={'run_id':'1:1','commit':'a'*40,'cleanup_verified':True,'scrapingant_credits':0,'started_at':NOW,'finished_at':NOW,'observations':reader.observations}
+        a={'run_id':'1:1','commit':'a'*40,'cleanup_verified':True,'scrapingant_credits':0,'source_account_used':False,'started_at':NOW,'finished_at':NOW,'observations':reader.observations}
         with tempfile.TemporaryDirectory() as temp:
             p=Path(temp);(p/'normalized.json').write_text(json.dumps(b));(p/'evidence.json').write_text(json.dumps(a))
             self.assertEqual(g.validate_bundle(p,'1:1','a'*40,datetime.fromisoformat(NOW)),b)
             b['records'].pop();(p/'normalized.json').write_text(json.dumps(b))
             with self.assertRaises(ValueError):g.validate_bundle(p,'1:1','a'*40,datetime.fromisoformat(NOW))
+
+class MemorySheets:
+    def __init__(self,mode=None):self.mode=mode;self.formula=None;self.generation='idle:test';self.writes=0;self.reads=0
+    def request(self,method,suffix='',**kwargs):
+        if method=='POST':
+            self.writes+=1
+            for r in kwargs['json']['requests']:
+                op=r['updateCells'];where=op.get('start',op.get('range'));assert where['sheetId']==g.TAB_ID
+                if 'range' in op:self.formula=None
+                elif where['rowIndex']==0:self.generation=op['rows'][0]['values'][0]['userEnteredValue']['stringValue']
+                else:self.formula=op['rows'][0]['values'][0]['userEnteredValue']['formulaValue']
+            return {}
+        if 'ranges' not in kwargs['params']:
+            return {'spreadsheetId':'different' if self.mode=='foreign' else g.STAGING,'properties':{'importFunctionsExternalUrlAccessAllowed':True},
+              'sheets':[{'properties':{'sheetId':g.TAB_ID,'title':g.TAB,'gridProperties':{'rowCount':g.ROWS,'columnCount':4}}}]}
+        rows=[{'values':[{'userEnteredValue':{'stringValue':g.MARKER}},{},{'userEnteredValue':{'stringValue':self.generation}}]}]
+        if self.formula:
+            self.reads+=1
+            lines=['','',page()]
+            for i,line in enumerate(lines):
+                cell={'effectiveValue':{'stringValue':line}}
+                if i==0:cell['userEnteredValue']={'formulaValue':'=changed' if self.mode=='formula' else self.formula}
+                if self.mode=='numeric' and i==2:cell['effectiveValue']={'numberValue':17}
+                if self.mode=='error':cell['effectiveValue']={'errorValue':{'type':'ERROR','message':'test'}}
+                rows.append({'values':[cell]+([{'effectiveValue':{'stringValue':'unexpected'}}] if self.mode=='wide' else [])})
+        return {'spreadsheetId':g.STAGING,'sheets':[{'properties':{'sheetId':g.TAB_ID,'title':g.TAB},'data':[{'rowData':rows}]}]}
+
+class ReaderChecks(unittest.TestCase):
+    def build(self,mode=None):
+        self.clock=0
+        def sleep(value):self.clock+=value
+        client=MemorySheets(mode)
+        reader=g.Reader('test-only','1:1',client=client,clock=lambda:self.clock,sleep=sleep)
+        return reader,client
+    def test_actual_reader_stable_lines_and_cleanup(self):
+        reader,client=self.build();o=reader.read(URL)
+        self.assertIn('Новый партнёр',g.checked(o));self.assertGreaterEqual(client.reads,2)
+        self.assertTrue(reader.cleanup_verified);self.assertIsNone(client.formula)
+    def test_reader_rejects_coercion_formula_change_and_wide_spill(self):
+        for mode in ('numeric','formula','wide','error'):
+            with self.subTest(mode=mode):
+                reader,client=self.build(mode)
+                with self.assertRaises(ValueError):reader.read(URL)
+                self.assertTrue(reader.cleanup_verified);self.assertIsNone(client.formula);self.assertFalse(reader.observations)
+    def test_foreign_workspace_does_not_write(self):
+        with self.assertRaises(ValueError):self.build('foreign')
+    def test_request_scope_checked_before_write(self):
+        reader,client=self.build()
+        with self.assertRaises(ValueError):reader.read('https://example.test/')
+        self.assertEqual(client.writes,0)
+
+class ReportChecks(unittest.TestCase):
+    def test_coverage_cannot_claim_extra_full_scope(self):
+        reader=Source();b=g.collect(reader,'1:1',NOW)
+        audit={'run_id':'1:1','commit':'a'*40,'cleanup_verified':True,'scrapingant_credits':0,'source_account_used':False,'started_at':NOW,'finished_at':NOW,'observations':reader.observations}
+        with tempfile.TemporaryDirectory() as temp:
+            p=Path(temp);(p/'evidence.json').write_text(json.dumps(audit))
+            coverage=json.loads(b['sources'][0]['coverage']);coverage['full_program_catalogue_verified']=True
+            b['sources'][0]['coverage']=json.dumps(coverage);(p/'normalized.json').write_text(json.dumps(b))
+            with self.assertRaises(ValueError):g.validate_bundle(p,'1:1','a'*40,datetime.fromisoformat(NOW))
+
 if __name__=='__main__':unittest.main()
