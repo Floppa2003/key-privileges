@@ -1,0 +1,103 @@
+name: RZD unkeyed public reader comparison
+on:
+  push:
+    branches: ['diagnostics/last-catalogues-20260916']
+    paths: ['.github/workflows/rzd-free-reader.yml']
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r loyalty/requirements.txt
+      - name: Public reader - no key, private session, Google access or source-policy bypass
+        run: |
+          python - <<'PY'
+          import hashlib,json,os,sys,time
+          from pathlib import Path
+          from urllib.parse import urlsplit
+          import requests
+          from bs4 import BeautifulSoup
+          from protego import Protego
+          sys.path.insert(0,'diagnostics');sys.path.insert(0,'loyalty')
+          from last_catalogues import safe_url,public_html,sitemap
+          from public_transport import robots_document,check_response
+          from free_access_probe import now
+          out=Path('rzd-unkeyed-output');out.mkdir()
+          report={'run_id':os.environ['GITHUB_RUN_ID'],'commit':os.environ['GITHUB_SHA'],'started_at':now(),
+                  'provider':'AllOrigins','provider_endpoint':'https://api.allorigins.win/get',
+                  'source':'rzd','requests':[],'publication':False,'keys_used':False,'provider_credits':0,
+                  'freshness':'provider_cache_age_not_exposed_no_fresh_source_claim',
+                  'final_url':'provider_status_url_may_echo_requested_url_not_a_verified_redirect_chain'}
+          deadline=time.monotonic()+300;stopped=False
+          def save():
+              p=out/'report.tmp';p.write_text(json.dumps(report,ensure_ascii=False,indent=2));p.replace(out/'report.json')
+          def read(url,label):
+              global stopped
+              if stopped or len(report['requests'])>=6 or time.monotonic()>deadline-40:raise RuntimeError('reader_bound_or_stop')
+              if url!='https://example.com/' and (not safe_url(url) or urlsplit(url).hostname!='rzd-bonus.ru'):raise RuntimeError('target_not_allowed')
+              item={'target':url,'started_at':now()};report['requests'].append(item);save()
+              try:
+                  with requests.get('https://api.allorigins.win/get',params={'url':url},timeout=(8,30),stream=True,allow_redirects=False) as r:
+                      item['provider_status']=r.status_code
+                      if r.status_code==429 or r.headers.get('Retry-After'):
+                          stopped=True;raise RuntimeError('reader_rate_limit')
+                      if r.status_code!=200:raise RuntimeError('reader_http_'+str(r.status_code))
+                      data=bytearray()
+                      for chunk in r.iter_content(65536):
+                          data.extend(chunk)
+                          if len(data)>6000000:raise RuntimeError('reader_size_bound')
+                  item['envelope_sha256']=hashlib.sha256(data).hexdigest();obj=json.loads(data)
+                  status=obj.get('status',{});code=status.get('http_code');body=obj.get('contents')
+                  item['reported_url']=safe_url(status.get('url')) if url!='https://example.com/' else 'control'
+                  if type(code) is not int or not 100<=code<=599 or not isinstance(body,str):raise RuntimeError('reader_origin_contract_missing')
+                  item.update(origin_status=code,chars=len(body),sha256=hashlib.sha256(body.encode()).hexdigest())
+                  if url=='https://example.com/':
+                      item['control_identity_matches']=code==200 and 'Example Domain' in body
+                  elif url.endswith('/robots.txt'):
+                      rules,state=robots_document(code,body);item['policy_state']=state
+                      (out/(label+'.txt')).write_text(rules)
+                  elif code==200:
+                      check_response(code,body)
+                      if url.endswith('.xml'):
+                          kind,links=sitemap(body,url);item.update(sitemap_kind=kind,public_urls=links)
+                          (out/(label+'.xml')).write_text(body)
+                      else:
+                          dom=public_html(body,url);(out/(label+'.html')).write_text(dom)
+                          soup=BeautifulSoup(dom,'html.parser');item['title']=soup.title.get_text(' ',strip=True) if soup.title else ''
+                          item['public_links']=[{'url':a['href'],'text':a.get_text(' ',strip=True)[:200]} for a in soup.select('a[href]')]
+                  return code,body,item
+              except Exception as exc:
+                  item['error']=str(exc) if isinstance(exc,RuntimeError) else type(exc).__name__;raise
+              finally:item['finished_at']=now();save();time.sleep(1)
+          try:
+              try:read('https://example.com/','control')
+              except Exception:report['control_failed']=True
+              status,body,item=read('https://rzd-bonus.ru/robots.txt','rzd-policy')
+              rules,state=robots_document(status,body);policy=Protego.parse(rules)
+              delay=max(1,policy.crawl_delay('LoyaltyCatalogResearchBot') or 0)
+              if delay>60:raise RuntimeError('source_delay_exceeds_budget')
+              for url,label in [('https://rzd-bonus.ru/sitemap.xml','rzd-sitemap'),('https://rzd-bonus.ru/','rzd-root')]:
+                  if not policy.can_fetch(url,'LoyaltyCatalogResearchBot'):
+                      report.setdefault('policy_disallowed',[]).append(url);continue
+                  time.sleep(delay)
+                  try:read(url,label)
+                  except Exception:pass
+          except Exception as exc:
+              report['error']=str(exc) if isinstance(exc,RuntimeError) else type(exc).__name__
+          report['finished_at']=now();save()
+          (out/'executed-workflow.yml').write_bytes(Path('.github/workflows/rzd-free-reader.yml').read_bytes())
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: rzd-unkeyed-reader-${{ github.run_id }}
+          path: rzd-unkeyed-output/
+          retention-days: 7
