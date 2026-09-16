@@ -1,8 +1,8 @@
 name: Coral public sitemap and conditions via Google import
 on:
   push:
-    branches: [main, 'loyalty/coral-google-import-20260916', 'loyalty/coral-bounded-retry-20260916']
-    paths: [loyalty/coral_import.py, loyalty/tests/test_coral_import.py, loyalty/tests/test_coral_import_retry.py, .github/workflows/coral-import.yml]
+    branches: [main, 'loyalty/coral-google-import-20260916', 'loyalty/coral-bounded-retry-20260916', 'loyalty/coral-linked-rules-20260916']
+    paths: [loyalty/coral_linked_rules.py, loyalty/tests/test_coral_linked_rules.py, loyalty/coral_import.py, loyalty/tests/test_coral_import.py, loyalty/tests/test_coral_import_retry.py, .github/workflows/coral-import.yml]
   workflow_dispatch:
   schedule:
     - cron: '17 9 * * 3,6'

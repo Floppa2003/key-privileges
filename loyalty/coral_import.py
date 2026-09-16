@@ -11,6 +11,7 @@ from urllib.parse import urlsplit
 import xml.etree.ElementTree as ET
 from bs4 import BeautifulSoup
 import coral_catalog as c
+import coral_linked_rules as linked
 from free_access_probe import sanitized_page
 from normalized import content_hash, validate_offer
 from sheets_normalized import prepare
@@ -37,7 +38,7 @@ def instant(s):
     return d
 
 def formula(url):
-    if url not in (ROBOTS,SITEMAP,c.CLUB,c.PROMO):
+    if url not in (ROBOTS,SITEMAP,c.CLUB,c.PROMO) and not linked.is_rule_url(url):
         if url.startswith(c.CLUB):c.checked_url(url,'/klub-privilegii/',3)
         else:c.checked_url(url,'/promo/',2)
     return f'=IMPORTDATA("{url}";"¦";"en_US")'
@@ -208,6 +209,18 @@ def collect(reader,run_id,observed_at):
             except Exception as exc:
                 results[sid]['errors'].append({'url':entry['url'],'reason':error(exc)})
                 if not getattr(reader,'cleanup_verified',True) or error(exc)=='cg_budget':break
+        entries=linked.discover([r for v in results.values() for r in v['records']])
+        if entries:
+            result={'records':[],'errors':[],'excluded':[],'discovered':len(entries)}
+            results[linked.SOURCE_ID]=result
+            for index,entry in enumerate(entries):
+                if index>=linked.MAX_RULES:
+                    result['errors'].append({'url':entry['url'],'reason':'cg_rule_limit'});continue
+                if not getattr(reader,'cleanup_verified',True):break
+                try:result['records'].append(linked.map_rule(read(entry['url']),entry,observed_at))
+                except Exception as exc:
+                    result['errors'].append({'url':entry['url'],'reason':error(exc)})
+                    if not getattr(reader,'cleanup_verified',True) or error(exc)=='cg_budget':break
     except Exception as exc:
         for v in results.values():v['errors'].append({'phase':'discovery','reason':error(exc)})
     return summarize(results,counts,run_id,observed_at)
@@ -217,7 +230,10 @@ def summarize(results,counts,run_id,observed_at):
     for sid,v in results.items():
         rows+=v['records'];n=len(v['records']);unresolved=v['discovered']-n-len(v['excluded'])
         meta={'method':METHOD,'scope':'sitemap_pages_in_current_categories' if sid=='coral' else 'current_promo_index',**counts,'candidates':v['discovered'],'accepted':n,'excluded_store_products':v['excluded'],'unresolved':unresolved,'full_program_catalogue_verified':False,'source_account_used':False,'origin_http_status_exposed':False,'origin_cache_age_verified':False}
-        reports.append({'source_id':sid,'name':'CoralBonus — '+('Клуб' if sid=='coral' else 'Акции'),'root':c.CLUB if sid=='coral' else c.PROMO,'status':('partial' if v['errors'] or unresolved else 'ok') if n else 'failed','discovered':v['discovered'],'normalized':n,'failed':len(v['errors']),'errors':v['errors'],'coverage':json.dumps(meta,ensure_ascii=False),'region':None,'observed_at':observed_at})
+        if sid==linked.SOURCE_ID:
+            meta['scope']='source_linked_public_rules_not_additional_offers'
+            meta['recursive_links_read']=False
+        reports.append({'source_id':sid,'name':'CoralBonus — '+('Правила' if sid==linked.SOURCE_ID else 'Клуб' if sid=='coral' else 'Акции'),'root':c.PROMO if sid=='coral_promo' else c.CLUB,'status':('partial' if v['errors'] or unresolved else 'ok') if n else 'failed','discovered':v['discovered'],'normalized':n,'failed':len(v['errors']),'errors':v['errors'],'coverage':json.dumps(meta,ensure_ascii=False),'region':None,'observed_at':observed_at})
     return {'schema_version':2,'run_id':run_id,'observed_at':observed_at,'records':rows,'sources':reports}
 
 def validate_bundle(folder,run_id,commit,clock):
@@ -254,7 +270,7 @@ def validate_bundle(folder,run_id,commit,clock):
         raise ValueError('cg_request_accounting')
     expected=[];counts={};results={sid:{'records':[],'errors':[],'excluded':[],'discovered':0} for sid in ('coral','coral_promo')}
     supplied={r['source_id']:r for r in b.get('sources',[])}
-    if len(b.get('sources',[]))!=2 or set(supplied)!=set(results):raise ValueError('cg_source_reports')
+    if len(supplied)!=len(b.get('sources',[])):raise ValueError('cg_source_reports')
     targets=[]
     if retries and not all(u in lookup for u in (ROBOTS,c.CLUB,c.PROMO,SITEMAP)):raise ValueError('cg_retry_without_discovery')
     if all(u in lookup for u in (ROBOTS,c.CLUB,c.PROMO,SITEMAP)):
@@ -264,7 +280,6 @@ def validate_bundle(folder,run_id,commit,clock):
         if not all(rules.can_fetch(u,'LoyaltyCatalogResearchBot') for u in controls):raise ValueError('cg_policy_binding')
         for sid,_ in targets:results[sid]['discovered']+=1
         allowed={u for u in (ROBOTS,c.CLUB,c.PROMO,SITEMAP)}|{e['url'] for s,e in targets}
-        if (set(lookup)|seen)-allowed:raise ValueError('cg_undiscovered_read')
         if any(not rules.can_fetch(u,'LoyaltyCatalogResearchBot') for u in seen):raise ValueError('cg_retry_policy')
         for sid,entry in targets:
             obs=lookup.get(entry['url'])
@@ -275,6 +290,22 @@ def validate_bundle(folder,run_id,commit,clock):
             if r:
                 expected.append(r);results[sid]['records'].append(r)
             else:results[sid]['excluded'].append(entry['url'])
+        entries=linked.discover(expected)
+        if entries:
+            results[linked.SOURCE_ID]={'records':[],'errors':[],'excluded':[],'discovered':len(entries)}
+            targets.extend((linked.SOURCE_ID,e) for e in entries)
+            allowed.update(e['url'] for e in entries[:linked.MAX_RULES])
+            for entry in entries[:linked.MAX_RULES]:
+                obs=lookup.get(entry['url'])
+                if not obs:continue
+                if not rules.can_fetch(obs['url'],'LoyaltyCatalogResearchBot'):raise ValueError('cg_rule_policy')
+                if any(instant(lookup[p['source_url']]['calculated_at'])>instant(obs['requested_at']) for p in entry['parents']):
+                    raise ValueError('cg_rule_before_parent')
+                try:r=linked.map_rule(obs,entry,b['observed_at'])
+                except ValueError:continue
+                expected.append(r);results[linked.SOURCE_ID]['records'].append(r)
+        if (set(lookup)|seen)-allowed:raise ValueError('cg_undiscovered_read')
+    if set(supplied)!=set(results):raise ValueError('cg_source_reports')
     for sid,r in supplied.items():
         urls={e['url'] for source,e in targets if source==sid}
         errors=r.get('errors')
@@ -286,7 +317,7 @@ def validate_bundle(folder,run_id,commit,clock):
         results[sid]['errors']=errors
     rebuilt=summarize(results,counts,run_id,b['observed_at'])
     if rebuilt['sources']!=b['sources']:raise ValueError('cg_coverage_reconstruction')
-    expected.sort(key=lambda r:0 if r['source_id']=='coral' else 1)
+    expected.sort(key=lambda r:('coral','coral_promo',linked.SOURCE_ID).index(r['source_id']))
     if expected!=b['records']:raise ValueError('cg_bundle_reconstruction')
     prepare(b);return b
 
