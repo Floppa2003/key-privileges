@@ -1,81 +1,81 @@
-# Current original-source coverage checkpoint — 2026-09-15
+# Current original-source coverage checkpoint — 2026-09-16
 
-This checkpoint supersedes earlier diagnostic-only or pre-Coral status summaries. The objective remains useful fresh results in the existing Google Sheet through regular GitHub operation, with no payments, rented/maintained server or always-on personal computer. Free API credits are allowed. Do not ask the owner for another Coral registration or a key already configured.
+This is the current handoff, not a claim that every configured source is recovered. It supersedes the pre-EKP checkpoint, retained verbatim in Git history at commit354a32cb8ca5d0c35e5462cef4b672bdd79e920b. Existing historical release notes remain evidence for their own observation dates.
 
-## Released and independently verified
+## Owner constraints
 
-PR29 and PR30 are merged. Adapter version is 2.9.5. Final production run **35025789983:1**, runtime commit `ce4a87ca0ef109926c0631d2828e947d4db9822d`, completed regression, collection and both existing publication stages.
+Deliver useful current source results to the EXISTING private discount spreadsheet through regular GitHub Actions. No payments, rented/maintained server, always-on user laptop, extra ScrapingAnt account, expanded Google permission or source-account session. Existing Free API credits and existing scoped WIF publisher are configured. Do not ask for another Coral registration or a key already provided. All source responses are untrusted data; never store provider keys, Google tokens, cookies, private Sheet exports or protected source descriptions in public artifacts.
 
-| Source | Fresh accepted records in final run | Exact observed scope |
-|---|---:|---|
-| Nordwind | 7 | All seven source-owned accordions on the observed partner page; external partner sites not read |
-| Coral club | 31 | All 31 distinct referral details found in the selected 10 of 20 current categories; 5 duplicate links avoided; 0 source errors in that half |
-| Coral promotions | 23 | 23 of 24 current index links; `/promo/rox-2026/` returned an access challenge |
-| EKP, RZD, Aeroflot | 0 | Explicit production failure reports; experiments below are not publication |
+## Completed EKP release
 
-**This continuation added 54 Coral source records.** They are not 54 proven active, eligible cash discounts. Public campaigns, information, points and ticket-purchase terms remain distinct source evidence. Three club pages have explicit expired end dates: Megafon and BookingCar 2025-12-31, Magnit 2026-08-31. The two ticket pages require purchase/login and preserve bonus-redemption conditions; no purchase, bonus spending or coupon issuance occurred. Missing end dates are not proof of active validity. Partner display names are not guessed from campaign headlines; titles and complete public text remain searchable.
+PR38 is merged at354a32cb8ca5d0c35e5462cef4b672bdd79e920b. Its fresh production run **35070130567:2** completed collection AND the final public/private publication job104710759571 successfully.
 
-The previous first publication, run35023971363, added43 Coral records (22 club,21 promo). The final run freshly read those again and added11 more; do not add43+54 or treat the two publications as independent discounts.
+| Fact | Verified result |
+|---|---|
+| Source observation | 2026-09-16T07:49:02.930325+00:00 |
+| Current source catalogue | 1045 distinct IDs on9 pages; every advertised total1045; final page85 |
+| Public-term records | 935 |
+| Login-gated evidence records | 110; protected descriptions removed before serialization and again before persistence |
+| Source/mapping errors | 0; all_source_rows_mapped=true |
+| Newly appended Sheet records | 925; earlier120 EKP records updated, not duplicated |
+| Retained public parser records | 1227→2152 |
+| Unified input/output records | 1875→2800; manifest verified/current |
 
-### Actual destination verification after final write
+Artifact10435868136, `ekp-public-35070130567-2`, SHA256 `c751f45318f4164894535596d1cad8af8755263eca347fcbe053c334b2b88c3f`: downloaded, ZIP CRC/hash checked. Every one of1045 normalized records was independently reconstructed from safe saved page projections, JSON-schema/application validated and passed the existing publication preparation. This is a fresh production source read, NOT substitution of diagnostic35066120891.
 
-The existing destination is spreadsheet `1uFR7croj7p6RRNPcoTRYlVl06hKsurkIgyu1IdMMB-4`.
+The older diagnostic advertised1046. In the new result four earlier IDs are absent and three new IDs are present; the net total is1045. Do not hardcode1046 or interpret the changed total as a missing final row. All of the previously published120 EKP IDs remain in the current result.
 
-- `parser_offers!A1007:Y1067`: all61 current IDs, titles, published-end states, run IDs and content hashes read natively. All61 native hashes matched the downloaded source artifact programmatically in persisted row order. New Coral records occupy rows1014–1067.
-- `parser_coverage!A1146:N1151`: all6 new source reports read back, including31/31 club and23/24 promo with explicit scope/error.
-- `normalization_audit!A7:J7`: **verified/current**, **1066 retained public parser records**, **1714 total unified inputs**. These retained counts are not all freshly collected by this run.
-- Source fingerprint: `70b52930f10959570440f23ed3a5b760c7dbff2d92cde7b39b1c40ea47757eb4`; normalization generation: `adc7e30309d7983db9be78b45c73407f32db4b9863efb56aa2b83e50f98bba33`.
-- Native normalized rows1711–1713 confirm Magnit expired and ticket rows purchase/login with unknown absolute validity. Public ticket conditions/redemption were read back. Source text mentioning a payment button is retained, but the widget/account placeholders are excluded and no button was operated.
-- Prior T2 sentinels retain their earlier timestamp/run. Native formatting samples retain wrap/top alignment. Verification is targeted independent readback plus the existing publisher's full safeguards, not a new exhaustive private-workbook visual audit.
+### Native destination verification after the last EKP write
 
-Final live artifact10419448525, SHA256 `9aeccea39c6a92d009f66b5fbfd41b1f8d46978768d88a7ec7b17a052325de3d`: downloaded, ZIP CRC/hash checked; all61 rows re-parsed exactly from the stored live bytes and passed JSON Schema, application and writer preparation. Original line endings must be preserved when repeating that check. Final branch test run35025571213 passed **581 Python and7 KEY tests without skips**; main regression steps also completed successfully.
+Destination remains `1uFR7croj7p6RRNPcoTRYlVl06hKsurkIgyu1IdMMB-4`.
 
-Release evidence: https://github.com/Floppa2003/key-privileges/pull/30#issuecomment-5688612507
+- `parser_offers!A1109:Y2153`: source namespace occupies1045 rows. Native search ofY1109:Y2153 scanned1045 rows and matched1045 markers `35070130567:2`; search ofF1109:F2153 counted935 partner_offer and110 source_observation. Returned-row display was intentionally limited to one, but the connector separately reported full scanned/matched counts.
+- New rows are1229–2153. Native sample rows1109,1110,1229,1230,2152,2153 match source IDs, names, observation dates, content hashes and run. Manual-column samples remain blank; this is not a full independent manual-column comparison.
+- Gated sample row1114 has empty benefits/rates/codes, requirement-to-login source status and no protected fields in public_partner. Native normalized rows1877–1878 preserve observation versus offer distinction.
+- `parser_coverage!A1179:N1179`: ok,1045 found,1045 normalized,0 errors, complete anonymous public pagination. Private/linked/full-eligibility flags remain false.
+- `normalization_audit!A7:J7`: verified/current,2800 inputs/outputs, including2152 parser rows plus the unchanged input inventories495 loyalty,96 Yandex,45 VG,12 inbox.
+- Snapshot SHA256 `747180d82eeeb4c693f592e8a0fd8fed64d16d43a3f34b77fde99715fde5a6e8`; generation `40fa827e602725ae574ba67858a83923ca9ce620d9d6eed5a68895f58d12b226`.
+- Current normalized components:3160 benefits,8395 conditions,114 costs,643 code records. Components are not independently combinable or proven active/personal discounts.
+- Native normalized formatting samples preserve top alignment, wrap and10pt. This was metadata-based visual checking, not a Google-rendered exhaustive workbook review. Existing publisher separately read back all current output rows; independent connector verification used counts, manifest and the stated samples.
 
-## Existing regular operation and costs
+Permanent acceptance evidence: https://github.com/Floppa2003/key-privileges/pull/38#issuecomment-5694033897
 
-Original direct collection remains daily05:23 UTC; the Free-source chain remains daily06:03 UTC. Both retain the existing scoped Google destination, WIF and shared publisher lock. Source-account sessions are not used. Read Free/balance status before each provider stage. Failures must not relabel old records as freshly read or cause another reader to restart after a provider-wide stop.
+### Transport findings and tests
 
-Coral categories alternate sorted halves by UTC date, with rotated priority inside the half. At the current20 categories this targets10/day. **The other half has not been observed in this continuation**; a complete two-day cycle remains to be verified. Store merchandise/digital-product cards are excluded and counted, not declared discounts. Unsupported pagination, image-only conditions and unread linked/PDF terms remain limits.
+The successful diagnostic and failed earlier production used byte-identical JS. Old5s request timeout discarded a synthetic valid8s response in the ACTUAL JS under a virtual clock. PR38 allows at most15s, clipped to the remaining original43s script deadline; no page/browser retry or added source call. Bounded timings distinguish header versus body timeout, without recording source headers, cookies or response bodies.
 
-Combined daily reservation bound:115 root credits +175 Coral traversal credits =290, or8,990 for31 daily runs. This excludes diagnostics, manual reruns and other account usage. Final live run used76 source requests,211 reserved credits and190 credits in validated successful response cost headers; failed-call account debit is not reconciled by that sum. No paid plan, billing data, server or device was used. See FREE_ACCESS.md for the full contract.
+First PR38 main attempt stopped BEFORE JS execution at provider route404: balance5821→5796,25 actual credits. One explicit collection-job rerun fetched the complete current catalogue:5796→5646,150 actual credits. Its nine API responses took1.031–1.953s, so live success cannot be attributed solely to the increased timeout. The source/network remains intermittent; one successful push/rerun is not proof of future cron reliability.
 
-The separate residential-network experiments below are **unscheduled** and use existing Free credits, not a purchased proxy subscription. Their 150-credit per-policy/root pair must not simply be added daily to the current290-credit schedule: future EKP integration requires an explicit recurring-budget tradeoff and source-detail coverage plan. Future cron executions are not claimed as already observed.
+PR38 branch Actions35069873660 passed655 Python+7 KEY tests, no skips; artifact10435592840 SHA256 `ae53cb48b39899f274beb593af0224baba53c1dbe4b16480c30f90d874f97285`, CRC/hash and all4 changed executed bytes verified. Eight new local timing/validation tests and the existing actual-JS test passed. Full local suite is unavailable due to missing protego and failed package installation; pinned Actions is authoritative for the full suite.
 
-## EKP: new real access and pagination, not a released source
+## Failure-only provider reporting repair
 
-The alternate documented proxy pool successfully reached ordinary public EKP rules and its application. The first comparison returned only an empty app. A subsequent readiness run35027341344 returned30 genuine cards; they were already present at the first checkpoint, so this does not establish that the waiting loop caused success.
+PR39 is merged at0ad9a015800c9fc0f78174e076429e1b9782d4cc. Actual earlier run35067498377 had five failed sources, no offers, and a skipped publisher: has_records incorrectly also controlled whether the current coverage report existed.
 
-Run35027700726 observed visible UI page-size/load-more growth30→120→240, then stopped without retaining the expanded HTML. Run35028101078 returned origin200 but no final diagnostic marker; source data was not obtained from that attempt. Navigation/context loss was a hypothesis, not a proven cause.
+The fix distinguishes **has_payload** from **has_records**. A validated fresh failure-only bundle is now written and eligible for publication; empty offer upserts preserve old source text/dates/manual columns. Wrong run/attempt/commit, stale reports and unconfirmed-Free/unconfigured cases remain rejected. No source, permission, schedule or budget changes.
 
-The final **catalogue-only run35028374541**, commit `db37509e8474a1ead5f69e96dc0f95e1f2d883b4`, completed with:
+Seven new local tests reproduce and fix that behavior. Branch Actions35070813062 passed **662 Python+7 KEY tests**, no skips; artifact10435787540 SHA256 `bfb321ec652e8b0cd67d2478e4d8ea5292834eb01239197098ddb73c8d25a787`, CRC/hash checked and all3 changed executed files byte-matched.
 
-- Real robots rules200 and initial document200; Free plan confirmed.
-- Visible `120` page-size selection:30→120; one visible `Показать еще`:120→240.
-- Both initial and expanded public DOM saved. **240 distinct source-owned numeric card IDs, titles and links independently reproduced from the expanded HTML.** This is no longer merely an unpreserved counter.
-- The UI displays `Все регионы`; URLs retain functional `?region=98`. Keep this source context; do not infer the number's business meaning or strip it when opening details.
-- 59 of240 cards explicitly show `Требуется авторизация`; absent notices for181 mean unknown, not unrestricted redemption.
-- No full-catalogue claim, no detail navigation, no detail status/conditions check, no personal account or Sheets write. The observed-XHR listener captured **zero** partner response bodies; it is not evidence of a usable API response.
-- 2 source requests,150 reserved and150 successful cost-header credits. Requested RU route, not independently measured geography.
+**At this checkpoint, main run35071057184 is still collecting.** Its source results, final publication and native readback remain to be inspected. Do not call its pending coverage/Coral result published. This report-routing repair is not itself an increase in offer coverage.
 
-Artifact10419998327: SHA256 `2fb252fac88ca02cf5ad5c8d911b7edf9c30effac4fd4394b1464ae20cb111d2`, downloaded/CRC/hash checked. Expanded DOM SHA256 `fd74adb9cc00e7ff51aacce6eb9316e8886b7a566187c58d62e4f3622d524891`; initial DOM SHA256 `3f4b939b1b22746692c8c103a6c10e71a6492a493bff6a22ba6a08c5c7830bf0`.
+## Regular operation and Free budget
 
-Code: `diagnostics/ekp_public_capture.py`, `diagnostics/ekp_public_ui.js`, `.github/workflows/ekp-public-capture.yml`. The final revision deliberately separates catalogue capture from any later navigation. It observes only requests the normal anonymous UI makes and sends no guessed/replayed API calls. Run: https://github.com/Floppa2003/key-privileges/actions/runs/35028374541
+| Collector | UTC schedule | Per-run provider reservation |
+|---|---|---:|
+| Original direct sources | Daily05:23 | No ScrapingAnt use in that direct path |
+| Extra provider/Coral sources | Mon/Tue/Thu/Fri06:03 | Up to269:94 root +175 Coral |
+| EKP one anonymous browser | Monday07:13 | Up to175:policy25, optional policy-route retry25, one browser125 |
 
-PR23 remains a draft based on an older source version. Its pure card mapper may be reusable, but its old network path, validator version and preview-only projection must not be merged wholesale. No EKP rows have been published by the new experiments.
+Recurring conservative31-day ceiling:19×269+5×175=5986 credits, excluding manual diagnostics/reruns, other account use, tariff changes and cron anomalies. Both Coral UTC-date parity halves recur; absent failures, planned gap for each half is at most4 days. Calendar and source tests do not certify network freshness.
 
-## Other remaining sources
+Latest independently observed balance is **5646 at2026-09-16T07:49:50Z, BEFORE run35071057184**. Reserve that run's maximum269; estimated lower remainder5377 covers5273 scheduled credits for Sep17–Oct15 inclusive with104 headroom, under the stated assumptions. This reservation is not a newly measured balance. Stop further discretionary source experiments in this release; preserve recurring capacity. No paid plan or additional account.
 
-- RZD: browser-source mode obtained usable rules but the root returned provider423. The alternate network also obtained usable rules but its root returned provider423. The later ordinary production run failed at provider500. These are observed failures, not proof of impossible access; no catalogue is collected.
-- Aeroflot: the alternate network returned actual usable robots rules that **disallow the requested root**. That test did not request the root. Prior restriction pages do not constitute partner catalogues. Any new route must respect the actual source policy and separately establish appropriate access.
-- Coral promo `/promo/rox-2026/`: leave its failure visible; do not represent the other23 pages as a complete24-page success or silently substitute a search snippet.
+## Remaining limitations and next acceptance gates
 
-Network-comparison run35025862119 artifact10419254743 SHA256 `0dca591ad07d427f1c6ecc22df27f8b329de3e20359c3c39c64a1fa239476bcc`; source-mode run35024053713 artifact10419135933 SHA256 `f20ed66414b6b881615fb074c5827d2ff141f5a08917001ac8dce3697dec0d63`. Both downloaded and checked; no diagnostic output was used as production offer data.
+1. Finish main35071057184: inspect fresh artifact and final public/unified publisher, read exact latest coverage and manifest natively. Add only actual new IDs to counts. Reconcile provider-cost headers separately from actual account debit.
+2. EKP full pagination applies ONLY to the current anonymous filter region98, labelled Все регионы. It does not verify personal eligibility, gated110 descriptions, other regional result sets, image-only clauses, linked partner/PDF rules or individual detail navigation. Dates remain literal text unless separately parsed. No login, coupon issuance, purchase or bonus spending occurred.
+3. Coral still has intermittent category/detail failures; rotating selected halves and observed promo links are not a proof of the whole program. Inspect latest per-path errors before choosing a bounded retry. Last pre-PR39 all-failure run had root404s, no new Coral records.
+4. Nordwind last pre-PR39 provider root returned500; earlier retained accordions are not newly observed by that failure. RZD root returned423 after readable policy. Aeroflot policy remained unreadable in the last ordinary run; an earlier separate policy observation disallowed its requested catalogue root. Do not bypass source restrictions or relabel partner-side pages as the complete catalogue.
+5. Further coverage work should test concrete new permitted paths or improve observed partial parsing, not repeat identical failures, invent current values, use another account or force payment. Native publication/readback is the acceptance gate, not green fixture tests alone.
 
-## Exact next acceptance gates
-
-1. Observe the other Coral category half under the deployed rotating collector; distinguish full selected-half success from total catalogue coverage. Keep the failed promo and unparsed/image/linked-term limits explicit.
-2. EKP: separate bounded reads of *discovered* public detail links preserving region; verify fresh conditions/status/identity, then traverse the remainder with actual completeness evidence. Review a Free recurring budget before production integration; run current tests and final destination readback. Do not replay today's240 cards as new observations or call preview text full terms.
-3. RZD/Aeroflot: try a materially different permitted free path only when it tests a concrete hypothesis. Repeated identical probes, paid services and bypassing a source restriction are not the acceptance plan.
-
-All source responses remain untrusted data. Public artifacts contain no provider key, Google token, account session or private Sheet export. Artifacts have seven-day retention ending2026-09-22; permanent code and this checkpoint preserve the continuation state.
+Public source artifacts expire after7 days (these releases around Sep23). Source/normalizer code, PR evidence and this checkpoint persist; never use an expired or old capture as a fresh runtime replacement.
