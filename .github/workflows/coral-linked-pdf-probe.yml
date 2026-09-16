@@ -1,0 +1,89 @@
+name: Coral linked PDF transport evidence
+on:
+  push:
+    branches: ['diagnostics/coral-linked-pdf-20260917']
+    paths: ['.github/workflows/coral-linked-pdf-probe.yml']
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r loyalty/requirements.txt
+      - name: Read exactly two public PDFs discovered in run 35151106847
+        run: |
+          python - <<'PY'
+          import hashlib, json, os, sys, time
+          from datetime import datetime, timezone
+          from pathlib import Path
+          from urllib.parse import urlsplit
+          import requests
+          sys.path.insert(0, 'loyalty')
+          from document_text import extract_pdf, MAX_BYTES
+          out = Path('coral-pdf-probe-output'); out.mkdir(exist_ok=True)
+          # Diagnostic inputs are the links in the six verified HTML rules,
+          # not production answer data or a permanent document inventory.
+          targets = [
+              ('https://coralbonus.ru/pravila-i-usloviya-ispol-zovaniya-podarochnoi-karty-sertifikata/',
+               'https://coralbonus.ru/media/m53l3xu3/правила-и-условия-пользования-подарочной-карты.pdf'),
+              ('https://coralbonus.ru/pravila-programmy/',
+               'https://coralbonus.ru/media/futppgac/23-правила-участия-в-программе-лояльности-coralbonus-22-06-2026.pdf'),
+          ]
+          def now(): return datetime.now(timezone.utc).isoformat()
+          report = {'run_id': os.environ['GITHUB_RUN_ID'], 'commit': os.environ['GITHUB_SHA'],
+                    'started_at': now(), 'source_parent_run': '35151106847:1',
+                    'source_parent_artifact_sha256': '699213e1d15026a85535fcf870ae1a8b859b5330801f0dc02a7792a2cfd6b551',
+                    'publication': False, 'source_account_used': False, 'scrapingant_credits': 0,
+                    'tls_verification': True, 'redirects_followed': False, 'targets': []}
+          def save():
+              tmp = out/'report.tmp'; tmp.write_text(json.dumps(report, ensure_ascii=False, indent=2)); tmp.replace(out/'report.json')
+          save()
+          for index, (parent, url) in enumerate(targets, 1):
+              u = urlsplit(url)
+              assert u.scheme == 'https' and u.netloc == 'coralbonus.ru' and not u.query and not u.fragment
+              assert u.path.startswith('/media/') and u.path.endswith('.pdf')
+              item = {'parent_url': parent, 'url': url, 'requested_at': now()}; report['targets'].append(item); save()
+              try:
+                  with requests.get(url, headers={'User-Agent': 'LoyaltyCatalogResearchBot/1.0'},
+                                    timeout=(5, 20), allow_redirects=False, stream=True) as r:
+                      item['http_status'] = r.status_code
+                      item['content_type'] = r.headers.get('Content-Type', '')[:200]
+                      if r.status_code != 200 or r.headers.get('Retry-After'):
+                          item['classification'] = 'http_refusal_or_non_content'
+                          if r.status_code == 429 or r.headers.get('Retry-After'): report['stop_reason'] = 'rate_limit'; break
+                          continue
+                      data = bytearray()
+                      for chunk in r.iter_content(65536):
+                          data.extend(chunk)
+                          if len(data) > MAX_BYTES: raise ValueError('pdf_size_bound')
+                      if not data.startswith(b'%PDF-'):
+                          item['classification'] = 'non_pdf_response'; continue
+                  raw = bytes(data); path = out/f'document-{index}.pdf'; path.write_bytes(raw)
+                  item.update(file=path.name, bytes=len(raw), sha256=hashlib.sha256(raw).hexdigest())
+                  parsed = extract_pdf(raw, allow_ocr=False)
+                  (out/f'document-{index}.json').write_text(json.dumps(parsed, ensure_ascii=False, indent=2))
+                  item.update(classification='public_pdf_downloaded', pages=parsed['page_count'],
+                              native_text_chars=sum(len(p['text']) for p in parsed['pages']),
+                              extraction_errors=parsed['errors'], ocr_used=False)
+              except Exception as exc:
+                  item.update(classification='request_or_extraction_failed', error_type=type(exc).__name__)
+              finally:
+                  item['finished_at'] = now(); save()
+              time.sleep(5)
+          report['finished_at'] = now(); save()
+          (out/'executed-workflow.yml').write_bytes(Path('.github/workflows/coral-linked-pdf-probe.yml').read_bytes())
+          print(json.dumps({'targets': [(t.get('http_status'), t.get('classification')) for t in report['targets']], 'publication': False}))
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: coral-linked-pdf-probe-${{ github.run_id }}
+          path: coral-pdf-probe-output/
+          retention-days: 7
