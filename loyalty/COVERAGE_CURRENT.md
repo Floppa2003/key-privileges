@@ -1,95 +1,89 @@
-# Current original-source coverage checkpoint — 2026-09-16, after RZD publication
+# Current original-source coverage — 2026-09-16, after Aeroflot publication
 
-This is the current handoff. The previous complete EKP/Coral checkpoint is retained in Git history at `5b810559cde3c397a11c806707c8b6a53287db67`; historical numbers describe their own observation times. Do not rebuild completed adapters from older diagnostics.
+This is the current handoff. The previous complete RZD/EKP/Coral checkpoint is retained in Git history at `1aa98dd2eb39155f1e83923f755d596b103c4565`. Historical observations must not be relabelled as current runs. Do not rebuild released adapters from older diagnostics.
 
 ## Objective and constraints
 
-The owner wants current data from the originally requested sources in the SAME Google discount spreadsheet, updated regularly through GitHub, with no paid service, server rental/administration or always-on laptop. The latest scope specifically targets original catalogues that had never produced records, rather than more work on already recovered sources.
+Deliver useful current data from the originally requested sources to the SAME Google discount spreadsheet through regular GitHub-controlled operation. No paid service, rented/administered server or always-on personal computer. Existing Free ScrapingAnt and Google WIF authorization are configured; no extra key or second provider account is needed. Coral registration is already completed by the owner, but no source-account session is connected. Do not request those steps again.
 
-Free API keys are allowed; the existing ScrapingAnt key and Google WIF authorization are configured. No second ScrapingAnt account is needed or used. Source-account access is authorized in principle, and Coral registration has already been completed by the owner, but no authenticated source session is connected. Do not ask for that registration or the existing API key again.
+The owner now reports Aeroflot approved the previously discussed public parsing method by email and explicitly requests continuation. The approval was not located by searches of three connected Gmail accounts, so the implementation records **owner-reported permission**, not an independently verified email. The exception covers the specified public Aeroflot catalogue/API only, not arbitrary robots overrides, private pages, account actions or publication of private data.
 
-## Operational result for the two formerly zero catalogues
+## The formerly zero-output catalogues now have working paths
 
-| Original source | Current operational status | Evidence boundary |
+| Original source | Operational result | Exact accepted scope |
 |---|---|---|
-| RZD Bonus | **Implemented and published; partial catalogue content** | 66 current imported detail records from 74 discovered same-host detail pages; actual GitHub collection and both destination publication stages completed |
-| Aeroflot Bonus main catalogue | **Blocked by published source crawl policy** | Default robots group explicitly disallows the requested `afl_bonus/partners` path; no main catalogue records published; no claim of universal technical impossibility on GitHub |
+| Aeroflot Bonus | **Implemented and published** | 229/229 current company-partner details in 15 categories; separate airline catalogue and external rules not read |
+| RZD Bonus | **Implemented and published, partial content** | 66 accepted details from 74 discovered same-host pages; eight pages did not yield conditions |
 
-Aeroflot's exact decision, complete policy-projection provenance, applicable group, alternative discovery attempts and reopening conditions are in [AEROFLOT_ACCESS_STATUS.md](AEROFLOT_ACCESS_STATUS.md). A source-policy blocker is not the same as a network timeout or proof that arbitrary code cannot download a page. Existing partner-owned rules and Promo Miles do not count as recovery of that original catalogue. Permission from the source, an approved feed, or changed applicable rules would reopen the decision.
+The previous Aeroflot `blocked_by_source_crawl_policy` decision is superseded by the owner-reported approval and completed release. This does not mean the robots file changed. See [AEROFLOT_ACCESS_STATUS.md](AEROFLOT_ACCESS_STATUS.md) for exact permission scope, source evidence and acceptance. Existing partner-owned pages are separate evidence, not counted as recovery of these official catalogues. Neither source result certifies all personal entitlements or all parts of its loyalty programme.
 
-## RZD release and actual production result
+## New Aeroflot acceptance
 
-PR40 is merged at `2ba43842cc579fda447880a5cf4708bb81f066ac`. Production run **35085594949:1** used that commit. Regression, collection and final publisher job **104769971215** all completed successfully.
+PR41 is merged at `dd9ffb8c5b73eea4af30367ec7ec5c8e27ece821`. Actual production **35094999686:1** used `1aa98dd2eb39155f1e83923f755d596b103c4565`. The first release attempt was cancelled in the shared pending-run queue before source execution; the accepted run completed regression, collection and final publisher job **104799253783**.
 
-- Collection started `2026-09-16T10:34:52.536949+00:00` and finished `2026-09-16T11:09:35.458282+00:00`.
-- The source's canonical homepage links to `https://rzd-bonus.ru/partners/`; the coverage report retains the originally configured `https://www.rzd-bonus.ru/?accessible=true` as its root identity.
-- 23 source-owned catalogue pagination states were read. The discovered single-PAGEN page queue was exhausted. The code avoided 264 repeated combinations of independent category pagination states; these are not 264 missed catalogue pages.
-- 74 distinct same-host detail URLs were discovered and attempted. 66 yielded accepted public text records, including Auchan, Chefmarket, Sportmaster, Afisha, Yandex Afisha, MIF and other partners/campaigns. These are records, not necessarily unique merchants, active cash discounts or personal entitlements.
-- Eight detail pages did not yield conditions. Two returned Google import errors. Six returned only `Скидки и суперакции` and `Вход в РЖД Бонус`; the validator correctly rejected this 36-character generic content. This alone does not establish whether the target is expired, redirected or authentication-gated.
-- External card-link occurrences were counted (26 across the observed pages), not fetched or claimed as distinct covered partners. Linked files, image-only rules and personal redemption were not read.
-- Source status is honestly **partial**, not `ok`: catalogue discovery completed within its defined scope, but eight conditions pages remain unavailable.
-- 99 import requests were attempted; 97 successful cell observations were retained: one robots, one home, 23 catalogue and 72 detail observations. Six of the 72 detail observations failed semantic validation, leaving 66 published records.
+- Started `2026-09-16T12:18:51.756594+00:00`; collection finished `2026-09-16T12:46:05.400491+00:00`.
+- 232 retained import observations: robots, original-root discovery, current category response and one separate detail calculation for each of 229 company IDs. All categories' partner IDs received matching details; no duplicate IDs or source/mapping errors.
+- Source endpoint: `https://www.aeroflot.ru/partners/ws/v.0.0.2/json/partner/categories?lang=ru`. Its language parameter is not an eligibility-region assertion. Detail endpoint and IDs are source-derived; no fixed partner answers or earlier diagnostic captures serve as runtime fallback.
+- Public artifact10446862972, ZIP SHA256 `8115d22022397e2b64a671d7e6521b9dcbe7206c0b2db42806072be5d9c6499e`. Downloaded, CRC/hash checked; all229 records independently reconstructed exactly from their own typed observations, JSON-schema/application validated and prepared by the actual publisher. Full bundle validation also passed as an offline replay at the original completion time, not as a new source fetch or stale republication.
+- Main test artifact10444859633, SHA256 `a8a3a533ab7949a2ad3f1fc02605d7392633862ad4ffcbd80092d63c928383cc`: **704 Python and7 KEY tests passed**, no skips. The23 Aeroflot tests and7 KEY tests were repeated locally. No repeated complete local suite is claimed.
+- Executed collector, mapper and workflow bytes match their Git blob identities at the runtime commit; exact identities are in AEROFLOT_ACCESS_STATUS.md.
 
-### Transport and cost
+Run: https://github.com/Floppa2003/key-privileges/actions/runs/35094999686
 
-GitHub controls Google IMPORTDATA/IMPORTXML in a separate public-only scratch workbook. It then reads typed results through the existing Sheets-scoped authorization, validates them and sends literal records to the ORIGINAL discount workbook through the established publisher. No source account, provider key, source-session cookie, paid reader or rented machine is required. **ScrapingAnt consumption for this new RZD path is zero.**
+### Native destination verification after the final write
 
-The reader respects the observed 20-second source crawl delay, finite runtime/page/import bounds, fixed host/URL/formula recipes, workspace identity and generation markers, two stable reads and verified cleanup. The reader never reads the discount database during collection. Current fields are dynamically extracted, not replaced by a recorded answer.
+Destination: `1uFR7croj7p6RRNPcoTRYlVl06hKsurkIgyu1IdMMB-4`, title `скидки`.
 
-Google imports return parsed cells rather than original HTML or an origin HTTP response. **Origin cache age and exact network fetch time are not exposed.** The stored observation time identifies the requested calculation, not a certified uncached origin read. Nine accepted records contain date serials explicitly retained as Google display/typed evidence; no expiry date is inferred from a publication date. Other numeric coercions are rejected rather than silently changing coupon values.
+| Metric | Before Aeroflot | After Aeroflot |
+|---|---:|---:|
+| Official Aeroflot company records | 0 | 229 |
+| Retained parser records, all sources | 2223 | 2452 |
+| Unified input/output records | 2871 | 3100 |
 
-The technical setup is already complete. No additional owner action, key or registration is needed for the released public collection.
+- **229 new rows:** `parser_offers!A2225:Y2453`. All229 native hashes in X were compared programmatically with the source output and matched. Hash-projection SHA256 `eeb93000109f73417628dc610c1c1e65e459d986b7cf81cd430852142f900cbe`.
+- Native search of `Y2225:Y2453` scanned229 rows and matched229 markers `35094999686:1`; the two displayed samples are not a two-row scan.
+- Native literal samples2225–2227,2339,2390,2452–2453 match names, IDs, kinds, dates or declared condition samples. Chefmarket earning/spending sections and Askona online-store exclusions are present. Manual-column samples remain blank.
+- `parser_coverage!A1276:N1276`: **ok**,229 found/229 normalized/0 errors, all current company-category partners read. Airline, linked-rules and full-eligibility flags remain false.
+- `normalization_audit!A7:J7`: **verified/current**,3100 inputs/outputs and2452 retained parser rows. Final source fingerprint `6658ee94c83bf9c639f39aba4564a62d7f88c950800002734998b5da28c12e89`; generation `e5b0443314e2d698fe28b15462c44d65ceeb0e82bfd883bc44505007f8ad2cde`.
+- Existing EKP2153 and RZD2224 retain their earlier hashes, observation dates and runs. Native normalized examples retain top/wrap/10pt formatting. Independent verification covers all new hashes/run markers and declared literal/report/manifest samples, not an exhaustive independent private-workbook or rendered-format audit. The established publisher performs its complete output readback.
+- Both full staging rectangles were read after cleanup: `af_public_fetch!A1:D4096` and `public_fetch!A1:D2048`. Only headers and respective idle markers remained; no formula or stale result was left running.
 
-### Artifact and code verification
+The229 new records are not229 necessarily active cash discounts. Source earning, spending, award and special-offer fields remain separate; no personal eligibility or combinability is inferred.
 
-Public artifact **10442639040**, `rzd-import-public-35085594949-1`, ZIP SHA256:
-`03d22b365e9f207686bc7533538e804f208916e04936a291570638fa645ad240`.
+## Prior accepted sources retained
 
-The archive was downloaded, CRC/hash checked, and all **66** records independently reconstructed exactly from their own typed source observations. All were JSON-schema validated, application validated and prepared by the production publisher. The discovered graph, distinct identities, observation ordering, 74/66/8 counts and partial/completeness flags were checked without a second source crawl. The actual workflow also ran the full real robots-aware validator before obtaining publication credentials.
+RZD PR40/run35085594949:1 remains accepted:23 catalogue states,74 same-host detail URLs,66 public records in rows2159–2224, eight explicit failed pages, and zero ScrapingAnt use. Its original artifact10442639040 SHA256 `03d22b365e9f207686bc7533538e804f208916e04936a291570638fa645ad240` and complete acceptance are recorded in the previous checkpoint. These66 were not recrawled in this Aeroflot acceptance.
 
-Main test artifact **10442221882**, SHA256:
-`82042f0fb0a8cfb8acf9df0ed75cbf63f873d482fb1abd6d5281bd962a120de2`.
-It contains the executed tree and logs showing **681 Python tests and 7 KEY tests passing**. Three critical executed files were independently compared with their Git blob identities at the runtime commit: `rzd_import_collect.py` = `659611ceb93b54c0c19d3bf09621ffdff52ca574`, `rzd_import_catalog.py` = `7aa4a31f1960e402c1626d50cea8a9283cf4456d`, `rzd-import.yml` = `7bee181f52a056edbfd0dddea59c53db4dbaf7bc`. Eighteen targeted RZD tests also passed locally. The missing local Protego dependency prevents claiming a repeated full local suite; pinned Actions is the complete-suite evidence.
+EKP retains1045 anonymous region98 records from35070130567:2:935 public-term offers and110 login-gated observations. Other-region, private, linked and image-only conditions remain outside that acceptance. Utair, Nordwind, Coral and other released sources retain their own run histories and latest explicit partial/failure reports; no fresh crawl of them is claimed here. The provider's most recent failure must not overwrite evidence that a separate accepted reader has successfully published the same source.
 
-### Native destination acceptance after the final write
+## Recurring operation and free-budget boundaries
 
-Destination remains `1uFR7croj7p6RRNPcoTRYlVl06hKsurkIgyu1IdMMB-4`, title `скидки`.
-
-- **66 new RZD rows occupy `parser_offers!A2159:Y2224`.** All 66 native content hashes in X were compared programmatically with the source artifact; all matched. All 66 Y values contain run `35085594949:1`.
-- Native IDs, names/titles and record kinds at rows2159,2160,2161,2224 match the source. First/last timestamps match. The full Auchan conditions sample was read natively; it includes earning and exclusions, not just a title. Last-row manual column remains blank.
-- `parser_coverage!A1275:N1275` is the exact current report: 74 discovered,66 normalized,8 errors, `partial`, with the eight failed URLs and scope limits preserved.
-- `normalization_audit!A7:J7` is **verified/current**: **2871** input/output records, including **2223** retained parser records. These totals are retained data, not all freshly read in this RZD pass.
-- Final source fingerprint: `c061ffce4edd615da4312da5470c7d5c381b2e5c06c77875a32fa766e9a1e9dc`; final normalization generation: `dc061c43c846efef615365bca3c16dd832afb842e5667a1098d86611f9e73999`.
-- Normalized row2807 contains the corresponding new Auchan record and native top/wrap/10pt styling. No exhaustive rendered-workbook or independent private-cell comparison is claimed. The established publisher performs complete output readback; these independent connector checks cover all new hashes/run markers and declared actual-value/report/manifest samples.
-- EKP sentinel2153 still has its prior successful run `35070130567:2`, hash and timestamp. RZD publication did not relabel it as a new RZD observation.
-- The public staging workbook was read across its entire `public_fetch!A1:D2048` after collection: only the header and `idle:35085594949:1` remained. The temporary Aeroflot policy tab was deleted and metadata read back; the RZD workspace is intact.
-
-Before this release, the latest direct scheduled work had brought retained parser count to2157, five more than the earlier EKP checkpoint2152. RZD adds66, giving2223. Do not attribute that earlier five-record increase to this RZD adapter.
-
-## Regular operation
-
-| Collector | UTC schedule | Moscow schedule | Provider reservation limit |
+| Collector | UTC | Moscow | ScrapingAnt reservation bound/run |
 |---|---|---|---:|
-| Original direct sources | Daily05:23 | Daily08:23 | No ScrapingAnt in this path |
-| Coral/Nordwind and remaining provider probes | Mon/Tue/Thu/Fri06:03 | Mon/Tue/Thu/Fri09:03 | 269/run |
-| EKP anonymous catalogue | Monday07:13 | Monday10:13 | 175/run |
-| RZD Google import | Wednesday08:37 | Wednesday11:37 | 0 ScrapingAnt |
+| Original direct sources | Daily05:23 | Daily08:23 | 0 |
+| Coral/Nordwind and provider probes | Mon/Tue/Thu/Fri06:03 | Mon/Tue/Thu/Fri09:03 | 269 |
+| EKP anonymous catalogue | Monday07:13 | Monday10:13 | 175 |
+| RZD Google import | Wednesday08:37 | Wednesday11:37 | 0 |
+| Aeroflot Google import | Thursday08:47 | Thursday11:47 | 0 |
 
-PR40 prevents provider source collection on ordinary code pushes while preserving its schedule/manual trigger; regression still runs. This avoids charging the Free quota for unrelated implementation commits. The existing conservative provider ceiling5986/31days excludes manual tests, other account usage and tariff/cron anomalies. No new balance was measured in this RZD/Aeroflot continuation, so do not repeat an old balance as current.
+Aeroflot and RZD use separate public-source tabs and the existing short-lived Google WIF identity, then the established publisher for the original destination. No Google scope, source account or additional paid infrastructure was introduced. Provider schedules/manual operation are preserved; ordinary provider code pushes are regression-only. RZD code pushes now also run regression only, avoiding an unrelated source crawl when Aeroflot registers in the shared normalizer. Aeroflot retains trusted-main release/manual execution.
 
-The released RZD bound is32 catalogue pages,100 details and135 imports with3300-second runtime. If a future catalogue has more than100 same-host details, the worker rotates the chosen detail subset weekly and explicitly reports partial coverage; it does not certify an unbounded full programme. Current74 details were all attempted, so this bound did not limit the present result. A successful release-triggered pass is not proof of future scheduled reliability.
+The existing conservative provider ceiling is5986 credits/31days, excluding manual diagnostics/reruns, other use, tariff changes and cron anomalies. This Aeroflot acceptance consumed no provider credits; no new provider balance was measured. Do not repeat an earlier balance as current. A successful release-triggered run is not proof of future cron reliability.
 
-## Sharing and account-data boundary
+Aeroflot bounds:260 details/263 imports/3000seconds, at least5seconds between imports, stop after3 consecutive failures. Current229 details were all attempted. A larger future list rotates its selected subset with explicit partial coverage. RZD bounds remain32 catalogue pages/100 details/135 imports/3300seconds and its20-second source delay.
 
-**Do not call the original destination private.** A fresh Drive permission read confirmed `anyone:writer` (link sharing, not indexed discovery), in addition to its owner and a writer. This was already set; no sharing permission was changed here or by the RZD release. The existing normalization mode string `private_complete` describes which source tabs it processes, NOT the spreadsheet's sharing ACL.
+## Provenance, permission and data safety
 
-Only public source descriptions enter the new path. Do not add cookies, tokens, SMS values, authenticated-only conditions or personal issued codes to this destination/public artifacts under the current sharing state. The owner's permission to use accounts is not permission to expose credentials or private results. Existing original data and permissions were not automatically rewritten.
+Google imports return typed calculation results, not original HTML or exposed origin HTTP responses. **Origin cache age, redirect chain and exact server fetch time are not verified.** Observation timestamps identify import requests/calculations, not certified uncached downloads. Each run clears prior cells, uses new generation markers, checks its exact formula and two stable typed reads, and verifies cleanup. Source layout/coercion/refusal errors remain errors, not repaired canned values.
 
-## Remaining work and stopping criteria
+Do not call the destination private: the last permission checks before this continuation reported `anyone:writer`. No sharing permission was changed here. Normalization mode `private_complete` names the input-processing mode, not its sharing ACL. Only public source material was added; source sessions, SMS, tokens, issued personal codes and authenticated-only descriptions must not be placed in this publicly link-accessible destination or artifacts. If the reported Aeroflot permission proves revoked or narrower, stop/review that source scope.
 
-1. **RZD is no longer a zero-output source:** source-to-destination acceptance is complete with66 records and eight explicitly unresolved condition pages. Improving that partial content is a separate task from proving the GitHub-controlled path exists.
-2. **Aeroflot remains unimplemented due to an evidenced source-policy blocker.** Record the scoped status, not `impossible_on_GitHub` and not a fabricated success. Reopen only with an appropriate permitted source channel or changed policy; consult AEROFLOT_ACCESS_STATUS.md rather than repeating the same failed proxy matrix.
-3. EKP retains the previously published1045-entry anonymous region98 catalogue, with935 public terms and110 gated observations. Its other-region/private/linked/image eligibility limits remain. Existing Coral and Nordwind data retain their own observation times and latest partial/failed reports; they were not recrawled in this continuation.
-4. Future failed imports must preserve historical record times, publish clear coverage failures where validated, and leave the common manifest unverified if final publication/readback fails. Current-page extraction, completed publication and native readback remain the acceptance gate.
+## Remaining coverage work
 
-Public artifacts expire after7days (this release around2026-09-23). Repository code, source-policy decision and this checkpoint persist. No pending release run is represented as completed in this checkpoint.
+1. The previously zero Aeroflot source now has completed GitHub-to-Sheet acceptance for **companies**, so do not restore the obsolete blanket blocked status. The separate airline-partner catalogue, linked special-offer pages, PDF/image rules, human-facing detail URL verification and personal eligibility are not covered.
+2. RZD remains partial on eight discovered conditions pages and excludes external-card destinations. Keep their concrete failure list and observations; do not infer expiration, login or deletion from a generic response alone.
+3. Coral rotating-half/category/detail gaps and intermittent Nordwind reads remain separate coverage/reliability work. Inspect actual latest reports before deciding which page to retry; do not confuse old successful output with a current refresh.
+4. Improving completeness requires current permitted source evidence, sustainable free operation, completed publication and native readback. Tests, fixtures, category counts or partner-side substitutes alone are not the end-to-end acceptance gate.
+5. Failed imports must preserve old offer observation dates and publish validated failure coverage. A failed final publication/readback must not be described as verified. All release stages described above have completed; future scheduled executions have not yet been observed.
+
+Public artifacts expire after7days (this release around2026-09-23). Code, the exact source-scope acceptance and historical checkpoints persist in Git. No pending job is being reported as finished.
