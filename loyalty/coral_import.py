@@ -22,6 +22,7 @@ STAGING='1nIH7seMlDR_3Hw1iOMQ0bnrD-iWspj73zvqCVT4dxW8'
 TAB='coral_public_fetch';TAB_ID=2026091604;ROWS=4096
 MARKER='CORAL_PUBLIC_IMPORT_V1';METHOD='google_import_public_html_lines'
 MAX_READS=164;MAX_SECONDS=2700;MAX_DETAILS=160
+MAX_DETAIL_RETRIES=12;RETRY_DELAY=30
 OUT=Path('coral-import-output')
 
 
@@ -77,7 +78,7 @@ class Reader:
     """Isolated public scratch tab; literal formula, stable typed reads, cleanup."""
     def __init__(self,token,run_id,*,client=None,clock=time.monotonic,sleep=time.sleep,checkpoint=lambda:None):
         self.client=client or Sheets(STAGING,token);self.clock=clock;self.sleep=sleep;self.checkpoint=checkpoint
-        self.run_id=run_id;self.calls=0;self.started=clock();self.next_at=0;self.delay=5;self.observations=[];self.cleanup_verified=False
+        self.run_id=run_id;self.calls=0;self.started=clock();self.next_at=0;self.delay=5;self.observations=[];self.retries=[];self.cleanup_verified=False
         meta=self.client.request('GET',params={'fields':'spreadsheetId,properties(importFunctionsExternalUrlAccessAllowed),sheets.properties'})
         tabs=[s['properties'] for s in meta.get('sheets',[]) if s['properties']['sheetId']==TAB_ID]
         if meta['spreadsheetId']!=STAGING or not meta.get('properties',{}).get('importFunctionsExternalUrlAccessAllowed') or len(tabs)!=1 or tabs[0]['title']!=TAB or tabs[0]['gridProperties']['rowCount']!=ROWS or tabs[0]['gridProperties']['columnCount']!=4:raise ValueError('cg_workspace_identity')
@@ -103,6 +104,25 @@ class Reader:
             self.sleep(1)
         raise ValueError('cg_cleanup_failed')
     def read(self,url):
+        try:return self._read_once(url)
+        except ValueError as exc:
+            # Only a failed public detail import, never policy/discovery, bad
+            # data, access refusals or ambiguous Google writes. The old read
+            # and source-time bounds still govern the second attempt.
+            if (str(exc)!='cg_import_timeout_or_error' or not self.cleanup_verified
+                or url in (ROBOTS,SITEMAP,c.CLUB,c.PROMO)
+                or len(self.retries)>=MAX_DETAIL_RETRIES or self.calls>=MAX_READS
+                or self.clock()-self.started+RETRY_DELAY>MAX_SECONDS-80):raise
+        item={'url':url,'initial_reason':'cg_import_timeout_or_error','failed_at':now(),
+              'retry_at':None,'finished_at':None,'result':'pending'}
+        self.retries.append(item);self.sleep(RETRY_DELAY);item['retry_at']=now()
+        try:
+            obs=self._read_once(url);item['result']='ok';return obs
+        except Exception as exc:
+            item['result']=error(exc);raise
+        finally:
+            item['finished_at']=now();self.checkpoint()
+    def _read_once(self,url):
         f=formula(url)
         if self.calls>=MAX_READS or self.clock()-self.started>MAX_SECONDS-80:raise ValueError('cg_budget')
         generation=f'{self.run_id}:{self.calls+1}';self.clear(generation)
@@ -120,7 +140,13 @@ class Reader:
                     if any(v.get('userEnteredValue') or v.get('effectiveValue') for v in row[1:]):raise ValueError('cg_import_wide')
                     cell=row[0] if row else {};v=cell.get('effectiveValue',{})
                     if i and cell.get('userEnteredValue'):raise ValueError('cg_extra_input')
-                    if 'errorValue' in v:waiting=True;break
+                    if 'errorValue' in v:
+                        ev=v['errorValue'];message=ev.get('message','')
+                        if re.search(r'too many|traffic|quota|permission|denied|blocked|превыш|слишком|трафик|доступ|разрешени',message,re.I):
+                            raise ValueError('cg_import_quota_or_permission')
+                        if ev.get('type')!='LOADING' and not re.search(r'could not fetch url|resource at url not found|internal error|loading data|не удалось загрузить|ресурс.{0,30}не найден|внутренняя ошибка|загрузка данных',message,re.I):
+                            raise ValueError('cg_import_error_nonretryable')
+                        waiting=True;break
                     if v and set(v)!={'stringValue'}:raise ValueError('cg_import_type_coercion')
                     lines.append(v.get('stringValue',''))
                 if waiting or not any(lines):previous=None;self.sleep(3);continue
@@ -206,10 +232,31 @@ def validate_bundle(folder,run_id,commit,clock):
         checked(o)
         if not last<=instant(o['requested_at'])<=instant(o['calculated_at'])<=end:raise ValueError('cg_bundle_observation_time')
         last=instant(o['calculated_at'])
+    retries=a.get('retries',[])
+    if not isinstance(retries,list) or len(retries)>MAX_DETAIL_RETRIES:raise ValueError('cg_retry_bound')
+    seen=set()
+    for item in retries:
+        if (not isinstance(item,dict) or set(item)!={'url','initial_reason','failed_at','retry_at','finished_at','result'}
+            or item['url'] in seen or item['url'] in (ROBOTS,SITEMAP,c.CLUB,c.PROMO)
+            or item['initial_reason']!='cg_import_timeout_or_error'
+            or not re.fullmatch(r'ok|(?:coral|cg)_[a-z_0-9]{1,100}|[A-Za-z]+Error',item['result'])):
+            raise ValueError('cg_retry_evidence')
+        formula(item['url']);seen.add(item['url'])
+        failed,retry,finished=map(instant,(item['failed_at'],item['retry_at'],item['finished_at']))
+        if not start<=failed<=retry<=finished<=end or (retry-failed).total_seconds()<RETRY_DELAY:
+            raise ValueError('cg_retry_time')
+        o=lookup.get(item['url'])
+        if (item['result']=='ok')!=(o is not None):raise ValueError('cg_retry_result')
+        if o and not retry<=instant(o['requested_at'])<=instant(o['calculated_at'])<=finished:
+            raise ValueError('cg_retry_observation_binding')
+    minimum_requests=len(observations)+sum(1 if r['result'] in ('ok','cg_budget') else 2 for r in retries)
+    if type(a.get('import_requests',minimum_requests)) is not int or not minimum_requests<=a.get('import_requests',minimum_requests)<=MAX_READS:
+        raise ValueError('cg_request_accounting')
     expected=[];counts={};results={sid:{'records':[],'errors':[],'excluded':[],'discovered':0} for sid in ('coral','coral_promo')}
     supplied={r['source_id']:r for r in b.get('sources',[])}
     if len(b.get('sources',[]))!=2 or set(supplied)!=set(results):raise ValueError('cg_source_reports')
     targets=[]
+    if retries and not all(u in lookup for u in (ROBOTS,c.CLUB,c.PROMO,SITEMAP)):raise ValueError('cg_retry_without_discovery')
     if all(u in lookup for u in (ROBOTS,c.CLUB,c.PROMO,SITEMAP)):
         rules=policy(checked(lookup[ROBOTS]));targets,ncats,npromo=candidates(lookup[c.CLUB],lookup[c.PROMO],lookup[SITEMAP])
         counts={'categories':ncats,'promo_index':npromo}
@@ -217,7 +264,8 @@ def validate_bundle(folder,run_id,commit,clock):
         if not all(rules.can_fetch(u,'LoyaltyCatalogResearchBot') for u in controls):raise ValueError('cg_policy_binding')
         for sid,_ in targets:results[sid]['discovered']+=1
         allowed={u for u in (ROBOTS,c.CLUB,c.PROMO,SITEMAP)}|{e['url'] for s,e in targets}
-        if set(lookup)-allowed:raise ValueError('cg_undiscovered_read')
+        if (set(lookup)|seen)-allowed:raise ValueError('cg_undiscovered_read')
+        if any(not rules.can_fetch(u,'LoyaltyCatalogResearchBot') for u in seen):raise ValueError('cg_retry_policy')
         for sid,entry in targets:
             obs=lookup.get(entry['url'])
             if not obs:continue
@@ -246,17 +294,17 @@ def main():
     OUT.mkdir(exist_ok=True);run_id=os.environ['GITHUB_RUN_ID']+':'+os.environ['GITHUB_RUN_ATTEMPT'];started=now();reader=None
     audit={'run_id':run_id,'commit':os.environ['GITHUB_SHA'],'started_at':started,'observations':[],'cleanup_verified':False,'scrapingant_credits':0,'source_account_used':False}
     def checkpoint():
-        if reader:audit.update(observations=reader.observations,cleanup_verified=reader.cleanup_verified)
+        if reader:audit.update(observations=reader.observations,retries=reader.retries,cleanup_verified=reader.cleanup_verified)
         temp=OUT/'evidence.tmp';temp.write_text(json.dumps(audit,ensure_ascii=False));temp.replace(OUT/'evidence.json')
     try:
         reader=Reader(os.environ.get('GOOGLE_ACCESS_TOKEN',''),run_id,checkpoint=checkpoint);b=collect(reader,run_id,started);reader.clear('idle:'+run_id)
-        audit.update(observations=reader.observations,cleanup_verified=reader.cleanup_verified,finished_at=now(),import_requests=reader.calls)
+        audit.update(observations=reader.observations,retries=reader.retries,cleanup_verified=reader.cleanup_verified,finished_at=now(),import_requests=reader.calls)
         (OUT/'normalized.json').write_text(json.dumps(b,ensure_ascii=False));(OUT/'evidence.json').write_text(json.dumps(audit,ensure_ascii=False))
         validate_bundle(OUT,run_id,os.environ['GITHUB_SHA'],datetime.now(timezone.utc))
         with open(os.environ['GITHUB_OUTPUT'],'a') as f:f.write('has_payload=true\n')
         print(json.dumps({'records':len(b['records']),'sources':[(r['source_id'],r['normalized'],r['status']) for r in b['sources']],'scrapingant_credits':0}))
     except Exception as exc:
         audit.update(finished_at=now(),error=error(exc))
-        if reader:audit.update(observations=reader.observations,cleanup_verified=reader.cleanup_verified)
+        if reader:audit.update(observations=reader.observations,retries=reader.retries,cleanup_verified=reader.cleanup_verified)
         (OUT/'evidence.json').write_text(json.dumps(audit,ensure_ascii=False));print('Coral import failed: '+error(exc));raise SystemExit(1)
 if __name__=='__main__':main()
