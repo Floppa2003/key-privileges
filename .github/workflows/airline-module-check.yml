@@ -1,0 +1,66 @@
+name: Inspect public airline module
+on:
+  push:
+    branches: ['loyalty/airline-coverage-20260916']
+    paths: ['.github/workflows/airline-module-check.yml']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - run: python -m pip install requests==2.32.5 beautifulsoup4==4.14.3
+      - name: Read one source-discovered public JavaScript file
+        env:
+          SCRAPINGANT_API_KEY: ${{ secrets.SCRAPINGANT_API_KEY }}
+        run: |
+          python - <<'PY'
+          import hashlib,json,os,re,sys
+          from pathlib import Path
+          import requests
+          sys.path.insert(0,'loyalty')
+          from free_access_probe import FreeReader,ProbeError,now
+          u='https://www.aeroflot.ru/frontend/static/js/airline-partners.master-192-175fd1753-20260908202059.bundle.js'
+          out=Path('airline-module-output');out.mkdir()
+          report={'run_id':os.environ['GITHUB_RUN_ID'],'commit':os.environ['GITHUB_SHA'],'url':u,'started_at':now(),'source_account_used':False,'published_records':0,'reads':[]}
+          def script(raw):return bool(raw and '<html' not in raw[:500].lower() and len(raw)>1000 and re.search(r'function|=>|webpack',raw[:5000]))
+          raw=None
+          try:
+              with requests.get(u,timeout=(8,25),allow_redirects=False,stream=True) as r:
+                  data=bytearray()
+                  for b in r.iter_content(65536):
+                      data.extend(b)
+                      if len(data)>6000000:raise ValueError('module_size_bound')
+                  report['reads'].append({'method':'direct','http_status':r.status_code,'bytes':len(data)})
+                  if r.status_code==200 and not r.headers.get('Retry-After'):
+                      candidate=data.decode('utf-8')
+                      if script(candidate):raw=candidate
+          except Exception as e:report['reads'].append({'method':'direct','error_type':type(e).__name__})
+          key=os.getenv('SCRAPINGANT_API_KEY','')
+          if raw is None and key:
+              try:
+                  reader=FreeReader(key,[{'url':u}],max_credits=1,max_requests=1);reader.preflight()
+                  status,candidate,cost=reader.read(u,browser=False)
+                  report['reads'].append({'method':'free_provider','http_status':status,'credits':cost})
+                  if status==200 and script(candidate):raw=candidate
+              except ProbeError as e:report['reads'].append({'method':'free_provider','error':str(e)})
+          if raw is not None:
+              if key and key in raw:raise ValueError('credential_echo')
+              data=raw.encode();(out/'module.js').write_bytes(data)
+              report.update(module_sha256=hashlib.sha256(data).hexdigest(),module_bytes=len(data))
+          report['finished_at']=now();(out/'report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2))
+          print(json.dumps({'module_read':raw is not None,'reads':report['reads']}))
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: airline-module-${{ github.run_id }}
+          path: airline-module-output/
+          retention-days: 7
