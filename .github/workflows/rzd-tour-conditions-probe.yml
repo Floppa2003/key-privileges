@@ -1,0 +1,93 @@
+name: RZD Tour source-linked condition check
+on:
+  push:
+    branches: ['diagnostics/public-documents-20260917']
+    paths: ['.github/workflows/rzd-tour-conditions-probe.yml']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: 52126d96c804f5b1c77bab48040b64efbed5d449
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r loyalty/requirements.txt
+      - name: Current homepage and at most six owned tour pages; no transaction URLs
+        run: |
+          python - <<'PY'
+          import hashlib,json,os,re,sys,time
+          from datetime import datetime,timezone
+          from pathlib import Path
+          from urllib.parse import urljoin,urlsplit
+          import requests
+          from bs4 import BeautifulSoup
+          from protego import Protego
+          sys.path.insert(0,'loyalty')
+          from free_access_probe import sanitized_page
+          from public_transport import robots_document
+          out=Path('rzd-tour-check');out.mkdir()
+          root='https://rzdtour.com/'
+          audit={'run_id':os.environ['GITHUB_RUN_ID'],'publication':False,'accounts_used':False,'requests':[],'candidates':[]}
+          def now():return datetime.now(timezone.utc).isoformat()
+          def save():(out/'report.json').write_text(json.dumps(audit,ensure_ascii=False,indent=2))
+          try:
+              r=requests.get(root+'robots.txt',timeout=(5,15),allow_redirects=False)
+              rules,state=robots_document(r.status_code,r.text)
+              audit['robots_status']=r.status_code;audit['robots_state']=state;(out/'robots.txt').write_text(rules)
+              policy=Protego.parse(rules);delay=max(3,policy.crawl_delay('LoyaltyCatalogResearchBot') or 0)
+              rate=policy.request_rate('LoyaltyCatalogResearchBot')
+              if rate:delay=max(delay,rate.seconds/rate.requests)
+              if delay>30:raise ValueError('source_delay_bound')
+              def read(url,label):
+                  u=urlsplit(url)
+                  if u.scheme!='https' or u.netloc!='rzdtour.com' or u.query or u.fragment:raise ValueError('url_scope')
+                  if not policy.can_fetch(url,'LoyaltyCatalogResearchBot'):raise ValueError('source_policy')
+                  time.sleep(delay);item={'url':url,'requested_at':now()};audit['requests'].append(item);save()
+                  try:
+                      with requests.get(url,headers={'User-Agent':'LoyaltyCatalogResearchBot/1.0'},timeout=(5,25),allow_redirects=False,stream=True) as response:
+                          item['status']=response.status_code
+                          if response.status_code!=200 or response.headers.get('Retry-After'):raise ValueError('not_success')
+                          data=bytearray()
+                          for block in response.iter_content(65536):
+                              data.extend(block)
+                              if len(data)>3000000:raise ValueError('size_bound')
+                      raw=data.decode('utf-8');soup=BeautifulSoup(raw,'html.parser')
+                      canonical=soup.select_one('link[rel=canonical]')
+                      if canonical and urljoin(url,canonical.get('href','')).rstrip('/')!=url.rstrip('/'):raise ValueError('canonical_mismatch')
+                      safe,_=sanitized_page(raw,url,canonical_identity=False)
+                      if 'РЖД' not in BeautifulSoup(safe,'html.parser').get_text():raise ValueError('site_identity')
+                      (out/(label+'.html')).write_text(safe)
+                      item.update(file=label+'.html',sha256=hashlib.sha256(safe.encode()).hexdigest(),identity='exact_requested_TLS_URL_no_redirect')
+                      return BeautifulSoup(safe,'html.parser')
+                  finally:item['finished_at']=now();save()
+              home=read(root,'home')
+              for a in home.select('a[href]'):
+                  url=urljoin(root,a['href']);u=urlsplit(url)
+                  if (u.scheme=='https' and u.netloc=='rzdtour.com' and not u.query and not u.fragment and
+                      re.fullmatch(r'/(?:kruiznyie-turyi/kruiznyie-poezda|ekskursionnyie-turyi/iz-[a-z-]+)/[^/]+',u.path) and
+                      url not in audit['candidates']):audit['candidates'].append(url)
+              for i,url in enumerate(audit['candidates'][:6]):
+                  try:
+                      soup=read(url,'tour-'+str(i));clauses=[]
+                      for node in soup.select('p,li'):
+                          value=node.get_text(' ',strip=True)
+                          if re.search(r'РЖД.{0,8}Бонус',value,re.I):
+                              clauses.append({'text':value,'tag':node.name,'class':node.get('class',[]),'parent_class':node.parent.get('class',[])})
+                      audit['requests'][-1]['clauses']=clauses
+                      audit['requests'][-1]['title']=soup.h1.get_text(' ',strip=True) if soup.h1 else None
+                  except Exception as exc:audit.setdefault('errors',[]).append({'url':url,'reason':str(exc) if isinstance(exc,ValueError) else type(exc).__name__})
+          except Exception as exc:audit['setup_error']=str(exc) if isinstance(exc,ValueError) else type(exc).__name__
+          save()
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: rzd-tour-conditions-${{ github.run_id }}
+          path: rzd-tour-check/
+          retention-days: 7
