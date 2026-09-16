@@ -4,7 +4,7 @@ The sitemap is discovery, not proof of active listing or user eligibility. No
 source account, coupon issuance, raw script/session archive or provider credits.
 """
 from __future__ import annotations
-import argparse, hashlib, json, os, re, time
+import hashlib, json, os, re, time
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urlsplit
@@ -57,8 +57,6 @@ def sanitize(raw,url):
         root=ET.fromstring(raw)
         if root.tag!='{http://www.sitemaps.org/schemas/sitemap/0.9}urlset':raise ValueError('cg_sitemap_shape')
         if len(root)>4000:raise ValueError('cg_sitemap_bound')
-        # Only source-owned public URLs are retained. Modification dates do not
-        # become offer validity dates; sitemap contents do not change configuration.
         urls=[n.text for n in root.findall('{*}url/{*}loc')]
         if any(not isinstance(u,str) or len(u)>800 or urlsplit(u).netloc!='coralbonus.ru' or urlsplit(u).scheme!='https' or urlsplit(u).query or urlsplit(u).fragment for u in urls):
             raise ValueError('cg_sitemap_url')
@@ -77,13 +75,14 @@ def checked(obs):
 
 class Reader:
     """Isolated public scratch tab; literal formula, stable typed reads, cleanup."""
-    def __init__(self,token,run_id):
-        self.client=Sheets(STAGING,token);self.run_id=run_id;self.calls=0;self.started=time.monotonic();self.next_at=0;self.delay=5;self.observations=[];self.cleanup_verified=False
+    def __init__(self,token,run_id,*,client=None,clock=time.monotonic,sleep=time.sleep,checkpoint=lambda:None):
+        self.client=client or Sheets(STAGING,token);self.clock=clock;self.sleep=sleep;self.checkpoint=checkpoint
+        self.run_id=run_id;self.calls=0;self.started=clock();self.next_at=0;self.delay=5;self.observations=[];self.cleanup_verified=False
         meta=self.client.request('GET',params={'fields':'spreadsheetId,properties(importFunctionsExternalUrlAccessAllowed),sheets.properties'})
         tabs=[s['properties'] for s in meta.get('sheets',[]) if s['properties']['sheetId']==TAB_ID]
         if meta['spreadsheetId']!=STAGING or not meta.get('properties',{}).get('importFunctionsExternalUrlAccessAllowed') or len(tabs)!=1 or tabs[0]['title']!=TAB or tabs[0]['gridProperties']['rowCount']!=ROWS or tabs[0]['gridProperties']['columnCount']!=4:raise ValueError('cg_workspace_identity')
         rows=self.snapshot()
-        if any(v.get('userEnteredValue') or v.get('effectiveValue') for row in rows[1:] for v in row):raise ValueError('cg_workspace_not_idle')
+        if len(rows[0])<3 or not rows[0][2].get('userEnteredValue',{}).get('stringValue','').startswith('idle:') or any(v.get('userEnteredValue') or v.get('effectiveValue') for row in rows[1:] for v in row):raise ValueError('cg_workspace_not_idle')
     def snapshot(self):
         data=self.client.request('GET',params={'ranges':f"'{TAB}'!A1:D{ROWS}",'includeGridData':'true','fields':'spreadsheetId,sheets(properties(sheetId,title),data(startRow,startColumn,rowData.values(userEnteredValue,effectiveValue)))'})
         sheets=data.get('sheets',[])
@@ -96,21 +95,25 @@ class Reader:
     def clear(self,generation):
         self.cleanup_verified=False
         self.client.request('POST',':batchUpdate',json={'requests':[{'updateCells':{'range':{'sheetId':TAB_ID,'startRowIndex':1,'endRowIndex':ROWS,'startColumnIndex':0,'endColumnIndex':4},'rows':[],'fields':'userEnteredValue'}},{'updateCells':{'start':{'sheetId':TAB_ID,'rowIndex':0,'columnIndex':2},'rows':[{'values':[{'userEnteredValue':{'stringValue':generation}}]}],'fields':'userEnteredValue'}}]})
-        rows=self.snapshot()
-        if rows[0][2].get('userEnteredValue',{}).get('stringValue')!=generation or any(v.get('userEnteredValue') or v.get('effectiveValue') for row in rows[1:] for v in row):raise ValueError('cg_cleanup_failed')
-        self.cleanup_verified=True
+        for _ in range(5):
+            rows=self.snapshot()
+            if len(rows[0])<3 or rows[0][2].get('userEnteredValue',{}).get('stringValue')!=generation:raise ValueError('cg_generation')
+            if not any(v.get('userEnteredValue') or v.get('effectiveValue') for row in rows[1:] for v in row):
+                self.cleanup_verified=True;return
+            self.sleep(1)
+        raise ValueError('cg_cleanup_failed')
     def read(self,url):
         f=formula(url)
-        if self.calls>=MAX_READS or time.monotonic()-self.started>MAX_SECONDS-80:raise ValueError('cg_budget')
+        if self.calls>=MAX_READS or self.clock()-self.started>MAX_SECONDS-80:raise ValueError('cg_budget')
         generation=f'{self.run_id}:{self.calls+1}';self.clear(generation)
-        time.sleep(max(0,self.next_at-time.monotonic()));requested=now();self.calls+=1;self.cleanup_verified=False
-        self.client.request('POST',':batchUpdate',json={'requests':[{'updateCells':{'start':{'sheetId':TAB_ID,'rowIndex':1,'columnIndex':0},'rows':[{'values':[{'userEnteredValue':{'formulaValue':f}}]}],'fields':'userEnteredValue'}}]})
-        self.next_at=time.monotonic()+self.delay;previous=None;until=time.monotonic()+65
+        self.sleep(max(0,self.next_at-self.clock()));requested=now();self.calls+=1;self.cleanup_verified=False
+        self.next_at=self.clock()+self.delay;previous=None;until=self.clock()+65
         try:
-            while time.monotonic()<until:
+            self.client.request('POST',':batchUpdate',json={'requests':[{'updateCells':{'start':{'sheetId':TAB_ID,'rowIndex':1,'columnIndex':0},'rows':[{'values':[{'userEnteredValue':{'formulaValue':f}}]}],'fields':'userEnteredValue'}}]})
+            while self.clock()<until:
                 rows=self.snapshot()
                 if rows[0][2].get('userEnteredValue',{}).get('stringValue')!=generation:raise ValueError('cg_generation')
-                if len(rows)<2 or not rows[1]:time.sleep(2);continue
+                if len(rows)<2 or not rows[1]:self.sleep(2);continue
                 if rows[1][0].get('userEnteredValue',{}).get('formulaValue')!=f:raise ValueError('cg_formula_changed')
                 lines=[];waiting=False
                 for i,row in enumerate(rows[1:]):
@@ -120,14 +123,14 @@ class Reader:
                     if 'errorValue' in v:waiting=True;break
                     if v and set(v)!={'stringValue'}:raise ValueError('cg_import_type_coercion')
                     lines.append(v.get('stringValue',''))
-                if waiting or not any(lines):previous=None;time.sleep(3);continue
+                if waiting or not any(lines):previous=None;self.sleep(3);continue
                 if len(lines)>=ROWS-2 or sum(map(len,lines))>2000000:raise ValueError('cg_import_bound')
                 h=digest(lines)
                 if h==previous:
                     safe=sanitize('\n'.join(lines),url)
                     obs={'url':url,'requested_at':requested,'calculated_at':now(),'formula_sha256':digest(f),'typed_lines_sha256':h,'text':safe,'sha256':digest(safe)}
-                    checked(obs);self.observations.append(obs);return obs
-                previous=h;time.sleep(2)
+                    checked(obs);self.observations.append(obs);self.checkpoint();return obs
+                previous=h;self.sleep(2)
             raise ValueError('cg_import_timeout_or_error')
         finally:self.clear('idle:'+self.run_id)
 
@@ -181,6 +184,9 @@ def collect(reader,run_id,observed_at):
                 if not getattr(reader,'cleanup_verified',True) or error(exc)=='cg_budget':break
     except Exception as exc:
         for v in results.values():v['errors'].append({'phase':'discovery','reason':error(exc)})
+    return summarize(results,counts,run_id,observed_at)
+
+def summarize(results,counts,run_id,observed_at):
     rows=[];reports=[]
     for sid,v in results.items():
         rows+=v['records'];n=len(v['records']);unresolved=v['discovered']-n-len(v['excluded'])
@@ -190,7 +196,7 @@ def collect(reader,run_id,observed_at):
 
 def validate_bundle(folder,run_id,commit,clock):
     folder=Path(folder);b=json.loads((folder/'normalized.json').read_text());a=json.loads((folder/'evidence.json').read_text())
-    if a['run_id']!=run_id or b['run_id']!=run_id or a['commit']!=commit or a['cleanup_verified'] is not True or a['scrapingant_credits']!=0:raise ValueError('cg_bundle_identity')
+    if a['run_id']!=run_id or b['run_id']!=run_id or a['commit']!=commit or a['cleanup_verified'] is not True or a['scrapingant_credits']!=0 or a.get('source_account_used') is not False or b.get('observed_at')!=a['started_at']:raise ValueError('cg_bundle_identity')
     start,end=instant(a['started_at']),instant(a['finished_at'])
     if not start<=end<=clock or (clock-end).total_seconds()>900 or (end-start).total_seconds()>3000:raise ValueError('cg_bundle_time')
     observations=a['observations'];lookup={o['url']:o for o in observations}
@@ -200,9 +206,16 @@ def validate_bundle(folder,run_id,commit,clock):
         checked(o)
         if not last<=instant(o['requested_at'])<=instant(o['calculated_at'])<=end:raise ValueError('cg_bundle_observation_time')
         last=instant(o['calculated_at'])
-    expected=[]
+    expected=[];counts={};results={sid:{'records':[],'errors':[],'excluded':[],'discovered':0} for sid in ('coral','coral_promo')}
+    supplied={r['source_id']:r for r in b.get('sources',[])}
+    if len(b.get('sources',[]))!=2 or set(supplied)!=set(results):raise ValueError('cg_source_reports')
+    targets=[]
     if all(u in lookup for u in (ROBOTS,c.CLUB,c.PROMO,SITEMAP)):
-        rules=policy(checked(lookup[ROBOTS]));targets,_,_=candidates(lookup[c.CLUB],lookup[c.PROMO],lookup[SITEMAP])
+        rules=policy(checked(lookup[ROBOTS]));targets,ncats,npromo=candidates(lookup[c.CLUB],lookup[c.PROMO],lookup[SITEMAP])
+        counts={'categories':ncats,'promo_index':npromo}
+        controls=(c.CLUB,c.PROMO,SITEMAP)
+        if not all(rules.can_fetch(u,'LoyaltyCatalogResearchBot') for u in controls):raise ValueError('cg_policy_binding')
+        for sid,_ in targets:results[sid]['discovered']+=1
         allowed={u for u in (ROBOTS,c.CLUB,c.PROMO,SITEMAP)}|{e['url'] for s,e in targets}
         if set(lookup)-allowed:raise ValueError('cg_undiscovered_read')
         for sid,entry in targets:
@@ -211,8 +224,20 @@ def validate_bundle(folder,run_id,commit,clock):
             if not rules.can_fetch(obs['url'],'LoyaltyCatalogResearchBot'):raise ValueError('cg_policy_binding')
             try:r=map_detail(obs,sid,entry,b['observed_at'])
             except ValueError:continue
-            if r:expected.append(r)
-    # Collector emits grouped source rows; deterministic reconstruction mirrors it.
+            if r:
+                expected.append(r);results[sid]['records'].append(r)
+            else:results[sid]['excluded'].append(entry['url'])
+    for sid,r in supplied.items():
+        urls={e['url'] for source,e in targets if source==sid}
+        errors=r.get('errors')
+        if not isinstance(errors,list) or len(errors)>MAX_READS:raise ValueError('cg_error_report_shape')
+        for item in errors:
+            if not isinstance(item,dict) or not isinstance(item.get('reason'),str) or len(item['reason'])>110:raise ValueError('cg_error_report_shape')
+            if 'url' in item and (set(item)!={'url','reason'} or item['url'] not in urls):raise ValueError('cg_error_report_source')
+            if 'url' not in item and (set(item)!={'phase','reason'} or item['phase']!='discovery' or targets):raise ValueError('cg_error_report_phase')
+        results[sid]['errors']=errors
+    rebuilt=summarize(results,counts,run_id,b['observed_at'])
+    if rebuilt['sources']!=b['sources']:raise ValueError('cg_coverage_reconstruction')
     expected.sort(key=lambda r:0 if r['source_id']=='coral' else 1)
     if expected!=b['records']:raise ValueError('cg_bundle_reconstruction')
     prepare(b);return b
@@ -220,8 +245,11 @@ def validate_bundle(folder,run_id,commit,clock):
 def main():
     OUT.mkdir(exist_ok=True);run_id=os.environ['GITHUB_RUN_ID']+':'+os.environ['GITHUB_RUN_ATTEMPT'];started=now();reader=None
     audit={'run_id':run_id,'commit':os.environ['GITHUB_SHA'],'started_at':started,'observations':[],'cleanup_verified':False,'scrapingant_credits':0,'source_account_used':False}
+    def checkpoint():
+        if reader:audit.update(observations=reader.observations,cleanup_verified=reader.cleanup_verified)
+        temp=OUT/'evidence.tmp';temp.write_text(json.dumps(audit,ensure_ascii=False));temp.replace(OUT/'evidence.json')
     try:
-        reader=Reader(os.environ.get('GOOGLE_ACCESS_TOKEN',''),run_id);b=collect(reader,run_id,started);reader.clear('idle:'+run_id)
+        reader=Reader(os.environ.get('GOOGLE_ACCESS_TOKEN',''),run_id,checkpoint=checkpoint);b=collect(reader,run_id,started);reader.clear('idle:'+run_id)
         audit.update(observations=reader.observations,cleanup_verified=reader.cleanup_verified,finished_at=now(),import_requests=reader.calls)
         (OUT/'normalized.json').write_text(json.dumps(b,ensure_ascii=False));(OUT/'evidence.json').write_text(json.dumps(audit,ensure_ascii=False))
         validate_bundle(OUT,run_id,os.environ['GITHUB_SHA'],datetime.now(timezone.utc))
