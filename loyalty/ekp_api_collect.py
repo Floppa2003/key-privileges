@@ -85,6 +85,32 @@ def read_policy(reader, audit):
     raise ProbeError('ekp_policy_retry_exhausted')
 
 
+
+def read_page(reader, request, audit):
+    """Retry a known read-only query once on provider route404, at most twice/run.
+
+    A source refusal, challenge, auth/rate/quota or schema error is never retried.
+    The same 300-credit/12-request cap accounts for unsuccessful requests too.
+    """
+    attempts=audit.setdefault('page_attempts',[])
+    for number in range(2):
+        item={'offset':request['pagination']['offset'],'number':number+1,'started_at':now()}
+        attempts.append(item)
+        try:
+            raw=reader.read(API,request)
+            item.update(result='source_document_received',finished_at=now())
+            return raw
+        except ProbeError as exc:
+            item.update(error=str(exc),finished_at=now())
+            if (number or str(exc)!='provider_http_404' or audit.get('page_retries',0)>=2
+                or getattr(getattr(reader,'http',None),'halted',False)):
+                raise
+            audit['page_retries']=audit.get('page_retries',0)+1
+            item['retry_delay_seconds']=10
+            reader.sleep(10)
+    raise ProbeError('ekp_page_retry_exhausted')
+
+
 def collect(reader,out,*,run_id,observed_at,commit):
     from public_transport import robots_document
     from protego import Protego
@@ -108,7 +134,20 @@ def collect(reader,out,*,run_id,observed_at,commit):
         (out/'robots.txt').write_text(rules)
         report['robots']={'state':state,'http_status':200,'sha256':hashlib.sha256(raw.encode()).hexdigest()}
         while reader.calls<MAX_REQUESTS:
-            request=query(offset);raw=reader.read(API,request);finished=now();payload=json.loads(raw)
+            request=query(offset)
+            try:
+                raw=read_page(reader,request,audit)
+            except ProbeError as exc:
+                if str(exc)!='provider_http_404' or total is None:raise
+                # The source total from an earlier successful current page bounds
+                # the remaining read-only offsets. A missing page remains a gap;
+                # it does not discard later pages or become an empty result.
+                errors.append({'phase':'page','offset':offset,'reason':'provider_http_404'})
+                audit.setdefault('missing_page_offsets',[]).append(offset)
+                offset+=min(PAGE_SIZE,total-offset);save()
+                if offset==total:break
+                continue
+            finished=now();payload=json.loads(raw)
             ids=page(payload,offset)
             if total is None:total=payload['total']
             if payload['total']!=total or seen.intersection(ids):raise ProbeError('ekp_catalogue_changed_during_scan')
@@ -129,8 +168,11 @@ def collect(reader,out,*,run_id,observed_at,commit):
                 'source_response_sha256':digest,'public_projection_sha256':hashlib.sha256((out/filename).read_bytes()).hexdigest(),
                 'completed_at':finished,'origin_status':200})
             save();offset+=len(ids)
-            if offset==total:completed=True;break
-        if not completed:errors.append({'phase':'coverage','reason':'ekp_weekly_budget_bound'})
+            if offset==total:
+                completed=len(seen)==total
+                break
+        if not completed and (total is None or offset<total):
+            errors.append({'phase':'coverage','reason':'ekp_weekly_budget_bound'})
     except Exception as exc:
         code=str(exc);reason=code if isinstance(exc,(ProbeError,RuntimeError,ValueError)) and re.fullmatch(r'[a-z_0-9]{1,100}',code) else type(exc).__name__
         errors.append({'phase':'collection','reason':reason})

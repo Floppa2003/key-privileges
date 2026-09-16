@@ -76,7 +76,7 @@ class PolicyRetryTests(unittest.TestCase):
             self.assertEqual(r.calls,11);self.assertEqual(r.reserved,275)
             r.sleep.assert_called_once_with(10)
 
-    def test_catalogue404_does_not_inherit_policy_retry(self):
+    def test_catalogue404_has_separate_bounded_query_retry(self):
         class ApiFailure(FakeReader):
             def __init__(self):super().__init__(total=1);self.sleep=Mock()
             def read(self,url,body=None):
@@ -87,6 +87,6 @@ class PolicyRetryTests(unittest.TestCase):
         r=ApiFailure()
         with tempfile.TemporaryDirectory() as tmp:
             b=c.collect(r,tmp,run_id='fixture:1',observed_at=NOW,commit='test')
-            self.assertFalse(b['records']);self.assertEqual(len(r.queries),1);r.sleep.assert_not_called()
+            self.assertFalse(b['records']);self.assertEqual(len(r.queries),2);r.sleep.assert_called_once_with(10)
 
 if __name__=='__main__':unittest.main()
