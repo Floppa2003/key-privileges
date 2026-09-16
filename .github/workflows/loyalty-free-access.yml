@@ -84,7 +84,7 @@ jobs:
           # A release-time crawl checks the complementary half without changing
           # real observation time or the daily UTC-based rotation.
           if [ "${{ github.event_name }}" = push ]; then args+=(--other-coral-half); fi
-          python loyalty/free_catalog_bundle.py --collect "${args[@]}"
+          python loyalty/free_catalog_bundle.py --collect --separate-ekp "${args[@]}"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:

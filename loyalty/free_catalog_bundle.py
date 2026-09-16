@@ -16,12 +16,15 @@ from normalized import validate_offer
 from sheets_normalized import prepare
 
 
-def build(report, roots, folder, *, run_id, attempt, commit, clock):
+def build(report, roots, folder, *, run_id, attempt, commit, clock, separate_ekp=False):
+    if type(separate_ekp) is not bool:raise ValueError("invalid_separate_ekp_mode")
+    expected=[sid for sid in SOURCE_IDS if not separate_ekp or sid!="ekp"]
+    if separate_ekp:roots=[r for r in roots if r["id"]!="ekp"]
     if (report.get('run_id') != run_id or report.get('run_attempt') != attempt
         or report.get('commit') != commit or not run_id or not attempt or not commit
         or report.get('mode') != 'free_access_probe' or report.get('account_sessions_used') is not False
         or report.get('free_plan_confirmed') is not True
-        or report.get('source_ids') != list(SOURCE_IDS)):
+        or report.get('source_ids') != expected):
         raise ValueError('untrusted_or_wrong_attempt_report')
     observed = report['started_at']; started = datetime.fromisoformat(observed)
     finished = datetime.fromisoformat(report['finished_at'])
@@ -30,7 +33,7 @@ def build(report, roots, folder, *, run_id, attempt, commit, clock):
         raise ValueError('provider_report_not_fresh')
     observations = report.get('sources', [])
     by_id = {x['source_id']: x for x in observations}
-    if len(by_id) != len(observations) or set(by_id)-set(SOURCE_IDS):
+    if len(by_id) != len(observations) or set(by_id)-set(expected):
         raise ValueError('provider_report_identity')
     records = []; reports = []
     for cfg in roots:
@@ -73,12 +76,12 @@ def build(report, roots, folder, *, run_id, attempt, commit, clock):
 
 def main():
     p = argparse.ArgumentParser(); p.add_argument('--input', default='free-access-output')
-    p.add_argument('--out', default='free-catalog-output'); p.add_argument('--collect', action='store_true'); p.add_argument('--other-coral-half', action='store_true'); args = p.parse_args()
+    p.add_argument('--out', default='free-catalog-output'); p.add_argument('--collect', action='store_true'); p.add_argument('--other-coral-half', action='store_true'); p.add_argument('--separate-ekp', action='store_true'); args = p.parse_args()
     output = Path(args.out); output.mkdir(exist_ok=True)
     (output/'normalized.json').unlink(missing_ok=True)
     if args.collect:
         roots = configured_roots(Path(__file__).with_name('sources_normalized.json'))
-        report = run(roots, os.environ.get('SCRAPINGANT_API_KEY', ''), args.input)
+        report = run(roots, os.environ.get('SCRAPINGANT_API_KEY', ''), args.input, **({'separate_ekp':True} if args.separate_ekp else {}))
         # Bind the freshly returned in-process observation, never a prior disk report.
         report['run_attempt'] = os.getenv('GITHUB_RUN_ATTEMPT')
         (Path(args.input)/'report.json').write_text(json.dumps(report, ensure_ascii=False, indent=2))
@@ -89,7 +92,7 @@ def main():
     else:
         bundle = build(report, configured_roots(Path(__file__).with_name('sources_normalized.json')),
                        args.input, run_id=os.getenv('GITHUB_RUN_ID'), attempt=os.getenv('GITHUB_RUN_ATTEMPT'),
-                       commit=os.getenv('GITHUB_SHA'), clock=datetime.now(timezone.utc))
+                       commit=os.getenv('GITHUB_SHA'), clock=datetime.now(timezone.utc), separate_ekp=args.separate_ekp)
         if args.collect and report.get('status') != 'stopped':
             from coral_catalog import collect as collect_coral
             additional = collect_coral(report, args.input, os.environ.get('SCRAPINGANT_API_KEY', ''), bundle['observed_at'], other_half=args.other_coral_half)
