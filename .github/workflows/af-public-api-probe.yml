@@ -1,0 +1,78 @@
+name: Aeroflot public catalogue API confirmation
+on:
+  push:
+    branches: ['diagnostics/aeroflot-authorized-20260916']
+    paths: ['.github/workflows/af-public-api-probe.yml']
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - run: python -m pip install requests==2.32.5 beautifulsoup4==4.14.3
+      - name: Two source-defined anonymous reads, no credentials or provider
+        run: |
+          python - <<'PY'
+          import hashlib,json,os,re,time
+          from pathlib import Path
+          from datetime import datetime,timezone
+          import requests
+          from bs4 import BeautifulSoup
+          OUT=Path('af-api-probe-output');OUT.mkdir(exist_ok=True)
+          BASE='https://www.aeroflot.ru/partners/ws/'
+          requests_to_make=[('GET',BASE+'v.0.0.2/json/partner/categories',{'params':{'lang':'ru'}}),
+                            ('POST',BASE+'v.0.0.2/json/partner/search',{'json':{'lang':'ru','data':{'paginator':{'start':0,'limit':12}}}})]
+          report={'run_id':os.environ['GITHUB_RUN_ID'],'commit':os.environ['GITHUB_SHA'],
+              'started_at':datetime.now(timezone.utc).isoformat(),'publication':False,'source_accounts_used':False,
+              'permission_basis':'owner_reported_source_permission_2026-09-16','permission_email_read':False,
+              'endpoint_discovery':'current_public_mf_partners_module','requests':[],'scrapingant_credits':0}
+          def private_key(obj):
+              if isinstance(obj,dict):return any(re.search(r'password|token|secret|cookie|authorization',k,re.I) or private_key(v) for k,v in obj.items())
+              return any(private_key(x) for x in obj) if isinstance(obj,list) else False
+          for index,(method,url,kw) in enumerate(requests_to_make):
+              if index:time.sleep(10)
+              item={'method':method,'url':url};report['requests'].append(item)
+              try:
+                  with requests.request(method,url,timeout=(8,25),allow_redirects=False,stream=True,
+                       headers={'User-Agent':'LoyaltyCatalogResearchBot/1.0','Accept':'application/json'},**kw) as response:
+                      item['http_status']=response.status_code
+                      if response.status_code==429 or response.headers.get('Retry-After'):
+                          item['result']='rate_limited_stop';break
+                      data=bytearray()
+                      for chunk in response.iter_content(65536):
+                          data.extend(chunk)
+                          if len(data)>3000000:raise ValueError('response_size_bound')
+                      item['response_sha256']=hashlib.sha256(data).hexdigest()
+                      raw=data.decode('utf8')
+                      if response.status_code==200:
+                          try:obj=json.loads(raw)
+                          except ValueError:obj=None
+                          if obj is not None:
+                              if private_key(obj):raise ValueError('unexpected_private_field')
+                              item['result']='public_json_requires_review';item['top_keys']=list(obj)[:20] if isinstance(obj,dict) else None
+                              name=f'public-response-{index}.json';(OUT/name).write_bytes(data);item['file']=name
+                          else:
+                              soup=BeautifulSoup(raw,'html.parser')
+                              item['result']='non_json_document';item['title']=soup.title.get_text()[:200] if soup.title else ''
+                              body=soup.get_text(' ',strip=True)
+                              item['restriction']=bool(re.search(r'vpn|captcha|access denied|доступ.{0,40}ограничен',body[:1000],re.I))
+                      else:item['result']='http_refusal_or_redirect'
+              except Exception as exc:item['error']=str(exc) if type(exc) is ValueError else type(exc).__name__
+          report['finished_at']=datetime.now(timezone.utc).isoformat()
+          (OUT/'report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2))
+          (OUT/'executed-workflow.yml').write_bytes(Path('.github/workflows/af-public-api-probe.yml').read_bytes())
+          print(json.dumps({'requests':len(report['requests']),'results':[r.get('result',r.get('error')) for r in report['requests']]}))
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: af-public-api-${{ github.run_id }}
+          path: af-api-probe-output/
+          retention-days: 7
