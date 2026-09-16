@@ -124,6 +124,10 @@ class ImportReader:
                     last_error=str(exc);self.sleep(3);continue
                 current=digest(atoms)
                 if previous==current:
+                    if kind=='catalog_cards':
+                        from rzd_catalogue_cards import sanitize
+                        if any(a['kind']!='string' for a in atoms):raise ValueError('rzd_catalogue_coercion')
+                        atoms=[{'kind':'string','text':sanitize('\n'.join(a['text'] for a in atoms))}];current=digest(atoms)
                     obs={'url':url,'kind':kind,'requested_at':requested,'calculated_at':now(),
                          'cells':atoms,'cells_sha256':current,'formula_sha256':digest(f)}
                     checked_observation(obs);self.observations.append(obs);return obs
@@ -135,7 +139,9 @@ class ImportReader:
     def close(self):self.clear('idle:'+self.run_id)
 
 
-def walk(reader,run_id,commit,observed_at,*,checkpoint=lambda:None):
+def walk(reader,run_id,commit,observed_at,*,checkpoint=lambda:None,include_previews=False):
+    from rzd_catalogue_cards import previews,merge_previews,make_preview
+    preview_index={};preview_count=0
     records=[];errors=[];details=[];pages=[];pending=[];external=0;combined=0
     rules=None;catalogue_complete=False
     try:
@@ -152,7 +158,9 @@ def walk(reader,run_id,commit,observed_at,*,checkpoint=lambda:None):
             url=pending.pop(0);pages.append(url)
             try:
                 if not rules.can_fetch(url,'LoyaltyCatalogResearchBot'):raise ValueError('rzd_policy_disallow')
-                parsed=catalog(reader.read(url,'catalog'));checkpoint()
+                observation=reader.read(url,'catalog_cards' if include_previews else 'catalog');checkpoint()
+                parsed=catalog(observation)
+                if include_previews:merge_previews(preview_index,previews(observation))
                 external+=parsed['external_links'];combined+=parsed['combined_pagination_links']
                 for target in parsed['details']:
                     if target not in details:details.append(target)
@@ -172,16 +180,19 @@ def walk(reader,run_id,commit,observed_at,*,checkpoint=lambda:None):
                 obs=reader.read(url,'detail');checkpoint()
                 records.append(detail(obs,observed_at))
             except Exception as exc:
-                errors.append({'phase':'detail','url':url,'reason':reason(exc)})
-                if reason(exc)=='rzd_collection_bound':break
+                failure=reason(exc);errors.append({'phase':'detail','url':url,'reason':failure})
+                if include_previews and url in preview_index and failure!='rzd_policy_disallow':
+                    records.append(make_preview(preview_index[url],observed_at,failure));preview_count+=1
+                if failure=='rzd_collection_bound':break
     except Exception as exc:errors.append({'phase':'setup','reason':reason(exc)})
     meta={'method':METHOD,'catalogue_root':ROOT,'catalogue_pages_attempted':len(pages),
           'catalogue_pagination_exhausted':catalogue_complete,'pagination_scope':'source_single_PAGEN_category_states',
           'combined_category_states_not_repeated':combined,'external_card_links_not_fetched':external,
-          'discovered_owned_detail_urls':len(details),'accepted_detail_records':len(records),
-          'all_discovered_details_read':len(records)==len(details) and bool(details),
+          'discovered_owned_detail_urls':len(details),'accepted_detail_records':len(records)-preview_count,
+          'all_discovered_details_read':len(records)-preview_count==len(details) and bool(details),
           'origin_http_status_exposed':False,'origin_cache_age_verified':False,'source_account_used':False,
           'full_program_and_eligibility_verified':False,'linked_rules_read':False}
+    if include_previews:meta.update(accepted_catalogue_previews=preview_count,preview_records_are_not_full_conditions=True)
     report={'source_id':'rzd','name':'РЖД Бонус — публичный каталог','root':ORIGINAL,
             'status':('ok' if catalogue_complete and len(records)==len(details) and not errors else 'partial') if records else 'failed',
             'discovered':len(details),'normalized':len(records),'failed':len(errors),'coverage':json.dumps(meta,ensure_ascii=False),
@@ -201,6 +212,10 @@ def validate_bundle(folder,*,run_id,commit,clock):
     if not start<=end<=clock or (clock-end).total_seconds()>900 or (end-start).total_seconds()>3600:raise ValueError('rzd_bundle_time')
     observations=audit.get('observations',[])
     if len(observations)>MAX_READS:raise ValueError('rzd_bundle_observation_bound')
+    from rzd_catalogue_cards import previews,merge_previews,make_preview
+    include_previews=audit.get('include_previews',False)
+    if type(include_previews) is not bool:raise ValueError('rzd_preview_mode')
+    preview_index={};discovery_order=[]
     expected=[];discovered=set();known_pages={ROOT};seen=set();rules=None;last=start;home_verified=False
     for obs in observations:
         checked_observation(obs)
@@ -214,25 +229,46 @@ def validate_bundle(folder,*,run_id,commit,clock):
             if not re.search('РЖД.*Бонус',cells[0]['text'],re.I) or ROOT not in {urljoin(HOME,c['text'].strip()) for c in cells[1:]}:
                 raise ValueError('rzd_home_catalogue_link_missing')
             home_verified=True
-        if obs['kind']=='catalog':
+        if obs['kind'] in ('catalog','catalog_cards'):
             if not home_verified or obs['url'] not in known_pages:raise ValueError('rzd_undiscovered_pagination')
             try:p=catalog(obs)
             except ValueError:continue
+            if obs['kind']=='catalog_cards':
+                if not include_previews:raise ValueError('rzd_unexpected_preview_mode')
+                merge_previews(preview_index,previews(obs))
+            discovery_order.extend(u for u in p['details'] if u not in discovered)
             discovered.update(p['details']);known_pages.update(p['pages'])
         elif obs['kind']=='detail':
             if obs['url'] not in discovered:raise ValueError('rzd_undiscovered_detail')
             try:expected.append(detail(obs,bundle['observed_at']))
             except ValueError:continue
+    detail_count=len(expected);preview_count=0
+    if include_previews:
+        detail_rows={r['source_url']:r for r in expected};failures={}
+        for e in bundle['sources'][0]['errors']:
+            if e.get('phase')=='detail' and e.get('url'):
+                if e['url'] not in discovered or e['url'] in failures:raise ValueError('rzd_preview_failure_source')
+                failures[e['url']]=e['reason']
+        expected=[]
+        selected=discovery_order
+        if len(selected)>MAX_DETAILS:
+            week=int(instant(bundle['observed_at']).timestamp()//604800);offset=week*MAX_DETAILS%len(selected)
+            selected=(selected[offset:]+selected[:offset])[:MAX_DETAILS]
+        for url in selected:
+            if url in detail_rows:expected.append(detail_rows[url])
+            elif url in failures and url in preview_index and failures[url]!='rzd_policy_disallow':
+                expected.append(make_preview(preview_index[url],bundle['observed_at'],failures[url]));preview_count+=1
     if expected!=bundle['records'] or len(bundle.get('sources',[]))!=1:raise ValueError('rzd_bundle_reconstruction')
     report=bundle['sources'][0]
     if report.get('source_id')!='rzd' or report.get('root')!=ORIGINAL or report.get('discovered')!=len(discovered):raise ValueError('rzd_bundle_coverage')
     meta=json.loads(report['coverage'])
-    if (meta.get('accepted_detail_records')!=len(expected) or meta.get('discovered_owned_detail_urls')!=len(discovered)
+    if (meta.get('accepted_detail_records')!=detail_count or meta.get('discovered_owned_detail_urls')!=len(discovered)
         or meta.get('origin_http_status_exposed') is not False or meta.get('origin_cache_age_verified') is not False
         or meta.get('source_account_used') is not False or meta.get('full_program_and_eligibility_verified') is not False
-        or meta.get('all_discovered_details_read')!=(len(expected)==len(discovered) and bool(discovered))):
+        or meta.get('all_discovered_details_read')!=(detail_count==len(discovered) and bool(discovered))):
         raise ValueError('rzd_bundle_coverage_mismatch')
-    completed=home_verified and known_pages<={u for k,u in seen if k=='catalog'} and not any(e['phase']=='catalogue' for e in report['errors'])
+    if include_previews and (meta.get('accepted_catalogue_previews')!=preview_count or meta.get('preview_records_are_not_full_conditions') is not True):raise ValueError('rzd_preview_coverage')
+    completed=home_verified and known_pages<={u for k,u in seen if k in ('catalog','catalog_cards')} and not any(e['phase']=='catalogue' for e in report['errors'])
     if meta['catalogue_pagination_exhausted']!=completed:raise ValueError('rzd_bundle_pagination_claim')
     status=('ok' if completed and len(expected)==len(discovered) and not report['errors'] else 'partial') if expected else 'failed'
     if report['status']!=status:raise ValueError('rzd_bundle_status')
@@ -247,13 +283,13 @@ def main():
     started=now();reader=None
     audit={'run_id':run_id,'commit':commit,'started_at':started,'source_accounts_used':False,
            'scrapingant_credits':0,'staging_contains_only_public_source_data':True,'observations':[],
-           'origin_response_and_cache_age_not_exposed':True,'cleanup_verified':False}
+           'origin_response_and_cache_age_not_exposed':True,'cleanup_verified':False,'include_previews':True}
     def checkpoint():
         if reader:audit['observations']=reader.observations
         save(out/'evidence.json',audit)
     try:
         reader=ImportReader(os.environ.get('GOOGLE_ACCESS_TOKEN',''),run_id)
-        bundle=walk(reader,run_id,commit,started,checkpoint=checkpoint)
+        bundle=walk(reader,run_id,commit,started,checkpoint=checkpoint,include_previews=True)
         reader.close();audit['cleanup_verified']=reader.cleanup_verified
         audit['import_requests']=reader.calls;audit['finished_at']=now();checkpoint()
         prepare(bundle);save(out/'normalized.json',bundle)

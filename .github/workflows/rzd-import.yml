@@ -1,8 +1,8 @@
 name: RZD public catalogue via Google import
 on:
   push:
-    branches: [main, 'loyalty/rzd-google-import-20260916']
-    paths: [loyalty/rzd_import_catalog.py, loyalty/rzd_import_collect.py, loyalty/tests/test_rzd_import.py, loyalty/normalized.py, .github/workflows/rzd-import.yml]
+    branches: [main, 'loyalty/rzd-google-import-20260916', 'loyalty/rzd-catalogue-evidence-20260916']
+    paths: [loyalty/rzd_catalogue_cards.py, loyalty/tests/test_rzd_catalogue_cards.py, loyalty/rzd_import_catalog.py, loyalty/rzd_import_collect.py, loyalty/tests/test_rzd_import.py, .github/workflows/rzd-import.yml]
   workflow_dispatch:
   schedule:
     - cron: '37 8 * * 3'
@@ -38,7 +38,7 @@ jobs:
           retention-days: 7
   collect:
     needs: regression
-    if: github.repository == 'Floppa2003/key-privileges' && github.ref == 'refs/heads/main' && vars.LOYALTY_SHEETS_SYNC == 'true' && github.event_name != 'push'
+    if: github.repository == 'Floppa2003/key-privileges' && github.ref == 'refs/heads/main' && vars.LOYALTY_SHEETS_SYNC == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     permissions:

@@ -60,6 +60,9 @@ def formula(url,kind):
     if kind=='robots':
         if url!=ROBOTS:raise ValueError('rzd_wrong_policy_url')
         return f'=IMPORTDATA("{url}")'
+    if kind=='catalog_cards':
+        if urlsplit(url).path!='/partners/':raise ValueError('rzd_import_kind_url_mismatch')
+        return f'=IMPORTDATA("{url}";"¦";"en_US")'
     if kind not in XPATH:raise ValueError('rzd_import_kind_unknown')
     if ((kind=='home' and url!=HOME) or (kind=='catalog' and urlsplit(url).path!='/partners/')
             or (kind=='detail' and (urlsplit(url).query or not re.fullmatch(r'/partners/[0-9]+/|/promo/[a-z0-9_-]+/',urlsplit(url).path)))):
@@ -100,7 +103,7 @@ def checked_observation(obs):
     if not isinstance(cells,list) or not 1<=len(cells)<2000 or len(json.dumps(cells,ensure_ascii=False))>700000:
         raise ValueError('rzd_observation_size')
     for c in cells:
-        if not isinstance(c,dict) or not isinstance(c.get('text'),str) or len(c['text'])>40000:raise ValueError('rzd_atom_invalid')
+        if not isinstance(c,dict) or not isinstance(c.get('text'),str) or len(c['text'])>(600000 if obs['kind']=='catalog_cards' else 40000):raise ValueError('rzd_atom_invalid')
         if c.get('kind')=='string':
             if set(c)!={'text','kind'}:raise ValueError('rzd_atom_invalid')
         elif c.get('kind')=='google_date':
@@ -113,7 +116,11 @@ def checked_observation(obs):
 
 def catalog(obs):
     cells=checked_observation(obs)
-    if obs['kind']!='catalog' or cells[0]['kind']!='string' or not re.fullmatch('Партн[её]ры',cells[0]['text'].strip(),re.I):
+    if obs['kind']=='catalog_cards':
+        from rzd_catalogue_cards import read_html
+        soup=read_html(obs)
+        cells=[{'kind':'string','text':soup.find('h1').get_text(strip=True)}]+[{'kind':'string','text':a['href']} for a in soup.select('.partners__frame a[href]')]
+    if obs['kind'] not in ('catalog','catalog_cards') or cells[0]['kind']!='string' or not re.fullmatch('Партн[её]ры',cells[0]['text'].strip(),re.I):
         raise ValueError('rzd_catalogue_identity')
     out={'details':[],'pages':[],'external_links':0,'combined_pagination_links':0,'excluded_navigation_links':0}
     current=dict(parse_qsl(urlsplit(obs['url']).query))
@@ -170,6 +177,9 @@ def detail(obs,observed_at):
 
 
 def validate_record(r):
+    if r.get('native_id','').startswith('catalogue:'):
+        from rzd_catalogue_cards import validate_record as validate_preview
+        return validate_preview(r)
     d=r.get('details',{});obs=d.get('import_observation')
     title,body,partner,benefit=source_fields(obs)
     if (r['source_id']!='rzd' or r['source_url']!=obs['url'] or r['native_id']!=urlsplit(obs['url']).path
