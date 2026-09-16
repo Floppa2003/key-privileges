@@ -1,6 +1,6 @@
 // Known anonymous catalogue POST only; no account, coupon or arbitrary endpoint.
 const API='https://ekp.spb.ru/api/portal/loyalty/partners', deadline=Date.now()+43000;
-const result={pages:[],errors:[],startedAt:new Date().toISOString(),initialUrl:location.href,complete:false};
+const result={pages:[],requests:[],errors:[],startedAt:new Date().toISOString(),initialUrl:location.href,complete:false};
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 function sourceURL(){const u=new URL(location.href);if(u.origin!=='https://ekp.spb.ru'||!['/capabilities/loyalty/','/capabilities/loyalty/tiles','/capabilities/loyalty/tiles/'].includes(u.pathname))throw Error('root_identity_changed');}
 function projection(row){
@@ -15,15 +15,22 @@ try{
  if(/captcha|access denied|проверка безопасности|доступ к сайту временно ограничен/i.test(document.title+' '+document.body.textContent.slice(0,1000)))throw Error('restriction_document');
  let total=null,offset=0,seen=new Set(),bytes=0;
  for(let i=0;i<11;i++){
-  if(Date.now()>deadline-6000)throw Error('source_time_bound');
+  const remaining=deadline-Date.now()-1500;
+  if(remaining<1000)throw Error('source_time_bound');
   const request={pagination:{limit:120,offset},filters:{categories:[],name:'',qrDiscount:false,region:'98'}};
-  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),5000);
-  let response,raw;
+  const timeoutMs=Math.min(15000,remaining),requestedAt=Date.now();
+  const attempt={offset,timeoutMs,startedAt:new Date().toISOString()};result.requests.push(attempt);
+  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),timeoutMs);
+  let response,raw,phase='headers';
   try{
    response=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(request),credentials:'omit',redirect:'error',cache:'no-store',signal:controller.signal});
+   attempt.status=response.status;
    if(response.status!==200||response.url!==API||response.headers.has('Retry-After'))throw Error('source_http_refusal');
-   raw=await response.text();if(raw.length>6000000)throw Error('source_size_bound');
-  }finally{clearTimeout(timer);}
+   phase='body';raw=await response.text();if(raw.length>6000000)throw Error('source_size_bound');
+  }catch(e){
+   const reason=e.name==='AbortError'?'source_'+phase+'_timeout':/^[a-z_]+$/.test(e.message)?e.message:e.name;
+   attempt.error=reason;throw Error(reason);
+  }finally{clearTimeout(timer);attempt.finishedAt=new Date().toISOString();attempt.elapsedMs=Date.now()-requestedAt;}
   const data=JSON.parse(raw);
   if(!Number.isInteger(data.total)||data.total<0||data.total>5000||data.offset!==offset||!Array.isArray(data.partners)||
    data.partners.length!==Math.min(120,data.total-offset))throw Error('page_schema_changed');

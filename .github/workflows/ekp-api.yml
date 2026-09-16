@@ -1,8 +1,8 @@
 name: EKP public catalogue and Sheets sync
 on:
   push:
-    branches: [main, 'loyalty/ekp-api-release-20260916', 'loyalty/ekp-policy-retry-20260916', 'loyalty/ekp-page-recovery-20260916', 'loyalty/ekp-session-release-20260916']
-    paths: [loyalty/ekp_session_collect.py, loyalty/ekp_session_ui.js, loyalty/tests/test_ekp_session.py, loyalty/ekp_catalog.py, loyalty/ekp_api_collect.py, loyalty/tests/test_ekp_api.py, loyalty/tests/test_ekp_policy_retry.py, loyalty/tests/test_ekp_page_recovery.py, .github/workflows/ekp-api.yml]
+    branches: [main, 'loyalty/ekp-api-release-20260916', 'loyalty/ekp-policy-retry-20260916', 'loyalty/ekp-page-recovery-20260916', 'loyalty/ekp-session-release-20260916', 'loyalty/ekp-time-budget-20260916']
+    paths: [loyalty/ekp_session_collect.py, loyalty/ekp_session_ui.js, loyalty/tests/test_ekp_session.py, loyalty/tests/test_ekp_session_timing.py, loyalty/ekp_catalog.py, loyalty/ekp_api_collect.py, loyalty/tests/test_ekp_api.py, loyalty/tests/test_ekp_policy_retry.py, loyalty/tests/test_ekp_page_recovery.py, .github/workflows/ekp-api.yml]
   workflow_dispatch:
   schedule:
     - cron: '13 7 * * 1'
