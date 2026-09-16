@@ -1,0 +1,39 @@
+name: Materialize reviewed airline patch once
+on:
+  push:
+    branches: ['loyalty/airline-coverage-20260916']
+    paths: ['.github/workflows/airline-apply-once.yml']
+permissions:
+  contents: write
+jobs:
+  apply:
+    if: github.repository == 'Floppa2003/key-privileges' && github.ref == 'refs/heads/loyalty/airline-coverage-20260916'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: true
+      - name: Check original file bytes before the deterministic patch
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib
+          expected={'.github/workflows/aeroflot-import.yml':'13ce76026f6b7301c763d55b253a3d35b6543071caa6c447d4abb72e5fe6270c',
+            'loyalty/aeroflot_import_catalog.py':'d9bf773f862a4a859d4486b3fe2aaff747d926e4e9cd23a0e24d34680947a458',
+            'loyalty/aeroflot_import_collect.py':'c3a78571039c13c81f11e770adcd0725cf871f570d698c6968476a93a9202de8',
+            'loyalty/normalized.py':'ef5eff8f7d27cb562b1e706802945ac2206e60fb774c0ab7d17ca8c2b1fc3ef7',
+            'loyalty/unified_normalization.py':'15703224bef674bbe5f55f621e390aae9c7272d251826ecb848beee23cb67088'}
+          for path,sha in expected.items():
+              if hashlib.sha256(Path(path).read_bytes()).hexdigest()!=sha:raise ValueError('Unexpected original: '+path)
+          PY
+          python diagnostics/airline_extension.py
+      - name: Commit only the reviewed branch changes and remove temporary staging helpers
+        run: |
+          git rm diagnostics/airline_extension.py .github/workflows/airline-module-check.yml .github/workflows/airline-module-residential.yml .github/workflows/airline-apply-once.yml
+          git add .github/workflows/aeroflot-import.yml loyalty/aeroflot_import_catalog.py loyalty/aeroflot_import_collect.py loyalty/normalized.py loyalty/unified_normalization.py
+          git diff --cached --check
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Apply byte-verified airline extension to development branch; remove one-time diagnostics'
+          git push origin HEAD:refs/heads/loyalty/airline-coverage-20260916
