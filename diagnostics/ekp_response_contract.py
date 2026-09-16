@@ -63,7 +63,8 @@ def main():
             params={'url':url,'browser':'true' if js else 'false','proxy_country':'RU','proxy_type':'residential','timeout':'60'}
             if js:params.update(js_snippet=base64.b64encode(js.encode()).decode(),block_resource=['image','media','font'])
             data,meta=r._request('extended' if js else 'general',params)
-            c=str(meta.get('Ant-credits-cost',''));s=str(meta.get('Ant-page-status-code',''))
+            c=str(meta.get('Ant-credits-cost',''));s=str(json.loads(data).get('status_code')) if js else str(meta.get('Ant-page-status-code',''))
+            report.setdefault('safe_response_metadata',[]).append({'extended':bool(js),'cost':c,'origin_status':s,'retry_after_present':bool(meta.get('ant-original-header-retry-after'))})
             if not c.isdigit() or int(c)>cost or s!='200' or meta.get('ant-original-header-retry-after'):raise ProbeError('status_or_cost_invalid')
             r.known_charged_credits+=int(c);return data
         raw=read(POLICY);rules,state=robots_document(200,raw);namespace_allowed(rules);policy=Protego.parse(rules)
@@ -73,14 +74,6 @@ def main():
         blob=read(ROOT,js);payload=json.loads(blob)
         # Never persist extended envelope, cookies, headers, iframe or other XHR.
         report['envelope_shape']=shape({k:v for k,v in payload.items() if k not in ('cookies','headers','iframes','xhrs','html','text')})
-        html=payload.get('html');check_response(payload.get('status_code'),html)
-        node=BeautifulSoup(html,'html.parser').select_one('#loyalty-inline-evidence')
-        if node is None:raise ProbeError('marker_missing')
-        ui=json.loads(node.get_text());report['ui']={k:v for k,v in ui.items() if k not in ('details','initialResources','finalResources')}
-        for d in ui.get('details',[]):
-            url=card_url(d['url']);parsed=extract(d['html'],url,d['title']);ident=parsed['native_id']
-            data=d['html'].encode();file='partner-'+ident+'.html';(OUT/file).write_bytes(data)
-            report['details'].append({'url':url,'file':file,'sha256':hashlib.sha256(data).hexdigest(),'terms':parsed})
         for entry in payload.get('xhrs',[]):
             if entry.get('url')!=PUBLIC_API:continue
             obs={'url':PUBLIC_API,'method':entry.get('method'),'status':entry.get('status')}
@@ -94,6 +87,14 @@ def main():
                 try:obs.update(inspect_response(json.loads(raw)))
                 except ValueError:obs['response_encoding']='not_json'
             report['observed_responses'].append(obs)
+        html=payload.get('html',payload.get('content'));check_response(payload.get('status_code'),html)
+        node=BeautifulSoup(html,'html.parser').select_one('#loyalty-inline-evidence')
+        if node is None:raise ProbeError('marker_missing')
+        ui=json.loads(node.get_text());report['ui']={k:v for k,v in ui.items() if k not in ('details','initialResources','finalResources')}
+        for d in ui.get('details',[]):
+            url=card_url(d['url']);parsed=extract(d['html'],url,d['title']);ident=parsed['native_id']
+            data=d['html'].encode();file='partner-'+ident+'.html';(OUT/file).write_bytes(data)
+            report['details'].append({'url':url,'file':file,'sha256':hashlib.sha256(data).hexdigest(),'terms':parsed})
     except Exception as exc:
         s=str(exc);report['error']=s if re.fullmatch('[a-z_0-9]{1,100}',s) else type(exc).__name__
     finally:
