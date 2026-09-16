@@ -1,0 +1,53 @@
+name: Airline module - alternative network
+on:
+  push:
+    branches: ['loyalty/airline-coverage-20260916']
+    paths: ['.github/workflows/airline-module-residential.yml']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - run: python -m pip install requests==2.32.5 beautifulsoup4==4.14.3
+      - name: One free-plan request - reserve 25 credits, no retries or publication
+        env:
+          SCRAPINGANT_API_KEY: ${{ secrets.SCRAPINGANT_API_KEY }}
+        run: |
+          python - <<'PY'
+          import hashlib,json,os,re,sys
+          from pathlib import Path
+          sys.path.insert(0,'loyalty')
+          from free_access_probe import FreeReader,ProbeError,now
+          u='https://www.aeroflot.ru/frontend/static/js/airline-partners.master-192-175fd1753-20260908202059.bundle.js'
+          out=Path('airline-module-output');out.mkdir()
+          report={'run_id':os.environ['GITHUB_RUN_ID'],'commit':os.environ['GITHUB_SHA'],'url':u,'started_at':now(),'source_account_used':False,'published_records':0,'maximum_credits':25,'module_read':False}
+          try:
+              reader=FreeReader(os.environ.get('SCRAPINGANT_API_KEY',''),[{'url':u}],max_credits=25,max_requests=1);reader.preflight()
+              raw,meta=reader._request('general',{'url':u,'browser':'false','proxy_country':'RU','proxy_type':'residential','timeout':'60'})
+              cost=meta['Ant-credits-cost'];status=meta['Ant-page-status-code']
+              if cost is None or not re.fullmatch('[0-9]+',cost) or int(cost)>25:raise ProbeError('credit_contract_unconfirmed')
+              if status is None or not re.fullmatch('[1-5][0-9]{2}',status):raise ProbeError('origin_status_unconfirmed')
+              report.update(credits=int(cost),origin_status=int(status))
+              if int(status)==200 and meta['ant-original-header-retry-after'] is None and '<html' not in raw[:500].lower() and len(raw)>1000 and re.search(r'function|=>|webpack',raw[:5000]):
+                  data=raw.encode();(out/'module.js').write_bytes(data)
+                  report.update(module_read=True,module_sha256=hashlib.sha256(data).hexdigest(),module_bytes=len(data))
+              else:report['classification']='not_javascript_or_origin_refusal'
+          except ProbeError as e:report['error']=str(e)
+          except Exception as e:report['error']=type(e).__name__
+          report['finished_at']=now();(out/'report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2))
+          print(json.dumps(report))
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: airline-module-residential-${{ github.run_id }}
+          path: airline-module-output/
+          retention-days: 7
