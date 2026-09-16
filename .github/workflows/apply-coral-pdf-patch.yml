@@ -17,7 +17,7 @@ jobs:
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with:
           python-version: '3.12'
-      - name: Apply exact reviewed integration deltas, no source crawl or Google credential
+      - name: Apply exact reviewed integration deltas without any source or Google key
         run: |
           test "$(git rev-parse HEAD)" = 'c1ee1f2abc6dc1f1585a21eb6ab26cacc7b70ab9'
           python - <<'PY'
@@ -34,26 +34,25 @@ jobs:
           p.write_text(s.replace(needle,needle+"HOSTS['coral_pdf_documents']=['coralbonus.ru']\n"))
           p=Path('loyalty/unified_normalization.py');s=p.read_text()
           needle="    if raw['kind']=='program_rules' and d.get('retrieval_method')=='coral_linked_public_rules_google_import_v1':\n"
-          insert="""    if raw['kind']=='program_rules' and d.get('retrieval_method')=='coral_source_linked_pdf_free_api_v1':
-                  # The PDF is a contract, not a catalogue of extra discounts or codes.
-                  if not d.get('live_document_text') or not d.get('parent_references'):
-                      raise ValueError('Linked PDF provenance missing')
-                  condition('linked_pdf_rules','/conditions',scope={'parent_references':d['parent_references'],
-                            'document_part':d['document_part'],'document_sha256':d['document_sha256'],
-                            'applicability_requires_parent_offer_review':True})
-                  n['quality']['level']='structured_with_review'
-                  n['quality']['issues'].append('linked_rules_no_automatic_benefits_or_codes')
-                  n['content_sha256']=digest({k:v for k,v in n.items() if k!='content_sha256'})
-                  validate_normalized(n);return n
-          """
-          # Strip the YAML/Python continuation indent, retaining reviewed Python indentation.
-          lines=insert.splitlines(True);insert=lines[0]+''.join(line[10:] if line.startswith('          ') else line for line in lines[1:])
+          insert='\n'.join([
+            "    if raw['kind']=='program_rules' and d.get('retrieval_method')=='coral_source_linked_pdf_free_api_v1':",
+            "        # The PDF is a contract, not a catalogue of extra discounts or codes.",
+            "        if not d.get('live_document_text') or not d.get('parent_references'):",
+            "            raise ValueError('Linked PDF provenance missing')",
+            "        condition('linked_pdf_rules','/conditions',scope={'parent_references':d['parent_references'],",
+            "                  'document_part':d['document_part'],'document_sha256':d['document_sha256'],",
+            "                  'applicability_requires_parent_offer_review':True})",
+            "        n['quality']['level']='structured_with_review'",
+            "        n['quality']['issues'].append('linked_rules_no_automatic_benefits_or_codes')",
+            "        n['content_sha256']=digest({k:v for k,v in n.items() if k!='content_sha256'})",
+            "        validate_normalized(n);return n",''])
           assert s.count(needle)==1;p.write_text(s.replace(needle,insert+needle))
           p=Path('.github/workflows/coral-import.yml');s=p.read_text()
           s=s.replace("'loyalty/coral-linked-rules-20260916']","'loyalty/coral-linked-rules-20260916', 'loyalty/coral-pdfs-20260917']")
           s=s.replace('paths: [loyalty/coral_linked_rules.py','paths: [loyalty/coral_pdf_collect.py, loyalty/tests/test_coral_pdf_collect.py, loyalty/coral_linked_rules.py')
           needle='        run: python loyalty/coral_import.py\n';assert s.count(needle)==1
-          s=s.replace(needle,needle+'      - name: Download source-linked public PDFs with the existing free key\n        env:\n          SCRAPINGANT_API_KEY: ${{ secrets.SCRAPINGANT_API_KEY }}\n        run: python loyalty/coral_pdf_collect.py\n')
+          reference=chr(36)+'{{ secrets.SCRAPINGANT_API_KEY }}'
+          s=s.replace(needle,needle+'      - name: Download source-linked public PDFs with the existing free key\n        env:\n          SCRAPINGANT_API_KEY: '+reference+'\n        run: python loyalty/coral_pdf_collect.py\n')
           s=s.replace('from coral_import import validate_bundle','from coral_pdf_collect import validate_bundle').replace('coral-source-evidence/normalized.json','coral-source-evidence/combined.json')
           p.write_text(s)
           final={
