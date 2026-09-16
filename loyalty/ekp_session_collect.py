@@ -91,6 +91,28 @@ def policy_document(reader,audit):
     raise ProbeError('ekp_policy_retry_exhausted')
 
 
+
+def checked_timings(items,start,end):
+    """Keep bounded operational timings only, never headers or response bodies."""
+    if not isinstance(items,list) or len(items)>MAX_PAGES:raise ValueError('ekp_request_timing_invalid')
+    previous=start
+    required={'offset','timeoutMs','startedAt','finishedAt','elapsedMs'}
+    for i,item in enumerate(items):
+        if not isinstance(item,dict) or not required<=set(item) or set(item)-required-{'status','error'}:
+            raise ValueError('ekp_request_timing_invalid')
+        if (type(item['offset']) is not int or item['offset']!=120*i or
+            type(item['timeoutMs']) is not int or not 1<=item['timeoutMs']<=15000 or
+            type(item['elapsedMs']) is not int or not 0<=item['elapsedMs']<=65000 or
+            ('status' in item and (type(item['status']) is not int or not 100<=item['status']<=599)) or
+            ('error' in item and (not isinstance(item['error'],str) or not re.fullmatch('[a-zA-Z_]{1,100}',item['error'])))):
+            raise ValueError('ekp_request_timing_invalid')
+        a,b=instant(item['startedAt']),instant(item['finishedAt'])
+        if not previous<=a<=b<=end or abs((b-a).total_seconds()*1000-item['elapsedMs'])>2:
+            raise ValueError('ekp_request_timing_invalid')
+        previous=b
+    return items
+
+
 def accept_session(obj,out,audit,records,seen,errors):
     """Verify page identities and preserve prior valid pages after a later failure."""
     if not isinstance(obj,dict) or not isinstance(obj.get('pages'),list) or len(obj['pages'])>MAX_PAGES:
@@ -105,7 +127,8 @@ def accept_session(obj,out,audit,records,seen,errors):
         any(not isinstance(x,str) or not re.fullmatch('[a-zA-Z_]{1,100}',x) for x in source_errors)):
         raise ValueError('ekp_session_error_contract_changed')
     audit['session']={'started_at':obj['startedAt'],'finished_at':obj['finishedAt'],
-                      'initial_url':obj['initialUrl'],'final_url':obj['finalUrl'],'errors':source_errors}
+                      'initial_url':obj['initialUrl'],'final_url':obj['finalUrl'],'errors':source_errors,
+                      'requests':checked_timings(obj.get('requests',[]),start,end)}
     offset=0;total=None;previous=start
     for src in obj['pages']:
         if (src.get('request')!=query(offset) or src.get('status')!=200 or src.get('url')!=API
@@ -191,6 +214,9 @@ def validate_session_bundle(folder,*,run_id,commit,clock):
         type(audit.get('reserved_credits')) is not int or not 0<=audit['reserved_credits']<=MAX_CREDITS or
         type(audit.get('provider_requests')) is not int or not 0<=audit['provider_requests']<=MAX_REQUESTS):
         raise ValueError('ekp_session_audit_mismatch')
+    if 'session' in audit:
+        session=audit['session']
+        checked_timings(session.get('requests',[]),instant(session['started_at']),instant(session['finished_at']))
     count=sum(x['source_count'] for x in audit['pages'])
     if (count!=audit['observed_ids'] or count!=meta['distinct_ids_observed'] or
         audit['pagination_complete']!=meta['catalogue_pagination_complete'] or
