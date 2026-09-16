@@ -33,7 +33,7 @@ jobs:
           from free_access_probe import FreeReader,free_plan,now,public_url,sanitized_page,ProbeError
           ROOT='https://www.aeroflot.ru/ru-ru/partners'
           OUT=Path('af-probe-output');OUT.mkdir(exist_ok=True)
-          script=r'''(async()=>{
+          script=r'''await (async()=>{
             const startedAt=new Date().toISOString();
             await new Promise(resolve=>setTimeout(resolve,18000));
             const urls=[...new Set(performance.getEntriesByType('resource').map(x=>{
