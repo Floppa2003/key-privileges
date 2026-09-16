@@ -1,8 +1,8 @@
 name: Free original-source access check
 on:
   push:
-    branches: [main, 'loyalty/free-api-access-20260915', 'loyalty/free-nordwind-live-20260915', 'loyalty/free-browser-policy-20260915', 'loyalty/coral-public-catalog-20260915', 'loyalty/coral-coverage-repair-20260915', 'loyalty/coral-cycle-20260916', 'loyalty/free-calendar-20260916']
-    paths: ['loyalty/free_access_probe.py', 'loyalty/tests/test_free_access_probe.py', 'loyalty/tests/test_free_policy_fallback.py', 'loyalty/tests/test_free_calendar.py', 'loyalty/nordwind_catalog.py', 'loyalty/free_catalog_bundle.py', 'loyalty/coral_catalog.py', 'loyalty/tests/test_coral_catalog.py', 'loyalty/tests/test_coral_catalog_repair.py', 'loyalty/tests/test_coral_cycle.py', 'loyalty/tests/test_nordwind_catalog.py', 'loyalty/normalized.py', '.github/workflows/loyalty-free-access.yml']
+    branches: [main, 'loyalty/free-api-access-20260915', 'loyalty/free-nordwind-live-20260915', 'loyalty/free-browser-policy-20260915', 'loyalty/coral-public-catalog-20260915', 'loyalty/coral-coverage-repair-20260915', 'loyalty/coral-cycle-20260916', 'loyalty/free-calendar-20260916', 'loyalty/failure-coverage-20260916']
+    paths: ['loyalty/tests/test_free_failure_publication.py', 'loyalty/free_access_probe.py', 'loyalty/tests/test_free_access_probe.py', 'loyalty/tests/test_free_policy_fallback.py', 'loyalty/tests/test_free_calendar.py', 'loyalty/nordwind_catalog.py', 'loyalty/free_catalog_bundle.py', 'loyalty/coral_catalog.py', 'loyalty/tests/test_coral_catalog.py', 'loyalty/tests/test_coral_catalog_repair.py', 'loyalty/tests/test_coral_cycle.py', 'loyalty/tests/test_nordwind_catalog.py', 'loyalty/normalized.py', '.github/workflows/loyalty-free-access.yml']
   workflow_dispatch:
   schedule:
     - cron: '3 6 * * 1,2,4,5'
@@ -67,6 +67,7 @@ jobs:
     timeout-minutes: 30
     outputs:
       has_records: ${{ steps.collect.outputs.has_records }}
+      has_payload: ${{ steps.collect.outputs.has_payload }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
@@ -96,7 +97,7 @@ jobs:
   publish:
     needs: probe
     if: >-
-      needs.probe.result == 'success' && needs.probe.outputs.has_records == 'true' &&
+      needs.probe.result == 'success' && needs.probe.outputs.has_payload == 'true' &&
       github.repository == 'Floppa2003/key-privileges' && github.ref == 'refs/heads/main' &&
       vars.LOYALTY_SHEETS_SYNC == 'true'
     runs-on: ubuntu-24.04

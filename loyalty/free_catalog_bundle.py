@@ -87,6 +87,7 @@ def main():
         (Path(args.input)/'report.json').write_text(json.dumps(report, ensure_ascii=False, indent=2))
     else:
         report = json.loads((Path(args.input)/'report.json').read_text())
+    has_payload = False
     if report.get('status') == 'not_configured' or not report.get('free_plan_confirmed'):
         count = 0
     else:
@@ -107,11 +108,14 @@ def main():
                     status=('ok' if meta.get('all_observed_promo_details_read') else 'partial') if rows else 'failed')
             prepare(bundle)
         count = len(bundle['records'])
-        if count:
-            (output/'normalized.json').write_text(json.dumps(bundle, ensure_ascii=False, indent=2))
+        # A valid fresh failure report is a payload even when no offers loaded.
+        # Empty offer upserts leave old evidence and observation dates unchanged.
+        (output/'normalized.json').write_text(json.dumps(bundle, ensure_ascii=False, indent=2))
+        has_payload = True
     if os.getenv('GITHUB_OUTPUT'):
         with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
             f.write('has_records='+('true' if count else 'false')+'\n')
+            f.write('has_payload='+str(has_payload).lower()+'\n')
     print(json.dumps({'normalized_records': count, 'published': False}))
 
 
