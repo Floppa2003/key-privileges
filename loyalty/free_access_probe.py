@@ -230,7 +230,12 @@ def read_policy(reader, url, info):
     return status, raw, credits
 
 
-def run(roots, key, out, *, get=requests.get, sleep=time.sleep):
+def run(roots, key, out, *, get=requests.get, sleep=time.sleep, separate_ekp=False):
+    if type(separate_ekp) is not bool:raise ProbeError("invalid_separate_ekp_mode")
+    if separate_ekp:roots=[r for r in roots if r["id"]!="ekp"]
+    ids=[sid for sid in SOURCE_IDS if not separate_ekp or sid!="ekp"]
+    budget=94 if separate_ekp else MAX_CREDITS
+    request_bound=13 if separate_ekp else MAX_REQUESTS
     out = Path(out)
     out.mkdir(parents=True, exist_ok=True)
     # Remove only this probe's known prior page outputs, never unrelated files.
@@ -238,10 +243,10 @@ def run(roots, key, out, *, get=requests.get, sleep=time.sleep):
         (out / (sid + '.html')).unlink(missing_ok=True)
     report = {'started_at': now(), 'run_id': os.getenv('GITHUB_RUN_ID'),
               'commit': os.getenv('GITHUB_SHA'), 'mode': 'free_access_probe',
-              'source_ids': list(SOURCE_IDS), 'status': 'not_configured',
+              'source_ids': ids, 'status': 'not_configured',
               'published_records': 0, 'account_sessions_used': False, 'sources': [],
               'requested_country': 'RU', 'requested_proxy_type': 'datacenter',
-              'maximum_estimated_credits': MAX_CREDITS, 'target_requests': 0}
+              'maximum_estimated_credits': budget, 'target_requests': 0}
     def save():
         tmp = out / 'report.tmp'
         tmp.write_text(json.dumps(report, ensure_ascii=False, indent=2))
@@ -256,7 +261,7 @@ def run(roots, key, out, *, get=requests.get, sleep=time.sleep):
         # Reuse the same crawl-rule and refusal semantics as the production reader.
         from public_transport import robots_document, check_response
         from protego import Protego
-        reader = FreeReader(key, roots, get=get)
+        reader = FreeReader(key, roots, get=get, max_credits=budget, max_requests=request_bound)
         reader.preflight()
         report['status'] = 'checked'; report['free_plan_confirmed'] = True
         policies = {}; intervals = {}; last = {}
