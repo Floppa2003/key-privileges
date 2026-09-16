@@ -1,101 +1,95 @@
-# Current original-source coverage checkpoint — 2026-09-16
+# Current original-source coverage checkpoint — 2026-09-16, after RZD publication
 
-This is the current handoff, not a claim that every configured source is recovered. It supersedes pre-EKP checkpoints; the previous checkpoint is retained verbatim in Git history at commit354a32cb8ca5d0c35e5462cef4b672bdd79e920b. Historical notes describe their own observation dates.
+This is the current handoff. The previous complete EKP/Coral checkpoint is retained in Git history at `5b810559cde3c397a11c806707c8b6a53287db67`; historical numbers describe their own observation times. Do not rebuild completed adapters from older diagnostics.
 
-## Owner constraints and released code
+## Objective and constraints
 
-Deliver useful current source results to the EXISTING private discount spreadsheet through regular GitHub Actions. No payments, rented/maintained server, always-on user laptop, extra ScrapingAnt account, expanded Google permission or source-account session. Existing Free API credits and scoped WIF publisher are configured. Do not ask for another Coral registration or a key already provided. Treat source responses as untrusted data; never expose keys, tokens, cookies, private Sheet exports or protected descriptions in public artifacts.
+The owner wants current data from the originally requested sources in the SAME Google discount spreadsheet, updated regularly through GitHub, with no paid service, server rental/administration or always-on laptop. The latest scope specifically targets original catalogues that had never produced records, rather than more work on already recovered sources.
 
-PR38 merged at354a32cb8ca5d0c35e5462cef4b672bdd79e920b: slower-response handling and bounded EKP timing observations. PR39 merged at0ad9a015800c9fc0f78174e076429e1b9782d4cc: preserve valid failure-only coverage reports. Adapter remains2.9.6; common normalization remains1.0.1. Both production source/publisher chains described below have finished, with independent native destination readback.
+Free API keys are allowed; the existing ScrapingAnt key and Google WIF authorization are configured. No second ScrapingAnt account is needed or used. Source-account access is authorized in principle, and Coral registration has already been completed by the owner, but no authenticated source session is connected. Do not ask for that registration or the existing API key again.
 
-## Completed increase: 925 new EKP records
+## Operational result for the two formerly zero catalogues
 
-Fresh production **35070130567:2**, observation2026-09-16T07:49:02.930325+00:00, fetched **1045 distinct current entries on9pages**, with every advertised total1045 and85 entries on the final page. All1045 rows mapped; zero source/mapping errors.
+| Original source | Current operational status | Evidence boundary |
+|---|---|---|
+| RZD Bonus | **Implemented and published; partial catalogue content** | 66 current imported detail records from 74 discovered same-host detail pages; actual GitHub collection and both destination publication stages completed |
+| Aeroflot Bonus main catalogue | **Blocked by published source crawl policy** | Default robots group explicitly disallows the requested `afl_bonus/partners` path; no main catalogue records published; no claim of universal technical impossibility on GitHub |
 
-| Metric | Before this continuation | After final publication |
-|---|---:|---:|
-| EKP catalogue records | 120 | 1045 |
-| EKP public-term records | 86 | 935 |
-| EKP login-gated evidence records | 34 | 110 |
-| Retained public parser records, all sources | 1227 | 2152 |
-| Unified input/output records | 1875 | 2800 |
+Aeroflot's exact decision, complete policy-projection provenance, applicable group, alternative discovery attempts and reopening conditions are in [AEROFLOT_ACCESS_STATUS.md](AEROFLOT_ACCESS_STATUS.md). A source-policy blocker is not the same as a network timeout or proof that arbitrary code cannot download a page. Existing partner-owned rules and Promo Miles do not count as recovery of that original catalogue. Permission from the source, an approved feed, or changed applicable rules would reopen the decision.
 
-The old120 EKP IDs remain and were freshly updated, not duplicated. New rows1229–2153 add925 IDs. This is NOT925 proven active/personal cash discounts: publication, access requirements, current eligibility and linked rules remain separate facts.
+## RZD release and actual production result
 
-Artifact10435868136, `ekp-public-35070130567-2`, SHA256 `c751f45318f4164894535596d1cad8af8755263eca347fcbe053c334b2b88c3f`: downloaded, ZIP CRC/hash checked; every1045 record independently reconstructed from safe saved page projections, schema/application validated and prepared by the production writer. This is a fresh production read, NOT substitution of diagnostic35066120891. Relative to that earlier1046 diagnostic, four native IDs disappeared and three appeared; never hardcode1046 or label the changed total a missing final row.
+PR40 is merged at `2ba43842cc579fda447880a5cf4708bb81f066ac`. Production run **35085594949:1** used that commit. Regression, collection and final publisher job **104769971215** all completed successfully.
 
-The final EKP publisher job104710759571 completed both public upsert and private normalization/readback successfully. Permanent acceptance record: https://github.com/Floppa2003/key-privileges/pull/38#issuecomment-5694033897
+- Collection started `2026-09-16T10:34:52.536949+00:00` and finished `2026-09-16T11:09:35.458282+00:00`.
+- The source's canonical homepage links to `https://rzd-bonus.ru/partners/`; the coverage report retains the originally configured `https://www.rzd-bonus.ru/?accessible=true` as its root identity.
+- 23 source-owned catalogue pagination states were read. The discovered single-PAGEN page queue was exhausted. The code avoided 264 repeated combinations of independent category pagination states; these are not 264 missed catalogue pages.
+- 74 distinct same-host detail URLs were discovered and attempted. 66 yielded accepted public text records, including Auchan, Chefmarket, Sportmaster, Afisha, Yandex Afisha, MIF and other partners/campaigns. These are records, not necessarily unique merchants, active cash discounts or personal entitlements.
+- Eight detail pages did not yield conditions. Two returned Google import errors. Six returned only `Скидки и суперакции` and `Вход в РЖД Бонус`; the validator correctly rejected this 36-character generic content. This alone does not establish whether the target is expired, redirected or authentication-gated.
+- External card-link occurrences were counted (26 across the observed pages), not fetched or claimed as distinct covered partners. Linked files, image-only rules and personal redemption were not read.
+- Source status is honestly **partial**, not `ok`: catalogue discovery completed within its defined scope, but eight conditions pages remain unavailable.
+- 99 import requests were attempted; 97 successful cell observations were retained: one robots, one home, 23 catalogue and 72 detail observations. Six of the 72 detail observations failed semantic validation, leaving 66 published records.
 
-### Native EKP verification
+### Transport and cost
 
-Destination: `1uFR7croj7p6RRNPcoTRYlVl06hKsurkIgyu1IdMMB-4`.
+GitHub controls Google IMPORTDATA/IMPORTXML in a separate public-only scratch workbook. It then reads typed results through the existing Sheets-scoped authorization, validates them and sends literal records to the ORIGINAL discount workbook through the established publisher. No source account, provider key, source-session cookie, paid reader or rented machine is required. **ScrapingAnt consumption for this new RZD path is zero.**
 
-- `parser_offers!Y1109:Y2153`: native search scanned1045 rows and matched1045 markers `35070130567:2`. `F1109:F2153` independently counted935 partner_offer and110 source_observation. Display was limited to one returned row, but the connector reported full scanned/matched counts.
-- Native rows1109,1110,1229,1230,2152,2153 match actual source IDs, names, dates, hashes and run. Manual-column samples remain blank; this is not an exhaustive independent manual-column comparison.
-- Gated sample1114 retains only the login requirement and source identity: benefits, rates, codes and protected descriptions absent. Normalized samples1877–1878 retain observation versus offer distinction.
-- `parser_coverage!A1179:N1179`: ok,1045 found/1045 normalized/0 errors; complete anonymous public pagination, with private/linked/full-eligibility flags false.
-- After EKP, `normalization_audit!A7:J7` was verified/current,2800 input/output rows. Source fingerprint `747180d82eeeb4c693f592e8a0fd8fed64d16d43a3f34b77fde99715fde5a6e8`; generation `40fa827e602725ae574ba67858a83923ca9ce620d9d6eed5a68895f58d12b226`. The later Coral refresh legitimately changes these hashes; see final state below.
+The reader respects the observed 20-second source crawl delay, finite runtime/page/import bounds, fixed host/URL/formula recipes, workspace identity and generation markers, two stable reads and verified cleanup. The reader never reads the discount database during collection. Current fields are dynamically extracted, not replaced by a recorded answer.
 
-### Transport findings and tests
+Google imports return parsed cells rather than original HTML or an origin HTTP response. **Origin cache age and exact network fetch time are not exposed.** The stored observation time identifies the requested calculation, not a certified uncached origin read. Nine accepted records contain date serials explicitly retained as Google display/typed evidence; no expiry date is inferred from a publication date. Other numeric coercions are rejected rather than silently changing coupon values.
 
-Successful diagnostic and failed earlier production used byte-identical JS. Actual-JS virtual-clock tests reproduce valid8s replies being discarded by the old5s per-request timeout. PR38 allows at most15s, clipped to the remaining original43s script deadline. It adds no page/browser retry or provider call. Bounded timings distinguish header/body timeout without recording source headers, cookies or bodies.
+The technical setup is already complete. No additional owner action, key or registration is needed for the released public collection.
 
-First PR38 production attempt failed BEFORE JS at provider route404:5821→5796 credits,25 spent. One explicit collection-job rerun obtained the complete current catalogue:5796→5646,150 spent. The successful API responses took1.031–1.953s, so live recovery is NOT proof that the timeout extension uniquely caused success. Network access remains intermittent; one successful production pass does not certify future cron reliability.
+### Artifact and code verification
 
-PR38 Actions35069873660 passed655 Python+7 KEY tests without skips. Artifact10435592840 SHA256 `ae53cb48b39899f274beb593af0224baba53c1dbe4b16480c30f90d874f97285`, CRC/hash and all4 changed executed bytes verified. Eight new local timing/validation tests and the existing actual-JS test passed. Full local tests could not run because protego is missing and installation failed; pinned Actions is authoritative for the full suite.
+Public artifact **10442639040**, `rzd-import-public-35085594949-1`, ZIP SHA256:
+`03d22b365e9f207686bc7533538e804f208916e04936a291570638fa645ad240`.
 
-## Final provider run: refresh, not additional new IDs
+The archive was downloaded, CRC/hash checked, and all **66** records independently reconstructed exactly from their own typed source observations. All were JSON-schema validated, application validated and prepared by the production publisher. The discovered graph, distinct identities, observation ordering, 74/66/8 counts and partial/completeness flags were checked without a second source crawl. The actual workflow also ran the full real robots-aware validator before obtaining publication credentials.
 
-**35071057184:1**, observation2026-09-16T07:56:57.186432+00:00, runtime commit0ad9a015800c9fc0f78174e076429e1b9782d4cc. Collection and final publisher job104714353716 both completed successfully. Source results remain partial/failed where appropriate:
+Main test artifact **10442221882**, SHA256:
+`82042f0fb0a8cfb8acf9df0ed75cbf63f873d482fb1abd6d5281bd962a120de2`.
+It contains the executed tree and logs showing **681 Python tests and 7 KEY tests passing**. Three critical executed files were independently compared with their Git blob identities at the runtime commit: `rzd_import_collect.py` = `659611ceb93b54c0c19d3bf09621ffdff52ca574`, `rzd_import_catalog.py` = `7aa4a31f1960e402c1626d50cea8a9283cf4456d`, `rzd-import.yml` = `7bee181f52a056edbfd0dddea59c53db4dbaf7bc`. Eighteen targeted RZD tests also passed locally. The missing local Protego dependency prevents claiming a repeated full local suite; pinned Actions is the complete-suite evidence.
 
-| Source | Fresh accepted | Actual scope and failures |
-|---|---:|---|
-| Coral club | 24 | 29 details discovered in9 successfully read categories of the selected10/20 half;5 failed details and1 failed category |
-| Coral promotions | 22 | 22 of24 current promo links;2 access challenges |
-| Nordwind | 0 | provider_http_500 while reading policy |
-| RZD | 0 | provider_http_423 at root after readable policy |
-| Aeroflot | 0 | robots_not_readable; catalogue not requested |
+### Native destination acceptance after the final write
 
-All46 Coral records already existed. They were freshly updated; **do not add46 to the925 new IDs**. Retained records from failed pages are not relabelled as freshly observed. Full selected-half/program coverage is not claimed.
+Destination remains `1uFR7croj7p6RRNPcoTRYlVl06hKsurkIgyu1IdMMB-4`, title `скидки`.
 
-Current club failures: category `/klub-privilegii/transfer/`; details madame-coco, sitidraiv and ekskurs-byuro-1500 returned access challenges, aitigenio and svoboda-clova returned provider404. Promo failures: `/promo/papillon-2026/` and `/promo/the-land-of-legends-kingdom-hotel/` returned access challenges. Preserve these exact gaps rather than an outdated earlier run's failed-path list.
+- **66 new RZD rows occupy `parser_offers!A2159:Y2224`.** All 66 native content hashes in X were compared programmatically with the source artifact; all matched. All 66 Y values contain run `35085594949:1`.
+- Native IDs, names/titles and record kinds at rows2159,2160,2161,2224 match the source. First/last timestamps match. The full Auchan conditions sample was read natively; it includes earning and exclusions, not just a title. Last-row manual column remains blank.
+- `parser_coverage!A1275:N1275` is the exact current report: 74 discovered,66 normalized,8 errors, `partial`, with the eight failed URLs and scope limits preserved.
+- `normalization_audit!A7:J7` is **verified/current**: **2871** input/output records, including **2223** retained parser records. These totals are retained data, not all freshly read in this RZD pass.
+- Final source fingerprint: `c061ffce4edd615da4312da5470c7d5c381b2e5c06c77875a32fa766e9a1e9dc`; final normalization generation: `dc061c43c846efef615365bca3c16dd832afb842e5667a1098d86611f9e73999`.
+- Normalized row2807 contains the corresponding new Auchan record and native top/wrap/10pt styling. No exhaustive rendered-workbook or independent private-cell comparison is claimed. The established publisher performs complete output readback; these independent connector checks cover all new hashes/run markers and declared actual-value/report/manifest samples.
+- EKP sentinel2153 still has its prior successful run `35070130567:2`, hash and timestamp. RZD publication did not relabel it as a new RZD observation.
+- The public staging workbook was read across its entire `public_fetch!A1:D2048` after collection: only the header and `idle:35085594949:1` remained. The temporary Aeroflot policy tab was deleted and metadata read back; the RZD workspace is intact.
 
-Artifact10435763427, `free-access-public-35071057184-1`, SHA256 `56402afdbb7b45f19c9319332b034ebedea0d57b0de7dd721cc8707ccf72f5d7`: downloaded, CRC/hash checked. All46 rows were rediscovered from saved CURRENT listing/category bytes, exactly re-parsed from their own detail bytes, schema/application validated and prepared along with all5 source reports. Root, category and detail digests and retrieval-time bounds checked; no new crawl or historical answer substitution during verification.
+Before this release, the latest direct scheduled work had brought retained parser count to2157, five more than the earlier EKP checkpoint2152. RZD adds66, giving2223. Do not attribute that earlier five-record increase to this RZD adapter.
 
-### Final native state after the LAST provider write
+## Regular operation
 
-- `parser_coverage!A1180:N1184`: all5 exact current reports read back with24/29 club,22/24 promo and the3 explicit failed sources. Errors and observation timestamps match the fresh artifact.
-- `parser_offers!Y2:Y1108`: native search scanned1107 rows and found46 markers `35071057184:1`. Native returned samples1014 and1016 match current source IDs, titles, dates and hashes programmatically. No new IDs: parser total remains2152.
-- Nordwind sentinels1007–1008 preserve timestamp2026-09-15T23:56:02.477277+00:00 and old run35037785769:1. EKP sentinels2152–2153 preserve their fresh EKP hashes/date/run35070130567:2 after the separate Coral publication.
-- `normalization_audit!A7:J7`: **verified/current**,2800 input/output rows; source inventories2152 parser+495 loyalty+96 Yandex+45 VG+12 inbox.
-- FINAL source fingerprint `337839ffc48ce08dd18c1d92638bd857e7dd8c7473dcca90fda18649bed76dd2`; FINAL generation `84e13c497de881c43c5b6bf10f067cf2ac8bdb1f222811644ec156288c1aee66`.
-- Components remain3160 benefits,8395 conditions,114 costs and643 code records. They are evidence components, not independently combinable or proven active/personal offers.
-- Native normalized style samples preserve top/wrap/10pt. No exhaustive Google-rendered workbook visual review is claimed. Existing publisher reads back all current output rows; independent connector checks use full run counts, exact reports, manifest and declared samples.
+| Collector | UTC schedule | Moscow schedule | Provider reservation limit |
+|---|---|---|---:|
+| Original direct sources | Daily05:23 | Daily08:23 | No ScrapingAnt in this path |
+| Coral/Nordwind and remaining provider probes | Mon/Tue/Thu/Fri06:03 | Mon/Tue/Thu/Fri09:03 | 269/run |
+| EKP anonymous catalogue | Monday07:13 | Monday10:13 | 175/run |
+| RZD Google import | Wednesday08:37 | Wednesday11:37 | 0 ScrapingAnt |
 
-## Failure-only report repair and verification boundary
+PR40 prevents provider source collection on ordinary code pushes while preserving its schedule/manual trigger; regression still runs. This avoids charging the Free quota for unrelated implementation commits. The existing conservative provider ceiling5986/31days excludes manual tests, other account usage and tariff/cron anomalies. No new balance was measured in this RZD/Aeroflot continuation, so do not repeat an old balance as current.
 
-Earlier35067498377 had five failed sources, zero offers and a skipped publisher because has_records controlled whether a coverage payload existed. PR39 separates **has_payload** from **has_records**: a validated current failure-only bundle is written and eligible for coverage publication. Empty offer upserts do not refresh old source dates/manual columns. Wrong run/attempt/commit, stale reports and unconfirmed-Free/unconfigured cases remain rejected. No source adapter, query, permission, schedule or budget changes.
+The released RZD bound is32 catalogue pages,100 details and135 imports with3300-second runtime. If a future catalogue has more than100 same-host details, the worker rotates the chosen detail subset weekly and explicitly reports partial coverage; it does not certify an unbounded full programme. Current74 details were all attempted, so this bound did not limit the present result. A successful release-triggered pass is not proof of future scheduled reliability.
 
-Seven new local tests exercise the actual CLI/build/planner and reproduce the old loss. Actions35070813062 passed **662 Python+7 KEY tests**, no skips; artifact10435787540 SHA256 `bfb321ec652e8b0cd67d2478e4d8ea5292834eb01239197098ddb73c8d25a787`, CRC/hash and all3 changed executed files verified. Main regression also completed successfully. The ALL-zero edge case is covered by these tests; the final live run had46 accepted records, so do not claim that live run exercised the all-zero branch.
+## Sharing and account-data boundary
 
-## Regular operation and costs
+**Do not call the original destination private.** A fresh Drive permission read confirmed `anyone:writer` (link sharing, not indexed discovery), in addition to its owner and a writer. This was already set; no sharing permission was changed here or by the RZD release. The existing normalization mode string `private_complete` describes which source tabs it processes, NOT the spreadsheet's sharing ACL.
 
-| Collector | UTC schedule | Maximum provider reservation/run |
-|---|---|---:|
-| Original direct sources | Daily05:23 | No ScrapingAnt use in that direct path |
-| Extra provider/Coral sources | Mon/Tue/Thu/Fri06:03 | 269:94 root+175 Coral |
-| EKP one anonymous browser | Monday07:13 | 175:policy25+optional policy-route retry25+one browser125 |
+Only public source descriptions enter the new path. Do not add cookies, tokens, SMS values, authenticated-only conditions or personal issued codes to this destination/public artifacts under the current sharing state. The owner's permission to use accounts is not permission to expose credentials or private results. Existing original data and permissions were not automatically rewritten.
 
-Conservative recurring31-day ceiling:19×269+5×175=5986 credits, excluding manual diagnostics/reruns, other usage, tariff changes and cron anomalies. Coral UTC-date parity halves both recur; planned gap per half is at most4 days absent source/job failures. Scheduled configuration is not a promise every page loads.
+## Remaining work and stopping criteria
 
-Last independently measured balance: **5646 at2026-09-16T07:49:50Z, BEFORE the final provider run**. That final run made72 source requests, reserved44+154=198 credits and recorded23+152=175 successful cost-header credits. Failed-call debit is not fully reconciled; do not present5646−175 as a measured final balance. Reserving the full269 cap still leaves projected5377 against5273 scheduled credits for Sep17–Oct15 inclusive, under unchanged costs/no other usage. Stop further discretionary source experiments in this release; preserve recurring capacity. No paid plan or extra account.
+1. **RZD is no longer a zero-output source:** source-to-destination acceptance is complete with66 records and eight explicitly unresolved condition pages. Improving that partial content is a separate task from proving the GitHub-controlled path exists.
+2. **Aeroflot remains unimplemented due to an evidenced source-policy blocker.** Record the scoped status, not `impossible_on_GitHub` and not a fabricated success. Reopen only with an appropriate permitted source channel or changed policy; consult AEROFLOT_ACCESS_STATUS.md rather than repeating the same failed proxy matrix.
+3. EKP retains the previously published1045-entry anonymous region98 catalogue, with935 public terms and110 gated observations. Its other-region/private/linked/image eligibility limits remain. Existing Coral and Nordwind data retain their own observation times and latest partial/failed reports; they were not recrawled in this continuation.
+4. Future failed imports must preserve historical record times, publish clear coverage failures where validated, and leave the common manifest unverified if final publication/readback fails. Current-page extraction, completed publication and native readback remain the acceptance gate.
 
-## Remaining scope and next acceptance gates
-
-1. EKP full pagination applies ONLY to the current anonymous region98 filter labelled Все регионы. It does not verify personal eligibility, gated110 descriptions, other regional result sets, image-only clauses, linked partner/PDF rules or individual detail navigation. Dates remain source text unless separately parsed. No login, coupon issuance, purchase or bonus spending occurred.
-2. Coral selected-half/detail gaps above remain. Inspect latest source reports before choosing a materially useful permitted improvement; repeating a challenge or substituting a snippet is not recovery.
-3. Nordwind retains older successful accordion data; its failed latest policy read is not a refresh. RZD catalogue is not recovered. Aeroflot latest policy was unreadable; an earlier separately observed policy disallowed the requested catalogue root. Do not bypass those restrictions or call selected partner-side pages the complete catalogue.
-4. Improve coverage only with concrete new permitted retrieval/parser evidence and sustainable Free budget. Current-page extraction, completed publication and native readback—not fixture success alone—are the acceptance gates. Stable source configuration/resource bounds are allowed; fixed benefit answers and historical captures as fresh runtime inputs are not.
-5. Both release publishers and native verification are complete at this checkpoint; no pending release run is being called finished. Future cron executions remain unobserved.
-
-Public artifacts expire after7 days (these releases around Sep23). Code, PR evidence and this checkpoint persist. Local verification reports handed to the owner are source/readback evidence, not new production observations.
+Public artifacts expire after7days (this release around2026-09-23). Repository code, source-policy decision and this checkpoint persist. No pending release run is represented as completed in this checkpoint.
