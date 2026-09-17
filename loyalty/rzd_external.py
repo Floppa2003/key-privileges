@@ -135,10 +135,15 @@ def tables(block):
              for row in t.find_all('tr')] for t in block.find_all('table')]
 
 def tour_fields(raw,url):
-    soup=BeautifulSoup(raw,'html.parser');titles=[text(h.get_text(' ',strip=True)) for h in soup.select('h1') if h.get_text(strip=True)]
+    soup=BeautifulSoup(raw,'html.parser')
     blocks=soup.select('.modal-main.content-price .text-content-route')
-    if len(titles)!=1 or len(blocks)!=1:raise ValueError('re_tour_owned_structure')
-    block=blocks[0];body=text(block.get_text('\n',strip=True))
+    if len(blocks)!=1:raise ValueError('re_tour_owned_structure')
+    block=blocks[0]
+    # A price-block heading is a condition, not the tour's identity heading.
+    titles=[text(h.get_text(' ',strip=True)) for h in soup.select('h1')
+            if h.get_text(strip=True) and block not in h.parents]
+    if len(titles)!=1:raise ValueError('re_tour_owned_structure')
+    body=text(block.get_text('\n',strip=True))
     if not 40<=len(body)<=35000:raise ValueError('re_tour_text_bound')
     clauses=[]
     for node in block.find_all(['p','li']):
