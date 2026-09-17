@@ -2,8 +2,8 @@
 name: Aeroflot public catalogue via Google import
 on:
   push:
-    branches: [main, 'loyalty/aeroflot-google-import-20260916', 'loyalty/airline-coverage-20260916']
-    paths: [loyalty/aeroflot_import_catalog.py, loyalty/aeroflot_airlines.py, loyalty/tests/test_aeroflot_airlines.py, loyalty/unified_normalization.py, loyalty/aeroflot_import_collect.py, loyalty/tests/test_aeroflot_import.py, loyalty/normalized.py, .github/workflows/aeroflot-import.yml]
+    branches: [main, 'loyalty/aeroflot-google-import-20260916', 'loyalty/airline-coverage-20260916', 'loyalty/aeroflot-retry-20260917']
+    paths: [loyalty/aeroflot_import_catalog.py, loyalty/aeroflot_airlines.py, loyalty/tests/test_aeroflot_airlines.py, loyalty/unified_normalization.py, loyalty/aeroflot_import_collect.py, loyalty/tests/test_aeroflot_import.py, loyalty/tests/test_aeroflot_retry.py, loyalty/normalized.py, .github/workflows/aeroflot-import.yml]
   workflow_dispatch:
     inputs:
       scope:
@@ -76,7 +76,7 @@ jobs:
         id: collect
         env:
           GOOGLE_ACCESS_TOKEN: ${{ steps.google.outputs.access_token }}
-          CATALOG_SCOPE: ${{ github.event_name == 'push' && 'airlines' || inputs.scope || 'all' }}
+          CATALOG_SCOPE: ${{ inputs.scope || 'all' }}
         run: python loyalty/aeroflot_import_collect.py --scope "$CATALOG_SCOPE"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()

@@ -25,6 +25,9 @@ ROWS=4096
 MAX_DETAILS=260
 MAX_READS=324
 MAX_SECONDS=3000
+MAX_DETAIL_RETRIES=12
+RETRY_WAIT_SECONDS=30
+TRANSIENT_IMPORT_ERRORS=frozenset({'af_import_error_cell','af_import_calculation_timeout'})
 OUT=Path('aeroflot-import-output')
 
 
@@ -44,7 +47,7 @@ class ImportReader:
         self.client=client or Sheets(STAGING_ID,token)
         self.clock=clock;self.sleep=sleep;self.run_id=run_id
         self.started=clock();self.next_at=0;self.delay=5;self.calls=0
-        self.observations=[];self.cleanup_verified=False
+        self.observations=[];self.cleanup_verified=False;self.retry_events=[]
         meta=self.client.request('GET',params={'fields':'spreadsheetId,properties(importFunctionsExternalUrlAccessAllowed),sheets.properties(sheetId,title,gridProperties)'})
         targets=[x['properties'] for x in meta.get('sheets',[]) if x['properties']['sheetId']==SHEET_ID]
         if (meta.get('spreadsheetId')!=STAGING_ID or meta.get('properties',{}).get('importFunctionsExternalUrlAccessAllowed') is not True
@@ -81,6 +84,31 @@ class ImportReader:
         raise ValueError('af_workspace_not_cleared')
 
     def read(self,url,kind):
+        """Retry only transient detail imports after verified workspace cleanup."""
+        try:
+            return self._read_once(url,kind)
+        except ValueError as exc:
+            if (kind not in ('detail','airline_detail') or str(exc) not in TRANSIENT_IMPORT_ERRORS
+                or not self.cleanup_verified or self.calls>=MAX_READS
+                or self.clock()-self.started>MAX_SECONDS-80-RETRY_WAIT_SECONDS
+                or len(self.retry_events)>=MAX_DETAIL_RETRIES
+                or any(e.get('url')==url for e in self.retry_events)):
+                raise
+            event={'url':url,'kind':kind,'first_error':str(exc),'wait_seconds':RETRY_WAIT_SECONDS,
+                   'started_at':now(),'result':'pending'}
+            self.retry_events.append(event)
+            try:
+                self.sleep(RETRY_WAIT_SECONDS)
+                observation=self._read_once(url,kind)
+                event['result']='recovered'
+                return observation
+            except Exception as retry_error:
+                event['result']='failed';event['final_error']=reason(retry_error)
+                raise
+            finally:
+                event['finished_at']=now()
+
+    def _read_once(self,url,kind):
         f=m.formula(url,kind)
         if self.calls>=MAX_READS or self.clock()-self.started>MAX_SECONDS-80:raise ValueError('af_collection_bound')
         generation=f'{self.run_id}:{self.calls+1}'
@@ -219,6 +247,36 @@ def walk(reader,run_id,observed_at,*,checkpoint=lambda:None,scope='companies'):
             'sources':[report(observed_at,records,partners,errors,pol,scope=scope,air_partners=air_partners,air_roots=air_roots)]}
 
 
+
+def validate_retries(audit,observations,partners,air_partners,start,end):
+    """Recovery receipts cannot claim a foreign target or an unobserved result."""
+    events=audit.get('detail_retries',[])
+    if not isinstance(events,list) or len(events)>MAX_DETAIL_RETRIES:raise ValueError('af_retry_audit_bound')
+    observed={(o['url'],o['kind']):o for o in observations};seen=set();last=start
+    for event in events:
+        if not isinstance(event,dict):raise ValueError('af_retry_audit_shape')
+        url=event.get('url');kind=event.get('kind')
+        if (kind not in ('detail','airline_detail') or event.get('first_error') not in TRANSIENT_IMPORT_ERRORS
+            or type(event.get('wait_seconds')) is not int or event['wait_seconds']!=RETRY_WAIT_SECONDS
+            or event.get('result') not in ('recovered','failed') or url in seen):raise ValueError('af_retry_audit_shape')
+        m.formula(url,kind)
+        pid=int(dict(parse_qsl(urlsplit(url).query))['id'])
+        if pid not in (partners if kind=='detail' else air_partners):raise ValueError('af_retry_undiscovered_target')
+        a,b=m.instant(event['started_at']),m.instant(event['finished_at'])
+        if not last<=a<=b<=end:raise ValueError('af_retry_audit_time')
+        last=b;seen.add(url);obs=observed.get((url,kind))
+        if event['result']=='recovered':
+            if obs is None or not a<=m.instant(obs['requested_at'])<=m.instant(obs['calculated_at'])<=b:
+                raise ValueError('af_retry_recovery_not_observed')
+            if 'final_error' in event:raise ValueError('af_retry_recovery_has_error')
+        elif obs is not None or not isinstance(event.get('final_error'),str):
+            raise ValueError('af_retry_failure_mismatch')
+    calls=audit.get('import_requests')
+    minimum=len(observations)+len(events)
+    if calls is not None and (type(calls) is not int or not minimum<=calls<=MAX_READS):
+        raise ValueError('af_retry_request_accounting')
+
+
 def validate_bundle(folder,*,run_id,commit,clock):
     folder=Path(folder)
     for name in ('normalized.json','evidence.json'):
@@ -267,6 +325,7 @@ def validate_bundle(folder,*,run_id,commit,clock):
     supplied=bundle['sources'][0]
     if supplied!=report(bundle['observed_at'],expected,partners,supplied['errors'],pol,scope=scope,air_partners=air_partners,air_roots=air_roots):raise ValueError('af_bundle_coverage')
     if sum(r['native_id'].startswith('partner:') for r in expected)>MAX_DETAILS or sum(r['native_id'].startswith('airline:') for r in expected)>airlines.MAX_AIRLINES:raise ValueError('af_bundle_detail_bound')
+    validate_retries(audit,observations,partners,air_partners,start,end)
     prepare(bundle)
     return bundle
 
@@ -281,7 +340,9 @@ def main():
       'staging_contains_only_public_source_data':True,'observations':[], 'cleanup_verified':False,
       'origin_response_and_cache_age_not_exposed':True,'scope':args.scope}
     def checkpoint():
-        if reader:audit['observations']=reader.observations
+        if reader:
+            audit['observations']=reader.observations
+            audit['detail_retries']=reader.retry_events
         save(out/'evidence.json',audit)
     try:
         reader=ImportReader(os.environ.get('GOOGLE_ACCESS_TOKEN',''),run_id)

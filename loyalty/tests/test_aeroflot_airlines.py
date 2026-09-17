@@ -130,9 +130,9 @@ class WalkTests(unittest.TestCase):
     def test_undiscovered_or_conflicting_children_are_rejected(self):
         p=a.catalog(obs([preview()],'airline_catalog'))
         with self.assertRaises(ValueError):a.add_children(p,{'id':91,'children':[{'id':91,'title':'Wrong','iata':'ZY'}]})
-    def test_workflow_keeps_schedule_and_caps_release_to_new_scope(self):
+    def test_workflow_keeps_schedule_and_defaults_to_combined_scope(self):
         s=(Path(__file__).resolve().parents[2]/'.github/workflows/aeroflot-import.yml').read_text()
-        self.assertIn("47 8 * * 4",s);self.assertIn('--scope',s);self.assertIn("'airlines'",s)
+        self.assertIn("47 8 * * 4",s);self.assertIn('--scope',s);self.assertIn("options: [all, companies, airlines]",s);self.assertIn("CATALOG_SCOPE: ${{ inputs.scope || 'all' }}",s)
         self.assertNotIn('SCRAPINGANT_API_KEY',s)
 
 if __name__=='__main__':unittest.main()
