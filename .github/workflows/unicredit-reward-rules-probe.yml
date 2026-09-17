@@ -1,0 +1,90 @@
+name: RZD-linked bank current reward rules
+on:
+  push:
+    branches: ['diagnostics/rzd-external-20260917']
+    paths: ['.github/workflows/unicredit-reward-rules-probe.yml']
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - run: python -m pip install requests==2.32.5 beautifulsoup4==4.14.3 protego==0.6.2 pypdf==6.18.1
+      - name: Discover and read the linked reward contract, not unrelated tariff files
+        run: |
+          python - <<'PY'
+          import io,json,hashlib,os,re,time
+          from pathlib import Path
+          from datetime import datetime,timezone
+          from urllib.parse import urljoin,urlsplit
+          import requests
+          from bs4 import BeautifulSoup
+          from protego import Protego
+          from pypdf import PdfReader
+          host='www.unicreditbank.ru';root='https://'+host
+          page=root+'/ru/personal/cards/pi-packages/debit-cash-and-back.html'
+          out=Path('bank-rules-output');out.mkdir()
+          report={'run_id':os.environ['GITHUB_RUN_ID'],'commit':os.environ['GITHUB_SHA'],'requests':[],'source_account':False,'provider_credits':0,'published':False}
+          def now():return datetime.now(timezone.utc).isoformat()
+          def save(): (out/'report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2))
+          def get(url):
+              u=urlsplit(url)
+              if u.scheme!='https' or u.netloc!=host or u.query or u.fragment:raise ValueError('unreviewed_scope')
+              item={'url':url,'started_at':now()};report['requests'].append(item)
+              try:
+                  with requests.get(url,headers={'User-Agent':'LoyaltyCatalogResearchBot'},timeout=(10,30),allow_redirects=False,stream=True) as r:
+                      item.update(status=r.status_code,mime=r.headers.get('Content-Type',''))
+                      if r.status_code!=200 or r.headers.get('Retry-After'):raise ValueError('http_refusal_or_rate_limit')
+                      data=bytearray()
+                      for b in r.iter_content(65536):
+                          data.extend(b)
+                          if len(data)>6000000:raise ValueError('byte_bound')
+                  item['sha256']=hashlib.sha256(data).hexdigest();return bytes(data)
+              finally:item['finished_at']=now();save()
+          try:
+              raw=get(root+'/robots.txt').decode('utf-8')
+              if '<html' in raw.lower() or not re.search('(?im)^User-agent:',raw):raise ValueError('robots_not_rules')
+              (out/'robots.txt').write_text(raw);rules=Protego.parse(raw)
+              if not rules.can_fetch(page,'LoyaltyCatalogResearchBot'):raise ValueError('robots_disallow')
+              rate=rules.request_rate('LoyaltyCatalogResearchBot');delay=max(5,rules.crawl_delay('LoyaltyCatalogResearchBot') or 0,rate.seconds/rate.requests if rate else 0)
+              if delay>30:raise ValueError('delay_bound')
+              time.sleep(delay);soup=BeautifulSoup(get(page),'html.parser');main=soup.select_one('#maincontent')
+              if main is None:raise ValueError('missing_owned_product')
+              links=[]
+              for tr in main.select('tr'):
+                  label=tr.get_text(' ',strip=True)
+                  if not re.search('Правила обслуживания банковских карт',label,re.I) or not re.search('вознаграждения',label,re.I):continue
+                  for a in tr.select('a[href]'):
+                      target=urljoin(page,a['href']);u=urlsplit(target)
+                      if u.netloc==host and u.path.startswith('/content/dam/') and u.path.lower().endswith('.pdf') and not u.query and not u.fragment:
+                          item={'url':target,'label':label}
+                          if item not in links:links.append(item)
+              report['discovered_rules']=links
+              if not 1<=len(links)<=2:raise ValueError('discovery_bound')
+              for n,entry in enumerate(links):
+                  if not rules.can_fetch(entry['url'],'LoyaltyCatalogResearchBot'):raise ValueError('pdf_robots_disallow')
+                  time.sleep(delay);data=get(entry['url'])
+                  if not data.startswith(b'%PDF-'):raise ValueError('non_pdf_response')
+                  reader=PdfReader(io.BytesIO(data),strict=True)
+                  if reader.is_encrypted or not 1<=len(reader.pages)<=80:raise ValueError('pdf_bound')
+                  name='reward-rules-'+str(n)+'.pdf';(out/name).write_bytes(data)
+                  pages=[{'page':i+1,'text':p.extract_text() or ''} for i,p in enumerate(reader.pages)]
+                  (out/('pages-'+str(n)+'.json')).write_text(json.dumps(pages,ensure_ascii=False,indent=2))
+                  entry.update(file=name,page_count=len(pages),pages_with_rzd_mention=[p['page'] for p in pages if re.search('РЖД',p['text'],re.I)])
+          except Exception as exc:report['error']=str(exc) if isinstance(exc,ValueError) else type(exc).__name__
+          report['finished_at']=now();save()
+          (out/'executed-workflow.yml').write_bytes(Path('.github/workflows/unicredit-reward-rules-probe.yml').read_bytes())
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: unicredit-reward-rules-${{ github.run_id }}
+          path: bank-rules-output/
+          retention-days: 7
