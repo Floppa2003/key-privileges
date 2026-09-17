@@ -27,4 +27,45 @@ class HtmlStability(unittest.TestCase):
         with self.assertRaises(ValueError):
             e.html_fields(e.clean_html(b'<html><head><title>Public page</title></head><body><script>load()</script></body></html>'))
 
+
+class RemovedNodeWhitespace(unittest.TestCase):
+    def test_removed_nodes_do_not_leave_noncanonical_whitespace(self):
+        for gap in ('\n<script>ignored()</script>\n', '\n<style>ignored</style>\n',
+                    ' <iframe></iframe> ', '\n<form><input value="secret"></form>\n'):
+            for container in ('head','body'):
+                with self.subTest(gap=gap,container=container):
+                    raw=html().decode().replace('</'+container+'>',gap+'</'+container+'>')
+                    first=e.clean_html(raw)
+                    self.assertEqual(first,e.clean_html(first.encode()))
+                    self.assertNotIn('ignored',first)
+                    self.assertNotIn('secret',first)
+
+    def test_canonical_roundtrip_preserves_owned_text_and_tables(self):
+        raw=html().decode().replace('</main>',
+            '<p>Ставка 17% &amp; ограничения</p><pre>  A\n\n B  </pre>'
+            '<table><tr><td>Категория</td><td>0%</td></tr></table>'
+            '\n<script>ignored()</script>\n</main>')
+        clean=e.clean_html(raw)
+        title,conditions=e.html_fields(clean)
+        from bs4 import BeautifulSoup
+        soup=BeautifulSoup(clean,'html.parser')
+        self.assertEqual(soup.pre.get_text(),'  A\n\n B  ')
+        self.assertEqual([n.get_text() for n in soup.select('td')],['Категория','0%'])
+        self.assertIn('Ставка 17% & ограничения',conditions)
+        for _ in range(3):
+            again=e.clean_html(clean.encode())
+            self.assertEqual(again,clean)
+            self.assertEqual(e.html_fields(again),(title,conditions))
+            clean=again
+
+    def test_canonical_output_remains_fail_closed_for_tampered_content(self):
+        from bs4 import BeautifulSoup
+        clean=e.clean_html(html())
+        bad=clean.replace('</body>','<script>new()</script></body>')
+        self.assertNotEqual(bad,e.clean_html(bad))
+        attrs=clean.replace('<main>', '<main onclick="bad()">')
+        self.assertNotEqual(attrs,e.clean_html(attrs))
+        with self.assertRaises(ValueError):
+            e.clean_html(clean.replace('</body>','<input type="password"></body>'))
+
 if __name__=='__main__':unittest.main()
