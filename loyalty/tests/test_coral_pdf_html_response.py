@@ -1,14 +1,13 @@
 """A successful HTTP envelope is not a PDF; one bounded route change may help."""
-import copy
 import json
 import sys
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).parents[1]))
 import coral_pdf_collect as p
-from test_coral_pdf_collect import Network, Response, PdfTests, URL, KEY, NOW
+from test_coral_pdf_collect import Network, Response, URL, KEY, NOW
+import test_coral_pdf_collect as fixtures
 from test_document_text import pdf
 
 
@@ -80,7 +79,7 @@ class HtmlEnvelopeTests(unittest.TestCase):
     def test_full_collector_and_publisher_reconstruct_recovered_binary(self):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            bundle = PdfTests().collect(root, Sequence([html(), binary()]))
+            bundle = fixtures.PdfTests().collect(root, Sequence([html(), binary()]))
             self.assertEqual(bundle['sources'][-1]['status'], 'ok')
             self.assertEqual(bundle['sources'][-1]['normalized'], 1)
             self.assertEqual(p.validate_bundle(root, '7:1', 'a'*40, NOW), bundle)
@@ -89,7 +88,7 @@ class HtmlEnvelopeTests(unittest.TestCase):
     def test_reconstruction_rejects_a_route_change_after_terminal_failure(self):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            PdfTests().collect(root, Sequence([html(), binary()]))
+            fixtures.PdfTests().collect(root, Sequence([html(), binary()]))
             audit = json.loads((root/'pdf-report.json').read_text())
             audit['requests'][0]['error'] = 'cp_provider_auth_quota_or_rate_limit'
             (root/'pdf-report.json').write_text(json.dumps(audit))

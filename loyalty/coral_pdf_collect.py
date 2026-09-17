@@ -17,6 +17,7 @@ from sheets_normalized import prepare
 
 SOURCE_ID='coral_pdf_documents'
 MAX_FILES=8;MAX_CREDITS=52;MAX_BYTES=6_000_000;MAX_SECONDS=480
+RETRYABLE=('cp_provider_non_success','cp_origin_refusal','cp_transport_error','cp_pdf_html_response')
 
 
 def now():return datetime.now(timezone.utc).isoformat()
@@ -77,6 +78,21 @@ class Reader:
                     if status!='200':raise ValueError('cp_origin_refusal')
                     mime=response.headers.get('Content-Type','').split(';')[0].strip().lower()
                     item['content_type']=mime
+                    if mime in ('text/html','application/xhtml+xml'):
+                        # Never archive or parse HTML as document text. Inspect a
+                        # bounded response only to avoid retrying an explicit
+                        # sign-in/quota boundary or leaking an echoed credential.
+                        body=bytearray()
+                        for block in response.iter_content(16384):
+                            body.extend(block)
+                            if len(body)>131072:
+                                self.stopped=True;raise ValueError('cp_html_size_bound')
+                        if self.key.encode() in body:
+                            self.stopped=True;raise ValueError('cp_credential_echo')
+                        if re.search(rb"type\s*=\s*[\"']?password|too many requests|rate[ -]?limit|quota|sign[ -]?in|log[ -]?in",body,re.I):
+                            self.stopped=True;raise ValueError('cp_html_access_or_quota')
+                        item['html_sha256']=sha(body)
+                        raise ValueError('cp_pdf_html_response')
                     if mime!='application/pdf':raise ValueError('cp_non_pdf_content_type')
                     data=bytearray()
                     for block in response.iter_content(65536):
@@ -88,7 +104,7 @@ class Reader:
             except Exception as exc:
                 failure=str(exc) if isinstance(exc,ValueError) and str(exc).startswith('cp_') else 'cp_transport_error'
                 item['error']=failure
-                if failure not in ('cp_provider_non_success','cp_origin_refusal','cp_transport_error'):raise ValueError(failure) from None
+                if failure not in RETRYABLE:raise ValueError(failure) from None
             finally:item['finished_at']=now();self.next_at=self.clock()+delay
         raise ValueError(failure)
 
@@ -155,16 +171,20 @@ def validate_bundle(folder,run_id,commit,clock):
     requests_=audit['requests']
     if not isinstance(requests_,list) or len(requests_)>MAX_FILES*2 or sum(x['reserved'] for x in requests_)!=audit['reserved'] or not 0<=audit['reserved']<=MAX_CREDITS:
         raise ValueError('cp_budget_evidence')
-    entries={e['url'] for e in discover(base['records'])};seen={};last=start
+    entries={e['url'] for e in discover(base['records'])};seen={};previous={};last=start
     observations={o['url']:o for o in original['observations']}
     policy=coral.policy(coral.checked(observations[coral.ROBOTS])) if entries else None
     for item in requests_:
         a,b=map(coral.instant,(item['requested_at'],item['finished_at']))
         if not last<=a<=b<=end or item['url'] not in entries or not policy.can_fetch(item['url'],'LoyaltyCatalogResearchBot'):raise ValueError('cp_request_binding')
+        if item['proxy']=='residential':
+            prior=previous.get(item['url'],{})
+            if prior.get('error') not in RETRYABLE or 'result' in prior:
+                raise ValueError('cp_fallback_reason')
         seq=seen.setdefault(item['url'],[]);seq.append(item['proxy'])
         if seq not in (['datacenter'],['datacenter','residential']):raise ValueError('cp_request_repetition')
         if item['reserved']!={'datacenter':1,'residential':25}[item['proxy']] or not 0<=item.get('charged',0)<=item['reserved']:raise ValueError('cp_cost_binding')
-        last=b
+        previous[item['url']]=item;last=b
     combined=assemble(base,audit,folder)
     if json.loads((folder/'combined.json').read_text())!=combined:raise ValueError('cp_output_reconstruction')
     return combined
