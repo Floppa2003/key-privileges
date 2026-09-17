@@ -25,19 +25,21 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m pip install -r loyalty/requirements.txt
-      - name: Exact integration and full regression before any live collection
+      - name: Exact repair and full regression before any live collection
         id: integrate
         run: |
           mkdir -p ekp-linked-tests
-          python -m unittest discover -s loyalty/tests -p test_ekp_linked_rules.py -v > ekp-linked-tests/before-integration.log 2>&1 && exit 1 || true
+          if python -m unittest discover -s loyalty/tests -p test_linked_read_regressions.py -v > ekp-linked-tests/before-repair.log 2>&1; then
+            echo 'Expected the reproduced regressions before repair'; exit 1
+          fi
           python loyalty/_integrate_ekp_linked_once.py
           set -o pipefail
           python -m unittest discover -s loyalty/tests -v 2>&1 | tee ekp-linked-tests/python-tests.log
           node --test key/refresh.test.mjs 2>&1 | tee ekp-linked-tests/key-tests.log
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add loyalty/ekp_linked_rules.py loyalty/normalized.py loyalty/unified_normalization.py
-          git commit -m 'Register public EKP linked rules and preserve source/parent boundaries'
+          git add loyalty/ekp_linked_rules.py loyalty/document_text.py
+          git commit -m 'Fix provider HTML buffer and literal OCR TSV; prefer source labels over numeric PDF metadata'
           git push origin HEAD:loyalty/ekp-linked-conditions-20260917
           echo "tested_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
           tar -cf ekp-linked-tests/code.tar loyalty key .github/workflows
