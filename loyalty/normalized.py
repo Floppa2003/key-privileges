@@ -40,6 +40,7 @@ HOSTS['rzd_tour_conditions']=['rzdtour.com']
 HOSTS['rzd_unicredit_reference']=['www.unicreditbank.ru']
 HOSTS['rzd_unicredit_rules']=['www.unicreditbank.ru']
 HOSTS['aeroflot']=['www.aeroflot.ru']
+HOSTS['aeroflot_linked_rules']=['stoletov.ru','parkingsvo.ru','parking.svo.aero','parking.svo.su']
 HOSTS['coral']=['coralbonus.ru']
 HOSTS['coral_promo']=['coralbonus.ru']
 HOSTS['coral_rule_documents']=['coralbonus.ru']
@@ -245,6 +246,9 @@ def validate_offer(r: dict) -> None:
     if r['details'].get('live_document_text'):
         from document_text import validate_document_record
         validate_document_record(r)
+    if r['source_id']=='aeroflot_linked_rules':
+        from aeroflot_linked_rules import validate_record
+        validate_record(r)
     if r['source_id']=='ekp_linked_rules':
         from ekp_linked_rules import validate_record
         validate_record(r)
