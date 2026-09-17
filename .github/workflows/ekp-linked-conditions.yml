@@ -1,0 +1,105 @@
+name: EKP linked public conditions
+on:
+  push:
+    branches: ['loyalty/ekp-linked-conditions-20260917']
+    paths: [.github/workflows/ekp-linked-conditions.yml, loyalty/ekp_linked_rules.py, loyalty/tests/test_ekp_linked_rules.py]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r loyalty/requirements.txt
+      - name: Locate the latest completed public EKP snapshot
+        id: upstream
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import json, os, subprocess
+          from datetime import datetime, timezone
+          repo=os.environ['GITHUB_REPOSITORY']
+          data=json.loads(subprocess.check_output(['gh','api',f'repos/{repo}/actions/workflows/ekp-api.yml/runs?branch=main&status=success&per_page=1']))
+          run=data['workflow_runs'][0]
+          assert run['head_branch']=='main' and run['conclusion']=='success'
+          assert (datetime.now(timezone.utc)-datetime.fromisoformat(run['updated_at'].replace('Z','+00:00'))).total_seconds()<604800
+          with open(os.environ['GITHUB_OUTPUT'],'a') as f:
+              f.write(f"run_id={run['id']}\nname=ekp-public-{run['id']}-{run['run_attempt']}\n")
+          PY
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ steps.upstream.outputs.run_id }}
+          name: ${{ steps.upstream.outputs.name }}
+          path: ekp-upstream
+      - name: Inspect only explicit public rule links, not login fields or merchant homepages
+        run: |
+          python - <<'PY'
+          import hashlib,json,time,re
+          from pathlib import Path
+          from urllib.parse import urlsplit,urlunsplit
+          from datetime import datetime,timezone
+          import requests
+          from bs4 import BeautifulSoup
+          from protego import Protego
+          folder=Path('ekp-linked-inspection');folder.mkdir()
+          bundle=json.loads(Path('ekp-upstream/normalized.json').read_text())
+          targets={};all_links=set()
+          for r in bundle['records']:
+              if r['source_id']!='ekp':continue
+              row=r['details']['public_partner']
+              if row['description_authorized'] or not row['active']:continue
+              for field in ('loyaltyDescription','discountScheme'):
+                  for a in BeautifulSoup(row.get(field,''),'html.parser').select('a[href]'):
+                      u=urlsplit(a['href']);label=a.get_text(' ',strip=True);all_links.add(a['href'])
+                      if u.scheme!='https' or u.username or u.password or u.query or u.fragment:continue
+                      if not (u.path.lower().endswith('.pdf') or re.search('правил|подробн|услов|прейскурант|приложен',label,re.I)):continue
+                      url=urlunsplit((u.scheme,u.netloc.encode('idna').decode(),u.path,'',''))
+                      targets.setdefault(url,[]).append({'id':r['id'],'partner':r['partner_name'],'field':field,'label':label,'parent_observed_at':r['observed_at']})
+          assert len(targets)<=12
+          report={'parent_run':bundle['run_id'],'parent_observed_at':bundle['observed_at'],'unique_public_links':len(all_links),'targets':[],'provider_credits':0}
+          sess=requests.Session();sess.trust_env=False
+          for i,(url,parents) in enumerate(targets.items()):
+              item={'url':url,'parents':parents};report['targets'].append(item)
+              try:
+                  origin=urlsplit(url);policy_url=f'{origin.scheme}://{origin.netloc}/robots.txt'
+                  policy=sess.get(policy_url,timeout=(5,12),allow_redirects=False,headers={'User-Agent':'loyalty-public-conditions/1.0'})
+                  item['policy_status']=policy.status_code
+                  if policy.status_code==200:
+                      item['robots_allowed']=Protego.parse(policy.text).can_fetch(url,'loyalty-public-conditions')
+                      if not item['robots_allowed']:raise RuntimeError('source_crawl_policy')
+                  elif policy.status_code not in (404,410):raise RuntimeError('policy_unavailable')
+                  time.sleep(2)
+                  response=sess.get(url,timeout=(5,15),allow_redirects=False,headers={'User-Agent':'loyalty-public-conditions/1.0'})
+                  item.update(status=response.status_code,content_type=response.headers.get('Content-Type'),bytes=len(response.content),observed_at=datetime.now(timezone.utc).isoformat())
+                  if response.status_code!=200 or response.headers.get('Retry-After'):raise RuntimeError('target_http_'+str(response.status_code))
+                  if len(response.content)>6000000:raise RuntimeError('size_limit')
+                  item['sha256']=hashlib.sha256(response.content).hexdigest()
+                  if response.content.startswith(b'%PDF-'):
+                      filename=f'document-{i}.pdf';(folder/filename).write_bytes(response.content);item['file']=filename
+                  else:
+                      soup=BeautifulSoup(response.content,'html.parser')
+                      for x in soup.select('script,style,noscript,form,input,textarea,iframe,button'):x.decompose()
+                      item['title']=soup.title.get_text(' ',strip=True) if soup.title else ''
+                      item['text']=soup.get_text(' ',strip=True)[:16000]
+              except Exception as e:item['error']=str(e) if isinstance(e,RuntimeError) else type(e).__name__
+              (folder/'report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2))
+          print(json.dumps({'selected':len(targets),'received':sum(x.get('status')==200 for x in report['targets']),'provider_credits':0}))
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: ekp-linked-inspection-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ekp-linked-inspection/
+          retention-days: 7
