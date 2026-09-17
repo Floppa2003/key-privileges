@@ -84,12 +84,14 @@ def clean_html(data):
     for n in soup.find_all(True):
         n.attrs={k:v for k,v in n.attrs.items() if k in ('id','class','href','colspan','rowspan')}
         if n.has_attr('href') and urlsplit(n['href']).scheme not in ('https','http'):del n.attrs['href']
-    return str(soup)
+    return str(soup.html)
 
 def html_fields(data):
     soup=BeautifulSoup(data,'html.parser');body=soup.find('main') or soup.body
     if body is None:raise ValueError('el_no_content')
     headings=[text(h.get_text(' ',strip=True)) for h in body.select('h1') if h.get_text(strip=True)]
+    if not headings and soup.title and soup.title.get_text(strip=True):
+        headings=[text(soup.title.get_text(' ',strip=True))]
     if len(set(headings))!=1:raise ValueError('el_html_needs_render_or_scope_review')
     value=text(body.get_text('\n',strip=True))
     if not 120<=len(value)<=35000 or DENIAL.search(value[:500]):raise ValueError('el_html_needs_render_or_scope_review')
@@ -204,7 +206,11 @@ class Reader:
                 if url.lower().endswith('.pdf'):
                     if not raw.startswith(b'%PDF-') or receipt['mime']!='application/pdf':raise ValueError('el_not_pdf')
                     return raw,receipt
-                raw=clean_html(raw).encode();html_fields(raw)
+                raw=clean_html(raw).encode()
+                dom=BeautifulSoup(raw,'html.parser');body=dom.find('main') or dom.body
+                receipt['html_structure']={'h1_count':len(body.select('h1')) if body else 0,
+                    'text_chars':len(text(body.get_text('\n',strip=True))) if body else 0}
+                html_fields(raw)
                 return raw,receipt
             except ValueError as exc:
                 last=str(exc)
