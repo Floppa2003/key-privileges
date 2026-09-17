@@ -32,3 +32,12 @@ class BaseTests(unittest.TestCase):
         rows=r.bank_pdf_records(f.pdf(['1\nFull source rules.'],title=''),entry,parent,f.NOW)
         self.assertEqual(rows[0]['title'],entry['label'])
         self.assertIn('Full source rules.',rows[0]['conditions_text'])
+
+    def test_pricing_heading_is_not_a_second_tour_title(self):
+        raw=f.tour().replace('<div class="text-content-route">','<div class="text-content-route"><h1>Airfare is not included</h1>')
+        row=r.tour_record(raw,f.URL,r.TOUR,f.NOW)
+        self.assertEqual(row['title'],'Новый тур')
+        self.assertIn('Airfare is not included',row['conditions_text'])
+    def test_tour_without_rzd_clause_is_excluded_despite_pricing_h1(self):
+        raw=f.tour(clause=False).replace('<div class="text-content-route">','<div class="text-content-route"><h1>Airfare is extra</h1>')
+        self.assertIsNone(r.tour_record(raw,f.URL,r.TOUR,f.NOW))
