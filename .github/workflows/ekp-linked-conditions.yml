@@ -15,8 +15,6 @@ jobs:
     timeout-minutes: 6
     permissions:
       contents: write
-    outputs:
-      tested_sha: ${{ steps.integrate.outputs.tested_sha }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
@@ -25,12 +23,11 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m pip install -r loyalty/requirements.txt
-      - name: Exact repair and full regression before any live collection
-        id: integrate
+      - name: Reproduce and repair HTML roundtrip without new source requests
         run: |
           mkdir -p ekp-linked-tests
-          if python -m unittest discover -s loyalty/tests -p test_linked_read_regressions.py -v > ekp-linked-tests/before-repair.log 2>&1; then
-            echo 'Expected the reproduced regressions before repair'; exit 1
+          if python -m unittest discover -s loyalty/tests -p test_ekp_html_stability.py -v > ekp-linked-tests/before-repair.log 2>&1; then
+            echo 'Expected the reproduced HTML regressions before repair'; exit 1
           fi
           python loyalty/_integrate_ekp_linked_once.py
           set -o pipefail
@@ -38,64 +35,13 @@ jobs:
           node --test key/refresh.test.mjs 2>&1 | tee ekp-linked-tests/key-tests.log
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add loyalty/ekp_linked_rules.py loyalty/document_text.py
-          git commit -m 'Fix provider HTML buffer and literal OCR TSV; prefer source labels over numeric PDF metadata'
+          git add loyalty/ekp_linked_rules.py
+          git commit -m 'Keep sanitized HTML stable and accept source page titles when H1 is absent'
           git push origin HEAD:loyalty/ekp-linked-conditions-20260917
-          echo "tested_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
           tar -cf ekp-linked-tests/code.tar loyalty key .github/workflows
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
           name: ekp-linked-tests-${{ github.run_id }}-${{ github.run_attempt }}
           path: ekp-linked-tests/
-          retention-days: 7
-  collect:
-    needs: regression
-    runs-on: ubuntu-24.04
-    timeout-minutes: 22
-    permissions:
-      contents: read
-      actions: read
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-        with:
-          ref: ${{ needs.regression.outputs.tested_sha }}
-          persist-credentials: false
-      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
-        with:
-          python-version: '3.12'
-      - run: python -m pip install -r loyalty/requirements.txt
-      - run: sudo apt-get update -qq && sudo apt-get install -y poppler-utils tesseract-ocr tesseract-ocr-rus
-      - name: Locate a recent successful public EKP catalogue, without refreshing its dates
-        id: upstream
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          python - <<'PY'
-          import json,os,subprocess
-          from datetime import datetime,timezone
-          repo=os.environ['GITHUB_REPOSITORY']
-          data=json.loads(subprocess.check_output(['gh','api',f'repos/{repo}/actions/workflows/ekp-api.yml/runs?branch=main&status=success&per_page=1']))
-          run=data['workflow_runs'][0]
-          assert run['head_branch']=='main' and run['conclusion']=='success'
-          assert 0<=(datetime.now(timezone.utc)-datetime.fromisoformat(run['updated_at'].replace('Z','+00:00'))).total_seconds()<604800
-          with open(os.environ['GITHUB_OUTPUT'],'a') as f:
-              f.write(f"run_id={run['id']}\nname=ekp-public-{run['id']}-{run['run_attempt']}\n")
-          PY
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
-        with:
-          github-token: ${{ github.token }}
-          run-id: ${{ steps.upstream.outputs.run_id }}
-          name: ${{ steps.upstream.outputs.name }}
-          path: ekp-upstream
-      - name: Read discovered public conditions under the existing Free credit budget
-        env:
-          SCRAPINGANT_API_KEY: ${{ secrets.SCRAPINGANT_API_KEY }}
-          GITHUB_SHA: ${{ needs.regression.outputs.tested_sha }}
-        run: python loyalty/ekp_linked_rules.py
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        if: always()
-        with:
-          name: ekp-linked-public-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ekp-linked-output/
           retention-days: 7
