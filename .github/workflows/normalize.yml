@@ -9,6 +9,7 @@ permissions:
 concurrency:
   group: loyalty-catalog-${{ github.ref }}
   cancel-in-progress: false
+  queue: max
 jobs:
   test:
     runs-on: ubuntu-24.04
