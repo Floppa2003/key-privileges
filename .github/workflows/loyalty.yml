@@ -20,6 +20,7 @@ permissions:
 concurrency:
   group: loyalty-catalog-${{ github.ref }}
   cancel-in-progress: false
+  queue: max
 jobs:
   collect:
     # Recurring collection was explicitly authorized on 2026-09-15.

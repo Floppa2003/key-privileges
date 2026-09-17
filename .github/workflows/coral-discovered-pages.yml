@@ -9,6 +9,7 @@ permissions:
 concurrency:
   group: loyalty-catalog-${{ github.ref }}
   cancel-in-progress: false
+  queue: max
 jobs:
   inspect:
     if: github.repository == 'Floppa2003/key-privileges' && github.ref == 'refs/heads/main'
