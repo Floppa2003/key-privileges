@@ -1,0 +1,109 @@
+name: RZD external public conditions probe
+on:
+  push:
+    branches: ['diagnostics/rzd-external-20260917']
+    paths: ['.github/workflows/rzd-external-probe.yml']
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - run: python -m pip install requests==2.32.5 beautifulsoup4==4.14.3 protego==0.6.2
+      - name: Public GETs only - no provider key, account or Sheets publication
+        run: |
+          python - <<'PY'
+          import hashlib,json,os,re,time
+          from pathlib import Path
+          from datetime import datetime,timezone
+          from urllib.parse import urljoin,urlsplit
+          import requests
+          from bs4 import BeautifulSoup
+          from protego import Protego
+          out=Path('rzd-external-output');out.mkdir()
+          report={'run_id':os.environ['GITHUB_RUN_ID'],'commit':os.environ['GITHUB_SHA'],'source_accounts':False,'provider_credits':0,'published':False,'requests':[]}
+          reward=re.compile(r'РЖД[\s«»"-]*Бонус',re.I)
+          def now():return datetime.now(timezone.utc).isoformat()
+          def save(): (out/'report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2))
+          def get(url,host):
+              item={'url':url,'requested_at':now()};report['requests'].append(item);save()
+              try:
+                  with requests.get(url,headers={'User-Agent':'LoyaltyCatalogResearchBot'},timeout=(8,25),allow_redirects=False,stream=True) as r:
+                      item['status']=r.status_code;item['mime']=r.headers.get('Content-Type','');item['retry_after']=bool(r.headers.get('Retry-After'))
+                      if item['retry_after'] or r.status_code==429:raise ValueError('rate_limit')
+                      if 300<=r.status_code<400:
+                          target=urljoin(url,r.headers.get('Location',''))
+                          item['redirect_same_host']=urlsplit(target).hostname==host
+                          item['redirect_path']=urlsplit(target).path
+                          raise ValueError('redirect_not_followed')
+                      data=bytearray()
+                      for block in r.iter_content(65536):
+                          data.extend(block)
+                          if len(data)>2000000:raise ValueError('size_bound')
+                      item['body_sha256']=hashlib.sha256(data).hexdigest()
+                      if r.status_code>=400:raise ValueError('http_'+str(r.status_code))
+                      return data.decode('utf-8')
+              except Exception as exc:
+                  item['error']=str(exc) if isinstance(exc,ValueError) else type(exc).__name__;raise
+              finally:item['finished_at']=now();save()
+          def evidence(raw,url,label):
+              soup=BeautifulSoup(raw,'html.parser')
+              title=soup.title.get_text(' ',strip=True) if soup.title else ''
+              if re.search(r'captcha|access denied|доступ.{0,60}ограничен',title,re.I):raise ValueError('restriction_page')
+              for node in soup.select('script,style,noscript,form,input,textarea,button,iframe,svg,img'):node.decompose()
+              for node in soup.find_all(True):
+                  for attr in list(node.attrs):
+                      if attr not in ('class','id','href'):del node.attrs[attr]
+                  if node.has_attr('href'):
+                      u=urlsplit(urljoin(url,node['href']))
+                      if u.scheme not in ('https','http') or u.username or u.password or re.search(r'token|session|auth|login|password',u.query,re.I):del node.attrs['href']
+              safe=str(soup);(out/(label+'.html')).write_text(safe)
+              clauses=[]
+              for node in soup.select('p,li'):
+                  text=node.get_text(' ',strip=True)
+                  if reward.search(text) and len(text)<10000 and text not in clauses:clauses.append(text)
+              return {'title':title,'h1':[x.get_text(' ',strip=True) for x in soup.select('h1')],'clauses':clauses,'html_file':label+'.html'},soup
+          targets=[('tour','https://rzdtour.com/'),('bank','https://www.unicreditbank.ru/ru/personal/cards/pi-packages/debit-cash-and-back.html')]
+          for label,url in targets:
+              host=urlsplit(url).hostname;scope={'url':url};report[label]=scope
+              try:
+                  try:raw=get('https://'+host+'/robots.txt',host)
+                  except ValueError as exc:
+                      if str(exc).startswith('http_4') and str(exc)!='http_429':raw=''
+                      else:raise
+                  if '<html' in raw.lower() or (raw.strip() and not re.search(r'(?im)^\s*(user-agent|sitemap)\s*:',raw)):raise ValueError('robots_not_rules')
+                  (out/(label+'-robots.txt')).write_text(raw)
+                  rules=Protego.parse(raw);rate=rules.request_rate('LoyaltyCatalogResearchBot')
+                  delay=max(5,rules.crawl_delay('LoyaltyCatalogResearchBot') or 0,rate.seconds/rate.requests if rate else 0)
+                  if delay>30:raise ValueError('source_delay_bound')
+                  if not rules.can_fetch(url,'LoyaltyCatalogResearchBot'):raise ValueError('robots_disallow')
+                  time.sleep(delay);raw=get(url,host);item,soup=evidence(raw,url,label);scope.update(item)
+                  if label=='tour':
+                      links=[]
+                      for a in soup.select('a[href]'):
+                          target=urljoin(url,a['href']);u=urlsplit(target)
+                          if u.scheme=='https' and u.netloc==host and not u.query and not u.fragment and re.fullmatch('/(?:kruiznyie-turyi/kruiznyie-poezda|ekskursionnyie-turyi/[^/]+)/[^/]+/?',u.path) and target not in links:links.append(target)
+                      scope['discovered_tour_urls']=links;scope['detail_samples']=[]
+                      for n,target in enumerate(links[:3]):
+                          if not rules.can_fetch(target,'LoyaltyCatalogResearchBot'):continue
+                          time.sleep(delay)
+                          try:item,_=evidence(get(target,host),target,'tour-detail-'+str(n));scope['detail_samples'].append({'url':target,**item})
+                          except Exception as exc:scope['detail_samples'].append({'url':target,'error':str(exc) if isinstance(exc,ValueError) else type(exc).__name__})
+              except Exception as exc:scope['error']=str(exc) if isinstance(exc,ValueError) else type(exc).__name__
+              save()
+          report['finished_at']=now();save()
+          (out/'executed-workflow.yml').write_bytes(Path('.github/workflows/rzd-external-probe.yml').read_bytes())
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: rzd-external-probe-${{ github.run_id }}
+          path: rzd-external-output/
+          retention-days: 7
