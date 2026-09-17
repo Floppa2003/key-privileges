@@ -8,17 +8,111 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-24.04
-    timeout-minutes: 2
+    timeout-minutes: 7
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
-      - run: |
-          mkdir -p transfer-check
-          cp diagnostics/rzd-external-code.json.gz.b64 transfer-check/
-          sha256sum transfer-check/* > transfer-check/sha256.txt
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+          path: transfer
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
-          name: external-source-transfer-${{ github.run_id }}
-          path: transfer-check/
+          persist-credentials: false
+          ref: 9f9835ba30796424bf8e8ab7120065b4a34809ac
+          path: candidate
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - name: Exact reviewed bytes only; no source credentials
+        run: |
+          python - <<'PY'
+          import base64,gzip,hashlib,json
+          from pathlib import Path
+          a=Path('transfer/diagnostics/rzd-external-code.json.gz.b64').read_text()
+          assert hashlib.sha256(a.encode()).hexdigest()=='b4c6a23e92fefe1d7bf2f22c178417f0a372ad32018a23b752d8b328ea063373'
+          patches=[[486,487,''],[523,524,''],[1501,1502,''],[1546,1547,''],[1618,1620,'w'],[1628,1629,'1'],[1749,1750,''],[1779,1780,''],[1894,1895,''],[4240,4241,''],[4243,4244,''],[5731,5732,'L'],[6550,6551,''],[7914,7915,'R'],[8092,8092,'q'],[9084,9085,''],[9657,9658,'u'],[10469,10472,''],[10516,10518,''],[12028,12030,''],[12304,12308,'']]
+          for i,j,s in reversed(patches):a=a[:i]+s+a[j:]
+          assert hashlib.sha256(a.encode()).hexdigest()=='ff99debcbb4850143c5337b8d7a5b50ff845f77d36c138bb94f353ca6d12e4c3'
+          data=gzip.decompress(base64.b64decode(a,validate=True))
+          assert hashlib.sha256(data).hexdigest()=='e564709c69d891d5d286df9792897516f61710897a4b8d2caa67ad6565a9918d'
+          files=json.loads(data)
+          assert set(files)=={'loyalty/rzd_external.py','loyalty/tests/test_rzd_external.py'}
+          root=Path('candidate')
+          for name,body in files.items():
+              p=root/name;assert not p.exists();p.write_text(body)
+          p=root/'loyalty/normalized.py';s=p.read_text()
+          assert hashlib.sha256(s.encode()).hexdigest()=='0c9b229ec8cd95d249bfae117c29f205f8759477ca40bf54e2da04e7aa41ed68'
+          s=s.replace("HOSTS['rzd']=['rzd-bonus.ru']\n","HOSTS['rzd']=['rzd-bonus.ru']\nHOSTS['rzd_tour_terms']=['rzdtour.com']\nHOSTS['rzd_unicredit_terms']=['www.unicreditbank.ru']\nHOSTS['rzd_unicredit_documents']=['www.unicreditbank.ru']\n")
+          s=s.replace("    if r['source_id']=='coral_rule_documents':","    if r['source_id'] in ('rzd_tour_terms','rzd_unicredit_terms','rzd_unicredit_documents'):\n        from rzd_external import validate_record\n        validate_record(r)\n    if r['source_id']=='coral_rule_documents':")
+          p.write_text(s)
+          p=root/'loyalty/unified_normalization.py';s=p.read_text()
+          assert hashlib.sha256(s.encode()).hexdigest()=='b21861759e6655b822eca72cd2f52c15f730cc8538399e6f15c0a2e3caa24f22'
+          new="""    if d.get('retrieval_method')=='rzd_external_public_conditions_v1':
+                  # Only the tour's explicit RZD clause supplies a projected discount.
+                  # Its other prices/children's discounts and bank product text stay rules.
+                  scope={'source_url':raw.get('source_url'),'individual_eligibility_not_verified':True}
+                  if raw['kind']=='partner_offer' and d.get('tour_url'):
+                      clauses=d.get('rzd_loyalty_clauses',[])
+                      for i,clause in enumerate(clauses):
+                          for rate in normalize_rates(clause):
+                              benefit(KIND.get(rate['kind'],rate['kind']),f'/details/rzd_loyalty_clauses/{i}',
+                                  value=decimal(rate['value']),unit=rate['unit'],qualifier=rate.get('qualifier','exact'),
+                                  scope={**scope,'tour_url':d['tour_url'],'full_booking_conditions_attached':True})
+                  condition('external_partner_conditions','/conditions',scope=scope)
+                  n['quality']['level']='structured_with_review'
+                  n['quality']['issues'].append('external_conditions_not_general_programme_entitlement')
+                  n['content_sha256']=digest({k:v for k,v in n.items() if k!='content_sha256'})
+                  validate_normalized(n);return n
+          """
+          lines=new.splitlines();new='\n'.join([lines[0]]+[line[10:] for line in lines[1:] if line.strip()])+'\n'
+          needle="    if raw['kind']=='program_rules' and d.get('retrieval_method')=='coral_source_linked_pdf_free_api_v1':"
+          assert s.count(needle)==1;s=s.replace(needle,new+needle);p.write_text(s)
+          expected={'loyalty/rzd_external.py':'789df043a34cc68a229008b638895839a2d374864b3d075277eff528ab1a8607','loyalty/tests/test_rzd_external.py':'5dfb388fd1ba784acab36f017cd2d6915a413ee9c10bd3e88e2c09bc46b51875','loyalty/normalized.py':'8f8db1d0e279b74a99f502708e2f3d9e860c7448c0b55d6f36b7c271e212adc5','loyalty/unified_normalization.py':'196bdad405d3b2226caa88f8d95e70bb99d163bbe556bccc006e333a98ad63f4'}
+          for name,h in expected.items():assert hashlib.sha256((root/name).read_bytes()).hexdigest()==h,name
+          out=Path('build-output');out.mkdir();(out/'hashes.json').write_text(json.dumps(expected,indent=2))
+          PY
+      - run: python -m pip install -r candidate/loyalty/requirements.txt
+      - name: Regressions before any branch update
+        working-directory: candidate
+        run: |
+          tar -cf ../build-output/code.tar loyalty key .github/workflows
+          set -o pipefail
+          python -m unittest discover -s loyalty/tests -v 2>&1 | tee ../build-output/python-tests.log
+          node --test key/refresh.test.mjs 2>&1 | tee ../build-output/key-tests.log
+      - name: Commit reviewed Python files to feature branch only
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import os,json,base64,hashlib
+          from pathlib import Path
+          import requests
+          root=Path('candidate');base='9f9835ba30796424bf8e8ab7120065b4a34809ac';branch='loyalty/rzd-external-terms-20260917'
+          host='https://api.github.com/repos/Floppa2003/key-privileges'
+          def call(method,path,body=None):
+              r=requests.request(method,host+path,headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json'},json=body,timeout=30)
+              if r.status_code not in (200,201):raise RuntimeError('GitHub write/read status '+str(r.status_code))
+              return r.json()
+          assert call('GET','/git/ref/heads/'+branch)['object']['sha']==base
+          entries=[]
+          for path,h in json.loads(Path('build-output/hashes.json').read_text()).items():
+              data=(root/path).read_bytes();assert hashlib.sha256(data).hexdigest()==h
+              blob=call('POST','/git/blobs',{'content':base64.b64encode(data).decode(),'encoding':'base64'})
+              assert blob['sha']==hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest()
+              entries.append({'path':path,'mode':'100644','type':'blob','sha':blob['sha']})
+          parent=call('GET','/git/commits/'+base)
+          tree=call('POST','/git/trees',{'base_tree':parent['tree']['sha'],'tree':entries})
+          commit=call('POST','/git/commits',{'message':'Read source-owned RZD Tour conditions and dynamically linked bank reward documents','tree':tree['sha'],'parents':[base]})
+          assert call('GET','/git/ref/heads/'+branch)['object']['sha']==base
+          call('PATCH','/git/refs/heads/'+branch,{'sha':commit['sha'],'force':False})
+          assert call('GET','/git/ref/heads/'+branch)['object']['sha']==commit['sha']
+          Path('build-output/feature-result.json').write_text(json.dumps({'commit':commit['sha'],'tree':tree['sha'],'paths':entries}))
+          print('Feature branch commit independently read back:',commit['sha'])
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: rzd-external-verified-build-${{ github.run_id }}
+          path: build-output/
           retention-days: 7
