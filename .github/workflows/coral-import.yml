@@ -1,3 +1,4 @@
+# Acceptance rerun requested 2026-09-17; prior PR47 run was cancelled before jobs.
 name: Coral public sitemap and conditions via Google import
 on:
   push:
