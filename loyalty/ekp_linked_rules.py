@@ -18,7 +18,7 @@ ROOT='https://ekp.spb.ru/capabilities/loyalty/'
 HOSTS=('ekp.spb.ru','xn--b1abfnwkklk1gdn5a.xn--p1ai','mpclinic.ru','vamprivet.ru')
 MAX_FILES=12
 MAX_BYTES=6_000_000
-MAX_CREDITS=200
+MAX_CREDITS=400
 MAX_SECONDS=720
 BOT='LoyaltyCatalogResearchBot'
 RULE_LABEL=re.compile(r'правил|подробн|услов|прейскурант|приложен',re.I)
@@ -99,7 +99,7 @@ class Reader:
     def __init__(self,key='',*,session=None,sleep=time.sleep):
         self.session=session or requests.Session();self.session.trust_env=False
         self.key=key;self.sleep=sleep;self.started=time.monotonic();self.reserved=0;self.charged=0
-        self.receipts=[];self.policies={};self.next_at={};self.stopped=set();self.free_checked=False
+        self.receipts=[];self.policies={};self.next_at={};self.stopped=set();self.free_checked=False;self.provider_halted=False;self.delays={}
     def limit(self,host):
         delay=max(0,self.next_at.get(host,0)-time.monotonic())
         if host in self.stopped or len(self.receipts)>=40 or time.monotonic()+delay-self.started>MAX_SECONDS-80:
@@ -112,6 +112,7 @@ class Reader:
             kwargs={'timeout':(5,20),'allow_redirects':False,'stream':True,'headers':{'User-Agent':BOT+'/1.0'}}
             target=url
             if provider:
+                if self.provider_halted:raise ValueError('el_provider_stopped')
                 if not self.key:raise ValueError('el_free_key_not_available')
                 if not self.free_checked:
                     guard=FreeReader(self.key,[{'url':url}]);usage,_=guard._request('usage',{})
@@ -155,8 +156,10 @@ class Reader:
                 return bytes(data),item
         except Exception as exc:
             code=str(exc) if isinstance(exc,ValueError) and str(exc).startswith('el_') else 'el_transport_error'
+            if provider and code in ('el_provider_auth_quota','el_unknown_credit_cost','el_credential_echo','el_rate_limit'):
+                self.provider_halted=True
             item['error']=code;raise ValueError(code) from None
-        finally:item['finished_at']=now();self.next_at[host]=time.monotonic()+3
+        finally:item['finished_at']=now();self.next_at[host]=time.monotonic()+self.delays.get(host,3)
     def read_policy(self,url):
         host=urlsplit(url).hostname
         if host in self.policies:return self.policies[host]
@@ -167,7 +170,8 @@ class Reader:
                 raw,receipt=self.raw(policy_url,provider=mode)
                 if receipt.get('redirect'):raise ValueError('el_policy_redirect')
                 from public_transport import robots_document
-                body=robots_document(raw.decode('utf8'))
+                try:body,_=robots_document(200,raw.decode('utf8'))
+                except (RuntimeError,UnicodeError):raise ValueError('el_policy_unreadable') from None
                 if not re.search(r'^\s*User-agent:',body,re.M|re.I):raise ValueError('el_policy_unreadable')
                 rules=Protego.parse(body);self.policies[host]=rules;return rules
             except ValueError as exc:
@@ -182,7 +186,8 @@ class Reader:
         rate=rules.request_rate(BOT)
         if rate:delay=max(delay,rate.seconds/rate.requests)
         if delay>30:raise ValueError('el_policy_delay_bound')
-        host=urlsplit(url).hostname;self.next_at[host]=max(self.next_at.get(host,0),time.monotonic()+delay)
+        host=urlsplit(url).hostname;self.delays[host]=delay
+        self.next_at[host]=max(self.next_at.get(host,0),time.monotonic()+delay)
         if not rules.can_fetch(url,BOT):raise ValueError('el_source_policy')
         last='el_unread'
         for mode in (None,'datacenter','residential'):
@@ -235,6 +240,16 @@ def assemble(base,audit,folder):
             errors.append({'url':entry['url'],'reason':result['error']});continue
         if i>=MAX_FILES or result['file']!=sha(entry['url'].encode())+('.pdf' if entry['url'].lower().endswith('.pdf') else '.html'):
             raise ValueError('el_file_identity')
+        target=entry['url'];visited=set()
+        for _ in range(3):
+            if target==result['receipt'].get('url'):break
+            if target in visited:raise ValueError('el_redirect_loop')
+            visited.add(target)
+            hops=[r['redirect'] for r in audit['requests'] if r['url']==target and r.get('redirect')]
+            if len(set(hops))!=1:raise ValueError('el_unbound_receipt')
+            target=checked_url(hops[0])
+            if urlsplit(target).hostname!=urlsplit(entry['url']).hostname:raise ValueError('el_foreign_redirect')
+        else:raise ValueError('el_unbound_receipt')
         data=(Path(folder)/'objects'/result['file']).read_bytes()
         if sha(data)!=result['sha256'] or len(data)>MAX_BYTES:raise ValueError('el_object_hash')
         receipt=result['receipt']
@@ -246,6 +261,14 @@ def assemble(base,audit,folder):
             # page identities and exact parts, never perform it again on publish.
             doc=result['document']
             if doc['document_sha256']!=sha(data):raise ValueError('el_pdf_hash')
+            import io
+            from pypdf import PdfReader
+            count=len(PdfReader(io.BytesIO(data),strict=True).pages)
+            if doc['page_count']!=count or [p['number'] for p in doc['pages']]!=list(range(1,count+1)):
+                raise ValueError('el_pdf_page_identity')
+            if doc['ocr_pages']!=sum(p['method']=='ocr_unverified' for p in doc['pages']):
+                raise ValueError('el_ocr_page_count')
+            if any(p['sha256']!=sha(p['text'].encode()) for p in doc['pages']):raise ValueError('el_pdf_page_hash')
             names=sorted({p['partner'] for p in entry['parents']})
             partrows=document_records(SID,'pdf:'+sha(entry['url'].encode()),'ЕКП — связанные публичные условия',names[0] if len(names)==1 else None,
                 entry['url'],audit['started_at'],doc,parent_source=entry['parents'][0]['source_url'],parent_sha256=entry['parents'][0]['content_sha256'],
@@ -270,10 +293,46 @@ def validate_bundle(folder,run_id,commit,clock):
     folder=Path(folder);audit=json.loads((folder/'audit.json').read_text());base=json.loads((folder/'parents.json').read_text())
     if audit['run_id']!=run_id or audit['commit']!=commit or not instant(audit['started_at'])<=instant(audit['finished_at'])<=clock:
         raise ValueError('el_run_identity')
-    if (clock-instant(audit['started_at'])).total_seconds()>7200 or audit['reserved']>MAX_CREDITS:raise ValueError('el_freshness_or_budget')
+    if (clock-instant(audit['started_at'])).total_seconds()>7200 or not 0<=audit['reserved']<=MAX_CREDITS:
+        raise ValueError('el_freshness_or_budget')
+    if audit.get('source_account_used') is not False or len(audit['requests'])>40:
+        raise ValueError('el_privacy_or_request_budget')
+    if sum(r.get('reserved_credits',0) for r in audit['requests'])!=audit['reserved']:
+        raise ValueError('el_reservation_mismatch')
+    for receipt in audit['requests']:
+        checked_url(receipt['url'])
+        if not instant(audit['started_at'])<=instant(receipt['requested_at'])<=instant(receipt['finished_at'])<=instant(audit['finished_at']):
+            raise ValueError('el_receipt_time')
+        if not 0<=receipt.get('charged_credits',0)<=receipt.get('reserved_credits',0):
+            raise ValueError('el_charge_mismatch')
     result=assemble(base,audit,folder)
     if result!=json.loads((folder/'normalized.json').read_text()):raise ValueError('el_replay_mismatch')
     return result
+
+
+def validate_record(r):
+    d=r['details'];url=checked_url(r['source_url']);parents=d.get('parent_references',[])
+    if (r['source_id']!=SID or d.get('retrieval_method')!=METHOD or not parents or len(parents)>200
+        or r['record_kind'] not in ('program_rules','source_observation') or r['rates'] or r['tables']
+        or r['valid_from'] is not None or r['valid_until'] is not None
+        or any(d.get(k) is not False for k in ('source_account_used','eligibility_verified','recursive_links_read'))):
+        raise ValueError('el_record_scope')
+    for parent in parents:
+        if (parent.get('source_url')!='https://ekp.spb.ru/api/portal/loyalty/partners'
+            or checked_url(parent.get('original_link'))!=url
+            or not re.fullmatch('[a-f0-9]{64}',parent.get('record_id',''))
+            or not re.fullmatch('[a-f0-9]{64}',parent.get('content_sha256',''))
+            or parent.get('field') not in ('loyaltyDescription','discountScheme')
+            or instant(parent['observed_at'])>instant(r['observed_at'])):
+            raise ValueError('el_parent_binding')
+    names=sorted({p['partner'] for p in parents})
+    if r['partner_name']!=(names[0] if len(names)==1 else None):raise ValueError('el_partner_binding')
+    if not d.get('live_document_text'):
+        if (r['native_id']!='html:'+sha(url.encode()) or r['conditions_text']!=d.get('public_rule_text')
+            or r['benefit_text'] or r['source_status']!='public_linked_rules_text'):
+            raise ValueError('el_html_binding')
+    elif not r['native_id'].startswith('pdf:'+sha(url.encode())):
+        raise ValueError('el_pdf_binding')
 
 def main():
     parser=argparse.ArgumentParser();parser.add_argument('--input',default='ekp-upstream/normalized.json');parser.add_argument('--out',default='ekp-linked-output')

@@ -240,6 +240,16 @@ def normalize_record(raw, *, as_of):
     def condition(kind,path,**kw):return add('conditions',kind,path,**kw)
     def code(value,path,scope=None,delivery='literal',fragment=None):
         return add('codes','promo_code',path,value=value,scope=scope,delivery=delivery,fragment=fragment)
+    if d.get('retrieval_method')=='ekp_source_linked_rules_v1':
+        if raw['kind'] not in ('program_rules','source_observation') or not d.get('parent_references'):
+            raise ValueError('EKP linked rules provenance missing')
+        if not d.get('live_document_text') and d.get('public_rule_text')!=raw.get('conditions'):
+            raise ValueError('EKP linked HTML text mismatch')
+        condition('linked_source_rules','/conditions',scope={'parent_references':d['parent_references'],
+                  'document_part':d.get('document_part'),'applicability_requires_parent_offer_review':True})
+        n['quality']['issues'].append('linked_rules_no_automatic_benefits_or_codes')
+        n['content_sha256']=digest({k:v for k,v in n.items() if k!='content_sha256'})
+        validate_normalized(n);return n
     if d.get('retrieval_method')=='rzd_external_direct_v1':
         # Only the tour-owned RZD clause projects benefits. Other price-table
         # discounts, bank refund rules and illustrative codes stay conditions.
