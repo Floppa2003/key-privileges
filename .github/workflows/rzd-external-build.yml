@@ -1,0 +1,24 @@
+name: Verify external RZD source transfer
+on:
+  push:
+    branches: ['diagnostics/rzd-external-build-20260917']
+    paths: ['.github/workflows/rzd-external-build.yml']
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - run: |
+          mkdir -p transfer-check
+          cp diagnostics/rzd-external-code.json.gz.b64 transfer-check/
+          sha256sum transfer-check/* > transfer-check/sha256.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: external-source-transfer-${{ github.run_id }}
+          path: transfer-check/
+          retention-days: 7
