@@ -2,7 +2,7 @@ name: RZD external public partner conditions
 on:
   push:
     branches: [main, 'loyalty/rzd-external-20260917']
-    paths: [loyalty/rzd_external.py, loyalty/tests/test_rzd_external.py, .github/workflows/rzd-external.yml]
+    paths: [loyalty/rzd_external.py, 'loyalty/tests/test_rzd_external*.py', .github/workflows/rzd-external.yml]
   workflow_dispatch:
   schedule:
     - cron: '57 9 * * 3'
