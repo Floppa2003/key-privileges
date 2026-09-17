@@ -1,0 +1,99 @@
+name: RZD external finite frontier
+on:
+  push:
+    branches: ['diagnostics/rzd-external-conditions-20260917']
+    paths: ['.github/workflows/rzd-external-frontier.yml']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r loyalty/requirements.txt
+      - name: Public discovery only, no Google or source accounts
+        run: |
+          python - <<'PY'
+          import hashlib,json,os,re,sys,time
+          from pathlib import Path
+          from datetime import datetime,timezone
+          from urllib.parse import urljoin,urlsplit
+          import xml.etree.ElementTree as ET
+          import requests
+          from bs4 import BeautifulSoup
+          from protego import Protego
+          sys.path.insert(0,'loyalty')
+          from free_access_probe import sanitized_page
+          from public_transport import robots_document
+          from document_text import extract_pdf
+          out=Path('frontier-output');out.mkdir()
+          report={'run':os.environ['GITHUB_RUN_ID'],'commit':os.environ['GITHUB_SHA'],'requests':[],'publication':False,'accounts':False,'credits':0}
+          def now():return datetime.now(timezone.utc).isoformat()
+          def save(): (out/'report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2))
+          def read(url,name,policy=None):
+              if policy is not None and not policy.can_fetch(url,'LoyaltyCatalogResearchBot'):raise ValueError('policy_disallow')
+              item={'url':url,'started_at':now()};report['requests'].append(item);save()
+              try:
+                  with requests.get(url,headers={'User-Agent':'LoyaltyCatalogResearchBot/1.0'},timeout=(8,25),allow_redirects=False,stream=True) as r:
+                      item.update(status=r.status_code,mime=r.headers.get('Content-Type','').split(';')[0])
+                      if r.status_code!=200 or r.headers.get('Retry-After'):raise ValueError('http_or_rate_limit')
+                      data=bytearray()
+                      for block in r.iter_content(65536):
+                          data.extend(block)
+                          if len(data)>6000000:raise ValueError('size_limit')
+                      item['sha256']=hashlib.sha256(data).hexdigest();item['bytes']=len(data)
+                      if name.endswith('.pdf'):
+                          if item['mime']!='application/pdf' or not data.startswith(b'%PDF-'):raise ValueError('not_pdf')
+                          (out/name).write_bytes(data)
+                          doc=extract_pdf(bytes(data),allow_ocr=False)
+                          item['pages']=doc['page_count'];item['text_errors']=doc['errors']
+                          (out/(name+'.json')).write_text(json.dumps(doc,ensure_ascii=False))
+                      else:
+                          text=bytes(data).decode('utf-8')
+                          if name.endswith('.html'):text=sanitized_page(text,url,canonical_identity=False)[0]
+                          (out/name).write_text(text)
+                      return bytes(data).decode('utf-8') if not name.endswith('.pdf') else None
+              except Exception as exc:
+                  item['error']=str(exc) if isinstance(exc,ValueError) else type(exc).__name__;return None
+              finally:item['finished_at']=now();save();time.sleep(5)
+          for host,tag in [('https://rzdtour.com','tour'),('https://www.unicreditbank.ru','bank')]:
+              raw=read(host+'/robots.txt',tag+'-robots.txt')
+              if raw is None:continue
+              rules,state=robots_document(200,raw);policy=Protego.parse(rules)
+              if tag=='tour':
+                  links=re.findall(r'^Sitemap:\s*(https://rzdtour.com/[^\s]+)',raw,re.I|re.M)
+                  report['sitemaps']=links
+                  for url in links[:1]:
+                      body=read(url,'tour-sitemap.xml',policy)
+                      if body:
+                          if '<!DOCTYPE' in body.upper() or '<!ENTITY' in body.upper():raise ValueError('xml_entities')
+                          root=ET.fromstring(body);urls=[n.text for n in root.findall('{*}url/{*}loc')]
+                          report['tour_sitemap_count']=len(urls);report['tour_sitemap_urls']=urls
+              else:
+                  url=host+'/ru/personal/cards/pi-packages/debit-cash-and-back.html'
+                  raw=read(url,'bank-current.html',policy)
+                  if raw:
+                      soup=BeautifulSoup(raw,'html.parser');entries=[]
+                      for row in soup.select('table.downloadlist tr'):
+                          label=row.get_text(' ',strip=True)
+                          if not re.search('Правила.*вознагражден',label,re.I):continue
+                          for a in row.select('a[href]'):
+                              target=urljoin(url,a['href']);u=urlsplit(target)
+                              if u.scheme=='https' and u.netloc=='www.unicreditbank.ru' and u.path.startswith('/content/dam/') and u.path.lower().endswith('.pdf') and not u.query and not u.fragment:
+                                  entries.append({'url':target,'label':label})
+                      report['bank_rules']=entries
+                      for index,entry in enumerate(entries[:2]):read(entry['url'],'bank-rule-'+str(index)+'.pdf',policy)
+          save();(out/'executed-workflow.yml').write_bytes(Path('.github/workflows/rzd-external-frontier.yml').read_bytes())
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: rzd-external-frontier-${{ github.run_id }}
+          path: frontier-output/
+          retention-days: 7
