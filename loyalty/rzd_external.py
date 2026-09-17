@@ -115,6 +115,11 @@ class Reader:
 
 def tour_links(raw,base):
     soup=BeautifulSoup(raw,'html.parser');out=[];unread=[]
+    bases=soup.select('head base[href]')
+    if bases:
+        candidate=urljoin(base,bases[0]['href'])
+        if len(bases)!=1 or candidate!=TOUR:raise ValueError('re_document_base')
+        base=candidate
     for a in soup.select('a[href]'):
         url=urljoin(base,a['href']);u=urlsplit(url)
         if u.netloc!='rzdtour.com' or not u.path.startswith(PREFIX):continue
@@ -180,6 +185,8 @@ def bank_record(raw,observed):
 
 def bank_pdf_records(data,entry,parent,observed):
     doc=extract_pdf(data,allow_ocr=False)
+    if not doc['title'].strip() or re.fullmatch(r'\d+',doc['title'].strip()):
+        doc['title']=entry['label']
     return document_records('rzd_unicredit_rules','pdf:'+sha(entry['url'].encode())[:32],
         'РЖД Бонус — связанные правила ЮниКредита','ЮниКредит Банк',entry['url'],observed,doc,
         parent_source=BANK,parent_sha256=parent['content_sha256'],label=entry['label'],
