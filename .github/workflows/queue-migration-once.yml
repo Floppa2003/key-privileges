@@ -1,0 +1,124 @@
+name: Verify shared loyalty queue correction once
+on:
+  push:
+    branches: ['maintenance/loyalty-queue-max-20260918']
+    paths: [.github/workflows/queue-migration-once.yml]
+permissions:
+  contents: read
+jobs:
+  queue-check:
+    strategy:
+      fail-fast: false
+      matrix:
+        entry: [one, two, three]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    concurrency:
+      group: isolated-queue-check-${{ github.run_id }}
+      cancel-in-progress: false
+      queue: max
+    steps:
+      - name: Record isolated queue service interval without network or credentials
+        env:
+          ENTRY: ${{ matrix.entry }}
+        run: |
+          mkdir -p queue-check
+          python - <<'PY'
+          import json,os,time
+          from datetime import datetime,timezone
+          start=datetime.now(timezone.utc).isoformat()
+          time.sleep(12)
+          end=datetime.now(timezone.utc).isoformat()
+          with open('queue-check/interval.json','w') as f:json.dump({'entry':os.environ['ENTRY'],'start':start,'end':end},f)
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: queue-interval-${{ matrix.entry }}-${{ github.run_id }}
+          path: queue-check/
+          retention-days: 7
+  prepare:
+    needs: queue-check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with: {python-version: '3.12'}
+      - run: python -m pip install -r loyalty/requirements.txt
+      - name: Add regression, demonstrate old failure, make only the queue-field change
+        run: |
+          python - <<'PY'
+          import hashlib,json,subprocess
+          from pathlib import Path
+          output=Path('queue-verification');output.mkdir()
+          test=Path('loyalty/tests/test_workflow_queue.py')
+          assert not test.exists()
+          test.write_text('''"""Every writer sharing the same lock must retain pending refreshes."""
+          import re,unittest
+          from pathlib import Path
+          class SharedQueueTests(unittest.TestCase):
+              def test_all_shared_catalogue_workflows_queue_without_parallel_writes(self):
+                  root=Path(__file__).resolve().parents[2]/'.github/workflows'
+                  found=[]
+                  for path in root.glob('*.yml'):
+                      raw=path.read_text()
+                      if 'group: loyalty-catalog-${{ github.ref }}' not in raw:continue
+                      found.append(path.name)
+                      block=re.search(r'^concurrency:\\n((?:  .*\\n)+)',raw,re.M)
+                      self.assertIsNotNone(block,path.name)
+                      with self.subTest(workflow=path.name):
+                          self.assertIn('  queue: max\\n',block[1])
+                          self.assertIn('  cancel-in-progress: false\\n',block[1])
+                          self.assertEqual(block[1].count('  group:'),1)
+                  self.assertTrue(found,'No shared workflows checked')
+          ''')
+          test.write_text('\n'.join(line[10:] if line.startswith('          ') else line for line in test.read_text().splitlines())+'\n')
+          command=['python','-m','unittest','discover','-s','loyalty/tests','-p','test_workflow_queue.py','-v']
+          before=subprocess.run(command,capture_output=True,text=True)
+          (output/'before.log').write_text(before.stdout+before.stderr)
+          assert before.returncode!=0 and 'AssertionError' in before.stderr,'Expected demonstrated missing-queue failure'
+          old='concurrency:\n  group: loyalty-catalog-${{ github.ref }}\n  cancel-in-progress: false\n'
+          new=old+'  queue: max\n';changes=[]
+          for p in sorted(Path('.github/workflows').glob('*.yml')):
+              raw=p.read_text()
+              if 'group: loyalty-catalog-${{ github.ref }}' not in raw:continue
+              if new in raw:continue
+              assert raw.count(old)==1 and '  queue:' not in raw,p
+              updated=raw.replace(old,new)
+              assert updated.replace(new,old)==raw
+              p.write_text(updated)
+              changes.append({'path':str(p),'before_sha256':hashlib.sha256(raw.encode()).hexdigest(),'after_sha256':hashlib.sha256(updated.encode()).hexdigest()})
+          assert changes
+          (output/'changes.json').write_text(json.dumps(changes,indent=2))
+          Path('.github/workflows/queue-migration-once.yml').unlink()
+          subprocess.run(command,check=True)
+          PY
+      - name: Complete regressions and save the proposed exact code
+        run: |
+          set -o pipefail
+          python -m unittest discover -s loyalty/tests -v 2>&1 | tee queue-verification/python-tests.log
+          node --test key/refresh.test.mjs 2>&1 | tee queue-verification/key-tests.log
+          git diff > queue-verification/change.patch
+          tar -cf queue-verification/code.tar loyalty key .github/workflows
+      - name: Commit only to the isolated review branch, with the writer removed
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          test "$GITHUB_REF" = 'refs/heads/maintenance/loyalty-queue-max-20260918'
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add .github/workflows loyalty/tests/test_workflow_queue.py
+          git commit -m 'Preserve all pending loyalty refreshes in the shared serial queue'
+          git -c credential.helper= -c 'credential.helper=!gh auth git-credential' push origin HEAD:refs/heads/maintenance/loyalty-queue-max-20260918
+          git rev-parse HEAD > queue-verification/proposed-commit.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: shared-queue-verification-${{ github.run_id }}-${{ github.run_attempt }}
+          path: queue-verification/
+          retention-days: 7
