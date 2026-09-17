@@ -40,8 +40,6 @@ jobs:
                   n['content_sha256']=digest({k:v for k,v in n.items() if k!='content_sha256'})
                   validate_normalized(n);return n
           """
-          # YAML block indentation is removed above; align subsequent source lines.
-          lines=extra.splitlines(True);extra=lines[0]+''.join(line[10:] if line.startswith('          ') else line for line in lines[1:])
           assert s.count(needle)==1;s=s.replace(needle,extra+needle)
           assert hashlib.sha256(s.encode()).hexdigest()=='c011a751e2ed1ee59c254b5024fbb2ba1220521afc5a660d15bc2e76c76eaa1a';p.write_text(s)
           PY
