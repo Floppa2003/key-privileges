@@ -61,13 +61,14 @@ jobs:
           test.write_text('''"""Every writer sharing the same lock must retain pending refreshes."""
           import re,unittest
           from pathlib import Path
+          GROUP='group: loyalty-catalog-'+'$'+'{{ github.ref }}'
           class SharedQueueTests(unittest.TestCase):
               def test_all_shared_catalogue_workflows_queue_without_parallel_writes(self):
                   root=Path(__file__).resolve().parents[2]/'.github/workflows'
                   found=[]
                   for path in root.glob('*.yml'):
                       raw=path.read_text()
-                      if 'group: loyalty-catalog-${{ github.ref }}' not in raw:continue
+                      if GROUP not in raw:continue
                       found.append(path.name)
                       block=re.search(r'^concurrency:\\n((?:  .*\\n)+)',raw,re.M)
                       self.assertIsNotNone(block,path.name)
@@ -77,16 +78,16 @@ jobs:
                           self.assertEqual(block[1].count('  group:'),1)
                   self.assertTrue(found,'No shared workflows checked')
           ''')
-          test.write_text('\n'.join(line[10:] if line.startswith('          ') else line for line in test.read_text().splitlines())+'\n')
           command=['python','-m','unittest','discover','-s','loyalty/tests','-p','test_workflow_queue.py','-v']
           before=subprocess.run(command,capture_output=True,text=True)
           (output/'before.log').write_text(before.stdout+before.stderr)
           assert before.returncode!=0 and 'AssertionError' in before.stderr,'Expected demonstrated missing-queue failure'
-          old='concurrency:\n  group: loyalty-catalog-${{ github.ref }}\n  cancel-in-progress: false\n'
+          group='group: loyalty-catalog-'+'$'+'{{ github.ref }}'
+          old='concurrency:\n  '+group+'\n  cancel-in-progress: false\n'
           new=old+'  queue: max\n';changes=[]
           for p in sorted(Path('.github/workflows').glob('*.yml')):
               raw=p.read_text()
-              if 'group: loyalty-catalog-${{ github.ref }}' not in raw:continue
+              if group not in raw:continue
               if new in raw:continue
               assert raw.count(old)==1 and '  queue:' not in raw,p
               updated=raw.replace(old,new)
