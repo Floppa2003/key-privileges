@@ -1,82 +1,82 @@
-# Current original-source coverage — 2026-09-17, after Coral PDF acceptance
+# Current original-source coverage — 2026-09-17, after RZD external acceptance
 
-This is the current handoff. The preceding detailed HTML-rule checkpoint remains in Git at `f2beafafb315628d900bc01edcaf70e2052a8864:loyalty/COVERAGE_CURRENT.md`, with its individual acceptance documents. Interrupted chat output did not mean code was absent: PR47/48 and their completed production run were recovered and independently verified before proceeding. Do not rebuild released adapters or republish old source observations with new dates.
+This is the current handoff. The preceding Coral PDF checkpoint is preserved at `c6bc13f0bce9ff2630a0d08131ffc959cfaad5cd:loyalty/COVERAGE_CURRENT.md` and in CORAL_PDF_ACCEPTANCE.md. Interrupted chat output does not mean missing code: recover actual branches/runs/destination before implementing again. Latest detailed evidence: **RZD_EXTERNAL_ACCEPTANCE.md**.
 
 ## Objective and constraints
 
-Useful current offers and conditions from the originally requested sources must reach the SAME Google spreadsheet through recurring GitHub-controlled operation. No paid services, rented/administered server or always-on user computer. Existing Free ScrapingAnt and Google WIF are configured. No second provider account or new key is needed. Coral registration is complete, but no source-account session is connected; do not ask for registration again.
+Useful source offers and their conditions must reach the SAME Google discount spreadsheet through recurring GitHub-controlled operation. No paid service, rented/administered server, always-on user computer or second provider account. Existing Free ScrapingAnt and Google WIF work. Coral registration is complete, but no source-account session is connected; do not ask for registration again. No new key is needed for the released public collectors.
 
-Aeroflot public parsing approval is owner-reported; prior Gmail searches did not independently locate the email. Scope is public programme content and source-derived endpoints, not private accounts or a global policy override. No account credentials, purchases, coupon issuance or bonus spending are authorized by the public collection implementation.
+Aeroflot public parsing permission is owner-reported; earlier Gmail searches did not independently locate the email. Scope remains public programme/source-derived endpoints, not private accounts or a global policy override. Source reading is not permission to issue coupons, buy products or spend bonuses.
 
-## Accepted source-to-destination coverage
+## Accepted source-to-destination scopes
 
-Counts have different observation times. They are not a simultaneous-freshness percentage, universal completeness proof or number of personally usable discounts.
+Different observation times are retained. These counts are not simultaneous freshness, global completeness or personally usable-discount counts.
 
-| Source/scope | Accepted result | Remaining boundary |
+| Scope | Accepted evidence | Remaining boundary |
 |---|---|---|
-| Aeroflot companies |229/229 details in15categories;35094999686:1|External special-offer/rule links and eligibility not fully checked|
-| Aeroflot airlines |6/6 discovered airlines;35108510915:1|Four roots/two subsidiaries in that response; codeshare/booking applicability not inferred|
-| RZD Bonus own-host catalogue |66full details +8separate catalogue observations from74URLs;35135328617:1|Eight full details remain unread; external destinations are separate|
-| Coral club, sitemap path |65records from101URLs under20categories;36 ordinary merchandise exclusions;latest35201353422:1,0errors|Sitemap does not prove current interactive listing; seven previously stored pages absent from sitemap use the other collector|
+| Aeroflot companies |229/229 details in15categories;35094999686:1|Further partner/rule links, eligibility and current freshness not universally checked|
+| Aeroflot airlines |6/6 discovered airlines;35108510915:1|Four roots/two subsidiaries in that response; booking/codeshare applicability unverified|
+| RZD own-host catalogue |66full details +8separate evidence-only previews from74URLs;35135328617:1|Eight full conditions unread; these are separate from external partner scopes|
+| **RZD Tour external pricing conditions** |**35real tour pages inspected;34offers +1no-RZD-clause exclusion;35227462966:1,0errors**|Homepage/cruise-category-linked selection, not all operator products; booking availability and personal eligibility unverified|
+| **RZD-linked UniCredit product/rules** |**1product reference +1PDF/12native-text pages/4parts;35227462966:1,0errors**|Present sources do not substantiate the older1:1RZD exchange; no cancellation/ineligibility inference|
+| Coral club sitemap scope |65records from101URLs under20categories,36ordinary merchandise exclusions;35201353422:1,0errors|Sitemap does not prove all current interactive listing; seven previously stored absent pages use the other collector|
 | Coral promos |23/23 current-index pages;35201353422:1|Source terms are not personal eligibility|
-| Coral linked HTML rules |6/6 discovered rules;35201353422:1|Supplementary conditions, not six new discounts|
-| Coral linked PDFs |**2/2 actual files,10native-text pages,4output parts**;35201353422:1|Tables retained as text, not automatically interpreted; HTML/PDF equivalence not assumed|
-| EKP region98 |1045entries:935public terms/110gated observations;35070130567:2|Other-region equivalence, authenticated, linked and image-only conditions unverified|
-| Utair, Nordwind and other released sources |Existing accepted source rows and per-run reports|Intermittent failures/rotating scopes remain explicit; old success is not today's full coverage|
+| Coral linked HTML rules |6/6 current discovered rules;35201353422:1|Supplementary conditions, not six extra discounts|
+| Coral linked PDFs |2actual files/10native-text pages/4parts;35201353422:1|PDF table relationships and HTML/PDF equivalence not automatically inferred|
+| EKP filter region98 |1045entries:935public terms/110gated observations;35070130567:2|UI label was “Все регионы”; other-region equivalence, authenticated/linked/image rules not independently established|
+| Utair, Nordwind and other released routes |Accepted stored rows and per-run reports|Intermittent/rotating scopes and old timestamps remain explicit|
 
-The earlier historical audit matched90configured routes to at least one positive report. It included supplementary URLs, not90independent programmes, and was not repeated here. None of the original seven access-problem roots is inherently zero-output. Maximum completeness is not established by connection success or record count.
+The older history audit matched90configured routes to at least one positive report, including supplementary URLs, not90independent programmes. It was not repeated as a new full-source crawl. None of the original seven access-problem roots is inherently zero-output. Neither successful connection nor retained row count proves maximum coverage.
 
-## Latest completed production and independent readback
+## Latest completed release and destination
 
-PR47 added PDF collection; PR48 added bounded handling of non-authentication HTML returned for a PDF. Actual production commit **f2beafafb315628d900bc01edcaf70e2052a8864**; run **35201353422:1**. Regression, collection and publisher **105140886439** completed successfully. Every final publisher step was read back. Full evidence is in [CORAL_PDF_ACCEPTANCE.md](CORAL_PDF_ACCEPTANCE.md).
+PR49 merge:`f21dcbd7e361d2666f3314fb70ae15d25a136a5e`; main execution after test-selector correction:`c6bc13f0bce9ff2630a0d08131ffc959cfaad5cd`. **Run35227462966:1**, publisher**105224771705**, all jobs/final publisher steps completed/success. Source interval**13:31:33.331169–13:36:11.693511UTC on17September2026**.
 
-- Fresh run start08:46:10.419840UTC; actual PDF downloads08:59:11.363053–08:59:21.286795UTC,17September2026. Final unified write/readback completed09:02:27UTC.
-- **98records =65club+23promos+6HTMLrules+4PDFparts**,0finalerrors. PDFs are the8-page programme rules and2-page gift-card rules. All10pages yielded native text and were locally rendered/inspected; no OCR/manual transcription.
-- **Four PDF source identities at parser_offers2475–2478**, unified3123–3126. Each projects0benefits/1condition/0costs/0codes. Parent IDs/URLs/hashes/link labels, binary hashes and page offsets are retained. Programme PDF had an earlier intervening partial release; final acceptance confirms both PDFs together.
-- Final destination remains `1uFR7croj7p6RRNPcoTRYlVl06hKsurkIgyu1IdMMB-4`, title `скидки`: **2477retained parser records /3125unified records**, manifest **verified/current**. Relative to the last user-reported2473/3121 checkpoint this is+4supplementary parts, not four discounts.
-- **2506managed fields matched** the post-publication read-only export:98×25source fields+4×14reports. Exact archived-code/binary reconstruction and JSON Schema validation passed. Historical offline replay explicitly used actual publisher-validation time08:59:44UTC; it is not a new live fetch/freshness assertion.
-- Native reads verified four new IDs/kinds/hashes/dates/run markers, coverage1293–1296, common condition-only projections and manifest. Sample styles remain top/wrap/10pt. No new exhaustive pre/post preservation or whole-workbook rendered audit is claimed; no pre-run private export was retained in this continuation. Existing publisher did its normal complete readback.
-- Main test logs: **801Python/7KEY passed**. Production archive10488761184 SHA256`6d803e42ecf3817140d8e25fa714cfca2f7ea3f428688ab42f726310d3530894`; tests10487454087 SHA256`a1f09d1f6f90915be34512e5dc606bbe4d70194977e7ac66a757bb3656db5757`. Hashes/ZIP CRCs checked. Portable pinned dependencies from branch test10487602934 were hash-checked before offline use.
-- Fingerprint:`5e3cff63e0d93bcbe9a941dad3296dd7676d3340936bf735d821287a8fec49cf`; generation:`c0993776ee10e4afc0bb362a563466c2da5e9c3fa3ca903fce786ce22863e2c9`.
+- **39new source records:**34tour-specific offers, one bank product reference, four parts of one12-page bank PDF. All three reports `ok`,41ordinary HTTPS requests,0provider credits.
+- The initial recovered branch ignored the HTML base tag, yielding21false nested navigation URLs and missing nine real tour URLs. Tested correction yields35real details. A second demonstrated bug misread a pricing-block H1 as another tour identity; tested ownership correction keeps it as a condition and correctly inspects/excludes that no-RZD-clause page. No fixed offer/slugs/rates/PDF answer inventory.
+- Only each tour's RZD clause projects a benefit. Current34clauses individually say5% with card-number sales-office/application requirements; exact exclusions and non-combination wording stay source-specific. Child discounts, all pricing tables and bank penalties/sample codes do not become RZD benefits. The bank product is evidence-only; the PDF is conditions only.
+- The actual bank PDF is240902bytes, SHA256`c9db3bc59fea0645579888f4d1a453c1b5089a7accf601878c66ebfc155f2610`;12native pages, noOCR. Main bytes match the12pages locally rendered/inspected during branch review. This is not exhaustive table/legal interpretation.
+- Destination remains **`1uFR7croj7p6RRNPcoTRYlVl06hKsurkIgyu1IdMMB-4`**, title`скидки`. Final independently read manifest: **verified/current;2518retained parser records /3166unified records**.
+- Fresh pre-run baseline was2479/3127; two automated additions preceded this release. Compared with the previous user-reported2477/3125, net+41 includes those two, not41from this external run.
+- New source rows **2481–2519**:tours2481–2514, bankreference2515, PDFparts2516–2519. Common rows3129–3167; source reports1392–1394.
+- **1017managed fields matched** a post-publication read-only export:39×25source fields+3×14reports. All39native hashes/dates/run markers checked. Per-record common fields plus current component IDs/evidence were independently checked. The bank reference has zero projected terms; each PDFpart one condition/zero benefits/costs/codes; each tour one benefit/one condition.
+- **2479old parser rows/manual comments,1390old coverage rows and six original input/audit tabs' values/formulas remained unchanged**. No private export was committed or attached.
+- Fingerprint:`82d3e40e51bcb91889cdeafe395fa6c80c34ca512b260723b68050506d1b32c5`; generation:`47a0164a42d59386a66976fc1df30f058cb650339c0ff002235915fdcdece0a0`.
+- **830Python/7KEY tests passed,0skips** in branch and main. All six execution-file blobs match reviewed bytes, including the one-line workflow trigger correction. Every main record was reconstructed and JSON-schema checked. Offline replay explicitly used historical source-completion time, not a new fetch/current-freshness claim.
+- Main source artifact10500191892 SHA256`7634495defd88743594794435f3da48757fca6afd05e50a777e48a34b368e82f`; exact code/tests10499058804 SHA256`371a9c53d96e40d2d8180cd1cef2340a7d331b414e902712a0146ca25a0afaa2`. SHA256/ZIPCRC verified.
+- Native common styles sampled as top/wrap/10pt. Artifact-tool daemon startup failed for rendered workbook inspection; no whole-workbook rendered/layout audit claimed, no restyling performed.
 
-Both PDFs succeeded on first datacenter attempts in this run: **2reserved/2confirmed credits**, Free opening balance5396. Ending/current balance was not separately queried. Do not claim this run exercised residential fallback. The earlier Coral HTML retry implementation remains released and was genuinely exercised in35151106847:1; see CORAL_LINKED_RULES_ACCEPTANCE.md. Neither implementation needs rebuilding.
+The first main external run35227125225 was cancelled in the shared pending queue before any read. The existing failed-jobs endpoint refused rerun; the narrowly corrected test-path selector then triggered only this workflow. The accepted run is35227462966, not the cancelled run. Other old schedules/concurrency exclusion stayed unchanged; one release does not prove future cron reliability.
 
-## New external-RZD evidence, not publication
+## Recurring operation and cost
 
-[ RZD_EXTERNAL_ACCESS.md ](RZD_EXTERNAL_ACCESS.md) records completed diagnostic **35207613565**, branch `diagnostics/rzd-external-conditions-20260917`, commit`0c2eae837a7a05e1cbfefedf9fb383dfdb498390`. Five ordinary TLS-verified requests,0credits/accounts/Google credentials. Both robots, RZD Tour homepage, one homepage-linked tour and the exact catalogue-linked UniCredit page returned200. Artifact10490535781 SHA256`6ccba43b34f71af447a4b24430e3876087cc9a31db7932686e1e1e31820147c1` was checked.
-
-The28tour-detail URLs discovered on the homepage are not28already collected conditions. One actual tour's pricing block contains the RZD Bonus5% clause and card-number booking requirement. Do not generalize this one detail to every tour. The UniCredit target's public text does not establish the older catalogue's1:1RZD exchange; that is not proof of cancellation or user ineligibility. Its linked bank rules still need real automated binary collection. A web-reader cached PDF was not accepted or published. No new RZD records were written by this probe, and its workflow has no schedule.
-
-The previous RZD catalogue's26external-link occurrences are two distinct destinations, not26missing offers. Anonymous connection is now demonstrably possible for both sites. The next task is extraction/publication with source-bound scope, not another proxy experiment.
-
-## Recurring operation / free budget
-
-| Collector | UTC | Moscow | Provider ceiling/run |
+| Collector | UTC | Moscow | ScrapingAnt ceiling/run |
 |---|---|---|---:|
 | Original direct sources |Daily05:23|Daily08:23|0|
 | Coral/Nordwind/provider |Mon/Tue/Thu/Fri06:03|Mon/Tue/Thu/Fri09:03|269|
 | EKP |Monday07:13|Monday10:13|175|
-| RZD Google import |Wednesday08:37|Wednesday11:37|0|
+| RZD own-host Google import |Wednesday08:37|Wednesday11:37|0|
 | Aeroflot Google import |Thursday08:47|Thursday11:47|0|
-| Coral Google HTML+linkedPDF |Wednesday/Saturday09:17|Wednesday/Saturday12:17|0HTML;52PDF|
+| Coral Google HTML+PDF |Wednesday/Saturday09:17|Wednesday/Saturday12:17|0HTML;52PDF|
+| **RZD external direct** |**Wednesday09:57**|**Wednesday12:57**|**0**|
 
-No schedule or Google permission changed in this continuation. The new PDF stage was already released by PR47. At most9scheduled Coral runs/31days add468 to the previous conservative5986 ceiling: **6454credits/31days**, excluding manual diagnostics/retries outside scheduled runs, other account use and service/cron anomalies. This is a budget bound, not measured monthly billing. No paid plan or extra account.
+The new external route uses no provider key. Existing conservative6454credits/31days remains unchanged and excludes manual diagnostics/other usage/tariff anomalies; no fresh balance is claimed. No paid plan, extra account or new Google scope/permission.
 
-Bounds remain: Coral HTML164imports/160parents/12HTMLrules/12transient retries/2700s/min5s; Coral PDF8files/6MBperfile/52credits/480s; RZD32catalogue states/100rotating details/135imports/3300s/20s delay; Aeroflot260companies/60airlines/324imports/3000s/min5s. Larger/slower future catalogues may be partial. Completed push/manual runs do not guarantee every future cron.
+Existing bounds:Coral164HTMLimports/160parents/12HTMLrules/12transient retries/2700s; PDF8files/6MBperfile/52credits/480s; RZD ownhost32catalogue states/100rotating details/135imports/3300s/20s delay; Aeroflot260companies/60airlines/324imports/3000s. New external:80tours/4PDFs/90requests/900s,2MBHTML/6MBPDF,min5s/host plus source rules. Larger/slower scopes may be partial. Shared queue can cancel pending push-triggered jobs; inspect real run state rather than assuming each merge published.
 
-## Remaining work and anti-loop rules
+## Remaining work / anti-loop rules
 
-1. Close reachable RZD external public-condition scope through actual recurring publication, preserving tour-specific context and unresolved bank/RZD wording. Neither external site is technically impossible via GitHub; the adapter is not yet implemented.
-2. RZD own-host terms remain66/74. Six observed anonymous pages showed matching main-content login forms; two imports failed. The eight separate previews are already in Sheets. Do not fix selectors to bypass a login or infer404/expiry from an import error.
-3. EKP's110gated records, region equivalence and linked/image rules require explicit checks. No source account has been connected.
-4. Aeroflot's separate special-offer/external documents and remaining partner links across original programmes are not exhausted. Do not turn every hyperlink into a new offer or certify a global maximum without a finite checked inventory.
-5. Do not reimplement Coral retries, six HTML rules or two PDFs: all are released and destination-verified. Do not repeat full unchanged crawls to chase a moving minor failure. Missing observations retain original dates; unsupported scope is explicit.
-6. Merchant lookup searches parser_offers title/conditions/source fields as well as derived tables. Evidence-only records can have zero benefits and unresolved partner names; no normalized benefit match is not proof of no offer.
+1. **Do not reimplement Coral retries, sixHTMLrules, twoPDFs or the new RZD external collector:** all are released and destination-verified. Do not repeat unchanged whole crawls to chase a small moving failure.
+2. RZD ownhost full terms remain66/74: six prior anonymous pages returned matching login forms, two Google imports failed. Eight previews are separate evidence-only identities. No404/removal/expiry/impossibility inference from import errors; selector changes cannot supply an account session.
+3. EKP110gated observations still lack authenticated terms. Current region98 was emitted by the UI labelled“Все регионы”; it is not proof that all geographic/linked/image conditions are exhausted. No source account connected.
+4. Further external partner/rule pages and image-only conditions across programmes remain a real separate scope. A read-only inventory of stored Aeroflot partner objects in this continuation found no nonempty `special_offers` values, but371outgoing-link occurrences; this is stored-data inspection, not a new live fetch or proof every link needs a new offer. Do not claim all external rules done or classify every homepage link as missing conditions.
+5. User eligibility, contract validity and actual booking availability remain distinct from transport/text coverage. Preserve unknowns and source inconsistencies; no canonical global completeness percentage exists.
+6. Merchant lookup searches parser_offers title/conditions/source fields as well as derived tables. Evidence-only records may have zero automatic benefits; no normalized-benefit match is not proof of no source offer.
 
-## Privacy and provenance
+## Privacy / provenance
 
-Google imports expose calculation results, not origin cache age/status/redirect chains. Stable local reads prevent mixing but not origin-cache uncertainty. PDF binary download receipts and run-start observation time are distinct. Rule edition dates are not automatically offer expiry dates; the current gift-card PDF retains its2021edition.
+Google imports expose calculation results, not origin cache age/status/redirects. The new RZD external route instead preserves real HTTP receipts and current sanitized bytes, but HTTP200 still does not certify uncached age or personal eligibility. Run-start observed_at and each individual response time differ. Rule editions are not automatically expiry dates.
 
-Destination sharing was last independently inspected as `anyone:writer`; not changed or newly audited in this continuation. `private_complete` is a normalizer mode, not an ACL. No sessions, SMS codes, tokens, personal coupons or authenticated-only conditions may enter that link-accessible Sheet or public artifacts without resolving privacy. No private workbook export is committed or attached.
+Destination sharing was last inspected as`anyone:writer`; not changed or newly audited in this release. `private_complete` is a normalizer mode, not an ACL. No source sessions, SMS, tokens, personal coupons or authenticated-only terms may enter the link-accessible Sheet/public artifacts without resolving privacy. Public-source permission does not authorize purchases/redemption. Private exports stay local and are not user deliverables.
 
-Historical evidence: AEROFLOT_ACCESS_STATUS.md, AIRLINE_COVERAGE.md, CORAL_IMPORT_COVERAGE.md, CORAL_RECOVERY.md, RZD_PREVIEW_ACCEPTANCE.md, CORAL_RETRY_ACCEPTANCE.md, CORAL_LINKED_RULES_ACCEPTANCE.md. Latest: CORAL_PDF_ACCEPTANCE.md and RZD_EXTERNAL_ACCESS.md. Public artifacts expire after7days; exact code/run identities and acceptance documents persist in Git.
+Older detailed evidence: AEROFLOT_ACCESS_STATUS.md, AIRLINE_COVERAGE.md, CORAL_IMPORT_COVERAGE.md, CORAL_RECOVERY.md, RZD_PREVIEW_ACCEPTANCE.md, CORAL_RETRY_ACCEPTANCE.md, CORAL_LINKED_RULES_ACCEPTANCE.md, CORAL_PDF_ACCEPTANCE.md, RZD_EXTERNAL_ACCESS.md. Latest:RZD_EXTERNAL_ACCEPTANCE.md. Public artifacts expire after7days; exact code/run identities and acceptance records persist in Git.
