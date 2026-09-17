@@ -1,0 +1,61 @@
+name: Prepare already-tested queue patch objects
+on:
+  push:
+    branches: ['maintenance/loyalty-queue-max-20260918']
+    paths: [.github/workflows/queue-blobs-once.yml]
+permissions:
+  contents: read
+jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with: {python-version: '3.12'}
+      - name: Read exact tested public artifact and create content objects only
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import hashlib,io,json,os,subprocess,tarfile,zipfile
+          from pathlib import Path
+          assert os.environ['GITHUB_REPOSITORY']=='Floppa2003/key-privileges'
+          assert os.environ['GITHUB_REF']=='refs/heads/maintenance/loyalty-queue-max-20260918'
+          repo=os.environ['GITHUB_REPOSITORY'];api='repos/'+repo
+          raw=subprocess.check_output(['gh','api',api+'/actions/artifacts/10523014369/zip'])
+          assert hashlib.sha256(raw).hexdigest()=='6df5a2861d9631550a6d6afc6f70d1afcba7cbf51d49e3bb4c6d1aaecc9a1530'
+          z=zipfile.ZipFile(io.BytesIO(raw));assert z.testzip() is None
+          changes=json.loads(z.read('changes.json'));assert len(changes)==22
+          tar=tarfile.open(fileobj=io.BytesIO(z.read('code.tar')))
+          payload=[]
+          for c in changes:
+              path=c['path'];assert path.startswith('.github/workflows/') and path.endswith('.yml') and '..' not in Path(path).parts
+              old=Path(path).read_bytes();new=tar.extractfile(path).read()
+              assert hashlib.sha256(old).hexdigest()==c['before_sha256']
+              assert hashlib.sha256(new).hexdigest()==c['after_sha256']
+              assert new.replace(b'  queue: max\n',b'')==old
+              payload.append((path,new))
+          test='loyalty/tests/test_workflow_queue.py'
+          assert not Path(test).exists()
+          payload.append((test,tar.extractfile(test).read()))
+          result=[]
+          for path,data in payload:
+              expected=hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest()
+              response=json.loads(subprocess.check_output(['gh','api','--method','POST',api+'/git/blobs','--input','-'],input=json.dumps({'content':data.decode('utf8'),'encoding':'utf-8'}).encode()))
+              assert response['sha']==expected
+              result.append({'path':path,'mode':'100644','type':'blob','sha':expected,'sha256':hashlib.sha256(data).hexdigest()})
+          out=Path('queue-object-receipts');out.mkdir()
+          (out/'objects.json').write_text(json.dumps({'upstream_run':'35285616414:1','upstream_artifact':10523014369,'objects':result,'refs_changed':False,'source_requests':0},indent=2))
+          print(json.dumps({'objects_created':len(result),'refs_changed':False}))
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: queue-object-receipts-${{ github.run_id }}-${{ github.run_attempt }}
+          path: queue-object-receipts/
+          retention-days: 7
