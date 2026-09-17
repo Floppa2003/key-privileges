@@ -1,0 +1,39 @@
+name: Register linked-rule adapter on development branch
+on:
+  push:
+    branches: ['loyalty/aeroflot-linked-20260918']
+    paths: [.github/workflows/linked-register-once.yml]
+permissions:
+  contents: write
+jobs:
+  register:
+    if: github.repository == 'Floppa2003/key-privileges' && github.ref == 'refs/heads/loyalty/aeroflot-linked-20260918'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {persist-credentials: false}
+      - name: Register only source validation and condition-only projection
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import os,subprocess,json,base64
+          branch='loyalty/aeroflot-linked-20260918'
+          assert os.environ['GITHUB_REF']=='refs/heads/'+branch
+          repo=os.environ['GITHUB_REPOSITORY'];assert repo=='Floppa2003/key-privileges'
+          changes={
+          'loyalty/normalized.py':[
+          ("HOSTS['aeroflot']=['www.aeroflot.ru']", "HOSTS['aeroflot']=['www.aeroflot.ru']\nHOSTS['aeroflot_linked_rules']=['stoletov.ru','parkingsvo.ru','parking.svo.aero','parking.svo.su']"),
+          ("    if r['source_id']=='ekp_linked_rules':", "    if r['source_id']=='aeroflot_linked_rules':\n        from aeroflot_linked_rules import validate_record\n        validate_record(r)\n    if r['source_id']=='ekp_linked_rules':")],
+          'loyalty/unified_normalization.py':[("if d.get('retrieval_method')=='ekp_source_linked_rules_v1':", "if d.get('retrieval_method') in ('ekp_source_linked_rules_v1','aeroflot_source_linked_rules_v1'):")]
+          }
+          for path,replacements in changes.items():
+              resource=json.loads(subprocess.check_output(['gh','api',f'repos/{repo}/contents/{path}?ref={branch}']))
+              content=base64.b64decode(resource['content']).decode()
+              for old,new in replacements:
+                  assert content.count(old)==1,(path,'anchor count')
+                  content=content.replace(old,new)
+              body={'message':'Register source-linked Aeroflot conditions in existing validation/projection','content':base64.b64encode(content.encode()).decode(),'sha':resource['sha'],'branch':branch}
+              subprocess.run(['gh','api','-X','PUT',f'repos/{repo}/contents/{path}','--input','-'],input=json.dumps(body).encode(),check=True,stdout=subprocess.DEVNULL)
+          PY
