@@ -151,7 +151,7 @@ class Reader:
                 if self.key and self.key.encode() in data:raise ValueError('el_credential_echo')
                 item.update(bytes=len(data),sha256=sha(data),mime=response.headers.get('Content-Type','').split(';')[0])
                 if browser:
-                    dom=BeautifulSoup(data,'html.parser');actual=dom.html.get('data-loyalty-probe-location','') if dom.html else ''
+                    dom=BeautifulSoup(bytes(data),'html.parser');actual=dom.html.get('data-loyalty-probe-location','') if dom.html else ''
                     if checked_url(actual).rstrip('/')!=url.rstrip('/'):raise ValueError('el_browser_destination')
                 return bytes(data),item
         except Exception as exc:
