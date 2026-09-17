@@ -240,6 +240,22 @@ def normalize_record(raw, *, as_of):
     def condition(kind,path,**kw):return add('conditions',kind,path,**kw)
     def code(value,path,scope=None,delivery='literal',fragment=None):
         return add('codes','promo_code',path,value=value,scope=scope,delivery=delivery,fragment=fragment)
+    if d.get('retrieval_method')=='rzd_external_public_conditions_v1':
+        # Only the tour's explicit RZD clause supplies a projected discount.
+        # Its other prices/children's discounts and bank product text stay rules.
+        scope={'source_url':raw.get('source_url'),'individual_eligibility_not_verified':True}
+        if raw['kind']=='partner_offer' and d.get('tour_url'):
+            clauses=d.get('rzd_loyalty_clauses',[])
+            for i,clause in enumerate(clauses):
+                for rate in normalize_rates(clause):
+                    benefit(KIND.get(rate['kind'],rate['kind']),f'/details/rzd_loyalty_clauses/{i}',
+                        value=decimal(rate['value']),unit=rate['unit'],qualifier=rate.get('qualifier','exact'),
+                        scope={**scope,'tour_url':d['tour_url'],'full_booking_conditions_attached':True})
+        condition('external_partner_conditions','/conditions',scope=scope)
+        n['quality']['level']='structured_with_review'
+        n['quality']['issues'].append('external_conditions_not_general_programme_entitlement')
+        n['content_sha256']=digest({k:v for k,v in n.items() if k!='content_sha256'})
+        validate_normalized(n);return n
     if raw['kind']=='program_rules' and d.get('retrieval_method')=='coral_source_linked_pdf_free_api_v1':
         # The PDF is a contract, not a catalogue of extra discounts or codes.
         if not d.get('live_document_text') or not d.get('parent_references'):
