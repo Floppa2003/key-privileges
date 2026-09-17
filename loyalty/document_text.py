@@ -47,7 +47,7 @@ def ocr_pages(pdf_path, numbers, temp):
         env={**os.environ,'OMP_THREAD_LIMIT':'1'}).stdout
     if len(output)>20_000_000:raise RuntimeError('pdf_ocr_output_size_limit')
     groups={n:{'lines':{},'conf':[],'numeric':[]} for n in numbers};observed=set()
-    for word in csv.DictReader(io.StringIO(output.decode('utf-8')),delimiter='\t'):
+    for word in csv.DictReader(io.StringIO(output.decode('utf-8')),delimiter='\t',quoting=csv.QUOTE_NONE):
         index=int(word['page_num'])-1
         if not 0<=index<len(numbers):raise ValueError('ocr_page_identity_mismatch')
         n=numbers[index]
@@ -155,7 +155,9 @@ def page_text(pages):
 def document_records(source_id,native_prefix,program,partner,url,observed_at,doc,*,parent_source,label='',parent_sha256=None,extra_details=None,link_kind='detail_page',locator=''):
     from normalized import make_offer
     groups=page_groups(doc['pages']);rows=[]
-    title=doc['title'].strip() or next((p['text'].split('\n')[0].strip() for p in doc['pages'] if p['text'].strip()),label or 'Документ источника')
+    title=doc['title'].strip()
+    if not re.search(r'[^\W\d_]',title):
+        title=label.strip() or next((p['text'].split('\n')[0].strip() for p in doc['pages'] if p['text'].strip()),'Документ источника')
     for index,pages in enumerate(groups,1):
         full=page_text(pages)
         has_text=any(p['text'].strip() for p in pages)
