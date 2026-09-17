@@ -84,7 +84,10 @@ def clean_html(data):
     for n in soup.find_all(True):
         n.attrs={k:v for k,v in n.attrs.items() if k in ('id','class','href','colspan','rowspan')}
         if n.has_attr('href') and urlsplit(n['href']).scheme not in ('https','http'):del n.attrs['href']
-    return str(soup.html)
+    # Removing elements leaves adjacent whitespace nodes. Reparse the cleaned
+    # Unicode tree once so serialization is stable under the publisher's exact
+    # re-sanitization check; do not weaken that check or alter source text.
+    return str(BeautifulSoup(str(soup.html),'html.parser').html)
 
 def html_fields(data):
     soup=BeautifulSoup(data,'html.parser');body=soup.find('main') or soup.body
