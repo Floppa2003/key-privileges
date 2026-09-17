@@ -240,7 +240,7 @@ def normalize_record(raw, *, as_of):
     def condition(kind,path,**kw):return add('conditions',kind,path,**kw)
     def code(value,path,scope=None,delivery='literal',fragment=None):
         return add('codes','promo_code',path,value=value,scope=scope,delivery=delivery,fragment=fragment)
-    if d.get('retrieval_method')=='ekp_source_linked_rules_v1':
+    if d.get('retrieval_method') in ('ekp_source_linked_rules_v1','aeroflot_source_linked_rules_v1'):
         if raw['kind'] not in ('program_rules','source_observation') or not d.get('parent_references'):
             raise ValueError('EKP linked rules provenance missing')
         if not d.get('live_document_text') and d.get('public_rule_text')!=raw.get('conditions'):
