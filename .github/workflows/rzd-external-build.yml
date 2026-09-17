@@ -65,7 +65,6 @@ jobs:
                   n['content_sha256']=digest({k:v for k,v in n.items() if k!='content_sha256'})
                   validate_normalized(n);return n
           """
-          lines=new.splitlines();new='\n'.join([lines[0]]+[line[10:] for line in lines[1:] if line.strip()])+'\n'
           needle="    if raw['kind']=='program_rules' and d.get('retrieval_method')=='coral_source_linked_pdf_free_api_v1':"
           assert s.count(needle)==1;s=s.replace(needle,new+needle);p.write_text(s)
           expected={'loyalty/rzd_external.py':'789df043a34cc68a229008b638895839a2d374864b3d075277eff528ab1a8607','loyalty/tests/test_rzd_external.py':'5dfb388fd1ba784acab36f017cd2d6915a413ee9c10bd3e88e2c09bc46b51875','loyalty/normalized.py':'8f8db1d0e279b74a99f502708e2f3d9e860c7448c0b55d6f36b7c271e212adc5','loyalty/unified_normalization.py':'196bdad405d3b2226caa88f8d95e70bb99d163bbe556bccc006e333a98ad63f4'}
