@@ -145,7 +145,7 @@ def validity(text: str) -> tuple[str, str]:
 def parse_document(spec: dict, data: bytes, observed_at: str) -> dict:
     if spec.get("url") not in BY_URL or BY_URL[spec["url"]] != spec:
         raise ValueError("alfa_partner_pdf_spec_identity")
-    text = pdf_text(data)
+    text = compact(pdf_text(data))
     sha = hashlib.sha256(data).hexdigest()
 
     title = must(
