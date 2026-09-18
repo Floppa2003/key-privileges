@@ -8,91 +8,67 @@ permissions:
 jobs:
   probe:
     runs-on: ubuntu-24.04
-    timeout-minutes: 6
+    timeout-minutes: 8
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with: {persist-credentials: false}
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with: {python-version: '3.12'}
-      - run: python -m pip install requests==2.32.5 beautifulsoup4==4.14.3 protego==0.6.2
-      - name: Read only reviewed public Alfa Only pages
+      - run: python -m pip install -r loyalty/requirements.txt
+      - name: Read two reviewed public Alfa Only pages through the existing free provider
+        env:
+          SCRAPINGANT_API_KEY: ${{ secrets.SCRAPINGANT_API_KEY }}
         run: |
           mkdir -p alfa-public-probe
           python - <<'PY'
-          import hashlib,json,re,tempfile,sys,ssl
+          import hashlib,json,os,sys,time
           from pathlib import Path
+          from urllib.parse import urlsplit
           sys.path.insert(0,'loyalty')
-          from urllib.parse import urljoin,urlsplit
-          import certifi,requests
-          from recovered_contract import CA_FILES
           from bs4 import BeautifulSoup
           from protego import Protego
+          from free_access_probe import FreeReader,read_policy,sanitized_page,ProbeError
+          from public_transport import robots_document,check_response
 
-          ROOT='https://alfabank.ru'
           BOT='LoyaltyCatalogResearchBot'
           urls=[
-            ROOT+'/everyday/package/premium/',
-            ROOT+'/everyday/package/premium/tsum/',
-            ROOT+'/everyday/package/premium/restaurants/',
-            ROOT+'/everyday/package/premium/lounge/',
+            'https://alfabank.ru/everyday/package/premium/',
+            'https://alfabank.ru/everyday/package/premium/tsum/',
           ]
-          headers={'User-Agent':BOT+'/1.0'}
-          ca_url,ca_sha=CA_FILES[0]
-          root_der_sha='d26d2d0231b7c39f92cc738512ba54103519e4405d68b5bd703e9788ca8ecf31'
-          ca_bytes=None;ca_origin=None
+          roots=[{'id':'alfa_public_'+str(i),'url':u} for i,u in enumerate(urls)]
+          reader=FreeReader(os.environ.get('SCRAPINGANT_API_KEY',''),roots,max_credits=25,max_requests=4)
+          report={'status':'started','pages':[],'account_session_used':False,'publication':False}
           try:
-            with requests.Session() as ca:
-              ca.trust_env=False
-              cr=ca.get(ca_url,timeout=(5,12),allow_redirects=False)
-              if cr.status_code==200 and len(cr.content)<=16384 and hashlib.sha256(cr.content).hexdigest()==ca_sha:
-                ca_bytes=cr.content;ca_origin='official'
-          except requests.RequestException:
-            pass
-          if ca_bytes is None:
-            mirror='https://raw.githubusercontent.com/koenrh/russian-trusted-root-ca/main/root-ca_rsa-2022.pem'
-            with requests.Session() as ca:
-              ca.trust_env=False
-              cr=ca.get(mirror,timeout=(5,12),allow_redirects=False)
-              assert cr.status_code==200 and len(cr.content)<=16384,('mirror',cr.status_code)
-              pem=cr.content.decode('ascii')
-              der=ssl.PEM_cert_to_DER_cert(pem)
-              assert hashlib.sha256(der).hexdigest()==root_der_sha,'mirror_root_fingerprint_changed'
-              ca_bytes=cr.content;ca_origin='fingerprint_verified_mirror'
-          td=tempfile.TemporaryDirectory()
-          bundle=Path(td.name)/'bank-ca.pem'
-          bundle.write_bytes(Path(certifi.where()).read_bytes()+b'\n'+ca_bytes)
-          s=requests.Session()
-          s.trust_env=False
-          rob=s.get(ROOT+'/robots.txt',headers=headers,verify=str(bundle),timeout=(8,20),allow_redirects=False)
-          assert rob.status_code in (200,403),('robots',rob.status_code)
-          rules=Protego.parse(rob.text) if rob.status_code==200 else Protego.parse('User-agent: *\nAllow: /')
-          out={'official_root_file_sha256':ca_sha,'root_der_sha256':root_der_sha,'ca_origin':ca_origin,'robots_status':rob.status_code,'robots_sha256':hashlib.sha256(rob.content).hexdigest(),'pages':[]}
-          for url in urls:
-            assert rules.can_fetch(url,BOT),('robots_disallow',url)
-            r=s.get(url,headers=headers,verify=str(bundle),timeout=(8,30),allow_redirects=False)
-            assert r.status_code in (200,301,302,307,308),(url,r.status_code)
-            if r.status_code!=200:
-              target=urljoin(url,r.headers.get('Location',''))
-              u=urlsplit(target)
-              assert u.scheme=='https' and u.netloc=='alfabank.ru',(url,'foreign_redirect',target)
-              assert rules.can_fetch(target,BOT),('robots_disallow_redirect',target)
-              r=s.get(target,headers=headers,verify=str(bundle),timeout=(8,30),allow_redirects=False)
-              assert r.status_code==200,(target,r.status_code)
-              url=target
-            assert len(r.content)<=4_000_000,(url,'oversized')
-            soup=BeautifulSoup(r.text,'html.parser')
-            title=(soup.title.get_text(' ',strip=True) if soup.title else '')
-            text=' '.join(soup.stripped_strings)
-            assert not re.search(r'access denied|captcha|проверка безопасности',title+' '+text[:500],re.I),url
-            heads=[x.get_text(' ',strip=True) for x in soup.select('h1,h2,h3') if x.get_text(' ',strip=True)]
-            snippets=[]
-            patterns=[r'.{0,90}кэшбэк.{0,140}',r'.{0,90}скидк.{0,140}',r'.{0,90}РБК.{0,140}',r'.{0,90}Альфа.?Мобайл.{0,140}',r'.{0,90}приоритетн.{0,140}']
-            for p in patterns:
-              for m in re.finditer(p,text,re.I):
-                value=' '.join(m.group(0).split())
-                if value not in snippets: snippets.append(value[:350])
-            out['pages'].append({'url':url,'status':r.status_code,'sha256':hashlib.sha256(r.content).hexdigest(),'bytes':len(r.content),'title':title,'headings':heads[:120],'evidence':snippets[:40]})
-          open('alfa-public-probe/report.json','w').write(json.dumps(out,ensure_ascii=False,indent=2))
+            reader.preflight()
+            host='alfabank.ru';info={'state':'fetching'}
+            status,raw,credits=read_policy(reader,'https://'+host+'/robots.txt',info)
+            rules_text,state=robots_document(status,raw)
+            policy=Protego.parse(rules_text)
+            report['robots']={'origin_http_status':status,'state':state,'method':info.get('method'),'credits':credits}
+            for url in urls:
+              item={'url':url}
+              try:
+                if not policy.can_fetch(url,BOT): raise ProbeError('robots_disallow')
+                status,raw,credits=reader.read(url,browser=True)
+                item.update(origin_http_status=status,credits=credits)
+                check_response(status,raw)
+                clean,meta=sanitized_page(raw,url)
+                soup=BeautifulSoup(clean,'html.parser')
+                visible=' '.join(soup.stripped_strings)
+                heads=[x.get_text(' ',strip=True) for x in soup.select('h1,h2,h3') if x.get_text(' ',strip=True)]
+                item.update(status='ok',sanitized_sha256=hashlib.sha256(clean.encode()).hexdigest(),
+                  text_chars=len(visible),headings=heads[:160],text_sample=visible[:12000],**meta)
+                Path('alfa-public-probe/'+('root' if url==urls[0] else 'tsum')+'.html').write_text(clean)
+              except Exception as exc:
+                item['status']='failed';item['error']=str(exc) if isinstance(exc,(ProbeError,RuntimeError)) else 'probe_error'
+              report['pages'].append(item)
+            report['status']='checked'
+          except Exception as exc:
+            report['status']='failed';report['error']=str(exc) if isinstance(exc,(ProbeError,RuntimeError)) else 'setup_error'
+          finally:
+            report.update(reserved_credits=reader.reserved,known_charged_credits=reader.known_charged_credits,calls=reader.calls)
+            Path('alfa-public-probe/report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2))
+          if report['status']!='checked' or not any(x.get('status')=='ok' for x in report['pages']): raise SystemExit(1)
           PY
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
