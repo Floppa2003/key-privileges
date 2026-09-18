@@ -8,44 +8,61 @@ permissions:
 jobs:
   check:
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 3
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with: {persist-credentials: false}
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with: {python-version: '3.12'}
       - run: python -m pip install -r loyalty/requirements.txt
-      - run: python -m playwright install --with-deps chromium
-      - name: Preserve only public source evidence
+      - name: Bound ordinary HTTPS reads to the exact public campaign and source policy
         run: |
           python - <<'PY'
-          import asyncio,hashlib,json,sys
+          import hashlib,json,sys,time
           from pathlib import Path
           from datetime import datetime,timezone
-          sys.path.insert(0,'loyalty')
+          import requests
           from bs4 import BeautifulSoup
-          from playwright.async_api import async_playwright
-          from public_transport import PublicSource,check_response
+          from protego import Protego
+          sys.path.insert(0,'loyalty')
+          from public_transport import robots_document,check_response
           from free_access_probe import sanitized_page
+          url='https://grandkarat.com/special-offer/';policy='https://grandkarat.com/robots.txt'
+          out=Path('karat-public-check');out.mkdir();audit={'method':'ordinary_https_no_redirects','requests':[],'url':url}
           def now():return datetime.now(timezone.utc).isoformat()
-          async def main():
-              url='https://grandkarat.com/special-offer/';out=Path('karat-public-check');out.mkdir();item={'url':url,'requested_at':now()}
+          def get(target,bound):
+              row={'url':target,'requested_at':now()};audit['requests'].append(row)
               try:
-                  async with async_playwright() as p:
-                      browser=await p.chromium.launch()
-                      async with PublicSource(browser,url) as source:
-                          await source.robots();item['robots']=source.robots_info
-                          source.check_url(url);await asyncio.sleep(max(2,source.request_interval))
-                          status,raw=await source.navigate(url);item.update(status=status,final_url=source.page.url)
-                          check_response(status,raw)
-                          if source.page.url!=url or len(raw.encode())>6000000:raise ValueError('document_scope_or_size')
-                          soup=BeautifulSoup(raw,'html.parser');soup.html['data-loyalty-probe-location']=url
-                          safe,_=sanitized_page(str(soup),url);data=safe.encode();(out/'page.html').write_bytes(data)
-                          item.update(file='page.html',sha256=hashlib.sha256(data).hexdigest(),read_at=now())
-                      await browser.close()
-              except Exception as exc:item['error']=str(exc)[:180] if isinstance(exc,(ValueError,RuntimeError)) else type(exc).__name__
-              item['finished_at']=now();(out/'manifest.json').write_text(json.dumps(item,ensure_ascii=False,indent=2))
-          asyncio.run(main())
+                  with requests.get(target,headers={'User-Agent':'LoyaltyCatalogResearchBot/1.0'},timeout=(8,20),stream=True,allow_redirects=False) as response:
+                      row.update(status=response.status_code,final_url=response.url,mime=response.headers.get('Content-Type',''))
+                      if response.url!=target:raise ValueError('changed_location')
+                      if response.status_code==429 or response.headers.get('Retry-After'):raise ValueError('rate_limit')
+                      if 300<=response.status_code<400:raise ValueError('redirect_not_followed')
+                      raw=bytearray();deadline=time.monotonic()+30
+                      for part in response.iter_content(65536):
+                          raw.extend(part)
+                          if len(raw)>bound or time.monotonic()>deadline:raise ValueError('response_bound')
+                      data=bytes(raw);row.update(origin_bytes=len(data),origin_sha256=hashlib.sha256(data).hexdigest())
+                      return response.status_code,data.decode('utf-8-sig')
+              except Exception as exc:
+                  row['error']=str(exc)[:160] if isinstance(exc,ValueError) else type(exc).__name__;raise
+              finally:row['finished_at']=now()
+          try:
+              status,body=get(policy,1048576);rules,state=robots_document(status,body)
+              (out/'robots.txt').write_text(rules);audit['policy_state']=state
+              parser=Protego.parse(rules)
+              if not parser.can_fetch(url,'LoyaltyCatalogResearchBot'):raise ValueError('source_policy_disallow')
+              rate=parser.request_rate('LoyaltyCatalogResearchBot')
+              delay=max(3,parser.crawl_delay('LoyaltyCatalogResearchBot') or 0,rate.seconds/rate.requests if rate else 0)
+              if delay>30:raise ValueError('policy_delay_bound')
+              time.sleep(delay);status,body=get(url,6000000);check_response(status,body)
+              dom=BeautifulSoup(body,'html.parser')
+              if not dom.html or dom.select('input[type=password]'):raise ValueError('not_public_html')
+              dom.html['data-loyalty-probe-location']=url
+              safe,_=sanitized_page(str(dom),url);data=safe.encode();(out/'page.html').write_bytes(data)
+              audit.update(file='page.html',sha256=hashlib.sha256(data).hexdigest(),observed_at=now())
+          except Exception as exc:audit['error']=str(exc)[:160] if isinstance(exc,(ValueError,RuntimeError)) else type(exc).__name__
+          audit['finished_at']=now();(out/'manifest.json').write_text(json.dumps(audit,ensure_ascii=False,indent=2))
           PY
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
