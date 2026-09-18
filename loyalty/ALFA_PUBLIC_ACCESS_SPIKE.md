@@ -113,7 +113,9 @@ A later review found two materially different public routes that were not covere
 1. **ScrapingAnt v2 extended response** (cookies + XHR/fetch capture). Run **35388278627** returned origin 200, the challenge cookie name `spid`, **0 XHR/fetch requests**, 0 visible text and the same ServicePipe shell. A second request chained the returned cookie and again produced the same challenge shell. This closes the important “challenge cookie / hidden public XHR” hypothesis for the datacenter route.
 2. **Alfa-owned public loyalty PDFs on `alfabank.servicecdn.ru` / `alfabank.st`**. Search-indexed current documents include 2026 loyalty-rule revisions (for example revision 46) with detailed Alfa Only-relevant mechanics: lounge access, airport restaurant reimbursement, participant tiers and explicit references to `/everyday/package/premium/` and `/premium/tsum/`. This is a separate public evidence layer and is not blocked by the authenticated `web.alfabank.ru/partner-offers/` boundary.
 
-Therefore it is **not correct** to say that every useful anonymous GitHub path has been exhausted. The next public-first work item is to discover the freshest official Alfa loyalty-rule document(s), parse the practical Alfa Only privileges they actually support, and determine which benefits can be refreshed reliably from Alfa-owned CDN documents before considering authenticated banking access.
+The public-first follow-up is now implemented. The accepted collector uses official Alfa-owned PDFs, not search snippets: core rules **revision 47 (effective 2026-05-01)** and reverse-cashback rules **revision 101 (effective 2026-05-25)**. Live run **35392321001** produced **9 + 1 = 10** validated public Alfa Only records and passed the normalized publication dry-run. See **ALFA_PUBLIC_RULES_ACCEPTANCE.md**.
+
+This closes a material anonymous gap but does not turn the public PDFs into the authenticated catalogue. The exact `web.alfabank.ru/partner-offers/` source remains authentication-gated with zero collected personalized offers.
 
 ## Priority consequence
 
