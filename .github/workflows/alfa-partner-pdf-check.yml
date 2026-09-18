@@ -37,6 +37,14 @@ jobs:
           print(json.dumps({'status':report['status'],'discovered':report['discovered'],'normalized':len(rows),'errors':report['errors'],
               'offers':[{'partner':r['partner_name'],'valid_from':r['valid_from'],'valid_until':r['valid_until'],'validity':r['validity_status'],'rates':r['rates'],'scope':r['details']['transaction_scope']} for r in rows],
               'prepared_offers':len(prepared['parser_offers'])},ensure_ascii=False))
+          for spec in a.DOCS:
+            if any(e.get('native_id')==spec['native_id'] for e in report['errors']):
+              data=a.fetch_pdf(spec['url']); text=a.pdf_text(data)
+              for marker in ('3.1.','3.2.','1 500','10 %','10%'):
+                i=text.find(marker)
+                if i>=0:
+                  print('DIAG',spec['native_id'],marker,text[max(0,i-350):i+1800])
+                  break
           if len(rows)<2: raise SystemExit(2)
           PY
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
