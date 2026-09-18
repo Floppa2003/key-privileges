@@ -54,6 +54,14 @@ Temporary targeted run **35392321001** on commit `6e24da30be9666a2c341041df82931
 
 The temporary targeted workflow is development-only and must not exist in the merged production tree.
 
+Final one-time release regression **35392595659** additionally passed:
+
+- **1016/1016 Python tests**;
+- **7/7 KEY tests**;
+- a second live fetch of both official PDFs;
+- exact **9 core + 1 cashback = 10** public records;
+- normalized dry-run **2 coverage rows / 10 offer rows**.
+
 ## Evidence contract
 
 Every record is marked `public_rules_document` / `tier_benefit` and carries:
