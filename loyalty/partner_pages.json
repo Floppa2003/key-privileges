@@ -158,5 +158,47 @@
     ],
     "category": "Отель",
     "program_regex": "Nordwind.{0,5}(?:Club|Клуб)"
+  },
+  "ekp_artflora": {
+    "program": "Единая карта петербуржца (ЕКП)",
+    "partner": "АртФлора",
+    "url": "https://artflora.ru/news/skidka-7-dlya-vseh-derzhateley-edinoy-katy-peterburzhca/",
+    "selectors": [
+      "article.node-news .field-name-body"
+    ],
+    "benefit_selectors": [
+      "article.node-news .field-name-body > .field-items > .field-item > p:nth-of-type(2)"
+    ],
+    "redemption_selectors": [
+      "article.node-news .field-name-body ol"
+    ],
+    "publication_selector": "article.node-news .submitted",
+    "category": "Цветы",
+    "warnings": [
+      "source_publication_date_is_not_current_validity",
+      "online_code_requires_ekp_access",
+      "independent_partner_terms_not_authenticated_ekp_card"
+    ]
+  },
+  "ekp_litres": {
+    "program": "Единая карта петербуржца (ЕКП)",
+    "partner": "Литрес",
+    "url": "https://www.litres.ru/collections/2-knigi-iz-podborki-v-podarok-i-skidka-20-ot-ekp-i-litres/",
+    "selectors": [
+      "h1#pageTitle",
+      "[class*='Collection-module'][class*='__description']"
+    ],
+    "benefit_selectors": [
+      "h1#pageTitle"
+    ],
+    "redemption_selectors": [
+      "[class*='Collection-module'][class*='__description']"
+    ],
+    "category": "Электронные и аудиокниги",
+    "warnings": [
+      "public_landing_copy_is_not_user_account_activation",
+      "gift_claim_and_purchase_not_performed",
+      "independent_partner_terms_not_authenticated_ekp_card"
+    ]
   }
 }

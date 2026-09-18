@@ -29,4 +29,7 @@ jobs:
           GOOGLE_SERVICE_ACCOUNT: ${{ vars.GOOGLE_SERVICE_ACCOUNT }}
           GOOGLE_WORKLOAD_IDENTITY_PROVIDER: ${{ vars.GOOGLE_WORKLOAD_IDENTITY_PROVIDER }}
           DISCOUNTS_SPREADSHEET_ID: ${{ secrets.DISCOUNTS_SPREADSHEET_ID }}
-        run: bash loyalty/request.sh
+        run: |
+          LOYALTY_SOURCE_IDS="$(python loyalty/source_selection.py --request loyalty/request.json)"
+          export LOYALTY_SOURCE_IDS
+          bash loyalty/request.sh
