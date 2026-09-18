@@ -169,7 +169,7 @@ def parse_core(data: bytes, observed_at: str) -> list[dict]:
 
     rbc_benefit = _must(
         text,
-        r"Промо-баллы\s*могут\s*быть\s*использованы.{0,260}?Подписке\s*на\s*РБК.{0,180}?от\s*6\s*000\s*000\s*рублей",
+        r"Промо-баллы\\s*могут\\s*быть\\s*использованы.{0,520}?Подписк[еи]\\s*на\\s*РБК.{0,420}?от\\s*6\\s*000\\s*000\\s*рублей",
         "alfa_rbc_benefit_missing",
     )
     rbc_conditions = _must(
@@ -200,10 +200,10 @@ def parse_core(data: bytes, observed_at: str) -> list[dict]:
 def parse_cashback(data: bytes, observed_at: str) -> list[dict]:
     text = pdf_text(data)
     sha = hashlib.sha256(data).hexdigest()
-    _must(text, r"Редакция\s*№\s*100", "alfa_cashback_revision_missing")
+    _must(text, r"Редакция\\s*№\\s*101", "alfa_cashback_revision_missing")
     _must(
         text,
-        r"Редакция\s*№\s*100\s*Правил\s*введена\s*в\s*действие\s*с\s*03\.04\.2026",
+        r"Редакция\\s*№\\s*101\\s*Правил\\s*введена\\s*в\\s*действие\\s*с\\s*25\\.05\\.2026",
         "alfa_cashback_effective_date_missing",
     )
     evidence = _must(
@@ -219,8 +219,8 @@ def parse_cashback(data: bytes, observed_at: str) -> list[dict]:
         "Ставки конкретных категорий выбираются и отображаются в «Кэшбэк и сервисы»; публичный документ фиксирует минимальное количество категорий и общие лимиты, но не персональные ставки.",
         CASHBACK_URL,
         observed_at,
-        revision=100,
-        effective_from="2026-04-03",
+        revision=101,
+        effective_from="2026-05-25",
         sha=sha,
     )
     return [row]
