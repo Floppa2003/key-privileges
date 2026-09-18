@@ -22,7 +22,8 @@ PROGRAM='Аэрофлот Бонус — связанные публичные �
 ROOT='https://www.aeroflot.ru/ru-ru/afl_bonus/partners'
 STOLETOV='/catalog/extra/spiski-tovarov/tovary-bez-skidok/'
 PARK='/vazhno-znat/pravila-ispolzovaniya.html'
-HOSTS=('stoletov.ru','parkingsvo.ru','parking.svo.aero','parking.svo.su')
+CATALOG_HOSTS=('stoletov.ru','samson-pharma.ru')
+HOSTS=CATALOG_HOSTS+('parkingsvo.ru','parking.svo.aero','parking.svo.su')
 BOT='LoyaltyCatalogResearchBot'
 MAX_PAGES=40; MAX_FILES=8; MAX_READS=100; MAX_SECONDS=1500; MAX_BYTES=6_000_000
 REDIRECTS=(301,302,303,307,308)
@@ -44,7 +45,7 @@ def checked_url(value):
         raise ValueError('al_url_scope')
     path=u.path;query=parse_qsl(u.query,keep_blank_values=True)
     if path=='/robots.txt' and not query:return value
-    if u.netloc=='stoletov.ru' and path in ('/catalog/groups/',STOLETOV,STOLETOV.rstrip('/')):
+    if u.netloc in CATALOG_HOSTS and (path in (STOLETOV,STOLETOV.rstrip('/')) or (u.netloc=='stoletov.ru' and path=='/catalog/groups/')):
         if not query:return value
         if path==STOLETOV and len(query)==1 and query[0][0]=='page' and re.fullmatch('[1-9][0-9]?',query[0][1]):return value
     if u.netloc=='parkingsvo.ru' and path==PARK and not query:return value
@@ -53,7 +54,7 @@ def checked_url(value):
 
 def redirect_allowed(original,target,policy=False):
     checked_url(target);a,b=urlsplit(original),urlsplit(target)
-    if (a.netloc=='stoletov.ru')!=(b.netloc=='stoletov.ru'):raise ValueError('al_cross_partner_redirect')
+    if (a.netloc in CATALOG_HOSTS or b.netloc in CATALOG_HOSTS) and a.netloc!=b.netloc:raise ValueError('al_cross_partner_redirect')
     if policy and b.path!='/robots.txt':raise ValueError('al_policy_redirect')
     if not policy and b.path=='/robots.txt':raise ValueError('al_target_is_policy')
     return target
@@ -66,13 +67,16 @@ def discover(base,clock):
         if record['source_id']!='aeroflot':raise ValueError('al_foreign_parent')
         if record['native_id'].startswith('airline:'):continue
         for link in record['details']['public_partner']['outgoing_links']:
-            if link['field']=='partner_url' or not RULE_LABEL.search(link['label']):continue
-            item={'url':link['url'],'label':link['label'],'classification':'outside_reviewed_rule_scope'};inventory.append(item)
+            if link['field']=='partner_url':continue
+            item={'url':link['url'],'label':link['label'],'classification':'outside_reviewed_rule_scope'}
             try:
                 url=checked_url(link['url'])
                 if urlsplit(url).path=='/robots.txt':continue
-            except ValueError:continue
-            item['classification']='selected_public_rules'
+            except ValueError:
+                if RULE_LABEL.search(link['label']):inventory.append(item)
+                continue
+            # A reviewed rule route can be labelled merely "on the website".
+            item['classification']='selected_public_rules';inventory.append(item)
             parent={'record_id':record['id'],'source_url':record['source_url'],'content_sha256':record['content_sha256'],
                 'observed_at':record['observed_at'],'partner':record['partner_name'],'field':link['field'],
                 'label':link['label'],'original_link':url}
@@ -91,16 +95,18 @@ def clean_html(data,url):
         if node.has_attr('href'):
             target=urljoin(url,node['href']);u=urlsplit(target)
             # Keep public product references as data, never fetch product cards.
-            if u.scheme!='https' or u.netloc!='stoletov.ru' or u.fragment or u.username or u.password or (u.query and not re.fullmatch(r'page=[1-9][0-9]?',u.query)):
+            if u.scheme!='https' or u.netloc not in CATALOG_HOSTS or u.netloc!=urlsplit(url).netloc or u.fragment or u.username or u.password or (u.query and not re.fullmatch(r'page=[1-9][0-9]?',u.query)):
                 del node.attrs['href']
             else:node['href']=target
     return str(BeautifulSoup(str(soup.html),'html.parser').html)
 
 def catalog_fields(raw,url):
-    checked_url(url);dom=BeautifulSoup(raw,'html.parser');main=dom.find('main')
-    if main is None:raise ValueError('al_catalog_structure')
+    checked_url(url);host=urlsplit(url).netloc;dom=BeautifulSoup(raw,'html.parser');main=dom.find('main')
+    if host not in CATALOG_HOSTS or main is None:raise ValueError('al_catalog_structure')
     titles=[text(h.get_text(' ',strip=True)) for h in main.select('h1')]
-    counts=main.select('.app-main-title_count');notes=main.select('[class*="CatalogSlugsPage_headerSubText"]')
+    counts=main.select('.app-main-title_count')
+    note_class='CatalogSlugs_bottomText' if host=='samson-pharma.ru' else 'CatalogSlugsPage_headerSubText'
+    notes=main.select('[class*="'+note_class+'"]')
     if len(titles)!=1 or not re.search(r'товар.*исключен',titles[0],re.I) or len(counts)!=1 or len(notes)!=1:raise ValueError('al_catalog_structure')
     count=re.fullmatch(r'([0-9 ]+)\s+товар\w*',text(counts[0].get_text(' ',strip=True)))
     if not count:raise ValueError('al_catalog_count')
@@ -108,14 +114,14 @@ def catalog_fields(raw,url):
     products={}
     for a in main.select('a.product-name'):
         name=text(a.get_text(' ',strip=True));link=a.get('href','');u=urlsplit(link)
-        if not name or u.scheme!='https' or u.netloc!='stoletov.ru' or not u.path.startswith('/catalog/') or u.query:raise ValueError('al_product_identity')
+        if not name or u.scheme!='https' or u.netloc!=host or not u.path.startswith('/catalog/') or u.query or u.fragment:raise ValueError('al_product_identity')
         if link in products and products[link]!=name:raise ValueError('al_product_conflict')
         products[link]=name
     if not 0<len(products)<=total<=5000:raise ValueError('al_product_count')
     next_links=[]
     for a in main.select('.pagination-microservices a[href]'):
         link=checked_url(urljoin(url,a['href']))
-        if urlsplit(link).netloc!='stoletov.ru' or urlsplit(link).path!=STOLETOV:raise ValueError('al_pagination_scope')
+        if urlsplit(link).netloc!=host or urlsplit(link).path!=STOLETOV:raise ValueError('al_pagination_scope')
         if link not in next_links:next_links.append(link)
     page=int(dict(parse_qsl(urlsplit(url).query)).get('page','1'))
     return {'title':titles[0],'total':total,'note':text(notes[0].get_text(' ',strip=True)),
@@ -151,7 +157,7 @@ class Reader:
                     if item['mime']!='application/pdf':raise ValueError('al_pdf_mime')
                     data=raw;ext='pdf'
                 else:
-                    if urlsplit(url).netloc!='stoletov.ru':raise ValueError('al_expected_parking_pdf')
+                    if urlsplit(url).netloc not in CATALOG_HOSTS:raise ValueError('al_expected_parking_pdf')
                     data=clean_html(raw,url).encode();ext='html'
                 filename=f'objects/{index}-{sha(data)}.{ext}'
                 (self.folder/filename).write_bytes(data);item.update(file=filename,saved_sha256=sha(data),saved_bytes=len(data))
