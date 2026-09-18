@@ -109,7 +109,10 @@ def main():
     path=Path(args.offline_input)
     if path.stat().st_size>50000000:raise ValueError('Offline input bound exceeded')
     tables=json.loads(path.read_text(encoding='utf8'))['sheets'];inputs,inventory=inputs_from_tables(tables)
-    result=normalize_inputs(inputs,as_of=args.as_of or datetime.now(timezone.utc).date().isoformat())
+    practical,excluded=select_inputs(inputs)
+    result=normalize_inputs(practical,as_of=args.as_of or datetime.now(timezone.utc).date().isoformat())
+    result['audit'].update(publication_scope=SCOPE_VERSION,excluded_bulk_records=excluded,
+        input_records_before_scope=len(inputs),source_snapshot_sha256=digest(inputs))
     result['audit']['input_inventory']=inventory
     views=prepare_views(result)
     if args.out:
@@ -120,7 +123,7 @@ def main():
             (target/(group+'.jsonl')).write_text(''.join(dump(x)+'\n' for r in result['records'] for x in r[group]),encoding='utf8')
         (target/'audit.json').write_text(dump(result['audit']),encoding='utf8')
         (target/'views.json').write_text(dump(views),encoding='utf8')
-    print(dump({'mode':'offline_unified_verified','records':len(inputs),'views':{k:len(v) for k,v in views.items()}}))
+    print(dump({'mode':'offline_unified_verified','records':len(practical),'views':{k:len(v) for k,v in views.items()}}))
 
 if __name__=='__main__':
     try:main()
