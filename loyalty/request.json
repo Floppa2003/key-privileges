@@ -1,8 +1,8 @@
 {
-  "request_id": "2026-09-19-alfa-public-rules-publish-retry-66",
+  "request_id": "2026-09-19-alfa-partner-pdf-offers-67",
   "source_ids": [
-    "alfa_only_public_rules",
-    "alfa_only_cashback_rules"
+    "alfa_only_partner_pdf_offers"
   ],
-  "reason": "Retry publication of only the two public Alfa-owned rules sources after PR66 fixed the publish-stage pypdf dependency. Collect core rev47 and reverse-cashback rev101, publish only the 10 already validated public practical records, and verify readback. Do not authenticate a bank account, infer the user's Alfa Only tier or personalized cashback rates, follow bank-auth redirects, activate offers, change sharing, or crawl unrelated programmes. Preserve all existing source/manual rows, formulas and archives."
+  "reason": "Collect and publish only the reviewed public Alfa Only partner promotion PDFs added by PR67. Fresh-fetch exact Alfa-owned PDFs, preserve source-derived validity (including expired Takhauli), exact 10% rate/cap/scope, and verify Sheet readback. Do not authenticate to Alfa-Bank, infer personalized offers or user tier, activate offers, or crawl unrelated programs.",
+  "publish": true
 }
