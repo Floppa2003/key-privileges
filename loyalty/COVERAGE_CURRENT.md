@@ -1,5 +1,27 @@
 # Current coverage — practical discounts, 18 September 2026
 
+## Latest accepted release: PR63 HSE alumni; Alfa access remains unresolved
+
+Full source/code/run/destination evidence: **HSE_ALFA_ACCEPTANCE.md**. This section supersedes the historical PR61/62 counts below, not their source constraints or outstanding gaps.
+
+The owner added `https://alumni.hse.ru/loyalty/partners/` and `https://web.alfabank.ru/partner-offers/`. PR63 merged as **d51cc66b9c9c53492cf8dbbfb26f12832c1f1cee**. Selective request **d7be819a405d635e60cd6dd3542afa79380af469** triggered main **35371990357:1**. Collection105687885967 and publication105688320796 succeeded; final unified readback completed **17:06:59UTC**. Actual source observation: **2026-09-18T17:03:41.137073+00:00**.
+
+- **HSE:55 public inventory entries,51 owned detailed sections and4 preview-only observations.** `skyeng,mordapechat` have no target anchor; `skillcup,academiya` have empty sections. No benefits/codes are inferred from those previews. Status remainspartial despite representing every observed inventory card.
+-45 records contain literal codes,29distinct strings/49occurrences. Two detailed offers have explicit past ends: MA-MA2026-01-01 and Gruzovichkof2025-12-31. Sila Vetra10%/HSExSilaSport10/SV20/end2026-12-31 remains distinct from its August-only20% clause. Payment100% is not a100%discount. Do not equate source publication with personal eligibility or checkout acceptance.
+- **Alfa:registered source/access probe, not collected cashback.** Ordinary reader and main dispatcher failed at source-policy retrieval withERR_CERT_AUTHORITY_INVALID. Existing Free-reader35369543970:1 used1credit and stopped atrobots_not_readable before the offers page. Neither result proves absent cashback or required login. No bank/source session, activation or weakerTLS check was used. No personal data may be exported into the public repo/Sheet.
+-992Python/7KEY tests, no skips, real source replay and fresh dispatcher passed before merge. Main tests passed; all63executable hashes matched reviewed code; all55main source records matched replay apart from observation time. Six intended files changed; temporary patch and two branch workflows removed. Existing daily scope includes the newHSE collector and boundedAlfa probe; no new recurring schedule or provider spend was introduced.
+- **Current destination:2567parser /3215unified records, verified/current, practical-offers-v1.** Current managed common views:3215records,3755benefit components,9750conditions/costs,712code/delivery components. These are not distinct usable discounts or code strings.
+- Independent fresh export/native checks verified all1403newsource/report fields (source2541–2595, reports1508–1509 at acceptance), everycurrentmanagedfield in all4derivedviews, all2512previoussource rows/manualpositions, priorreportcells,7original/historytabs and all8formulas. Archive remainshidden. Nativeformat samples retain10pt/top/wrap; no renderedwholeworkbook orACL audit is claimed.
+
+Current source fingerprint: **3a4c08a735bb9504cac776e27dcf64bf6f0ba102b4c5fa384f28216d7875722f**.
+Current generation: **28bf061d69c3503f2f86ee5365eb81e447db5ddede936d98b3c25554ed0e6981**.
+
+### Intervening PR62 and independent partner reads
+
+PR62 was already merged and published before the HSE request: merge53a599629d669d7804463b63667305c272771f86, request5527548d5983a0d03228c21eb8f34bbb0ccd8fdb, main35368074120:1, source16:23:40.637110UTC. Three Sacvoyage records at source2538–2540: own5%registration, own10%referral-first-stay, and independent publicRZD15% with explicit2025-12-31expiry/no literalcode. Keep them separate; oldRZDpreview2465 and its unknownexpiry were not overwritten. CurrentHSEbaseline2512/3160 was independently read asverified/current, with fingerprint9df8d22470756f64f930ec09135fec2cf6c279ebe67833037084c5dac77a269e and generation481b8dad58b763edd90f5c2a2abc763260c11c52fd1e33ab3ba7aaa0194863cb. PR62tested970Python/7KEY. Do not redo this release because chat was interrupted.
+
+FlyStation public promotions were successfully read by the existingFree reader in35367389851:1, execution8b4eeff5ebb406391bf1655f02b53bf16fcb80c9, at16:16:47.736775UTC. Policy and exact finalpageHTTP200,11credits. DOMSHA89599aaabaa8fb8603a965ec17d7bf17bda1b2d2074b7bb7b66cd9374dc6d04d. This is successful source retrieval, **not a released recurringofferadapter or recovered authenticatedEKP terms**. The on-demand diagnostic was later repointed to the owner-requestedAlfa URL; use historicalrun/commit to retrieveFlyevidence. Admiralteyskaya's publicloyalty/offers and HiltonGardenInnVolgograd's offersindex were read but did not supply the missingRZDconditions. Chekhoff's loyaltypage encountered a humancheck and was not classified as read. These results do not reduce RZD8 or EKP110 gaps.
+
 ## Objective and operating boundaries
 
 The owner corrected the earlier document-completeness goal: «какие-то огромные документы с условиями включать не нужно, при практическом применении они нам не пригодятся никак».
@@ -12,7 +34,7 @@ Measure useful offer/partner coverage and redemption information, not document p
 
 Destination: **скидки**, spreadsheet **1uFR7croj7p6RRNPcoTRYlVl06hKsurkIgyu1IdMMB-4**. Recurring GitHub-controlled updates; no paid service, rented/administered server, always-on user computer or second provider account. Existing Free ScrapingAnt and Google WIF work. Coral registration is already complete; do not request it again or mistake it for an EKP/RZD session. No source-account session has been connected by these releases.
 
-## Latest accepted release: PR61 iLocked, actually published
+## Previously accepted release: PR61 iLocked
 
 Detailed source/code/run/destination evidence: **ILOCKED_PUBLIC_ACCEPTANCE.md**. This supersedes the old local-draft and read-only-tool checkpoint. GitHub write/merge and existing Google publication were actually exercised successfully; do not describe a monthly PR limit or missing GitHub write access from old chat messages as the current state.
 
@@ -26,9 +48,9 @@ Detailed source/code/run/destination evidence: **ILOCKED_PUBLIC_ACCEPTANCE.md**.
 - Source-only run35354858688:1 obtained9/9 actual HTTP200 exact-URL DOMs. Successful verification35356138881:1 passed **953 Python /7 KEY tests, no skips**, replayed those DOMs and ran the actual current dispatcher against all nine URLs. Independent replay/fresh record comparison differed only in observation time. Main regression passed; all61 executable hashes in its artifact matched reviewed code.
 - The first preparation's wrong verifier key `source_reports` was corrected to actual `sources`; it was not a site failure or a successful release. A full local policy/transport suite is not claimed where `protego` was absent; acceptance used the pinned GitHub environment.
 
-### Current verified destination
+### Historical verified destination at PR61
 
-**2509 parser records /3157 unified records, verified/current, practical-offers-v1.** Current managed derived views:3157 records,3667 benefit components,9690 conditions-and-costs,663 code/delivery components. Counts are not unique merchants, personal usable-discount totals or distinct code strings.
+**2509 parser records /3157 unified records, verified/current, practical-offers-v1 at PR61 acceptance.** Managed derived views then contained3157 records,3667 benefit components,9690 conditions-and-costs,663 code/delivery components. Counts are not unique merchants, personal usable-discount totals or distinct code strings. Latest counts are at the top of this document.
 
 Fresh independent before/after exports matched all351 new source/report fields, every managed current field in the four derived views, all2500 previous source rows and positions/manual comments, prior coverage rows, six original input/audit tabs and the hidden archive. All8 workbook formulas remain unchanged. Native checks confirmed code/rate, certificate non-benefit fields and run/time markers; sampled common-view cells retain10pt/top/wrapped formatting. No whole-workbook rendered or ACL audit is claimed. Exported empty strings were mapped back to native empty cells after a bounded native check, not by altering source values.
 
@@ -38,7 +60,7 @@ These identify stored state at acceptance, not universal source freshness or cur
 
 The existing daily collector includes all nine new registered pages. Selective requests use the already released `source_ids` field in `loyalty/request.json`; blank scheduled selection still means the existing normal scope. No new recurring schedule, paid plan, provider/account, sharing change or destination was introduced. The two remaining new diagnostic workflows are on demand only.
 
-## Fresh alternative source results beyond iLocked
+## Earlier alternative source results beyond iLocked
 
 ### ALEF: current public terms read; catalogue discrepancy remains separate
 
@@ -76,7 +98,7 @@ Use `normalized_records`, `normalized_benefits`, `normalized_conditions`, `norma
 
 ## Remaining work, privacy and recovery
 
-Further useful work needs a concrete independently public source or demonstrated defect, not another broad crawl/account project/document expansion for a completion counter. RZD8detail gaps, EKP110protected details, ALEF interactive membership/current code issuance and individual redemption eligibility remain distinct. Current source success does not certify future cron runs, uncached age, inventory or booking availability.
+Further useful work needs a concrete independently public source or demonstrated defect, not another broad crawl/account project/document expansion for a completion counter. RZD8detail gaps, EKP110protected details, ALEF interactive membership/current code issuance, the newAlfa partner-offer access failure and individual redemption eligibility remain distinct. Current source success does not certify future cron runs, uncached age, inventory or booking availability.
 
 Source authentication and safe private storage are separate boundaries. Earlier sharing was observed as `anyone:writer`; it was not re-audited or changed. `private_complete` is a normalizer mode, not an ACL, and hidden sheets are not privacy controls. Do not publish sessions, SMS, tokens, private coupons or authenticated-only terms to public artifacts/link-accessible Sheet. Private exports remain local. Aeroflot parsing permission is owner-reported and does not waive other hosts' policies or authorize source-account access, coupon issuance, purchases, bookings or spending bonuses.
 
