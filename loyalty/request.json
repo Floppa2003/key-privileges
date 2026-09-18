@@ -1,5 +1,5 @@
 {
-  "request_id": "2026-09-18-sacvoyage-public-alternatives-62",
-  "source_ids": ["sacvoyage_loyalty", "rzd_sacvoyage_public"],
-  "reason": "Read only the two independently reviewed hotel-owned pages after PR62. Publish two own-programme audience records and the separately dated RZD record; preserve its explicit published end and expired status rather than presenting it as current. Keep original RZD preview dc110df76ffda2a4d2830a2b383c2c92f3a6416ccc2c9cff08b776a00fd3e5f2, every previous source/manual cell and existing programme boundaries unchanged. Use the existing main-only same-Sheet writer and verify final readback. Do not register accounts, obtain personal referral links, claim codes, make bookings, change sharing or crawl whole catalogues."
+  "request_id": "2026-09-18-hse-alfa-public-sources-63",
+  "source_ids": ["hse_alumni", "alfa_only_partner_offers"],
+  "reason": "Collect only the two explicitly requested URLs after PR63. Publish fresh HSE owned-anchor offers and honest previews for absent source details, preserving dates, literal codes and separate conditions. The Alfa source remains an access probe: a failed read is not absent cashback, not a proven login requirement and not permission to fabricate personal offers. Keep every original source/manual record, programme boundary, archive and formula unchanged. Use the existing main-only same-Sheet writer and verify completed readback. Do not authenticate bank accounts, activate offers, claim codes, disable TLS validation, change sharing, buy anything or crawl unrelated catalogues."
 }
