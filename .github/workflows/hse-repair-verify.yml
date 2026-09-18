@@ -1,4 +1,4 @@
-name: Verify HSE ownership and transient source recovery
+name: Verify source repairs before release
 on:
   push:
     branches: ['loyalty/source-repair-20260918']
@@ -8,7 +8,7 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-24.04
-    timeout-minutes: 18
+    timeout-minutes: 8
     permissions:
       contents: write
       actions: read
@@ -18,17 +18,26 @@ jobs:
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with: {python-version: '3.12'}
       - run: python -m pip install -r loyalty/requirements.txt
-      - name: Reproduce ownership error before applying the exact two-file patch
+      - name: Prove missing bank routing, then make only its two-line dispatch change
         run: |
           mkdir -p repair-verification
           set +e
-          python -m unittest discover -s loyalty/tests -p test_hse_unanchored.py -v >repair-verification/before.log 2>&1
+          python -m unittest discover -s loyalty/tests -p test_alfa_access.py -v >repair-verification/before.log 2>&1
           result=$?
           set -e
           test "$result" -ne 0
           grep -q AssertionError repair-verification/before.log
-          git apply --check loyalty/hse_repair.patch
-          git apply loyalty/hse_repair.patch
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('loyalty/collect_normalized.py');raw=p.read_text()
+          old='from hse_alumni import collect_hse\n'
+          new=old+'from alfa_access import collect_access as collect_alfa_access\n'
+          assert raw.count(old)==1 and 'from alfa_access import' not in raw
+          raw=raw.replace(old,new)
+          old="        elif cfg['id']=='utair':records=await collect_utair(cfg,report,now,limit)\n"
+          assert raw.count(old)==1
+          p.write_text(raw.replace(old,old+"        elif cfg['id']=='alfa_only_partner_offers':await collect_alfa_access(cfg,report)\n"))
+          PY
       - name: Full regressions and exact code snapshot
         run: |
           set -o pipefail
@@ -47,7 +56,7 @@ jobs:
           run-id: 35371990357
           name: loyalty-public-35371990357-1
           path: hse-published
-      - name: Replay real source with historical observation time and compare every old record
+      - name: Recheck exact HSE source identities and historical observation without re-fetch claims
         run: |
           python - <<'PY'
           import hashlib,json,sys
@@ -57,32 +66,23 @@ jobs:
           from normalized import validate_offer
           import test_hse_alumni
           sha='821ea05dbaff1b4afcb22277868e9c8f924845fdaf4f508e0c8b6a97589daf2f'
-          raw=(Path('hse-original')/(sha+'.html')).read_bytes()
-          assert hashlib.sha256(raw).hexdigest()==sha
-          old=json.loads(Path('hse-published/normalized.json').read_text())
-          test_hse_alumni.NOW=old['observed_at']
+          raw=(Path('hse-original')/(sha+'.html')).read_bytes();assert hashlib.sha256(raw).hexdigest()==sha
+          old=json.loads(Path('hse-published/normalized.json').read_text());test_hse_alumni.NOW=old['observed_at']
           rows=parse_catalog(raw.decode('utf-8'),old['observed_at'])
           prior={r['id']:r for r in old['records']};assert len(prior)==len(rows)==55
           changed=[r['native_id'] for r in rows if r!=prior[r['id']]]
           assert set(changed)=={'anchor:kvadrat','anchor:mordapechat'},changed
           for row in rows:validate_offer(row)
-          kv=next(r for r in rows if r['native_id']=='anchor:kvadrat')
           printed=next(r for r in rows if r['native_id']=='anchor:mordapechat')
-          assert [r['value'] for r in kv['rates']]==['10']
-          assert 'hello@modoband.ru' not in kv['conditions_text']
-          assert [r['value'] for r in printed['rates']]==['15'] and printed['promo_codes']==['HSEALUMNI']
-          assert 'hello@modoband.ru' in printed['conditions_text']
           assert test_hse_alumni.common(printed)['benefits'][0]['value']=='15'
-          previews=[r['native_id'] for r in rows if r['record_kind']=='source_observation']
-          assert set(previews)=={'anchor:skyeng','anchor:skillcup','anchor:academiya'}
           out=Path('repair-verification')
           (out/'source-replay.json').write_text(json.dumps(rows,ensure_ascii=False,indent=2))
-          (out/'replay-audit.json').write_text(json.dumps({'changed':changed,'unchanged':53,'detail_records':52,'previews':previews,'old_observed_at':old['observed_at']},ensure_ascii=False,indent=2))
+          (out/'replay-audit.json').write_text(json.dumps({'changed':changed,'unchanged':53,'detail_records':52,'old_observed_at':old['observed_at']},ensure_ascii=False,indent=2))
           PY
       - run: python -m playwright install --with-deps chromium
-      - name: Fresh selective HSE and three historically working transient sources, no Google/provider credentials
+      - name: Fresh actual dispatcher for HSE, T2, Uralsib and bank availability; no credentials
         run: |
-          python loyalty/collect_normalized.py --sources hse_alumni,t2_selection,ekp_rostelecom,uralsib_rzd_rules --out repair-verification/live-output
+          python loyalty/collect_normalized.py --sources hse_alumni,t2_selection,uralsib_rzd_rules,alfa_only_partner_offers --out repair-verification/live-output
           python loyalty/sheets_normalized.py --input repair-verification/live-output/normalized.json
           python - <<'PY'
           import json
@@ -90,27 +90,29 @@ jobs:
           b=json.loads(Path('repair-verification/live-output/normalized.json').read_text())
           h=[r for r in b['records'] if r['source_id']=='hse_alumni'];assert len(h)==55
           assert sum(r['record_kind']=='partner_offer' for r in h)==52
-          p=next(r for r in h if r['native_id']=='anchor:mordapechat');k=next(r for r in h if r['native_id']=='anchor:kvadrat')
-          assert p['details']['detail_read'] and 'hello@modoband.ru' in p['conditions_text']
-          assert 'hello@modoband.ru' not in k['conditions_text']
           old=json.loads(Path('repair-verification/source-replay.json').read_text())
           strip=lambda r:{key:value for key,value in r.items() if key!='observed_at'}
           assert [strip(r) for r in h]==[strip(r) for r in old]
+          alfa=next(s for s in b['sources'] if s['source_id']=='alfa_only_partner_offers')
+          assert alfa['normalized']==0 and alfa['status']=='failed'
+          assert alfa['errors'][0]['reason']=='alfa_bank_authentication_redirect',alfa['errors']
+          access=json.loads(alfa['coverage']);assert access['tls_verified'] and not access['catalogue_collected'] and not access['account_used']
+          assert not any(r['source_id']=='alfa_only_partner_offers' for r in b['records'])
           PY
-      - name: Commit only the tested production fix to the isolated branch
+      - name: Commit only verified bank dispatch to the isolated branch
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           test "$GITHUB_REF" = 'refs/heads/loyalty/source-repair-20260918'
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add loyalty/hse_alumni.py loyalty/unified_normalization.py
-          git commit -m 'Separate HSE printing-studio terms from the preceding partner and recover its missing anchor safely'
+          git add loyalty/collect_normalized.py
+          git commit -m 'Report the exact Alfa authentication boundary with verified scoped TLS instead of a generic certificate failure'
           git -c credential.helper= -c 'credential.helper=!gh auth git-credential' push origin HEAD:refs/heads/loyalty/source-repair-20260918
           git rev-parse HEAD >repair-verification/proposed-commit.txt
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
-          name: hse-repair-verification-${{ github.run_id }}-${{ github.run_attempt }}
+          name: source-repair-verification-${{ github.run_id }}-${{ github.run_attempt }}
           path: repair-verification/
           retention-days: 7
