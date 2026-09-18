@@ -125,7 +125,7 @@ def parse_core(data: bytes, observed_at: str) -> list[dict]:
 
     taxi_benefit = _must(
         text,
-        r"Выплата\s*[–—-]\s*денежные средства.{0,650}?такси,\s*трансфер\s*и\s*каршеринг,\s*но\s*не\s*более\s*2\s*500.{0,80}?рублей",
+        r"Выплата.{0,160}?денежные\s*средства.{0,800}?такси,\s*трансфер\s*и\s*каршеринг.{0,180}?2\s*500.{0,120}?рублей",
         "alfa_taxi_benefit_missing",
     )
     taxi_conditions = _must(
