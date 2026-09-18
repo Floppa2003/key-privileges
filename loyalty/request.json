@@ -1,5 +1,15 @@
 {
-  "request_id": "2026-09-18-public-ekp-partner-completion",
-  "source_ids": ["ekp_artflora", "ekp_litres"],
-  "reason": "Read and publish only these two reviewed, newly registered public partner pages after PR60. Preserve actual source observations, original publication metadata, full short redemption restrictions, all existing source/manual cells and gated EKP identities. Do not issue coupons, claim gifts, authenticate source accounts, change sharing, or run the complete catalogue. Use the existing main-only writer, then verify source rows and unified destination by independent readback."
+  "request_id": "2026-09-18-ilocked-public-release-61",
+  "source_ids": [
+    "ekp_ilocked_chuzhoy",
+    "ekp_ilocked_mumiya",
+    "ekp_ilocked_morskoy_boy",
+    "ekp_ilocked_gold_rush",
+    "ekp_ilocked_among_us",
+    "ekp_ilocked_morskoi_boi_kids",
+    "ekp_ilocked_poslednyaya_tayna_da_vinchi",
+    "ekp_ilocked_atlantida_kosmicheskaya_odisseya_0",
+    "ilocked_certificate_terms"
+  ],
+  "reason": "Read only the eight reviewed public quest pages and one short certificate restriction after PR61. Use fresh source data, preserve original gated EKP764 and all existing manual/source records, reuse the existing main-only same-Sheet writer and verify readback. Do not claim coupons, authenticate accounts, buy anything, change sharing or crawl full catalogues."
 }
