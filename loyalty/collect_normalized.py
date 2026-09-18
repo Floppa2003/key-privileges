@@ -32,6 +32,7 @@ from utair_support import collect_utair
 from hse_alumni import collect_hse
 from alfa_access import collect_access as collect_alfa_access
 from alfa_public_rules import collect_core as collect_alfa_public_core, collect_cashback as collect_alfa_public_cashback
+from alfa_partner_rules import collect as collect_alfa_partner_pdfs
 
 
 def error_record(exc,phase,url=''):
@@ -128,6 +129,7 @@ async def one(browser,cfg,now,limit):
         elif cfg['id']=='alfa_only_partner_offers':await collect_alfa_access(cfg,report)
         elif cfg['id']=='alfa_only_public_rules':records=await collect_alfa_public_core(cfg,report,now,limit)
         elif cfg['id']=='alfa_only_cashback_rules':records=await collect_alfa_public_cashback(cfg,report,now,limit)
+        elif cfg['id']=='alfa_only_partner_pdf_offers':records=await collect_alfa_partner_pdfs(cfg,report,now,limit)
         else:
             async with PublicSource(browser,cfg['url']) as client:
                 client.deadline=deadline

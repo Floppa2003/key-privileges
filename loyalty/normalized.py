@@ -37,6 +37,7 @@ HOSTS['hse_alumni']=['alumni.hse.ru']
 HOSTS['alfa_only_partner_offers']=['web.alfabank.ru']
 HOSTS['alfa_only_public_rules']=['alfabank.servicecdn.ru']
 HOSTS['alfa_only_cashback_rules']=['alfabank.servicecdn.ru']
+HOSTS['alfa_only_partner_pdf_offers']=['alfabank.servicecdn.ru']
 HOSTS['ekp']=['ekp.spb.ru']
 HOSTS['ekp_linked_rules']=['ekp.spb.ru','xn--b1abfnwkklk1gdn5a.xn--p1ai','mpclinic.ru','vamprivet.ru']
 HOSTS['rzd']=['rzd-bonus.ru']
@@ -162,6 +163,9 @@ def offer_rates(source_id, value):
     if source_id=='hse_alumni':
         from hse_alumni import hse_rates
         return hse_rates(value)
+    if source_id=='alfa_only_partner_pdf_offers':
+        from alfa_partner_rules import partner_rates
+        return partner_rates(value)
     return normalize_rates(value)
 
 
@@ -295,6 +299,9 @@ def validate_offer(r: dict) -> None:
     if r['source_id'] in ('alfa_only_public_rules','alfa_only_cashback_rules'):
         from alfa_public_rules import validate_public_record
         validate_public_record(r)
+    if r['source_id']=='alfa_only_partner_pdf_offers':
+        from alfa_partner_rules import validate_partner_record
+        validate_partner_record(r)
     if r['source_id']=='nordwind':
         from nordwind_catalog import validate_catalog_record
         validate_catalog_record(r)
