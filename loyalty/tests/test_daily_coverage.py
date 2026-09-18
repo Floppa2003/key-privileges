@@ -1,5 +1,6 @@
 """Daily coverage must outlive the old 5,000-row diagnostic window."""
 import copy
+import json
 import sys
 import unittest
 from pathlib import Path
@@ -32,7 +33,7 @@ class DailyCoverageTests(unittest.TestCase):
         actual = memory.tabs['parser_coverage']['values']
         self.assertEqual(actual[:-1], before['parser_coverage']['values'])
         self.assertEqual(actual[-1], incoming)
-        self.assertEqual(memory.tabs['loyalty_partner_benefits'], before['loyalty_partner_benefits'])
+        self.assertEqual(memory.tabs['loyalty_partner_benefits'], before['loyalty_partner_benefits']['values'] if False else before['loyalty_partner_benefits'])
         self.assertEqual(client.upsert('parser_coverage', [incoming]), 0)
 
     def test_normalized_offer_and_legacy_bounds_do_not_expand(self):
@@ -65,14 +66,14 @@ class DailyCoverageTests(unittest.TestCase):
             client.upsert('parser_coverage', [['new-run:ekp'] + ['new'] * 13])
 
     def test_main_routes_reports_to_dedicated_writer(self):
-        rows = {'parser_offers':[['offer']], 'parser_coverage':[['report']]}
-        with patch.object(publication, 'prepare', return_value=rows), \
-             patch.object(publication.Path, 'stat') as stat, \
-             patch.object(publication.Path, 'read_text', return_value='{}'), \
+        from test_normalized_sync import bundle
+        payload=bundle();rows=publication.prepare(payload)
+        with patch.object(publication.Path, 'stat') as stat, \
+             patch.object(publication.Path, 'read_text', return_value=json.dumps(payload)), \
              patch.object(publication, 'NormalizedSheets') as offers, \
              patch.object(publication, 'CoverageSheets', create=True) as coverage, \
              patch.object(sys, 'argv', ['sheets_normalized.py', '--publish']):
-            stat.return_value.st_size = 2
+            stat.return_value.st_size = 2000
             offers.return_value.upsert.return_value = 1
             coverage.return_value.upsert.return_value = 1
             publication.main()
