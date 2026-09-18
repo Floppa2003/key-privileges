@@ -1,7 +1,7 @@
 name: Aeroflot linked public rules
 on:
   push:
-    branches: [main, 'loyalty/aeroflot-linked-20260918']
+    branches: [main, 'loyalty/aeroflot-linked-20260918', 'loyalty/samson-linked-20260918']
     paths: [loyalty/aeroflot_linked_rules.py, loyalty/tests/test_aeroflot_linked_rules.py, .github/workflows/aeroflot-linked-rules.yml]
   workflow_dispatch:
   schedule:
