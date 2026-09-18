@@ -1,0 +1,78 @@
+name: Coral rendered catalogue inventory
+on:
+  push:
+    branches: [main, 'loyalty/coral-browser-inventory-20260918']
+    paths: [loyalty/coral_browser_inventory.py, loyalty/tests/test_coral_browser_inventory.py, .github/workflows/coral-browser-inventory.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: loyalty-catalog-${{ github.ref }}
+  cancel-in-progress: false
+  queue: max
+jobs:
+  regression:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with: {python-version: '3.12'}
+      - run: python -m pip install -r loyalty/requirements.txt
+      - name: Full regression without provider or Google credentials
+        run: |
+          mkdir -p inventory-tests
+          set -o pipefail
+          python -m unittest discover -s loyalty/tests -v 2>&1 | tee inventory-tests/python-tests.log
+          node --test key/refresh.test.mjs 2>&1 | tee inventory-tests/key-tests.log
+          tar -cf inventory-tests/code.tar loyalty key .github/workflows
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: coral-inventory-tests-${{ github.run_id }}-${{ github.run_attempt }}
+          path: inventory-tests/
+          retention-days: 7
+  collect:
+    needs: regression
+    if: github.ref == 'refs/heads/main' && github.repository == 'Floppa2003/key-privileges'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions: {contents: read, actions: read}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with: {python-version: '3.12'}
+      - run: python -m pip install -r loyalty/requirements.txt
+      - name: Reuse the recent main root and sitemap, not the unrendered category results
+        id: parent
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import json,os,subprocess
+          from datetime import datetime,timezone
+          repo=os.environ['GITHUB_REPOSITORY']
+          runs=json.loads(subprocess.check_output(['gh','api',f'repos/{repo}/actions/workflows/practical-frontier.yml/runs?branch=main&status=success&per_page=1']))
+          r=runs['workflow_runs'][0]
+          assert r['head_branch']=='main' and r['conclusion']=='success'
+          assert 0<=(datetime.now(timezone.utc)-datetime.fromisoformat(r['updated_at'].replace('Z','+00:00'))).total_seconds()<86400
+          with open(os.environ['GITHUB_OUTPUT'],'a') as f:f.write(f"run_id={r['id']}\nname=frontier-coral-{r['id']}-{r['run_attempt']}\n")
+          PY
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ steps.parent.outputs.run_id }}
+          name: ${{ steps.parent.outputs.name }}
+          path: coral-browser-output/parent
+      - name: Read current category listings only; free plan required, at most 222 reserved credits
+        env:
+          SCRAPINGANT_API_KEY: ${{ secrets.SCRAPINGANT_API_KEY }}
+        run: python loyalty/coral_browser_inventory.py
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: coral-browser-inventory-${{ github.run_id }}-${{ github.run_attempt }}
+          path: coral-browser-output/
+          retention-days: 7
