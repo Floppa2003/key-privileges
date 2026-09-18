@@ -31,12 +31,15 @@ from recovered_sources import collect_recovered
 from utair_support import collect_utair
 from hse_alumni import collect_hse
 from alfa_access import collect_access as collect_alfa_access
+from alfa_public_rules import collect_core as collect_alfa_public_core, collect_cashback as collect_alfa_public_cashback
 
 
 def error_record(exc,phase,url=''):
     reason=str(exc) if isinstance(exc,RuntimeError) else type(exc).__name__
     marker=re.search(r'ERR_[A-Z_]+',str(exc))
     if marker:reason=marker[0]
+    alfa_marker=re.fullmatch(r'alfa_[a-z0-9_]{1,120}',str(exc))
+    if alfa_marker:reason=alfa_marker.group(0)
     return {'phase':phase,'path':urlsplit(url).path,'reason':reason[:180]}
 
 
@@ -123,6 +126,8 @@ async def one(browser,cfg,now,limit):
         elif cfg['mode']=='recovered':records=await collect_recovered(cfg,report,now,limit)
         elif cfg['id']=='utair':records=await collect_utair(cfg,report,now,limit)
         elif cfg['id']=='alfa_only_partner_offers':await collect_alfa_access(cfg,report)
+        elif cfg['id']=='alfa_only_public_rules':records=await collect_alfa_public_core(cfg,report,now,limit)
+        elif cfg['id']=='alfa_only_cashback_rules':records=await collect_alfa_public_cashback(cfg,report,now,limit)
         else:
             async with PublicSource(browser,cfg['url']) as client:
                 client.deadline=deadline
