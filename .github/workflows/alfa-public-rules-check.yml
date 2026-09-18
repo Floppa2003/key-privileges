@@ -41,7 +41,7 @@ jobs:
           observed=datetime.now(timezone.utc).isoformat()
           core_pdf=a.fetch_pdf(a.CORE_URL)
           core_text=a.pdf_text(core_pdf)
-          for needle in ('Операция становится доступной для получения Выплаты','Получить Выплату','6.6.3.','6.7.7.','6.8.2.','Промо-баллы могут быть использованы','6.5.1.'):
+          for needle in ('Операция становится доступной для получения Выплаты','Получить Выплату','6.6.3.','6.7.7.','6.8.2.','Промо-баллы могут быть использованы','6.5.1.','Консьерж','SimplePrivé','Smart Reading','Страхование ВЗР','Услуга доступа к контенту'):
               i=core_text.find(needle)
               print('ALFA_CONTEXT',needle,repr(core_text[max(0,i-180):i+850] if i>=0 else 'MISSING'))
           core=a.parse_core(core_pdf,observed)
