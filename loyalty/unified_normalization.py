@@ -240,6 +240,27 @@ def normalize_record(raw, *, as_of):
     def condition(kind,path,**kw):return add('conditions',kind,path,**kw)
     def code(value,path,scope=None,delivery='literal',fragment=None):
         return add('codes','promo_code',path,value=value,scope=scope,delivery=delivery,fragment=fragment)
+    if d.get('scope')=='only_cards_in_current_public_partner_inventory':
+        from hse_alumni import PROGRAM,ROOT,claim_text,hse_rates
+        block=d.get('public_catalog_block',{})
+        if (raw['program']!=PROGRAM or raw['source_url']!=ROOT+'#'+block.get('anchor','')
+            or raw['conditions']!=block.get('body') or raw['benefit']!=claim_text(block.get('body',''))):
+            raise ValueError('HSE owned evidence changed')
+        scope={'anchor':block['anchor'],'programme_membership_not_verified':True}
+        rule=condition('owned_partner_rules','/conditions',scope=scope)
+        for rate in hse_rates(raw['benefit']):
+            local={**scope,**_scope(rate['evidence'])}
+            if rate['evidence'] in d.get('month_limited_clauses',[]):
+                local['calendar_constraint_text']=rate['evidence']
+            b=benefit(rate['kind'],'/benefit',value=rate['value'],unit=rate['unit'],
+                qualifier=rate['qualifier'],value_min=rate.get('min_value'),scope=local,
+                fragment=rate['evidence'],method='owned_source_clause')
+            b.update(condition_ids=[rule['id']],condition_linkage='full_owned_record_rules',remaining_record_rules_require_review=True)
+        for i,value in enumerate(raw['codes']):code(value,f'/codes/{i}',scope)
+        n['quality']['level']='structured_with_review'
+        n['quality']['issues'].append('month_product_audience_and_code_scopes_require_owned_rules')
+        n['content_sha256']=digest({k:v for k,v in n.items() if k!='content_sha256'})
+        validate_normalized(n);return n
     if d.get('retrieval_method') in ('ekp_source_linked_rules_v1','aeroflot_source_linked_rules_v1'):
         if raw['kind'] not in ('program_rules','source_observation') or not d.get('parent_references'):
             raise ValueError('EKP linked rules provenance missing')
