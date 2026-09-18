@@ -1,4 +1,5 @@
 {
-  "request_id": "2026-09-15-daily-original-source-coverage",
-  "reason": "Verify the existing full public collection and Sheets publication after PR24 enabled the user-authorized recurring schedule. Read all configured sources live; retain explicit failures, real observation times and manual fields. Publish through the unchanged main-only writer and verify destination readback. External-reader feasibility reports and archived EKP fixtures are not production offers. Do not change Google permissions, use paid services or alter private source tabs."
+  "request_id": "2026-09-18-public-ekp-partner-completion",
+  "source_ids": ["ekp_artflora", "ekp_litres"],
+  "reason": "Read and publish only these two reviewed, newly registered public partner pages after PR60. Preserve actual source observations, original publication metadata, full short redemption restrictions, all existing source/manual cells and gated EKP identities. Do not issue coupons, claim gifts, authenticate source accounts, change sharing, or run the complete catalogue. Use the existing main-only writer, then verify source rows and unified destination by independent readback."
 }
