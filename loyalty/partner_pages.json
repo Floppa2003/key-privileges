@@ -200,5 +200,68 @@
       "gift_claim_and_purchase_not_performed",
       "independent_partner_terms_not_authenticated_ekp_card"
     ]
+  },
+  "ekp_ilocked_chuzhoy": {
+    "program": "Единая карта петербуржца (ЕКП)",
+    "partner": "iLocked",
+    "url": "https://ilocked.ru/quest/chuzhoy",
+    "parser": "ilocked_ekp",
+    "category": "Квесты"
+  },
+  "ekp_ilocked_mumiya": {
+    "program": "Единая карта петербуржца (ЕКП)",
+    "partner": "iLocked",
+    "url": "https://ilocked.ru/quest/mumiya",
+    "parser": "ilocked_ekp",
+    "category": "Квесты"
+  },
+  "ekp_ilocked_morskoy_boy": {
+    "program": "Единая карта петербуржца (ЕКП)",
+    "partner": "iLocked",
+    "url": "https://ilocked.ru/quest/morskoy-boy",
+    "parser": "ilocked_ekp",
+    "category": "Квесты"
+  },
+  "ekp_ilocked_gold_rush": {
+    "program": "Единая карта петербуржца (ЕКП)",
+    "partner": "iLocked",
+    "url": "https://ilocked.ru/quest/gold_rush",
+    "parser": "ilocked_ekp",
+    "category": "Квесты"
+  },
+  "ekp_ilocked_among_us": {
+    "program": "Единая карта петербуржца (ЕКП)",
+    "partner": "iLocked",
+    "url": "https://ilocked.ru/quest/among_us",
+    "parser": "ilocked_ekp",
+    "category": "Квесты"
+  },
+  "ekp_ilocked_morskoi_boi_kids": {
+    "program": "Единая карта петербуржца (ЕКП)",
+    "partner": "iLocked",
+    "url": "https://ilocked.ru/quest/morskoi-boi-kids",
+    "parser": "ilocked_ekp",
+    "category": "Квесты"
+  },
+  "ekp_ilocked_poslednyaya_tayna_da_vinchi": {
+    "program": "Единая карта петербуржца (ЕКП)",
+    "partner": "iLocked",
+    "url": "https://ilocked.ru/quest/poslednyaya-tayna-da-vinchi",
+    "parser": "ilocked_ekp",
+    "category": "Квесты"
+  },
+  "ekp_ilocked_atlantida_kosmicheskaya_odisseya_0": {
+    "program": "Единая карта петербуржца (ЕКП)",
+    "partner": "iLocked",
+    "url": "https://ilocked.ru/quest/atlantida-kosmicheskaya-odisseya-0",
+    "parser": "ilocked_ekp",
+    "category": "Квесты"
+  },
+  "ilocked_certificate_terms": {
+    "program": "iLocked — ограничения скидок",
+    "partner": "iLocked",
+    "url": "https://ilocked.ru/certificate",
+    "parser": "ilocked_certificate",
+    "category": "Квесты"
   }
 }
