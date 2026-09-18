@@ -8,6 +8,7 @@ from pathlib import Path
 from normalized import validate_offer, VERSION
 from model import plan_rows
 from sheets_sync import Sheets
+from practical_scope import publication_rows
 
 SCHEMAS = {
  'parser_offers':['ID','Программа','Партнёр','Заголовок','Категория','Тип записи','Типы выгод',
@@ -71,7 +72,8 @@ def main():
     path=Path(args.input)
     if path.stat().st_size>25000000:
         raise ValueError('Normalized bundle exceeds 25 MB')
-    rows=prepare(json.loads(path.read_text()))
+    bundle=json.loads(path.read_text())
+    rows=publication_rows(prepare(bundle),{r['id']:r['source_id'] for r in bundle['records']})
     if not args.publish:
         print(dump({'mode':'normalized_dry_run','rows':{k:len(v) for k,v in rows.items()}}));return
     args=(os.environ.get('DISCOUNTS_SPREADSHEET_ID',''),os.environ.get('GOOGLE_ACCESS_TOKEN',''))

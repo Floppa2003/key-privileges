@@ -198,7 +198,7 @@ def bank_pdf_records(data,entry,parent,observed):
         extra_details={'retrieval_method':METHOD,'parent_record_id':parent['id'],'rzd_exchange_confirmed':False,
                        'document_rzd_mentions':bool(RZD.search('\n'.join(p['text'] for p in doc['pages'])))})
 
-def collect(reader,run_id,observed):
+def collect(reader,run_id,observed,*,include_bank_documents=True):
     states={s:{'records':[],'errors':[],'excluded':[],'targets':[]} for s in SPECS}
     t=states['rzd_tour_conditions']
     try:
@@ -223,7 +223,10 @@ def collect(reader,run_id,observed):
     try:
         raw=reader.read(BANK).decode();row=bank_record(raw,observed);b['records'].append(row)
         entries=row['details']['public_bank']['documents'];d['targets']=[x['url'] for x in entries]
-        if not entries:d['errors'].append({'url':BANK,'reason':'re_no_reward_rules_links'})
+        if not include_bank_documents:
+            d['excluded']=[{'url':e['url'],'reason':'out_of_scope_general_contract'} for e in entries]
+            d['targets']=[];entries=[]
+        if not entries and include_bank_documents:d['errors'].append({'url':BANK,'reason':'re_no_reward_rules_links'})
         for entry in entries[:MAX_PDFS]:
             try:
                 rows=bank_pdf_records(reader.read(entry['url']),entry,row,observed);d['records'].extend(rows)
@@ -238,7 +241,7 @@ def collect(reader,run_id,observed):
         coverage={'method':METHOD,'scope':'homepage_and_cruise_category_linked_tours' if sid=='rzd_tour_conditions' else 'linked_bank_product_or_reward_rules',
           'selected_urls':result['targets'],'excluded':result['excluded'],'full_program_verified':False,'account_used':False,'provider_credits':0}
         reports.append({'source_id':sid,'name':SPECS[sid][0],'root':SPECS[sid][1],
-          'status':'partial' if errors and rows else 'failed' if errors else 'ok','discovered':max(len(rows),len(result['targets'])),
+          'status':'out_of_scope' if sid=='rzd_unicredit_rules' and not include_bank_documents else 'partial' if errors and rows else 'failed' if errors else 'ok','discovered':max(len(rows),len(result['targets'])),
           'normalized':len(rows),'failed':len(errors),'coverage':json.dumps(coverage,ensure_ascii=False),'region':None,
           'errors':errors,'observed_at':observed})
     bundle={'schema_version':2,'run_id':run_id,'observed_at':observed,'records':records,'sources':reports}
@@ -275,15 +278,15 @@ def validate_bundle(folder,run_id,commit,clock):
         data=(folder/r['file']).read_bytes()
         if len(data)!=r['saved_bytes'] or sha(data)!=r['saved_sha256'] or len(data)>(MAX_PDF if ext=='pdf' else MAX_HTML):raise ValueError('re_file_hash')
         if ext=='pdf' and (r['mime']!='application/pdf' or not data.startswith(b'%PDF-')):raise ValueError('re_not_pdf')
-    replay=Replay(folder,receipts);bundle=collect(replay,run_id,audit['observed_at'])
+    replay=Replay(folder,receipts);bundle=collect(replay,run_id,audit['observed_at'],include_bank_documents=audit.get('include_bank_documents',True))
     if replay.index!=len(receipts) or bundle!=json.loads((folder/'normalized.json').read_text()):raise ValueError('re_reconstruction')
     return bundle
 
 def main():
     folder=Path('rzd-external-output');reader=Reader(folder)
     run_id=os.environ['GITHUB_RUN_ID']+':'+os.environ['GITHUB_RUN_ATTEMPT'];observed=now()
-    bundle=collect(reader,run_id,observed)
-    audit={'run_id':run_id,'commit':os.environ['GITHUB_SHA'],'observed_at':observed,'finished_at':now(),'receipts':reader.receipts}
+    bundle=collect(reader,run_id,observed,include_bank_documents=False)
+    audit={'run_id':run_id,'commit':os.environ['GITHUB_SHA'],'observed_at':observed,'finished_at':now(),'receipts':reader.receipts,'include_bank_documents':False}
     (folder/'normalized.json').write_text(json.dumps(bundle,ensure_ascii=False))
     (folder/'audit.json').write_text(json.dumps(audit,ensure_ascii=False,indent=2))
     validate_bundle(folder,run_id,audit['commit'],datetime.now(timezone.utc))

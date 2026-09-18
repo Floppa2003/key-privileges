@@ -9,6 +9,7 @@ from urllib.parse import urljoin,urlsplit
 from bs4 import BeautifulSoup
 import coral_catalog as c
 from normalized import make_offer,text
+from practical_scope import follow_document_link
 
 SOURCE_ID='coral_rule_documents'
 METHOD='coral_linked_public_rules_google_import_v1'
@@ -31,7 +32,7 @@ def discover(records):
         if r['source_id'] not in ('coral','coral_promo'):continue
         for link in r['details']['public_coral_block']['links']:
             url=link['url']
-            if not is_rule_url(url):continue
+            if not is_rule_url(url) or not follow_document_link(url,link['label']):continue
             entry=found.setdefault(url,{'url':url,'parents':[]})
             parent={'record_id':r['id'],'source_url':r['source_url'],'title':r['title'],
                     'content_sha256':r['content_sha256'],'label':link['label']}

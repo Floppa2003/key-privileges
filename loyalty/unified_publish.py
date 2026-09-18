@@ -16,6 +16,7 @@ from model import verify_rows
 from unified_inputs import read_tables,inputs_from_tables
 from unified_normalization import normalize_inputs,digest,dump
 from unified_views import SCHEMAS,prepare_views,retire_missing
+from practical_scope import select_inputs,VERSION as SCOPE_VERSION
 
 class UnifiedSheets(Sheets):
     schemas=SCHEMAS
@@ -47,7 +48,10 @@ def publish_all(*,as_of=None,client=None):
     tables=read_tables(client)
     inputs,inventory=inputs_from_tables(tables)
     if not inputs:raise ValueError('No source records; refusing empty publication')
-    result=normalize_inputs(inputs,as_of=as_of)
+    practical,excluded=select_inputs(inputs)
+    result=normalize_inputs(practical,as_of=as_of)
+    result['audit'].update(publication_scope=SCOPE_VERSION,excluded_bulk_records=excluded,
+        input_records_before_scope=len(inputs),source_snapshot_sha256=digest(inputs))
     result['audit']['input_inventory']=inventory
     views=prepare_views(result)
     # Inspect all proposed rows before the first write, including formula safety

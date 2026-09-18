@@ -332,7 +332,7 @@ def parse_bank_page(sid, raw, now):
         source_status='public_announcement_not_full_rules' if sid=='nspk_ekp_rules' else 'public_rules_text')
 
 
-def _collect(cfg, report, now, limit):
+def _collect(cfg, report, now, limit, *, include_documents=True):
     deadline=time.monotonic()+cfg.get('timeout_seconds',240)-2
     with ScopedReader(cfg,report,deadline) as reader:
         if cfg['id']=='loyals':
@@ -340,7 +340,14 @@ def _collect(cfg, report, now, limit):
         _, raw=reader.read(cfg['url'])
         parent=parse_bank_page(cfg['id'],raw.decode('utf-8'),now)
         records=[parent];inventory=[];seen=set()
-        links=parent['details']['linked_documents'];reader.bind_document_links(links)
+        links=parent['details']['linked_documents']
+        if not include_documents:
+            parent['details']['linked_documents_policy']='references_only_practical_scope'
+            parent['content_sha256']=content_hash(parent)
+            report['discovered']=1
+            report['coverage']=json.dumps({'kind':'practical_parent_page','attachments':'references_only','attached_documents_are_not_missing_offers':True},ensure_ascii=False)
+            return records
+        reader.bind_document_links(links)
         for link in links:
             url=link['url'].strip()
             if url in seen:continue
@@ -380,4 +387,4 @@ def _collect(cfg, report, now, limit):
 
 
 async def collect_recovered(cfg, report, now, limit):
-    return await asyncio.to_thread(_collect,cfg,report,now,limit)
+    return await asyncio.to_thread(_collect,cfg,report,now,limit,include_documents=False)
