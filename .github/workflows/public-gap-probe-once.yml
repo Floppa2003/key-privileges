@@ -28,12 +28,10 @@ jobs:
           from public_transport import PublicSource,check_response
           from free_access_probe import sanitized_page
           targets={
-            'alef':'https://coralbonus.ru/klub-privilegii/odezhda-i-aksessuary/alef/',
-            'artflora':'https://artflora.ru/blog/vygodnye-pokupki-v-artflora-kak-poluchit-promokody-i-skidki/',
-            'litres':'https://www.litres.ru/collections/2-knigi-iz-podborki-v-podarok-i-skidka-20-ot-ekp-i-litres/',
-            'elcom':'https://lenobl.ru/ru/dlya-smi/news/96437/',
-            'rzd_smart':'https://rzd-bonus.ru/promo/poluchite-4000-ballov-rzhd-bonus-za-oformlenie-programmy-smart-plyus-ot-renessans-zhizn/',
-            'rzd_karat':'https://rzd-bonus.ru/promo/500-ballov-rzhd-bonus-za-kazhduyu-noch-prozhivaniya-v-otele-grand-karat-sochi_2026/'
+            'artflora_campaign':'https://artflora.ru/news/skidka-7-dlya-vseh-derzhateley-edinoy-katy-peterburzhca/',
+            'ekp_public_search':'https://t.me/s/ekpcard?q=%D0%9F%D0%BB%D0%B0%D0%BD%D0%B5%D1%82%D0%B0%D1%80%D0%B8%D0%B9',
+            'karat_home':'https://grandkarat.com/',
+            'chekhoff_home':'https://chekhoffhotel.com/'
           }
           out=Path('public-gap-probe');out.mkdir();reads=[]
           def now():return datetime.now(timezone.utc).isoformat()
