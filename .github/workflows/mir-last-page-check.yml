@@ -1,0 +1,94 @@
+name: Inspect Mir final-page readiness
+on:
+  push:
+    branches: ['diagnostics/mir-last-pages-20260918']
+    paths: [.github/workflows/mir-last-page-check.yml]
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with: {python-version: '3.12'}
+      - run: python -m pip install -r loyalty/requirements.txt
+      - run: python -m playwright install --with-deps chromium
+      - name: Actual visible controls, anonymous context, no details or replayed APIs
+        run: |
+          python - <<'PY'
+          import asyncio,json,math,os,sys,time
+          from pathlib import Path
+          from datetime import datetime,timezone
+          sys.path.insert(0,'loyalty')
+          from playwright.async_api import async_playwright
+          from public_transport import PublicSource,check_response
+          from mir_ui import BrowserResponses,CARDS,select_listing_region
+          now=lambda:datetime.now(timezone.utc).isoformat()
+          out=Path('mir-last-page-check');out.mkdir()
+          audit={'run_id':os.environ['GITHUB_RUN_ID']+':'+os.environ['GITHUB_RUN_ATTEMPT'],'commit':os.environ['GITHUB_SHA'],
+                 'started_at':now(),'account_used':False,'source_api_replayed':False,'publication_performed':False,'profiles':[]}
+          def err(e):return str(e) if isinstance(e,RuntimeError) else type(e).__name__
+          async def state(page):
+              return await page.evaluate('''selector=>({
+                region:document.querySelector('.region-button__title')?.textContent.trim(),
+                cards:[...document.querySelectorAll(selector)].map(e=>({url:e.getAttribute('href'),name:e.querySelector('.promo-card-v2-owner__name')?.textContent.trim()})),
+                buttons:[...document.querySelectorAll('[class*="_pagination_"] button')].map(e=>({label:e.textContent.trim(),class:e.className,disabled:e.disabled,visible:!!(e.offsetWidth||e.offsetHeight||e.getClientRects().length)}))
+              })''',CARDS)
+          async def main():
+              async with async_playwright() as pw:
+                  browser=await pw.chromium.launch()
+                  try:
+                      async with PublicSource(browser,'https://vamprivet.ru/promo') as client:
+                          client.deadline=time.monotonic()+180
+                          await client.robots();audit['robots']=client.robots_info
+                          page=client.page;seen=BrowserResponses(page,client.host);page.on('response',seen.observe)
+                          try:
+                              await client.read('https://vamprivet.ru/promo',render=True)
+                              first=await seen.wait(seen.catalogs,0,lambda x:x['page']==1)
+                              first=await select_listing_region(page,seen,first,'msk');default=first['payment_type']
+                              for payment in (default,'mir' if default=='sbp' else 'sbp'):
+                                  item={'payment':payment,'started_at':now()};audit['profiles'].append(item)
+                                  try:
+                                      if payment!=default:
+                                          offset=len(seen.catalogs)
+                                          await page.locator('.switch-bar-option-label_'+payment).first.click(timeout=5000)
+                                          first=await seen.wait(seen.catalogs,offset,lambda x:x['page']==1 and x['payment_type']==payment)
+                                      await page.wait_for_function('''({selector,expected})=>JSON.stringify([...document.querySelectorAll(selector)].map(e=>e.getAttribute('href')).sort())===JSON.stringify(expected.sort())''',arg={'selector':CARDS,'expected':[x['url'] for x in first['items']]},timeout=15000)
+                                      item['first_response']=first;item['before']=await state(page)
+                                      size=len(first['items']);last=math.ceil(first['expected']/size)
+                                      if not 2<=last<=60:raise RuntimeError('no_bounded_last_page')
+                                      item['last_page']=last;item['expected_length']=first['expected']-(last-1)*size
+                                      button=page.locator('[class*="_pagination_"]').get_by_role('button',name=str(last),exact=True)
+                                      if await button.count()!=1 or not await button.is_visible():raise RuntimeError('last_page_button_not_visible')
+                                      offset=len(seen.catalogs);await page.wait_for_timeout(max(250,int(client.request_interval*1000)))
+                                      await button.click(timeout=5000)
+                                      try:
+                                          await page.wait_for_function('''({number,before,selector,expectedLength})=>{
+                                            const active=[...document.querySelectorAll('[class*="_pagination_"] button')].some(e=>e.textContent.trim()===String(number)&&e.className.includes('selected'));
+                                            const links=[...document.querySelectorAll(selector)].map(e=>e.getAttribute('href'));
+                                            return active&&links.length===expectedLength&&JSON.stringify(links)!==JSON.stringify(before);
+                                          }''',arg={'number':last,'before':[x['url'] for x in first['items']],'selector':CARDS,'expectedLength':item['expected_length']},timeout=15000)
+                                          item['production_predicate_passed']=True
+                                      except Exception as exc:item['production_predicate_error']=err(exc)
+                                      check_response(200,await page.content())
+                                      item['after']=await state(page);item['new_public_responses']=seen.catalogs[offset:]
+                                  except Exception as exc:item['error']=err(exc)
+                                  finally:item['finished_at']=now()
+                              audit['public_response_errors']=seen.errors
+                          finally:await seen.close()
+                  finally:await browser.close()
+          try:asyncio.run(asyncio.wait_for(main(),210))
+          except Exception as exc:audit['terminal_error']=err(exc)
+          finally:
+              audit['finished_at']=now();(out/'audit.json').write_text(json.dumps(audit,ensure_ascii=False,indent=2))
+              print(json.dumps({'profiles':len(audit['profiles']),'terminal_error':audit.get('terminal_error'),'publication_performed':False}))
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: mir-last-page-check-${{ github.run_id }}-${{ github.run_attempt }}
+          path: mir-last-page-check/
+          retention-days: 7
