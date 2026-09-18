@@ -83,7 +83,7 @@ class AlfaPublicRulesTests(unittest.TestCase):
         with patch.object(a,"pdf_text",return_value=CASHBACK_TEXT):
             row,=a.parse_cashback(b"%PDF-cashback",NOW)
         validate_offer(row)
-        self.assertEqual(row["details"]["document_revision"],100)
+        self.assertEqual(row["details"]["document_revision"],101)
         self.assertIn("5 Категорий",row["benefit_text"])
         self.assertIn("30 000",row["benefit_text"])
         self.assertIn("50 000",row["benefit_text"])
@@ -93,7 +93,7 @@ class AlfaPublicRulesTests(unittest.TestCase):
     def test_revision_or_effective_date_drift_fails_closed(self):
         with patch.object(a,"pdf_text",return_value=CORE_TEXT.replace("Редакция № 47","Редакция № 48",1)):
             with self.assertRaisesRegex(ValueError,"alfa_core_revision_missing"):a.parse_core(b"%PDF-core",NOW)
-        with patch.object(a,"pdf_text",return_value=CASHBACK_TEXT.replace("03.04.2026","04.04.2026")):
+        with patch.object(a,"pdf_text",return_value=CASHBACK_TEXT.replace("25.05.2026","26.05.2026")):
             with self.assertRaisesRegex(ValueError,"alfa_cashback_effective_date_missing"):a.parse_cashback(b"%PDF-cashback",NOW)
 
     def test_validator_rejects_relabel_or_authenticated_equivalence(self):
