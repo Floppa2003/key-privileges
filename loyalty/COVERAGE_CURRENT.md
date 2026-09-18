@@ -17,6 +17,16 @@ Alfa now uses the existing pinned official root in a temporary, exact-bank-reque
 
 Final verification **35380093960:1** passed **1008 Python / 7 KEY tests, no skips**. The six changed production/test files matched the reviewed bytes, and main regression subsequently passed. Mir job **105707481333** succeeded inside **35378087590:1**, despite an unrelated HSE replay-helper failure. Publication checked that specific successful job and its exact payload. A separate first/last-page diagnostic passed the unchanged Mir readiness predicate; no speculative Mir parser patch was made. Preparatory replay-clock and external-availability assertion failures are documented in the acceptance report.
 
+## Source-level priority audit after PR64
+
+The owner now prioritizes programmes where almost nothing is parsed over residual cards in already well-covered catalogues. A complete historical audit of all **105 configured source IDs** found **one and only one programme-level zero: `alfa_only_partner_offers`**. It has never produced a normalized record. No other configured source with a run discovering at least 10 items has a best observed normalization ratio below 80%.
+
+This prevents false prioritization from the latest red route alone. For example, NORDWIND currently reports a failed route, but multiple 15 September runs collected all **7/7** visible partner accordions; it is an intermittent transport issue, not an unseen catalogue. RZD, Aeroflot and EKP similarly have substantial successful alternate coverage.
+
+**Alfa public-access spike:** see **ALFA_PUBLIC_ACCESS_SPIKE.md**. Direct verified-TLS GitHub reads, Free ScrapingAnt datacenter, one bounded residential-browser read, Google IMPORTXML/IMPORTDATA and no-key Jina Reader were all tested without bank authentication or destination publication. The exact requested catalogue still routes to bank authentication; public Alfa Only marketing pages remain anti-bot/empty to the tested anonymous automation paths. The residential route cost 125 free credits and failed, so it must not be retried automatically. The temporary Google staging sheet was deleted after the failed imports. No discount-sheet cells changed.
+
+Therefore the next high-leverage Alfa step is separately authorized authenticated access with private storage, if explicitly approved. Do not publish authenticated banking data into the current link-accessible Sheet/public artifacts. Until then Alfa remains truthfully failed/0 rather than being filled from search snippets.
+
 ## Current destination and lookup contract
 
 The destination remains **скидки**, spreadsheet **`1uFR7croj7p6RRNPcoTRYlVl06hKsurkIgyu1IdMMB-4`**.
