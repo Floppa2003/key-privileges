@@ -1,0 +1,122 @@
+--- a/loyalty/hse_alumni.py
++++ b/loyalty/hse_alumni.py
+@@ -11,6 +11,29 @@
+ 
+ ROOT='https://alumni.hse.ru/loyalty/partners/'
+ PROGRAM='Карта выпускника НИУ ВШЭ'
++# Reviewed source identity only, never a cached rate/code. The catalogue's
++# #mordapechat target is absent, but its exact printed heading is public.
++UNANCHORED_HEADINGS={'mordapechat':'Морда довольна. Студия печати'}
++
++
++def heading_identity(section):
++    titles={text(h.get_text(' ',strip=True)) for h in section.select('h1,h2,h3')}
++    matches=[key for key,title in UNANCHORED_HEADINGS.items() if title in titles]
++    if len(matches)>1:raise ValueError('hse_ambiguous_heading_ownership')
++    return matches[0] if matches else None
++
++
++def source_location(block,full):
++    if not isinstance(block,dict) or not re.fullmatch('[A-Za-z0-9_-]{1,100}',block.get('anchor','')):raise ValueError('hse_invalid_block_identity')
++    if block.get('identity_method')=='reviewed_heading':
++        heading=UNANCHORED_HEADINGS.get(block['anchor'])
++        if (not full or not heading or block.get('detail_heading')!=heading
++            or not block['body'].startswith(heading+'\n')):
++            raise ValueError('hse_unreviewed_heading_identity')
++        return ROOT,'page_block','builder-section with exact heading '+heading
++    if block.get('identity_method') is not None:raise ValueError('hse_unknown_identity_method')
++    return (ROOT+'#'+block['anchor'],'page_anchor','a[name="'+block['anchor']+'"] and following sections before next named anchor') if full else (ROOT,'page_block','.fa-person__name[href ends with #'+block['anchor']+']')
++
+ CLAIM=re.compile(r'[сc]\s*кидк|[пp]\s*ромо[ -]?код|бесплат|подар|ключев\w* слов',re.I)
+ WARNINGS=['source_publication_not_personal_eligibility','linked_partner_sites_not_checked',
+           'validity_not_inferred_from_coupon_spelling_or_month_without_year','rates_have_separate_audience_and_product_scopes']
+@@ -91,7 +114,7 @@
+         if anchor in seen:raise ValueError('hse_duplicate_card')
+         seen.add(anchor);targets=root.find_all('a',attrs={'name':anchor})
+         if len(targets)>1:raise ValueError('hse_duplicate_target')
+-        parts=[];state='missing_anchor'
++        parts=[];state='missing_anchor';identity={}
+         if targets:
+             owner=targets[0].find_parent('div',class_='builder-section')
+             if owner is None or owner.parent is not root:raise ValueError('hse_anchor_owner')
+@@ -101,9 +124,20 @@
+             for node in owner.next_siblings:
+                 if not isinstance(node,Tag):continue
+                 if node.select('a[name]') or node.select('.nom h1'):break
++                heading_owner=heading_identity(node)
++                if heading_owner and heading_owner!=anchor:break
+                 if node.select('.fa-person__item'):raise ValueError('hse_detail_reentered_inventory')
+                 if text(node.get_text(' ',strip=True)):parts.append(node)
+             state='detail' if parts else 'empty_section'
++        elif anchor in UNANCHORED_HEADINGS:
++            matches=[node for node in root.find_all('div',class_='builder-section',recursive=False)
++                     if heading_identity(node)==anchor]
++            if len(matches)>1:raise ValueError('hse_duplicate_heading_target')
++            if matches:
++                node=matches[0]
++                if node.select('a[name],.fa-person__item'):raise ValueError('hse_heading_anchor_conflict')
++                parts=[node];state='detail'
++                identity={'identity_method':'reviewed_heading','detail_heading':UNANCHORED_HEADINGS[anchor]}
+         body=content(parts) if parts else '';links=[]
+         if len(body)>12000:raise ValueError('hse_detail_size')
+         for part in parts:
+@@ -113,7 +147,7 @@
+                 item={'label':text(link.get_text(' ',strip=True)),'url':target}
+                 if item not in links:links.append(item)
+         result.append({'anchor':anchor,'name':name,'category':text(headings[0].get_text(' ',strip=True)),
+-                       'summary':summary,'body':body,'links':links,'detail_state':state})
++                       'summary':summary,'body':body,'links':links,'detail_state':state,**identity})
+     return result
+ 
+ 
+@@ -131,10 +165,11 @@
+         month_limited=[line for line in block['body'].splitlines() if re.search(r'только в (?:январ|феврал|март|апрел|ма[ейя]|июн|июл|август|сентябр|октябр|ноябр|декабр)',line,re.I)]
+         if month_limited:warnings.append('contains_month_limited_suboffer_not_universal_rate')
+         if full and not benefit:warnings.append('benefit_clause_not_structurally_extracted')
++        source_url,link_kind,locator=source_location(block,full)
+         rows.append(make_offer('hse_alumni','anchor:'+block['anchor'],PROGRAM,block['name'],benefit,
+-            ROOT+'#'+block['anchor'] if full else ROOT,observed_at,title=block['name'],category=block['category'],
++            source_url,observed_at,title=block['name'],category=block['category'],
+             conditions=block['body'] if full else block['summary'],redemption=block['body'] if full else '',
+-            link_kind='page_anchor' if full else 'page_block',locator='a[name="'+block['anchor']+'"] and following sections before next named anchor' if full else '.fa-person__name[href ends with #'+block['anchor']+']',
++            link_kind=link_kind,locator=locator,
+             record_kind='partner_offer' if full else 'source_observation',valid_until=end,
+             source_status='public_hse_partner_detail' if full else 'public_hse_preview_detail_missing',
+             details={'public_catalog_block':block,'source_block_sha256':block_hash(block),
+@@ -146,13 +181,14 @@
+ 
+ def validate_record(r):
+     b=r['details'].get('public_catalog_block',{});full=b.get('detail_state')=='detail'
++    source_url,link_kind,locator=source_location(b,full)
+     if (not re.fullmatch('[A-Za-z0-9_-]{1,100}',b.get('anchor','')) or r['native_id']!='anchor:'+b['anchor']
+         or r['program']!=PROGRAM or r['partner_name']!=b.get('name') or r['title']!=b.get('name')
+         or r['category']!=b.get('category') or r['benefit_text']!=(claim_text(b['body']) if full else '')
+         or r['conditions_text']!=text(b['body'] if full else b['summary'])
+-        or r['source_url']!=(ROOT+'#'+b['anchor'] if full else ROOT)
+-        or r['benefit_url']!=(ROOT+'#'+b['anchor'] if full else None)
+-        or r['link_kind']!=('page_anchor' if full else 'page_block')
++        or r['source_url']!=source_url
++        or r['benefit_url']!=(source_url if link_kind=='page_anchor' else None)
++        or r['link_kind']!=link_kind or r['locator']!=locator
+         or r['redemption_text']!=text(b['body'] if full else '')
+         or r['valid_from'] is not None or r['valid_until']!=(explicit_end(b['body'])[0] if full else None)
+         or r['details'].get('user_eligibility_verified') is not False
+--- a/loyalty/unified_normalization.py
++++ b/loyalty/unified_normalization.py
+@@ -241,12 +241,14 @@
+     def code(value,path,scope=None,delivery='literal',fragment=None):
+         return add('codes','promo_code',path,value=value,scope=scope,delivery=delivery,fragment=fragment)
+     if d.get('scope')=='only_cards_in_current_public_partner_inventory':
+-        from hse_alumni import PROGRAM,ROOT,claim_text,hse_rates
++        from hse_alumni import PROGRAM,ROOT,claim_text,hse_rates,source_location
+         block=d.get('public_catalog_block',{})
+-        if (raw['program']!=PROGRAM or raw['source_url']!=ROOT+'#'+block.get('anchor','')
++        if (raw['program']!=PROGRAM or raw['source_url']!=source_location(block,True)[0]
+             or raw['conditions']!=block.get('body') or raw['benefit']!=claim_text(block.get('body',''))):
+             raise ValueError('HSE owned evidence changed')
+         scope={'anchor':block['anchor'],'programme_membership_not_verified':True}
++        if block.get('identity_method'):
++            scope.update(identity_method=block['identity_method'],detail_heading=block['detail_heading'])
+         rule=condition('owned_partner_rules','/conditions',scope=scope)
+         for rate in hse_rates(raw['benefit']):
+             local={**scope,**_scope(rate['evidence'])}
