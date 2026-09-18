@@ -1,4 +1,4 @@
-name: Check new independent partner pages
+name: Check source-discovered Sacvoyage RZD detail
 on:
   push:
     branches: ['loyalty/partner-alternatives-20260918']
@@ -8,7 +8,7 @@ permissions:
 jobs:
   public-check:
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 6
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with: {persist-credentials: false}
@@ -16,7 +16,7 @@ jobs:
         with: {python-version: '3.12'}
       - run: python -m pip install -r loyalty/requirements.txt
       - run: python -m playwright install --with-deps chromium
-      - name: Read only four source-discovered public pages; no provider, account or destination
+      - name: Read only the discovered hotel-owned RZD clause; no provider or destination
         run: |
           python - <<'PY'
           import asyncio,hashlib,json,os,sys
@@ -28,57 +28,41 @@ jobs:
           from public_transport import PublicSource
           from free_access_probe import sanitized_page
           def now():return datetime.now(timezone.utc).isoformat()
-          def sha(data):return hashlib.sha256(data).hexdigest()
+          def sha(b):return hashlib.sha256(b).hexdigest()
           out=Path('partner-alternative-check');out.mkdir()
-          groups=[['https://sacvoyage.ru/','https://sacvoyage.ru/aktsii/','https://sacvoyage.ru/partners/'],
-                  ['https://www.flystation.net/promotions']]
+          url='https://sacvoyage.ru/partners/rzhd-bonus/'
           audit={'run_id':os.environ['GITHUB_RUN_ID']+':'+os.environ['GITHUB_RUN_ATTEMPT'],
                  'commit':os.environ['GITHUB_SHA'],'started_at':now(),'account_used':False,
-                 'provider_used':False,'google_access':False,'groups':[]}
+                 'discovered_in_run':'35364900578:1','parent_url':'https://sacvoyage.ru/partners/',
+                 'parent_saved_sha256':'4e5a26180f3bbd49fb77e83d34fe49eada0b0d76e233d036bc188c2137654ab7',
+                 'url':url,'responses':[]}
           async def main():
               async with async_playwright() as p:
                   browser=await p.chromium.launch()
                   try:
-                      for urls in groups:
-                          group={'root':urls[0],'planned_urls':urls,'pages':[]};audit['groups'].append(group)
-                          async with PublicSource(browser,urls[0]) as client:
-                              try:
-                                  await client.robots();group['robots']=client.robots_info
-                                  client.request_interval=max(client.request_interval,3)
-                                  for url in urls:
-                                      item={'url':url,'requested_at':now()};group['pages'].append(item)
-                                      responses=[]
-                                      def record(response):
-                                          if response.request.is_navigation_request() and response.request.frame==client.page.main_frame:
-                                              responses.append({'url':response.url,'status':response.status})
-                                      client.page.on('response',record)
-                                      try:
-                                          raw=await client.read(url,render=True)
-                                          if client.page.url!=url:raise ValueError('exact_location_changed')
-                                          item['source_sha256']=sha(raw.encode())
-                                          dom=BeautifulSoup(raw,'html.parser')
-                                          if not dom.html:raise ValueError('no_html')
-                                          dom.html['data-loyalty-probe-location']=client.page.url
-                                          clean,identity=sanitized_page(str(dom),url)
-                                          data=clean.encode();name=sha(data)+'.html';(out/name).write_bytes(data)
-                                          item.update(file=name,saved_sha256=sha(data),bytes=len(data),identity=identity)
-                                      except Exception as exc:
-                                          item['error']=str(exc) if isinstance(exc,(RuntimeError,ValueError)) else type(exc).__name__
-                                      finally:
-                                          item['responses']=responses;item['finished_at']=now()
-                                          client.page.remove_listener('response',record)
-                                      if item.get('error'):break
-                              except Exception as exc:
-                                  group['error']=str(exc) if isinstance(exc,RuntimeError) else type(exc).__name__
-                                  group['robots']=getattr(client,'robots_info',{})
+                      async with PublicSource(browser,url) as client:
+                          await client.robots();audit['robots']=client.robots_info
+                          client.request_interval=max(client.request_interval,3)
+                          def record(response):
+                              if response.request.is_navigation_request() and response.request.frame==client.page.main_frame:
+                                  audit['responses'].append({'url':response.url,'status':response.status})
+                          client.page.on('response',record)
+                          audit['requested_at']=now()
+                          raw=await client.read(url,render=True)
+                          if client.page.url!=url:raise ValueError('exact_location_changed')
+                          audit['source_sha256']=sha(raw.encode())
+                          dom=BeautifulSoup(raw,'html.parser')
+                          if not dom.html:raise ValueError('no_html')
+                          dom.html['data-loyalty-probe-location']=client.page.url
+                          clean,identity=sanitized_page(str(dom),url)
+                          data=clean.encode();name=sha(data)+'.html';(out/name).write_bytes(data)
+                          audit.update(file=name,saved_sha256=sha(data),bytes=len(data),identity=identity)
                   finally:await browser.close()
           try:asyncio.run(main())
-          except Exception as exc:audit['failure']=type(exc).__name__
-          audit['finished_at']=now()
-          audit['successful']=sum('file' in p for g in audit['groups'] for p in g['pages'])
-          audit['complete']=audit['successful']==sum(map(len,groups))
+          except Exception as exc:audit['error']=str(exc) if isinstance(exc,(RuntimeError,ValueError)) else type(exc).__name__
+          audit['finished_at']=now();audit['complete']='file' in audit
           (out/'audit.json').write_text(json.dumps(audit,ensure_ascii=False,indent=2))
-          print(json.dumps({'complete':audit['complete'],'successful':audit['successful']}))
+          print(json.dumps({'complete':audit['complete'],'error':audit.get('error')}))
           PY
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
