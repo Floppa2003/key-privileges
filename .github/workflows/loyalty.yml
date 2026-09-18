@@ -9,6 +9,10 @@ on:
         description: Maximum detail pages per source (1-500; coverage reported separately)
         default: "500"
         type: string
+      sources:
+        description: Comma-separated registered source IDs; blank keeps the complete normal scope
+        default: ""
+        type: string
       publish:
         description: Publish normalized offers after Google authorization
         default: false
@@ -44,7 +48,8 @@ jobs:
       - name: Collect public normalized offers (no Google credentials)
         env:
           PAGE_LIMIT: ${{ inputs.limit || '500' }}
-        run: xvfb-run -a python loyalty/collect_normalized.py --limit "$PAGE_LIMIT"
+          SOURCE_IDS: ${{ inputs.sources || '' }}
+        run: xvfb-run -a python loyalty/collect_normalized.py --limit "$PAGE_LIMIT" --sources "$SOURCE_IDS"
       - name: Validate publication payload without access to Google
         if: always()
         run: |
