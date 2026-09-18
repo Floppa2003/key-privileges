@@ -1,0 +1,55 @@
+name: Check hotel-owned RZD campaign once
+on:
+  push:
+    branches: ['loyalty/rzd-grand-karat-public-20260918']
+    paths: [.github/workflows/karat-public-check-once.yml]
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with: {python-version: '3.12'}
+      - run: python -m pip install -r loyalty/requirements.txt
+      - run: python -m playwright install --with-deps chromium
+      - name: Preserve only public source evidence
+        run: |
+          python - <<'PY'
+          import asyncio,hashlib,json,sys
+          from pathlib import Path
+          from datetime import datetime,timezone
+          sys.path.insert(0,'loyalty')
+          from bs4 import BeautifulSoup
+          from playwright.async_api import async_playwright
+          from public_transport import PublicSource,check_response
+          from free_access_probe import sanitized_page
+          def now():return datetime.now(timezone.utc).isoformat()
+          async def main():
+              url='https://grandkarat.com/special-offer/';out=Path('karat-public-check');out.mkdir();item={'url':url,'requested_at':now()}
+              try:
+                  async with async_playwright() as p:
+                      browser=await p.chromium.launch()
+                      async with PublicSource(browser,url) as source:
+                          await source.robots();item['robots']=source.robots_info
+                          source.check_url(url);await asyncio.sleep(max(2,source.request_interval))
+                          status,raw=await source.navigate(url);item.update(status=status,final_url=source.page.url)
+                          check_response(status,raw)
+                          if source.page.url!=url or len(raw.encode())>6000000:raise ValueError('document_scope_or_size')
+                          soup=BeautifulSoup(raw,'html.parser');soup.html['data-loyalty-probe-location']=url
+                          safe,_=sanitized_page(str(soup),url);data=safe.encode();(out/'page.html').write_bytes(data)
+                          item.update(file='page.html',sha256=hashlib.sha256(data).hexdigest(),read_at=now())
+                      await browser.close()
+              except Exception as exc:item['error']=str(exc)[:180] if isinstance(exc,(ValueError,RuntimeError)) else type(exc).__name__
+              item['finished_at']=now();(out/'manifest.json').write_text(json.dumps(item,ensure_ascii=False,indent=2))
+          asyncio.run(main())
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: karat-public-check-${{ github.run_id }}-${{ github.run_attempt }}
+          path: karat-public-check/
+          retention-days: 7
