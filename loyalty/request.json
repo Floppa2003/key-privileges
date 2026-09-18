@@ -1,8 +1,8 @@
 {
-  "request_id": "2026-09-19-alfa-partner-pdf-offers-67",
+  "request_id": "2026-09-19-alfa-partner-pdf-offers-68",
   "source_ids": [
     "alfa_only_partner_pdf_offers"
   ],
-  "reason": "Collect and publish only the reviewed public Alfa Only partner promotion PDFs added by PR67. Fresh-fetch exact Alfa-owned PDFs, preserve source-derived validity (including expired Takhauli), exact 10% rate/cap/scope, and verify Sheet readback. Do not authenticate to Alfa-Bank, infer personalized offers or user tier, activate offers, or crawl unrelated programs.",
+  "reason": "Collect and publish the five reviewed public Alfa Only partner promotion PDFs after PR68. Fresh-fetch exact Alfa-owned PDFs, including newly added FRESA and Mama Tuta / Probka; preserve source-derived validity, exact 10% rate/cap/scope, and verify Sheet readback. Do not authenticate to Alfa-Bank, infer personalized offers or user tier, activate offers, or crawl unrelated programs.",
   "publish": true
 }
