@@ -25,34 +25,46 @@ A source's brief offer-specific terms remain necessary. The correction does **no
 
 Measure progress by covered partners/offers and usable redemption information, not PDF pages, document parts, exclusion products, field-check counts or total retained rows. An intentionally omitted general document is **out of scope**, not an unresolved coverage gap, source failure or proof of GitHub impossibility.
 
-## Implementation state of this correction
+## Accepted implementation — do not repeat the migration
 
-**This commit changes the requirements/handoff only.** No collector code, workflow schedule, Sheet contents, sharing or keys were changed. Existing full-document collectors and stored document rows have NOT yet been disabled, compacted, hidden or deleted. Do not claim otherwise from this policy update.
+**The correction is implemented and destination-verified**, not requirements-only. Detailed evidence and verification limits: **PRACTICAL_SCOPE_ACCEPTANCE.md**.
 
-The next implementation should first prevent bulk-document additions/republication, while preserving actual offer collectors and brief redemption conditions. Then remove standalone bulk texts from normal practical lookup, retaining source links, provenance and manual comments. Inspect actual records before changing them; do not blindly discard every `program_rules` record, every PDF or every record with zero automatically parsed benefits. Prefer a scoped reversible migration over deleting useful source data. Read back the resulting code/configuration and affected destination after the final write.
+- PR56 released the provenance-based practical filter, collection restrictions and reversible archive migration. Main execution `11fd53fc2153137e8986ece9e5df81c052997b8a`, run **35324821738:1**, migration job **105535582920**, completed successfully on 18 September 2026 at 08:35:46 UTC.
+- **64 bulk records** moved to hidden `parser_documents_archive`, retaining their 26 native source cells, original row positions and archive times. Their former source values are blank; rows were not deleted or shifted. Retained derived history is marked `retired_from_normalization`, not source-expired.
+- Fresh independent readback confirms **2494 parser records / 3142 unified records, verified/current**. Before migration: 2558/3206. All **3644 benefit components** remain; all **294 components containing literal codes** retain their IDs and values. The two retired code/delivery components had no literal codes. Counts are not unique merchants, personal usable-discount totals or distinct coupon strings.
+- The four current derived views contain 3142 records, 3644 benefits, 9652 conditions/costs and 651 code/delivery components. Every managed current field was recomputed and matched to a fresh export. Archive reconstruction also matched retained historical managed content; it is not an independently preserved old workbook export.
+- PR57 fixed a missed offline entrypoint: `unified_publish.py --offline-input` now applies the same practical filter and provenance audit as live publication. The real CLI regression failed before and passed after; replay of 3206 reconstructed historical inputs produces the identical 3142 practical records. **912 Python / 7 KEY tests plus schema validation passed** in run **35327225254:1**. A local all-suite attempt lacked dependencies and is not counted as passing.
+- PR57 main merge **37a9617572d03aeb9de260f82a2d4c1bba60974e** has the exact tested branch tree `d7d847313f44c48cea6116ea0b2813caddfda8ca`. Push-triggered migration/publication was skipped for that merge only to avoid rewriting an already verified Sheet. No schedule or live publisher behavior changed in PR57.
 
-Do not start another broad crawl, new API integration, account flow or document parser just to acknowledge this correction.
+The bulk Aeroflot linked-rules workflow is retired to a manual no-op without a schedule. Other released practical collectors remain: Coral offers and short lounge instructions without full contracts/PDF stage; RZD tour clauses and bank links without the general bank PDF; EKP practical linked HTML without full appendices; Utair short privileges without the full programme contract. Existing source-bundle validation remains before practical publication filtering. Do not blindly discard every `program_rules`, every PDF or every zero-rate record.
+
+Current source fingerprint: `84b18d0b76b5a2dca26913d5853cfa3fa392c8175e9d3be18abe47704abd5797`.
+Current generation: `f19389fda3fe508244b8b34b031e4173de07556523867f781815d70970cae325`.
+These are accepted stored-state identities, not universal source freshness. Post-PR57 native readback still matched both.
+
+## Practical lookup contract
+
+Use `normalized_records`, `normalized_benefits`, `normalized_conditions` and `normalized_codes` only where **Статус нормализации = current**. Their native filters are configured, but API/export readers must explicitly honor the status rather than treating all retained rows as current. Do not use `parser_documents_archive` in normal discount lookup.
+
+Search partner/title/offer text and practical conditions in `parser_offers` as well as the derived views; a missing automatically recognized benefit is not proof of no discount. `current` means current normalization, **not** current validity. Before answering, inspect the matched offer's source/validity status, original observation time, membership requirement, geography and redemption channel. Do not infer the owner's eligibility or combine different programme rates.
 
 ## Remaining work, under the corrected goal
 
-1. Apply the practical-only scope to existing collection/publication and lookup. The old external-document backlog is no longer a priority or a prerequisite for completion.
-2. RZD has eight historically unread offer-detail pages, with previews retained. Revisit only missing benefit/redemption information: two prior transient imports were Renaissance Life Smart Plus and Grand Karat Sochi; six other pages showed login forms. Targeted retry mode was not implemented at the preceding checkpoint. Do not reread the whole catalogue just to chase two imports.
-3. EKP has 110 historically gated observations. Establish whether useful offer information is actually missing before starting an account-dependent project. No source-account session is connected; authentication and safe publication remain separate boundaries.
-4. Check catalogue discovery only where it can reveal missing offers, including Coral interactive/sitemap differences. General attached regulations do not contribute to this denominator.
-5. Preserve the existing source-validation and queue/retry reliability improvements. Search partner/title/offer text and practical conditions, not only derived benefit rows; a missing automatic benefit match is not proof of no discount.
+1. RZD has eight historically unread offer-detail pages, with previews retained. Revisit only missing benefit/redemption information: two prior transient imports were Renaissance Life Smart Plus and Grand Karat Sochi; six other pages showed login forms. Targeted retry mode was not implemented at this checkpoint. Do not reread the whole catalogue just to chase two imports.
+2. EKP has 110 historically gated observations. Establish whether useful offer information is actually missing before starting an account-dependent project. No source-account session is connected; authentication and safe publication remain separate boundaries.
+3. Check catalogue discovery only where it can reveal missing offers, including Coral interactive/sitemap differences. General attached regulations do not contribute to this denominator.
+4. Preserve source-validation and queue/retry reliability. The correction and offline repair did not re-fetch source offers, refresh all timestamps or verify every future scheduled run.
 
-## Technical baseline and recovery references — historical, not newly verified here
+Do not start another broad crawl, new API integration, account flow or document parser merely to continue from this checkpoint. First resolve a concrete missing practical offer or demonstrated defect.
 
-The complete preceding checkpoint, including every accepted scope, schedule, bound, digest, limitation and recovery instruction, is preserved at:
+## Historical recovery references
 
-`b118c4425a010992c5b71e30bc4b94176c292c25:loyalty/COVERAGE_CURRENT.md`
+The preceding exhaustive-document checkpoint is preserved at `b118c4425a010992c5b71e30bc4b94176c292c25:loyalty/COVERAGE_CURRENT.md`. The subsequent requirements-only checkpoint is preserved in `11fd53fc2153137e8986ece9e5df81c052997b8a:loyalty/COVERAGE_CURRENT.md`; its “not implemented” status is now superseded.
 
-Latest accepted code release remains PR55 (Samson extension), main run `35315811926:1`, execution commit `f3f27c1187b40133ce940d3a58bb44ee06b49094`. Its source-to-Sheet acceptance is in `SAMSON_LINKED_ACCEPTANCE.md`. Previous recorded destination totals were 2558 retained parser records / 3206 common records, `verified/current`; those include now-out-of-scope documents and are **not practical-offer counts**. No fresh Sheet read was made for this requirements-only correction.
-
-Other persistent evidence: `AEROFLOT_LINKED_ACCEPTANCE.md`, `EKP_LINKED_ACCEPTANCE.md`, `RZD_EXTERNAL_ACCEPTANCE.md`, `CORAL_PDF_ACCEPTANCE.md`, `CORAL_LINKED_RULES_ACCEPTANCE.md`, `CORAL_RETRY_ACCEPTANCE.md`, `RZD_PREVIEW_ACCEPTANCE.md`, `AEROFLOT_ACCESS_STATUS.md`, `AIRLINE_COVERAGE.md`. These are historical implementation evidence, not a mandate to keep collecting every document. Interrupted chat output is not a rollback; inspect main/branches/runs/destination before reimplementing accepted work.
+Other persistent evidence: `SAMSON_LINKED_ACCEPTANCE.md`, `AEROFLOT_LINKED_ACCEPTANCE.md`, `EKP_LINKED_ACCEPTANCE.md`, `RZD_EXTERNAL_ACCEPTANCE.md`, `CORAL_PDF_ACCEPTANCE.md`, `CORAL_LINKED_RULES_ACCEPTANCE.md`, `CORAL_RETRY_ACCEPTANCE.md`, `RZD_PREVIEW_ACCEPTANCE.md`, `AEROFLOT_ACCESS_STATUS.md`, `AIRLINE_COVERAGE.md`. These are historical implementation evidence, not a mandate to keep collecting every document. Interrupted chat output is not a rollback; inspect main/branches/runs/destination before reimplementing accepted work.
 
 ## Unchanged operating and privacy constraints
 
 Destination: `скидки`, spreadsheet `1uFR7croj7p6RRNPcoTRYlVl06hKsurkIgyu1IdMMB-4`. Recurring GitHub-controlled updates, no paid service, rented/administered server or always-on user computer. Existing free ScrapingAnt and Google WIF; no extra provider account. Coral registration is already complete; do not ask for it again. Aeroflot parsing permission is owner-reported and does not waive other hosts' policies or authorize private-account access, coupon issuance, bookings, purchases or spending bonuses.
 
-The last ACL inspection noted `anyone:writer`; it was not rechecked or changed here. `private_complete` is a normalizer mode, not access control. Source sessions and personal coupons must not enter public artifacts or a link-accessible Sheet. Private exports stay private. Existing queue serialization, source identity, timestamps, bounded requests and no-canned-answer requirements remain in force.
+The last ACL inspection noted `anyone:writer`; it was not rechecked or changed in this continuation. `private_complete` is a normalizer mode, not access control; a hidden archive is not private storage. Source sessions and personal coupons must not enter public artifacts or a link-accessible Sheet. Private exports stay private. Existing queue serialization, source identity, timestamps, bounded requests and no-canned-answer requirements remain in force.
