@@ -33,10 +33,9 @@ jobs:
           BOT='LoyaltyCatalogResearchBot'
           urls=[
             'https://alfabank.ru/everyday/package/premium/',
-            'https://alfabank.ru/everyday/package/premium/tsum/',
           ]
           roots=[{'id':'alfa_public_'+str(i),'url':u} for i,u in enumerate(urls)]
-          reader=FreeReader(os.environ.get('SCRAPINGANT_API_KEY',''),roots,max_credits=25,max_requests=4)
+          reader=FreeReader(os.environ.get('SCRAPINGANT_API_KEY',''),roots,max_credits=12,max_requests=2)
           report={'status':'started','pages':[],'account_session_used':False,'publication':False}
           try:
             reader.preflight()
@@ -60,7 +59,7 @@ jobs:
                   text_chars=len(visible),headings=heads[:160],text_sample=visible[:12000],**meta)
                 Path('alfa-public-probe/'+('root' if url==urls[0] else 'tsum')+'.html').write_text(clean)
               except Exception as exc:
-                item['status']='failed';item['error']=str(exc) if isinstance(exc,(ProbeError,RuntimeError)) else 'probe_error'
+                item['status']='failed';item['error']=str(exc) if isinstance(exc,(ProbeError,RuntimeError)) else ('probe_'+type(exc).__name__)
               report['pages'].append(item)
             report['status']='checked'
           except Exception as exc:
