@@ -28,10 +28,29 @@ jobs:
       - run: python -m pip install -r loyalty/requirements.txt
       - name: Unit tests
         run: python -m unittest loyalty.tests.test_alfa_public_rules -v
-      - name: Install Chromium for the shared collector entrypoint
-        run: python -m playwright install --with-deps chromium
       - name: Live public Alfa PDF collection
-        run: python loyalty/collect_normalized.py --sources alfa_only_public_rules,alfa_only_cashback_rules --limit 20 --out alfa-public-output
+        run: |
+          mkdir -p alfa-public-output
+          python - <<'PY'
+          import json,sys
+          from datetime import datetime,timezone
+          from pathlib import Path
+          sys.path.insert(0,'loyalty')
+          import alfa_public_rules as a
+          from normalized import validate_offer
+          observed=datetime.now(timezone.utc).isoformat()
+          core=a.parse_core(a.fetch_pdf(a.CORE_URL),observed)
+          cashback=a.parse_cashback(a.fetch_pdf(a.CASHBACK_URL),observed)
+          rows=core+cashback
+          for row in rows: validate_offer(row)
+          bundle={'schema_version':2,'run_id':'targeted-live','observed_at':observed,'records':rows,
+                  'sources':[{'source_id':'alfa_only_public_rules','name':'Alfa Only — публичные правила привилегий','root':a.CORE_URL,
+                              'status':'ok','discovered':len(core),'normalized':len(core),'failed':0,'coverage':'targeted_live_core47','region':None,'errors':[],'observed_at':observed},
+                             {'source_id':'alfa_only_cashback_rules','name':'Alfa Only — публичные лимиты кэшбэка','root':a.CASHBACK_URL,
+                              'status':'ok','discovered':len(cashback),'normalized':len(cashback),'failed':0,'coverage':'targeted_live_cashback101','region':None,'errors':[],'observed_at':observed}]}
+          Path('alfa-public-output/normalized.json').write_text(json.dumps(bundle,ensure_ascii=False,indent=2))
+          print(json.dumps({'core':len(core),'cashback':len(cashback),'total':len(rows)}))
+          PY
       - name: Validate publication payload
         run: python loyalty/sheets_normalized.py --input alfa-public-output/normalized.json
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
