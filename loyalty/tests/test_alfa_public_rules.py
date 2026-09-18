@@ -26,6 +26,15 @@ CORE_TEXT = """
 6.8.3. Если Участник и сопровождающие его лица не смогут посетить Бизнес-зал в течение 24 часов, списанные Баллы подлежат восстановлению. На ресурсе Партнера необходимо нажать на кнопку «Вернуть» в течение 24 часов.
 Промо-баллы могут быть использованы на получение Услуги по предоставлению доступа к Подписке на РБК участниками с суммой от 6 000 000 рублей.
 6.5.1. В мобильном приложении выбрать раздел «Alfa Only», «Стиль жизни», РБК и авторизоваться через Alfa ID.
+6.2. Участнику 3, Участнику 4, Участнику 5 и Участнику 7 доступна Услуга «Консьерж сервис». Для получения Услуги «Консьерж сервис» необходимо со своего мобильного номера телефона, зарегистрированного в Банке, обратиться по Телефону Партнера.
+Телефон Партнера – круглосуточная выделенная телефонная линия +7 499-965-8083 Партнера по предоставлению Услуги «Консьерж сервис».
+6.3. Участнику 1, Участнику 2, Участнику 3, Участнику 4, Участнику 5 и Участнику 7 доступен статус Silver в программе SimplePrivé. Для получения статуса Silver в программе SimplePrivé необходимо перейти по уникальной ссылке в мобильном приложении на страницу Партнера и при оформлении покупки указать мобильный номер телефона, зарегистрированный в Банке, обратиться по Телефону Партнера к персональному менеджеру.
+Статус Silver в программе SimplePrivé – комплекс информационно-сервисных и консультационных услуг, которые Партнер предоставляет специально для Клиентов. Подробнее на сайте Партнера https://simplewine.ru.
+6.4. Участнику 3, Участнику 4, Участнику 5 и Участнику 7 доступна Услуга доступа к контенту.
+6.4.1. При переходе в раздел «Alfa Only» раздел «Стиль жизни» необходимо нажать на кнопку «1001+ книг в Smart Reading», в результате чего осуществляется переход на ресурс Партнера. Для получения Услуги требуется оформление Согласия «Alfa ID».
+Страхование ВЗР – страхование выезжающих за рубеж, предоставляемое АО «АльфаСтрахование».
+Услуга по Страхованию ВЗР 1 (один) раз – 1 Промо-балл.
+Единовременно Участнику Программы может предоставляться не более одной услуги по Страхованию ВЗР.
 """
 
 CASHBACK_TEXT = """
@@ -61,13 +70,15 @@ class AlfaPublicRulesTests(unittest.TestCase):
         self.assertFalse(calls[0][1]["allow_redirects"])
         with self.assertRaises(ValueError):a.fetch_pdf(a.CORE_URL+"?tracking=1",get=get)
 
-    def test_core_parser_emits_five_practical_records(self):
+    def test_core_parser_emits_nine_practical_records(self):
         with patch.object(a,"pdf_text",return_value=CORE_TEXT):
             rows=a.parse_core(b"%PDF-core",NOW)
-        self.assertEqual(len(rows),5)
+        self.assertEqual(len(rows),9)
         self.assertEqual([r["native_id"] for r in rows],[
             "core47:taxi-transfer-carsharing","core47:lounge-reimbursement",
-            "core47:airport-restaurants","core47:qr-lounges","core47:rbc"])
+            "core47:airport-restaurants","core47:qr-lounges","core47:rbc",
+            "core47:concierge","core47:simpleprive-silver","core47:smart-reading",
+            "core47:travel-insurance"])
         for r in rows:
             validate_offer(r)
             self.assertEqual(r["source_status"],"public_rules_document")
@@ -115,8 +126,8 @@ class AlfaPublicRulesTests(unittest.TestCase):
                 report,rows=await c.one(None,cfg,NOW,500)
                 ps.assert_not_called()
             self.assertEqual(report["status"],"ok")
-            self.assertEqual(report["discovered"],5)
-            self.assertEqual(len(rows),5)
+            self.assertEqual(report["discovered"],9)
+            self.assertEqual(len(rows),9)
         asyncio.run(exercise())
 
     def test_authenticated_catalogue_probe_remains_separate_zero_source(self):
