@@ -1,5 +1,8 @@
 {
-  "request_id": "2026-09-18-hse-alfa-public-sources-63",
-  "source_ids": ["hse_alumni", "alfa_only_partner_offers"],
-  "reason": "Collect only the two explicitly requested URLs after PR63. Publish fresh HSE owned-anchor offers and honest previews for absent source details, preserving dates, literal codes and separate conditions. The Alfa source remains an access probe: a failed read is not absent cashback, not a proven login requirement and not permission to fabricate personal offers. Keep every original source/manual record, programme boundary, archive and formula unchanged. Use the existing main-only same-Sheet writer and verify completed readback. Do not authenticate bank accounts, activate offers, claim codes, disable TLS validation, change sharing, buy anything or crawl unrelated catalogues."
+  "request_id": "2026-09-18-alfa-public-rules-65",
+  "source_ids": [
+    "alfa_only_public_rules",
+    "alfa_only_cashback_rules"
+  ],
+  "reason": "Publish only the two new public Alfa-owned rules sources after PR65. Collect exact official PDFs for core rev47 and reverse-cashback rev101, preserve the authenticated partner-offers source as a separate gated zero, and publish only the 10 validated public practical records. Do not authenticate a bank account, infer the user's Alfa Only tier or personalized cashback rates, follow bank-auth redirects, activate offers, change sharing, or crawl unrelated programmes. Preserve all existing source/manual rows, formulas and archives and verify readback."
 }
