@@ -104,7 +104,16 @@ For the **full requested Alfa partner-offers source**, the remaining obstacle is
 
 The next high-leverage path for Alfa is a **separately authorized authenticated bank session with private storage**, if the owner wants that. The current public/link-accessible Sheet is not an acceptable destination for authenticated banking data.
 
-Until that authorization/privacy boundary is explicitly changed, Alfa stays a truthful `failed / 0 offers` full-catalogue source rather than fabricated coverage.
+Until that authorization/privacy boundary is explicitly changed, the exact authenticated partner-offers catalogue stays a truthful `failed / 0 offers` full-catalogue source rather than fabricated coverage.
+
+## Follow-up: anonymous frontier was not yet exhausted
+
+A later review found two materially different public routes that were not covered by the first spike:
+
+1. **ScrapingAnt v2 extended response** (cookies + XHR/fetch capture). Run **35388278627** returned origin 200, the challenge cookie name `spid`, **0 XHR/fetch requests**, 0 visible text and the same ServicePipe shell. A second request chained the returned cookie and again produced the same challenge shell. This closes the important “challenge cookie / hidden public XHR” hypothesis for the datacenter route.
+2. **Alfa-owned public loyalty PDFs on `alfabank.servicecdn.ru` / `alfabank.st`**. Search-indexed current documents include 2026 loyalty-rule revisions (for example revision 46) with detailed Alfa Only-relevant mechanics: lounge access, airport restaurant reimbursement, participant tiers and explicit references to `/everyday/package/premium/` and `/premium/tsum/`. This is a separate public evidence layer and is not blocked by the authenticated `web.alfabank.ru/partner-offers/` boundary.
+
+Therefore it is **not correct** to say that every useful anonymous GitHub path has been exhausted. The next public-first work item is to discover the freshest official Alfa loyalty-rule document(s), parse the practical Alfa Only privileges they actually support, and determine which benefits can be refreshed reliably from Alfa-owned CDN documents before considering authenticated banking access.
 
 ## Priority consequence
 
