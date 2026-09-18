@@ -1,0 +1,54 @@
+name: Check existing official public CA downloads
+on:
+  push:
+    branches: ['diagnostics/mir-last-pages-20260918']
+    paths: [.github/workflows/public-ca-check.yml]
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with: {python-version: '3.12'}
+      - run: python -m pip install requests==2.32.5
+      - name: Official certificate bytes only, ordinary verified HTTPS, no bank request or credentials
+        run: |
+          python - <<'PY'
+          import hashlib,json,os,sys,time,subprocess
+          from pathlib import Path
+          from datetime import datetime,timezone
+          import requests
+          sys.path.insert(0,'loyalty')
+          from recovered_contract import CA_FILES
+          out=Path('public-ca-check');out.mkdir()
+          audit={'run_id':os.environ['GITHUB_RUN_ID']+':'+os.environ['GITHUB_RUN_ATTEMPT'],'commit':os.environ['GITHUB_SHA'],
+                 'account_used':False,'bank_requested':False,'system_trust_modified':False,'certificates':[]}
+          for url,pin in CA_FILES:
+              item={'url':url,'started_at':datetime.now(timezone.utc).isoformat()};audit['certificates'].append(item)
+              try:
+                  with requests.get(url,timeout=(8,20),stream=True,allow_redirects=False,verify=True) as r:
+                      item['status']=r.status_code
+                      if r.status_code!=200 or r.headers.get('Retry-After'):raise RuntimeError('certificate_unavailable_no_retry')
+                      raw=bytearray();deadline=time.monotonic()+25
+                      for chunk in r.iter_content(4096):
+                          raw.extend(chunk)
+                          if len(raw)>16384 or time.monotonic()>deadline:raise RuntimeError('certificate_size_or_time_bound')
+                  digest=hashlib.sha256(raw).hexdigest()
+                  if digest!=pin:raise RuntimeError('certificate_pin_changed')
+                  file=out/url.rsplit('/',1)[1];file.write_bytes(raw)
+                  item.update(sha256=digest,file=file.name,bytes=len(raw),metadata=subprocess.check_output(['openssl','x509','-in',str(file),'-noout','-subject','-issuer','-dates','-fingerprint','-sha256'],text=True))
+              except Exception as exc:item['error']=str(exc) if isinstance(exc,RuntimeError) else type(exc).__name__
+              finally:item['finished_at']=datetime.now(timezone.utc).isoformat()
+          (out/'audit.json').write_text(json.dumps(audit,indent=2))
+          print(json.dumps(audit))
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: public-ca-check-${{ github.run_id }}-${{ github.run_attempt }}
+          path: public-ca-check/
+          retention-days: 7
