@@ -25,8 +25,9 @@ jobs:
           from pathlib import Path
           p=Path('loyalty/public-gap-update.patch')
           assert hashlib.sha256(p.read_bytes()).hexdigest()=='05e5b2438f99e342830cc1c4a41a064a5b8d8d482697e0b6ee0229c5f0a3fbcd'
-          subprocess.run(['git','apply','--check',str(p)],check=True)
-          subprocess.run(['git','apply',str(p)],check=True)
+          excludes=['--exclude=.github/workflows/loyalty.yml','--exclude=.github/workflows/loyalty-request.yml']
+          subprocess.run(['git','apply','--check',*excludes,str(p)],check=True)
+          subprocess.run(['git','apply',*excludes,str(p)],check=True)
           module=Path('loyalty/partner_pages.py');updated=module.read_bytes()
           try:
               module.write_bytes(subprocess.check_output(['git','show','HEAD:loyalty/partner_pages.py']))
@@ -51,15 +52,15 @@ jobs:
         run: |
           test "$GITHUB_REF" = 'refs/heads/loyalty/public-gap-completion-20260918'
           rm .github/workflows/public-gap-probe-once.yml .github/workflows/ekp-public-targets-once.yml .github/workflows/prepare-public-gaps-once.yml loyalty/public-gap-update.patch
-          git add loyalty/partner_pages.json loyalty/sources_normalized.json loyalty/partner_pages.py loyalty/source_selection.py loyalty/collect_normalized.py loyalty/request.sh .github/workflows/loyalty.yml .github/workflows/loyalty-request.yml loyalty/tests/test_public_gap_partner_pages.py loyalty/tests/test_public_gap_selection.py
+          git add loyalty/partner_pages.json loyalty/sources_normalized.json loyalty/partner_pages.py loyalty/source_selection.py loyalty/collect_normalized.py loyalty/request.sh loyalty/tests/test_public_gap_partner_pages.py loyalty/tests/test_public_gap_selection.py
           git add -u .github/workflows loyalty/public-gap-update.patch
           git diff --cached --stat > public-gap-tests/change-stat.txt
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git commit -m 'Add source-bound EKP partner terms and explicit registered-source refreshes'
-          git -c credential.helper= -c 'credential.helper=!gh auth git-credential' push origin HEAD:refs/heads/loyalty/public-gap-completion-20260918
           git rev-parse HEAD > public-gap-tests/proposed-commit.txt
           tar -cf public-gap-tests/code.tar loyalty key .github/workflows
+          git -c credential.helper= -c 'credential.helper=!gh auth git-credential' push origin HEAD:refs/heads/loyalty/public-gap-completion-20260918
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
