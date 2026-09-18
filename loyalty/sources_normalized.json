@@ -697,5 +697,19 @@
     "mode": "probe",
     "url": "https://web.alfabank.ru/partner-offers/",
     "timeout_seconds": 45
+  },
+  {
+    "id": "alfa_only_public_rules",
+    "name": "Alfa Only — публичные правила привилегий",
+    "mode": "probe",
+    "url": "https://alfabank.servicecdn.ru/site-upload/4b/2c/2366/prog_loyal_v47.pdf",
+    "timeout_seconds": 60
+  },
+  {
+    "id": "alfa_only_cashback_rules",
+    "name": "Alfa Only — публичные лимиты кэшбэка",
+    "mode": "probe",
+    "url": "https://alfabank.servicecdn.ru/site-upload/22/13/2366/Loyalty_program_rules_revCashBack_03042026.pdf",
+    "timeout_seconds": 60
   }
 ]
