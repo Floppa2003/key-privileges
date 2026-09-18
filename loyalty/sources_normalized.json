@@ -617,5 +617,60 @@
     "mode": "html",
     "coverage_scope": "one_reviewed_public_partner_page_not_authenticated_card",
     "timeout_seconds": 120
+  },
+  {
+    "id": "ekp_ilocked_chuzhoy",
+    "name": "ЕКП → iLocked — Чужой",
+    "mode": "html",
+    "url": "https://ilocked.ru/quest/chuzhoy"
+  },
+  {
+    "id": "ekp_ilocked_mumiya",
+    "name": "ЕКП → iLocked — Мумия",
+    "mode": "html",
+    "url": "https://ilocked.ru/quest/mumiya"
+  },
+  {
+    "id": "ekp_ilocked_morskoy_boy",
+    "name": "ЕКП → iLocked — Морской бой",
+    "mode": "html",
+    "url": "https://ilocked.ru/quest/morskoy-boy"
+  },
+  {
+    "id": "ekp_ilocked_gold_rush",
+    "name": "ЕКП → iLocked — Золотая лихорадка",
+    "mode": "html",
+    "url": "https://ilocked.ru/quest/gold_rush"
+  },
+  {
+    "id": "ekp_ilocked_among_us",
+    "name": "ЕКП → iLocked — AMONG US",
+    "mode": "html",
+    "url": "https://ilocked.ru/quest/among_us"
+  },
+  {
+    "id": "ekp_ilocked_morskoi_boi_kids",
+    "name": "ЕКП → iLocked — Морской бой. KIDS",
+    "mode": "html",
+    "url": "https://ilocked.ru/quest/morskoi-boi-kids"
+  },
+  {
+    "id": "ekp_ilocked_poslednyaya_tayna_da_vinchi",
+    "name": "ЕКП → iLocked — Последняя тайна Да Винчи",
+    "mode": "html",
+    "url": "https://ilocked.ru/quest/poslednyaya-tayna-da-vinchi"
+  },
+  {
+    "id": "ekp_ilocked_atlantida_kosmicheskaya_odisseya_0",
+    "name": "ЕКП → iLocked — Атлантида: космическая Одиссея",
+    "mode": "html",
+    "url": "https://ilocked.ru/quest/atlantida-kosmicheskaya-odisseya-0"
+  },
+  {
+    "id": "ilocked_certificate_terms",
+    "name": "iLocked — ограничения скидок по сертификатам",
+    "mode": "html",
+    "url": "https://ilocked.ru/certificate",
+    "coverage_scope": "one_short_discount_restriction_not_full_contract"
   }
 ]
