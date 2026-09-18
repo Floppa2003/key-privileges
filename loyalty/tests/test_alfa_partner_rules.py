@@ -82,6 +82,19 @@ class AlfaPartnerPdfTests(unittest.TestCase):
         self.assertEqual(row['details']['transaction_scope'],'first_transaction_each_calendar_month')
         self.assertEqual(row['valid_until'],'2026-10-31')
 
+    def test_fresa_current_first_transaction_and_multi_tsp_appendix(self):
+        spec=a.BY_ID['fresa_0226']
+        raw=fixture(start='01 февраля 2026',end='30 ноября 2026',legal='ООО «СОМ»',
+                    ogrn=spec['ogrn'],city='г.Москва, г.Санкт-Петербург, г.Владивосток',
+                    address='1 «FRESA» г. Санкт-Петербург, Вознесенский пр, 6; 2 «Saviv Moscow» г. Москва, Петровка, 30/7',
+                    scope='первой',first=True)
+        with patch.object(a,'pdf_text',return_value=raw):
+            row=a.parse_document(spec,b'%PDF-fresa',NOW)
+        self.assertEqual(row['valid_until'],'2026-11-30')
+        self.assertEqual(row['details']['transaction_scope'],'first_transaction_each_calendar_month')
+        self.assertEqual(row['validity_status'],'within_published_period')
+        self.assertEqual(row['rates'][0]['value'],'10')
+
     def test_takhauli_expiry_is_source_derived_not_search_inferred(self):
         spec=a.DOCS[2]
         raw=fixture(start='01 февраля 2026',end='31 августа 2026',legal='ООО «ОЛИВЬЕ»',
@@ -119,6 +132,9 @@ class AlfaPartnerPdfTests(unittest.TestCase):
             'betulla_0126':fixture(),
             'r14_0126':fixture(end='31 октября 2026',legal='ООО «ЗЕН»',ogrn='1047855044203',
                               address='Санкт-Петербург, Ул. Академика Павлова, 5В',scope='первой',first=True),
+            'fresa_0226':fixture(start='01 февраля 2026',end='30 ноября 2026',legal='ООО «СОМ»',
+                                ogrn='1237800072377',city='г.Москва, г.Санкт-Петербург, г.Владивосток',
+                                address='1 «FRESA» г. Санкт-Петербург, Вознесенский пр, 6',scope='первой',first=True),
         }
         original_parse=a.parse_document
         async def exercise():
@@ -130,8 +146,8 @@ class AlfaPartnerPdfTests(unittest.TestCase):
             with patch.object(a,'fetch_pdf',side_effect=fake_fetch),patch.object(a,'parse_document',side_effect=fake_parse):
                 return await a.collect(cfg,report,NOW,20)
         rows=asyncio.run(exercise())
-        self.assertEqual(len(rows),2)
-        self.assertEqual(report['discovered'],3)
+        self.assertEqual(len(rows),3)
+        self.assertEqual(report['discovered'],4)
         self.assertEqual(report['errors'][0]['native_id'],'takhauli_0226')
 
 if __name__=='__main__':unittest.main()
