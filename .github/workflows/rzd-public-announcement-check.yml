@@ -1,0 +1,82 @@
+name: Check RZD public announcement alternatives
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/rzd-public-announcement-check.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  public-search:
+    if: github.repository == 'Floppa2003/key-privileges'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with: {python-version: '3.12'}
+      - run: python -m pip install -r loyalty/requirements.txt
+      - run: python -m playwright install --with-deps chromium
+      - name: Read eight public channel search pages with existing source policy and caption ownership checks
+        run: |
+          python - <<'PY'
+          import asyncio,hashlib,json,os,sys
+          from datetime import datetime,timezone
+          from pathlib import Path
+          from urllib.parse import urlencode
+          from bs4 import BeautifulSoup,Comment
+          from playwright.async_api import async_playwright
+          sys.path.insert(0,'loyalty')
+          from public_transport import PublicSource
+          from announcements import parse_feed,own_message_parts,caption_text
+          def now():return datetime.now(timezone.utc).isoformat()
+          out=Path('rzd-announcement-check');out.mkdir()
+          cfg=next(x for x in json.loads(Path('loyalty/sources_normalized.json').read_text()) if x['id']=='rzd_announcements')
+          cfg={**cfg,'lookback_days':366,'max_pages':1}
+          queries=['Адмиралтейская','Station','Chekhoff','Airo','Саквояж','Волгоград','Grand Karat','Ренессанс']
+          audit={'run_id':os.environ['GITHUB_RUN_ID']+':'+os.environ['GITHUB_RUN_ATTEMPT'],'commit':os.environ['GITHUB_SHA'],
+                 'started_at':now(),'account_used':False,'publication_performed':False,'queries':[]}
+          async def main():
+              async with async_playwright() as p:
+                  browser=await p.chromium.launch()
+                  try:
+                      async with PublicSource(browser,'https://t.me') as client:
+                          await client.robots();audit['robots']=client.robots_info
+                          client.request_interval=max(client.request_interval,3)
+                          for query in queries:
+                              url=cfg['url']+'?'+urlencode({'q':query})
+                              item={'query':query,'url':url,'started_at':now()};audit['queries'].append(item)
+                              try:
+                                  raw=await client.read(url)
+                                  # Retain only public post widgets and enough native DOM to replay ownership.
+                                  dom=BeautifulSoup(raw,'html.parser');clean=BeautifulSoup('<html><body></body></html>','html.parser')
+                                  for widget in dom.select('.tgme_widget_message[data-post]'):
+                                      clean.body.append(BeautifulSoup(str(widget),'html.parser'))
+                                  for tag in clean.select('script,style,form,input,textarea,iframe,img,video,svg'):
+                                      tag.decompose()
+                                  for comment in clean.find_all(string=lambda s:isinstance(s,Comment)):comment.extract()
+                                  for tag in clean.find_all(True):
+                                      tag.attrs={k:v for k,v in tag.attrs.items() if k in ('class','data-post','datetime','href')}
+                                  saved=str(clean);data=saved.encode();digest=hashlib.sha256(data).hexdigest()
+                                  file=digest+'.html';(out/file).write_bytes(data)
+                                  parsed=parse_feed(saved,cfg,item['started_at'])
+                                  item.update(file=file,sha256=digest,source_sha256=hashlib.sha256(raw.encode()).hexdigest(),
+                                              posts_scanned=parsed['scanned'],records=parsed['records'],parse_errors=parsed['errors'],
+                                              oldest_publication=parsed['oldest_publication'],newest_publication=parsed['newest_publication'])
+                              except Exception as exc:item['error']=str(exc)[:180] if isinstance(exc,RuntimeError) else type(exc).__name__
+                              item['finished_at']=now()
+                              (out/'audit.json').write_text(json.dumps(audit,ensure_ascii=False,indent=2))
+                              if item.get('error'):break
+                  finally:await browser.close()
+          try:asyncio.run(main())
+          except Exception as exc:audit['terminal_error']=type(exc).__name__
+          audit['finished_at']=now();(out/'audit.json').write_text(json.dumps(audit,ensure_ascii=False,indent=2))
+          print(json.dumps({'queries':len(audit['queries']),'unique_public_records':len({r['id'] for q in audit['queries'] for r in q.get('records',[])})}))
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: rzd-announcement-check-${{ github.run_id }}-${{ github.run_attempt }}
+          path: rzd-announcement-check/
+          retention-days: 7
