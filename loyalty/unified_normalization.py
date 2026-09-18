@@ -241,12 +241,14 @@ def normalize_record(raw, *, as_of):
     def code(value,path,scope=None,delivery='literal',fragment=None):
         return add('codes','promo_code',path,value=value,scope=scope,delivery=delivery,fragment=fragment)
     if d.get('scope')=='only_cards_in_current_public_partner_inventory':
-        from hse_alumni import PROGRAM,ROOT,claim_text,hse_rates
+        from hse_alumni import PROGRAM,ROOT,claim_text,hse_rates,source_location
         block=d.get('public_catalog_block',{})
-        if (raw['program']!=PROGRAM or raw['source_url']!=ROOT+'#'+block.get('anchor','')
+        if (raw['program']!=PROGRAM or raw['source_url']!=source_location(block,True)[0]
             or raw['conditions']!=block.get('body') or raw['benefit']!=claim_text(block.get('body',''))):
             raise ValueError('HSE owned evidence changed')
         scope={'anchor':block['anchor'],'programme_membership_not_verified':True}
+        if block.get('identity_method'):
+            scope.update(identity_method=block['identity_method'],detail_heading=block['detail_heading'])
         rule=condition('owned_partner_rules','/conditions',scope=scope)
         for rate in hse_rates(raw['benefit']):
             local={**scope,**_scope(rate['evidence'])}

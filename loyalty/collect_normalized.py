@@ -30,6 +30,7 @@ from utair_documents import collect_documents
 from recovered_sources import collect_recovered
 from utair_support import collect_utair
 from hse_alumni import collect_hse
+from alfa_access import collect_access as collect_alfa_access
 
 
 def error_record(exc,phase,url=''):
@@ -121,6 +122,7 @@ async def one(browser,cfg,now,limit):
         if cfg['mode']=='key':records=await collect_key(report,now)
         elif cfg['mode']=='recovered':records=await collect_recovered(cfg,report,now,limit)
         elif cfg['id']=='utair':records=await collect_utair(cfg,report,now,limit)
+        elif cfg['id']=='alfa_only_partner_offers':await collect_alfa_access(cfg,report)
         else:
             async with PublicSource(browser,cfg['url']) as client:
                 client.deadline=deadline
