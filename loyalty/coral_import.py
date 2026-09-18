@@ -39,7 +39,11 @@ def instant(s):
 
 def formula(url):
     if url not in (ROBOTS,SITEMAP,c.CLUB,c.PROMO) and not linked.is_rule_url(url):
-        if url.startswith(c.CLUB):c.checked_url(url,'/klub-privilegii/',3)
+        if url.startswith(c.CLUB):
+            # Category inventories are read only after current root discovery.
+            depth=len(urlsplit(url).path.strip('/').split('/'))
+            if depth not in (2,3):raise ValueError('cg_category_or_detail_depth')
+            c.checked_url(url,'/klub-privilegii/',depth)
         else:c.checked_url(url,'/promo/',2)
     return f'=IMPORTDATA("{url}";"¦";"en_US")'
 
