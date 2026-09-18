@@ -70,6 +70,27 @@ A formatting or identity mismatch fails closed for the individual PDF and is rep
 
 The source-specific rate normalizer intentionally derives **exact 10%** from section 3.2. The action title's wording “до 10%” remains source text but does not create a second contradictory normalized rate.
 
+### FRESA and other TSP of ООО «СОМ»
+- native ID: `fresa_0226`
+- URL: `https://alfabank.servicecdn.ru/site-upload/f6/ac/20418/fresa_only_02.26.pdf`
+- legal partner identity checked from source: ООО «СОМ», OGRN 1237800072377
+- published period: **2026-02-01 through 2026-11-30**
+- published partner rate: **10%**
+- published maximum: **1,500 Alfa-points / bonus miles per calendar month**
+- transaction scope: **first expense transaction in the partner TSP in each calendar month**
+- appendix includes FRESA and other named TSP in Saint Petersburg, Moscow and Vladivostok
+
+### Mama Tuta / Probka
+- native ID: `mamatuta_probka_spb_0126`
+- URL: `https://alfabank.servicecdn.ru/site-upload/01/03/1007/MamaTuta_Probka_spb_only_0126.pdf`
+- legal partner identity checked from source: ООО «Пробка-Север», OGRN 1137847157436
+- source PDF text contains malformed legal-name punctuation (`ООО Пробка-Север»`); parser acceptance still requires the reviewed legal-name marker and exact OGRN
+- published period: **2026-01-01 through 2026-10-31**
+- published partner rate: **10%**
+- published maximum: **1,500 Alfa-points / bonus miles per calendar month**
+- transaction scope: **first expense transaction in the partner TSP in each calendar month**
+- appendix identifies Mama Tuta and Probka at Zoologichesky Lane in Saint Petersburg
+
 ## Live acceptance
 
 Temporary pre-merge run **35399740563** on branch `loyalty/alfa-partner-pdfs`:
@@ -85,11 +106,28 @@ Temporary pre-merge run **35399740563** on branch `loyalty/alfa-partner-pdfs`:
 
 The temporary workflow used for this acceptance was deleted before PR creation.
 
+Expansion targeted live run **35402505220** on branch `loyalty/finish-catalogs`:
+
+- **10/10 partner-PDF unit tests passed**;
+- all **5** reviewed Alfa-owned PDFs were fetched live;
+- **5/5** records parsed with **0 source errors**;
+- normalized payload preparation accepted **5 parser offers / 1 coverage row**;
+- newly recovered current records: `fresa_0226` and `mamatuta_probka_spb_0126`.
+
+The expansion workflow is temporary and is removed before merge.
+
+Final expansion regression **35402721789**:
+
+- **1026/1026 Python tests passed**;
+- **7/7 KEY tests passed**;
+- all **5** reviewed Alfa-owned partner PDFs were fetched and parsed again;
+- **5/5** normalized offer records were accepted with zero source errors.
+
 ## Deliberate incompleteness
 
 This is **not** claimed to be an exhaustive inventory of every public Alfa Only partner PDF.
 
-A bounded web discovery pass also surfaced other 2026 Alfa-owned Alfa Only partner/action PDFs whose indexed published periods had already ended before 19 September 2026. They were not added merely to increase row count. The recurring source therefore records only the reviewed set above and carries `public_partner_pdf_inventory_not_exhaustive`.
+A bounded web discovery pass also surfaced other 2026 Alfa-owned Alfa Only partner/action PDFs whose indexed published periods had already ended before 19 September 2026. They were not added merely to increase row count. The recurring source therefore records only the **five reviewed documents** above and carries `public_partner_pdf_inventory_not_exhaustive`.
 
 Future expansion should add exact Alfa-owned partner documents only after:
 1. fresh source fetch;

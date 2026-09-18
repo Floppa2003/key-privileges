@@ -45,6 +45,21 @@ DOCS = [
         "ogrn": "1227700078726",
         "address_marker": "Малая Бронная",
     },
+    {
+        "native_id": "fresa_0226",
+        "display_name": "ООО «СОМ» — FRESA и другие ТСП",
+        "url": "https://alfabank.servicecdn.ru/site-upload/f6/ac/20418/fresa_only_02.26.pdf",
+        "ogrn": "1237800072377",
+        "address_marker": "Вознесенский",
+    },
+    {
+        "native_id": "mamatuta_probka_spb_0126",
+        "display_name": "Mama Tuta / Probka",
+        "url": "https://alfabank.servicecdn.ru/site-upload/01/03/1007/MamaTuta_Probka_spb_only_0126.pdf",
+        "ogrn": "1137847157436",
+        "legal_marker": "Пробка-Север",
+        "address_marker": "Зоологический",
+    },
 ]
 BY_URL = {x["url"]: x for x in DOCS}
 BY_ID = {x["native_id"]: x for x in DOCS}
@@ -156,12 +171,14 @@ def parse_document(spec: dict, data: bytes, observed_at: str) -> dict:
     valid_from, valid_until = validity(text)
 
     legal = re.search(
-        r"Партнер\s*[–—-]\s*(?P<legal>ООО\s*[«\"][^»\"]+[»\"]).{0,80}?ОГРН\s*[:№]?\s*(?P<ogrn>\d{13})",
+        r"Партнер\s*[–—-]\s*(?P<legal>ООО\s*(?:[«\"][^»\"]+[»\"]|[^,.;]{2,80}[»\"]?))\s*,?\s*ОГРН\s*[:№]?\s*(?P<ogrn>\d{13})",
         text,
         re.I,
     )
     if not legal or legal["ogrn"] != spec["ogrn"]:
         raise ValueError("alfa_partner_pdf_legal_identity")
+    if spec.get("legal_marker") and spec["legal_marker"].casefold() not in compact(legal["legal"]).casefold():
+        raise ValueError("alfa_partner_pdf_legal_name_mismatch")
 
     eligibility = must(
         text,
@@ -288,7 +305,7 @@ async def collect(cfg, report, observed_at: str, limit: int) -> list[dict]:
             errors.append({"phase": "partner_pdf", "native_id": spec["native_id"], "reason": reason[:160]})
     report["discovered"] = len(DOCS)
     report["coverage"] = (
-        "three_reviewed_public_alfa_only_partner_rule_pdfs; "
+        "five_reviewed_public_alfa_only_partner_rule_pdfs; "
         "search_discovery_inventory_not_exhaustive; authenticated_partner_catalog_not_read"
     )
     report["errors"].extend(errors)
