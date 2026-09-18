@@ -19,7 +19,7 @@ jobs:
         run: |
           mkdir -p alfa-public-probe
           python - <<'PY'
-          import hashlib,json,re,tempfile,sys
+          import hashlib,json,re,tempfile,sys,ssl
           from pathlib import Path
           sys.path.insert(0,'loyalty')
           from urllib.parse import urljoin,urlsplit
@@ -38,13 +38,26 @@ jobs:
           ]
           headers={'User-Agent':BOT+'/1.0'}
           ca_url,ca_sha=CA_FILES[0]
-          with requests.Session() as ca:
-            ca.trust_env=False
-            cr=ca.get(ca_url,timeout=(5,12),allow_redirects=False)
-            assert cr.status_code==200,('ca',cr.status_code)
-            assert len(cr.content)<=16384,'ca_oversized'
-            assert hashlib.sha256(cr.content).hexdigest()==ca_sha,'ca_digest_changed'
-            ca_bytes=cr.content
+          root_der_sha='d26d2d0231b7c39f92cc738512ba54103519e4405d68b5bd703e9788ca8ecf31'
+          ca_bytes=None;ca_origin=None
+          try:
+            with requests.Session() as ca:
+              ca.trust_env=False
+              cr=ca.get(ca_url,timeout=(5,12),allow_redirects=False)
+              if cr.status_code==200 and len(cr.content)<=16384 and hashlib.sha256(cr.content).hexdigest()==ca_sha:
+                ca_bytes=cr.content;ca_origin='official'
+          except requests.RequestException:
+            pass
+          if ca_bytes is None:
+            mirror='https://raw.githubusercontent.com/koenrh/russian-trusted-root-ca/main/root-ca_rsa-2022.pem'
+            with requests.Session() as ca:
+              ca.trust_env=False
+              cr=ca.get(mirror,timeout=(5,12),allow_redirects=False)
+              assert cr.status_code==200 and len(cr.content)<=16384,('mirror',cr.status_code)
+              pem=cr.content.decode('ascii')
+              der=ssl.PEM_cert_to_DER_cert(pem)
+              assert hashlib.sha256(der).hexdigest()==root_der_sha,'mirror_root_fingerprint_changed'
+              ca_bytes=cr.content;ca_origin='fingerprint_verified_mirror'
           td=tempfile.TemporaryDirectory()
           bundle=Path(td.name)/'bank-ca.pem'
           bundle.write_bytes(Path(certifi.where()).read_bytes()+b'\n'+ca_bytes)
@@ -53,7 +66,7 @@ jobs:
           rob=s.get(ROOT+'/robots.txt',headers=headers,verify=str(bundle),timeout=(8,20),allow_redirects=False)
           assert rob.status_code==200,('robots',rob.status_code)
           rules=Protego.parse(rob.text)
-          out={'official_root_sha256':ca_sha,'robots_sha256':hashlib.sha256(rob.content).hexdigest(),'pages':[]}
+          out={'official_root_file_sha256':ca_sha,'root_der_sha256':root_der_sha,'ca_origin':ca_origin,'robots_sha256':hashlib.sha256(rob.content).hexdigest(),'pages':[]}
           for url in urls:
             assert rules.can_fetch(url,BOT),('robots_disallow',url)
             r=s.get(url,headers=headers,verify=str(bundle),timeout=(8,30),allow_redirects=False)
