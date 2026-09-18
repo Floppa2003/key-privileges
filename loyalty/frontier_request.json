@@ -1,0 +1,4 @@
+{
+  "request_id": "2026-09-18-practical-frontier-1",
+  "reason": "Owner requested incomplete RZD cards, gated EKP audit and Coral discovery reconciliation. This trigger runs bounded public RZD recovery and Coral inventories only."
+}
