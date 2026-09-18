@@ -55,8 +55,9 @@ jobs:
                 soup=BeautifulSoup(clean,'html.parser')
                 visible=' '.join(soup.stripped_strings)
                 heads=[x.get_text(' ',strip=True) for x in soup.select('h1,h2,h3') if x.get_text(' ',strip=True)]
+                item.update(meta)
                 item.update(status='ok',sanitized_sha256=hashlib.sha256(clean.encode()).hexdigest(),
-                  text_chars=len(visible),headings=heads[:160],text_sample=visible[:12000],**meta)
+                  headings=heads[:160],text_sample=visible[:12000])
                 Path('alfa-public-probe/'+('root' if url==urls[0] else 'tsum')+'.html').write_text(clean)
               except Exception as exc:
                 item['status']='failed';item['error']=str(exc) if isinstance(exc,(ProbeError,RuntimeError)) else ('probe_'+type(exc).__name__)
