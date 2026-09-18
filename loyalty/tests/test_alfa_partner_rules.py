@@ -120,12 +120,13 @@ class AlfaPartnerPdfTests(unittest.TestCase):
             'r14_0126':fixture(end='31 октября 2026',legal='ООО «ЗЕН»',ogrn='1047855044203',
                               address='Санкт-Петербург, Ул. Академика Павлова, 5В',scope='первой',first=True),
         }
+        original_parse=a.parse_document
         async def exercise():
             def fake_fetch(url):return b'%PDF-'+a.BY_URL[url]['native_id'].encode()
             def fake_parse(spec,data,observed):
                 if spec['native_id']=='takhauli_0226':raise ValueError('fresh_source_conflict')
                 with patch.object(a,'pdf_text',return_value=texts[spec['native_id']]):
-                    return a.parse_document(spec,data,observed)
+                    return original_parse(spec,data,observed)
             with patch.object(a,'fetch_pdf',side_effect=fake_fetch),patch.object(a,'parse_document',side_effect=fake_parse):
                 return await a.collect(cfg,report,NOW,20)
         rows=asyncio.run(exercise())
