@@ -18,9 +18,8 @@ jobs:
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with: {python-version: '3.12'}
       - run: python -m pip install -r loyalty/requirements.txt
-      - run: mkdir -p alfa-inventory-check/wheels && python -m pip download --no-deps protego==0.6.2 pypdf==6.18.1 -d alfa-inventory-check/wheels
-      - name: Read public source-linked indices
-        run: python loyalty/alfa_inventory_probe.py
+      - name: Archive pointers are discovery only, not current offers
+        run: python loyalty/alfa_archive_probe.py
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
