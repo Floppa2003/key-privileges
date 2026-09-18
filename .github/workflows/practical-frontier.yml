@@ -1,0 +1,167 @@
+name: Practical source frontier
+on:
+  push:
+    branches: [main]
+    paths: [loyalty/frontier_checks.py, loyalty/tests/test_frontier_checks.py, loyalty/frontier_request.json, .github/workflows/practical-frontier.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: loyalty-catalog-${{ github.ref }}
+  cancel-in-progress: false
+  queue: max
+jobs:
+  regression:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with: {python-version: '3.12'}
+      - run: python -m pip install -r loyalty/requirements.txt
+      - name: Full regression without source or destination credentials
+        run: |
+          mkdir -p frontier-tests
+          set -o pipefail
+          python -m unittest discover -s loyalty/tests -v 2>&1 | tee frontier-tests/python-tests.log
+          node --test key/refresh.test.mjs 2>&1 | tee frontier-tests/key-tests.log
+          tar -cf frontier-tests/code.tar loyalty key .github/workflows
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: frontier-tests-${{ github.run_id }}-${{ github.run_attempt }}
+          path: frontier-tests/
+          retention-days: 7
+  rzd:
+    needs: regression
+    if: github.ref == 'refs/heads/main' && github.repository == 'Floppa2003/key-privileges' && vars.LOYALTY_SHEETS_SYNC == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    permissions: {contents: read, actions: read, id-token: write}
+    outputs:
+      records: ${{ steps.collect.outputs.records }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with: {python-version: '3.12'}
+      - run: python -m pip install -r loyalty/requirements.txt
+      - name: Locate latest accepted main RZD discovery, without another catalogue crawl
+        id: upstream
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import json,os,subprocess
+          from datetime import datetime,timezone
+          repo=os.environ['GITHUB_REPOSITORY']
+          runs=json.loads(subprocess.check_output(['gh','api',f'repos/{repo}/actions/workflows/rzd-import.yml/runs?branch=main&status=success&per_page=1']))
+          run=runs['workflow_runs'][0]
+          assert run['head_branch']=='main' and run['conclusion']=='success'
+          assert 0<=(datetime.now(timezone.utc)-datetime.fromisoformat(run['updated_at'].replace('Z','+00:00'))).total_seconds()<604800
+          with open(os.environ['GITHUB_OUTPUT'],'a') as f:
+              f.write(f"run_id={run['id']}\nname=rzd-import-public-{run['id']}-{run['run_attempt']}\n")
+          PY
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ steps.upstream.outputs.run_id }}
+          name: ${{ steps.upstream.outputs.name }}
+          path: rzd-parent
+      - name: Existing short-lived identity for public staging only
+        id: google
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093
+        with:
+          workload_identity_provider: ${{ vars.GOOGLE_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GOOGLE_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/spreadsheets
+          access_token_lifetime: 2100s
+          create_credentials_file: false
+          export_environment_variables: false
+      - name: Retry only source-discovered transient failures and reconstruct results
+        id: collect
+        env:
+          GOOGLE_ACCESS_TOKEN: ${{ steps.google.outputs.access_token }}
+        run: |
+          python loyalty/frontier_checks.py rzd --parent rzd-parent --out frontier-rzd
+          python - <<'PY'
+          import json,os
+          with open(os.environ['GITHUB_OUTPUT'],'a') as f:f.write('records='+str(len(json.load(open('frontier-rzd/normalized.json'))['records']))+'\n')
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: frontier-rzd-${{ github.run_id }}-${{ github.run_attempt }}
+          path: frontier-rzd/
+          retention-days: 7
+  publish:
+    needs: rzd
+    if: needs.rzd.result == 'success' && needs.rzd.outputs.records != '0' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions: {contents: read, id-token: write}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with: {python-version: '3.12'}
+      - run: python -m pip install -r loyalty/requirements.txt
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: frontier-rzd-${{ github.run_id }}-${{ github.run_attempt }}
+          path: frontier-rzd
+      - name: Independent source-bound replay before destination authorization
+        run: python loyalty/frontier_checks.py validate-rzd --out frontier-rzd
+      - name: Existing destination identity
+        id: google
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093
+        with:
+          workload_identity_provider: ${{ vars.GOOGLE_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GOOGLE_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/spreadsheets
+          access_token_lifetime: 600s
+          create_credentials_file: false
+          export_environment_variables: false
+      - name: Existing literal upsert and complete unified readback
+        env:
+          GOOGLE_ACCESS_TOKEN: ${{ steps.google.outputs.access_token }}
+          DISCOUNTS_SPREADSHEET_ID: ${{ secrets.DISCOUNTS_SPREADSHEET_ID }}
+        run: |
+          python loyalty/sheets_normalized.py --input frontier-rzd/normalized.json --publish
+          python loyalty/unified_publish.py --publish
+  coral:
+    needs: [regression, rzd, publish]
+    if: always() && needs.regression.result == 'success' && github.ref == 'refs/heads/main' && github.repository == 'Floppa2003/key-privileges' && vars.LOYALTY_SHEETS_SYNC == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions: {contents: read, id-token: write}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with: {python-version: '3.12'}
+      - run: python -m pip install -r loyalty/requirements.txt
+      - name: Existing identity for the public Coral scratch tab
+        id: google
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093
+        with:
+          workload_identity_provider: ${{ vars.GOOGLE_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GOOGLE_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/spreadsheets
+          access_token_lifetime: 2700s
+          create_credentials_file: false
+          export_environment_variables: false
+      - name: Category inventories and sitemap only, without details or documents
+        env:
+          GOOGLE_ACCESS_TOKEN: ${{ steps.google.outputs.access_token }}
+        run: python loyalty/frontier_checks.py coral --out frontier-coral
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: frontier-coral-${{ github.run_id }}-${{ github.run_attempt }}
+          path: frontier-coral/
+          retention-days: 7
