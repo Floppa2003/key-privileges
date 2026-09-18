@@ -1,0 +1,63 @@
+name: Prepare practical frontier once
+on:
+  push:
+    branches: ['loyalty/practical-frontier-20260918']
+    paths: [.github/workflows/frontier-prepare-once.yml]
+permissions:
+  contents: read
+jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with: {python-version: '3.12'}
+      - run: python -m pip install -r loyalty/requirements.txt
+      - name: Demonstrate the old category boundary and apply only the reviewed extension
+        run: |
+          python - <<'PY'
+          import hashlib,subprocess
+          from pathlib import Path
+          out=Path('frontier-prepare');out.mkdir()
+          path=Path('loyalty/coral_import.py');raw=path.read_bytes()
+          assert hashlib.sha1(b'blob '+str(len(raw)).encode()+b'\0'+raw).hexdigest()=='3a3f9b7af1ce60f0dbcc9991ed0e59f6cefe2d21'
+          cmd=['python','-m','unittest','discover','-s','loyalty/tests','-p','test_frontier_checks.py','-v']
+          before=subprocess.run(cmd,capture_output=True,text=True)
+          (out/'before.log').write_text(before.stdout+before.stderr)
+          assert before.returncode!=0 and 'coral_url_outside_discovered_scope' in before.stderr
+          old="        if url.startswith(c.CLUB):c.checked_url(url,'/klub-privilegii/',3)"
+          new="        if url.startswith(c.CLUB):\n            # Category inventories are read only after current root discovery.\n            depth=len(urlsplit(url).path.strip('/').split('/'))\n            if depth not in (2,3):raise ValueError('cg_category_or_detail_depth')\n            c.checked_url(url,'/klub-privilegii/',depth)"
+          text=raw.decode();assert text.count(old)==1
+          path.write_text(text.replace(old,new))
+          assert path.read_text().replace(new,old)==text
+          Path('.github/workflows/frontier-prepare-once.yml').unlink()
+          subprocess.run(cmd,check=True)
+          PY
+      - name: Complete tests on the proposed tree; no source or Sheet calls
+        run: |
+          set -o pipefail
+          python -m unittest discover -s loyalty/tests -v 2>&1 | tee frontier-prepare/python-tests.log
+          node --test key/refresh.test.mjs 2>&1 | tee frontier-prepare/key-tests.log
+          git diff > frontier-prepare/change.patch
+          tar -cf frontier-prepare/code.tar loyalty key .github/workflows
+      - name: Save only to the isolated branch, with the preparer removed
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          test "$GITHUB_REF" = 'refs/heads/loyalty/practical-frontier-20260918'
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add loyalty/coral_import.py .github/workflows/frontier-prepare-once.yml
+          git commit -m 'Allow discovered public category inventories through the existing Coral reader'
+          git -c credential.helper= -c 'credential.helper=!gh auth git-credential' push origin HEAD:refs/heads/loyalty/practical-frontier-20260918
+          git rev-parse HEAD > frontier-prepare/proposed-commit.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: frontier-prepare-${{ github.run_id }}-${{ github.run_attempt }}
+          path: frontier-prepare/
+          retention-days: 7
