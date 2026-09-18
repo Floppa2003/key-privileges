@@ -29,6 +29,8 @@ A later follow-up closed the next public-first step. ScrapingAnt `v2/extended` +
 
 Alfa is therefore no longer a public-data zero. The exact `web.alfabank.ru/partner-offers/` catalogue remains truthfully authentication-gated / zero and separate from these rules. Personalized cashback rates, user tier eligibility and authenticated partner-only offers are not inferred from the public documents.
 
+The reviewed Alfa Only partner-PDF layer now contains **5** source-owned promotion documents. Two additional current records were recovered on 19 September: **FRESA / other TSP of ООО «СОМ» — 10%, first transaction of the month, through 2026-11-30**; and **Mama Tuta / Probka — 10%, first transaction of the month, through 2026-10-31**. Betulla and Р14 remain current; Такахули remains source-expired on 2026-08-31. This partner-PDF inventory remains explicitly non-exhaustive.
+
 ## Current destination and lookup contract
 
 The destination remains **скидки**, spreadsheet **`1uFR7croj7p6RRNPcoTRYlVl06hKsurkIgyu1IdMMB-4`**.
