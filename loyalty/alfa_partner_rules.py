@@ -45,6 +45,13 @@ DOCS = [
         "ogrn": "1227700078726",
         "address_marker": "Малая Бронная",
     },
+    {
+        "native_id": "fresa_0226",
+        "display_name": "ООО «СОМ» — FRESA и другие ТСП",
+        "url": "https://alfabank.servicecdn.ru/site-upload/f6/ac/20418/fresa_only_02.26.pdf",
+        "ogrn": "1237800072377",
+        "address_marker": "Вознесенский",
+    },
 ]
 BY_URL = {x["url"]: x for x in DOCS}
 BY_ID = {x["native_id"]: x for x in DOCS}
@@ -288,7 +295,7 @@ async def collect(cfg, report, observed_at: str, limit: int) -> list[dict]:
             errors.append({"phase": "partner_pdf", "native_id": spec["native_id"], "reason": reason[:160]})
     report["discovered"] = len(DOCS)
     report["coverage"] = (
-        "three_reviewed_public_alfa_only_partner_rule_pdfs; "
+        "four_reviewed_public_alfa_only_partner_rule_pdfs; "
         "search_discovery_inventory_not_exhaustive; authenticated_partner_catalog_not_read"
     )
     report["errors"].extend(errors)
