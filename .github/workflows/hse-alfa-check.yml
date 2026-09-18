@@ -1,4 +1,4 @@
-name: Inspect HSE alumni and Alfa Only sources
+name: Inspect HSE source-owned section identities
 on:
   push:
     branches: ['loyalty/hse-alfa-20260918']
@@ -8,7 +8,7 @@ permissions:
 jobs:
   read-public:
     runs-on: ubuntu-24.04
-    timeout-minutes: 8
+    timeout-minutes: 6
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with: {persist-credentials: false}
@@ -16,54 +16,51 @@ jobs:
         with: {python-version: '3.12'}
       - run: python -m pip install -r loyalty/requirements.txt
       - run: python -m playwright install --with-deps chromium
-      - name: Two exact anonymous pages, no account session or Google credentials
+      - name: Preserve the public programme body and exact source anchors, not scripts or form fields
         run: |
           python - <<'PY'
           import asyncio,hashlib,json,os,re,sys
           from pathlib import Path
           from datetime import datetime,timezone
-          from urllib.parse import urlsplit
-          from bs4 import BeautifulSoup
+          from bs4 import BeautifulSoup,Comment
           from playwright.async_api import async_playwright
           sys.path.insert(0,'loyalty')
           from public_transport import PublicSource
-          from free_access_probe import sanitized_page
           def now():return datetime.now(timezone.utc).isoformat()
-          out=Path('hse-alfa-source');out.mkdir()
-          targets=[('hse_alumni','https://alumni.hse.ru/loyalty/partners/'),('alfa_only_partner_offers','https://web.alfabank.ru/partner-offers/')]
+          out=Path('hse-alfa-source');out.mkdir();url='https://alumni.hse.ru/loyalty/partners/'
           audit={'run_id':os.environ['GITHUB_RUN_ID']+':'+os.environ['GITHUB_RUN_ATTEMPT'],'commit':os.environ['GITHUB_SHA'],
-                 'started_at':now(),'account_used':False,'provider_used':False,'publication_performed':False,'pages':[]}
+                 'started_at':now(),'account_used':False,'provider_used':False,'publication_performed':False,'url':url,
+                 'previous_probe':'35369084201:1','correction':'Preserve source fragment/name identity; first generic sanitizer removed it','responses':[]}
           async def main():
               async with async_playwright() as p:
                   browser=await p.chromium.launch()
                   try:
-                      for sid,url in targets:
-                          item={'source_id':sid,'url':url,'requested_at':now(),'responses':[]};audit['pages'].append(item)
-                          async with PublicSource(browser,url) as client:
-                              def observe(res):
-                                  if res.request.is_navigation_request() and res.request.frame==client.page.main_frame:
-                                      u=urlsplit(res.url);item['responses'].append({'url':u.scheme+'://'+u.netloc+u.path,'status':res.status})
-                              client.page.on('response',observe)
-                              try:
-                                  await client.robots();raw=await client.read(url,render=True)
-                                  if client.page.url!=url:raise RuntimeError('exact_location_changed')
-                                  dom=BeautifulSoup(raw,'html.parser')
-                                  item['source_sha256']=hashlib.sha256(raw.encode()).hexdigest()
-                                  item['title']=dom.title.get_text(' ',strip=True) if dom.title else ''
-                                  item['password_control_present']=bool(dom.select('input[type=password]'))
-                                  dom.html['data-loyalty-probe-location']=client.page.url
-                                  clean,identity=sanitized_page(str(dom),url);data=clean.encode()
-                                  file=hashlib.sha256(data).hexdigest()+'.html';(out/file).write_bytes(data)
-                                  item.update(file=file,saved_sha256=hashlib.sha256(data).hexdigest(),bytes=len(data),identity=identity)
-                              except Exception as exc:
-                                  marker=re.search(r'ERR_[A-Z_]+',str(exc));item['error']=marker[0] if marker else str(exc) if isinstance(exc,RuntimeError) else type(exc).__name__
-                              finally:
-                                  item['robots']=getattr(client,'robots_info',{});item['finished_at']=now()
-                                  client.page.remove_listener('response',observe)
+                      async with PublicSource(browser,url) as client:
+                          def observe(res):
+                              if res.request.is_navigation_request() and res.request.frame==client.page.main_frame:
+                                  audit['responses'].append({'url':res.url,'status':res.status})
+                          client.page.on('response',observe)
+                          try:
+                              await client.robots();raw=await client.read(url,render=True)
+                              if client.page.url!=url:raise RuntimeError('exact_location_changed')
+                              soup=BeautifulSoup(raw,'html.parser');panels=soup.select('.post__text.builder_content')
+                              if len(panels)!=1:raise RuntimeError('programme_body_ambiguous')
+                              dom=BeautifulSoup(str(panels[0]),'html.parser')
+                              audit['attribute_names']=sorted({k for n in dom.find_all(True) for k in n.attrs})
+                              for node in dom.select('script,style,noscript,form,input,textarea,iframe'):node.decompose()
+                              for node in dom.find_all(string=lambda s:isinstance(s,Comment)):node.extract()
+                              for node in dom.find_all(True):
+                                  for key in list(node.attrs):
+                                      if key not in ('id','class','href','name','title','alt','hidden','aria-hidden'):del node.attrs[key]
+                              data=str(dom).encode('utf8');file=hashlib.sha256(data).hexdigest()+'.html';(out/file).write_bytes(data)
+                              audit.update(source_sha256=hashlib.sha256(raw.encode()).hexdigest(),file=file,saved_sha256=hashlib.sha256(data).hexdigest(),
+                                  bytes=len(data),final_url=client.page.url,source_title=soup.title.get_text(' ',strip=True),scope='public programme body; raw hrefs and named anchors preserved')
+                          except Exception as exc:
+                              marker=re.search(r'ERR_[A-Z_]+',str(exc));audit['error']=marker[0] if marker else str(exc) if isinstance(exc,RuntimeError) else type(exc).__name__
+                          finally:audit['robots']=getattr(client,'robots_info',{});client.page.remove_listener('response',observe)
                   finally:await browser.close()
-          asyncio.run(main());audit['finished_at']=now()
-          (out/'audit.json').write_text(json.dumps(audit,ensure_ascii=False,indent=2))
-          print(json.dumps({'sources':len(audit['pages']),'saved':sum('file' in p for p in audit['pages'])}))
+          asyncio.run(main());audit['finished_at']=now();(out/'audit.json').write_text(json.dumps(audit,ensure_ascii=False,indent=2))
+          print(json.dumps({'saved':'file' in audit,'bytes':audit.get('bytes',0)}))
           PY
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
