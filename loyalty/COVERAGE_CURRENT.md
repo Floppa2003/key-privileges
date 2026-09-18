@@ -25,7 +25,7 @@ This prevents false prioritization from the latest red route alone. For example,
 
 **Alfa public-access spike:** see **ALFA_PUBLIC_ACCESS_SPIKE.md**. Direct verified-TLS GitHub reads, Free ScrapingAnt datacenter, one bounded residential-browser read, Google IMPORTXML/IMPORTDATA and no-key Jina Reader were all tested without bank authentication or destination publication. The exact requested catalogue still routes to bank authentication; public Alfa Only marketing pages remain anti-bot/empty to the tested anonymous automation paths. The residential route cost 125 free credits and failed, so it must not be retried automatically. The temporary Google staging sheet was deleted after the failed imports. No discount-sheet cells changed.
 
-Therefore the next high-leverage Alfa step is separately authorized authenticated access with private storage, if explicitly approved. Do not publish authenticated banking data into the current link-accessible Sheet/public artifacts. Until then Alfa remains truthfully failed/0 rather than being filled from search snippets.
+A later follow-up reopened the public frontier: ScrapingAnt `v2/extended` + challenge-cookie chaining was tested and still returned the ServicePipe shell with 0 XHRs, but current Alfa-owned loyalty-rule PDFs on `alfabank.servicecdn.ru` / `alfabank.st` expose detailed Alfa Only mechanics and have not yet been turned into a recurring practical collector. Therefore authenticated banking access is **not yet the next step**. First exhaust the official CDN/PDF layer and any source-owned links it discovers. The exact `web.alfabank.ru/partner-offers/` catalogue remains truthfully failed/0 until authenticated access is explicitly authorized.
 
 ## Current destination and lookup contract
 
