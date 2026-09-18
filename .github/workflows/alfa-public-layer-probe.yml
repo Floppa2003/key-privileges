@@ -19,8 +19,9 @@ jobs:
         run: |
           mkdir -p alfa-public-probe
           python - <<'PY'
-          import hashlib,json,re,tempfile
+          import hashlib,json,re,tempfile,sys
           from pathlib import Path
+          sys.path.insert(0,'loyalty')
           from urllib.parse import urljoin,urlsplit
           import certifi,requests
           from recovered_contract import CA_FILES
