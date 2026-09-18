@@ -1,0 +1,99 @@
+name: Recheck three public detail boundaries
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/public-detail-recheck.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: loyalty-catalog-${{ github.ref }}
+  cancel-in-progress: false
+  queue: max
+jobs:
+  regression:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with: {python-version: '3.12'}
+      - run: python -m pip install -r loyalty/requirements.txt
+      - run: python -m unittest discover -s loyalty/tests -q && node --test key/refresh.test.mjs
+  read-public:
+    needs: regression
+    if: github.repository == 'Floppa2003/key-privileges' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with: {python-version: '3.12'}
+      - run: python -m pip install -r loyalty/requirements.txt
+      - name: Existing Free plan only; source policies first, three detail reads at most, no retry after challenge
+        env:
+          SCRAPINGANT_API_KEY: ${{ secrets.SCRAPINGANT_API_KEY }}
+        run: |
+          python - <<'PY'
+          import hashlib,json,os,sys,time
+          from pathlib import Path
+          from urllib.parse import urlsplit
+          sys.path.insert(0,'loyalty')
+          from free_access_probe import FreeReader,ProbeError,read_policy,sanitized_page,now
+          from public_transport import robots_document,check_response
+          from protego import Protego
+          targets=[
+              'https://rzd-bonus.ru/promo/poluchite-4000-ballov-rzhd-bonus-za-oformlenie-programmy-smart-plyus-ot-renessans-zhizn/',
+              'https://rzd-bonus.ru/promo/500-ballov-rzhd-bonus-za-kazhduyu-noch-prozhivaniya-v-otele-grand-karat-sochi_2026/',
+              'https://coralbonus.ru/klub-privilegii/odezhda-i-aksessuary/alef/']
+          out=Path('public-detail-recheck');out.mkdir()
+          reader=FreeReader(os.environ['SCRAPINGANT_API_KEY'],[{'url':u} for u in targets],max_credits=52,max_requests=7)
+          report={'run_id':os.environ['GITHUB_RUN_ID']+':'+os.environ['GITHUB_RUN_ATTEMPT'],'commit':os.environ['GITHUB_SHA'],
+                  'started_at':now(),'account_used':False,'coupon_issued':False,'publication_performed':False,
+                  'credit_ceiling':52,'policies':{},'pages':[]}
+          policies={}
+          def safe(exc):return str(exc) if isinstance(exc,ProbeError) else type(exc).__name__
+          def checkpoint():
+              report.update(finished_at=now(),reserved_credits=reader.reserved,known_charged_credits=reader.known_charged_credits)
+              (out/'audit.json').write_text(json.dumps(report,ensure_ascii=False,indent=2))
+          try:
+              reader.preflight()
+              for url in targets:
+                  host=urlsplit(url).netloc
+                  if host not in policies:
+                      info={'started_at':now()};report['policies'][host]=info
+                      try:
+                          status,raw,_=read_policy(reader,'https://'+host+'/robots.txt',info)
+                          rules,_=robots_document(status,raw);policy=Protego.parse(rules)
+                          rate=policy.request_rate('LoyaltyCatalogResearchBot')
+                          delay=max(3,policy.crawl_delay('LoyaltyCatalogResearchBot') or 0,rate.seconds/rate.requests if rate else 0)
+                          if delay>30:raise ProbeError('policy_delay_exceeds_budget')
+                          info.update(status=status,rules=rules);policies[host]=(policy,delay)
+                      except Exception as exc:info['error']=safe(exc);policies[host]=None
+                      finally:info['finished_at']=now();checkpoint()
+                  item={'url':url,'started_at':now()};report['pages'].append(item)
+                  try:
+                      if policies[host] is None:raise ProbeError('policy_unavailable_no_detail_request')
+                      policy,delay=policies[host]
+                      if not policy.can_fetch(url,'LoyaltyCatalogResearchBot'):raise ProbeError('robots_disallow')
+                      time.sleep(delay);status,raw,cost=reader.read(url,browser=True)
+                      item.update(status=status,credits=cost);check_response(status,raw)
+                      clean,identity=sanitized_page(raw,url);data=clean.encode('utf8')
+                      sha=hashlib.sha256(data).hexdigest();file=sha+'.html';(out/file).write_bytes(data)
+                      item.update(identity,file=file,sha256=sha,bytes=len(data),terms_verified=False)
+                  except Exception as exc:item['error']=safe(exc)
+                  finally:item['finished_at']=now();checkpoint()
+                  if reader.halted:break
+          except Exception as exc:report['terminal_error']=safe(exc)
+          finally:checkpoint()
+          print(json.dumps({'pages':len(report['pages']),'saved':sum('file' in p for p in report['pages']),
+                            'reserved_credits':reader.reserved,'no_publication':True}))
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: public-detail-recheck-${{ github.run_id }}-${{ github.run_attempt }}
+          path: public-detail-recheck/
+          retention-days: 7
