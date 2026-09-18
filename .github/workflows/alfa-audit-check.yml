@@ -1,0 +1,89 @@
+name: Alfa public evidence audit
+on:
+  push:
+    branches: [loyalty/alfa-public-audit-20260919]
+    paths: [.github/workflows/alfa-audit-check.yml, loyalty/alfa_partner_rules.py, loyalty/tests/test_alfa_partner_rules.py, loyalty/tests/test_alfa_partner_clauses.py]
+permissions:
+  contents: read
+concurrency:
+  group: alfa-public-audit-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with: {python-version: '3.12'}
+      - run: python -m pip install -r loyalty/requirements.txt
+      - run: python -m unittest discover -s loyalty/tests -v > tests.log 2>&1 || { tail -70 tests.log; exit 1; }
+      - run: node --test key/refresh.test.mjs
+      - name: Save tested public code
+        run: |
+          mkdir -p alfa-audit/code
+          git archive HEAD loyalty key .github/workflows | tar -x -C alfa-audit/code
+          cp tests.log alfa-audit/
+          git rev-parse HEAD > alfa-audit/commit.txt
+      - name: Fresh public PDFs and CDN index check
+        run: |
+          python - <<'PY'
+          import sys,json,hashlib,time
+          from pathlib import Path
+          from datetime import datetime,timezone
+          from urllib.parse import urlsplit
+          import requests
+          from protego import Protego
+          sys.path.insert(0,'loyalty')
+          import alfa_partner_rules as p
+          import alfa_public_rules as a
+          from public_transport import robots_document
+          out=Path('alfa-audit'); (out/'pdfs').mkdir(exist_ok=True)
+          report={'observed_at':datetime.now(timezone.utc).isoformat(),'policy':{},'documents':[], 'indices':[]}
+          def read(url,cap):
+              with requests.get(url,headers={'User-Agent':'LoyaltyCatalogResearchBot/1.0'},timeout=(8,25),allow_redirects=False,stream=True) as r:
+                  b=bytearray(); deadline=time.monotonic()+30
+                  for c in r.iter_content(65536):
+                      b.extend(c)
+                      if len(b)>cap or time.monotonic()>deadline: raise RuntimeError('response_bound')
+                  return r.status_code,bytes(b)
+          root='https://alfabank.servicecdn.ru'
+          status,raw=read(root+'/robots.txt',100000)
+          rules,state=robots_document(status,raw.decode('utf-8','replace'))
+          policy=Protego.parse(rules)
+          report['policy']={'status':status,'state':state,'sha256':hashlib.sha256(raw).hexdigest()}
+          specs=[(x['native_id'],x['url']) for x in p.DOCS]+[('core47',a.CORE_URL),('cashback101',a.CASHBACK_URL)]
+          for ident,url in specs:
+              item={'id':ident,'url':url}
+              try:
+                  if not policy.can_fetch(url,'LoyaltyCatalogResearchBot'):raise RuntimeError('robots_disallow')
+                  status,data=read(url,8000000); item['status']=status
+                  if status!=200 or not data.startswith(b'%PDF-'): raise RuntimeError('not_source_pdf')
+                  (out/'pdfs'/f'{ident}.pdf').write_bytes(data)
+                  item['sha256']=hashlib.sha256(data).hexdigest()
+              except Exception as exc:item['error']=str(exc) if isinstance(exc,RuntimeError) else type(exc).__name__
+              report['documents'].append(item)
+          for path in ('/actions/rules/','/sitemap.xml'):
+              url=root+path; item={'url':url}
+              try:
+                  if not policy.can_fetch(url,'LoyaltyCatalogResearchBot'): raise RuntimeError('robots_disallow')
+                  status,data=read(url,5000000); item.update(status=status,bytes=len(data),sha256=hashlib.sha256(data).hexdigest())
+                  if status==200:
+                      from bs4 import BeautifulSoup
+                      soup=BeautifulSoup(data,'html.parser'); item['title']=soup.title.get_text(' ',strip=True) if soup.title else ''
+                      links=[x.get('href') for x in soup.select('a[href]') if '.pdf' in x.get('href','').lower()]
+                      item['pdf_links']=links
+                      if links: (out/'index.html').write_bytes(data)
+              except Exception as exc:item['error']=str(exc) if isinstance(exc,RuntimeError) else type(exc).__name__
+              report['indices'].append(item)
+          (out/'report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2))
+          print(json.dumps(report,ensure_ascii=False))
+          assert all('error' not in d for d in report['documents'])
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: alfa-audit-${{ github.run_id }}
+          path: alfa-audit/
+          retention-days: 7
