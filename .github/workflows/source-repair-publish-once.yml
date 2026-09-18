@@ -1,0 +1,139 @@
+name: Publish verified source repairs once
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/source-repair-publish-once.yml]
+permissions:
+  contents: read
+concurrency:
+  group: loyalty-catalog-${{ github.ref }}
+  cancel-in-progress: false
+  queue: max
+jobs:
+  verify:
+    if: github.repository == 'Floppa2003/key-privileges' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with: {python-version: '3.12'}
+      - run: python -m pip install -r loyalty/requirements.txt
+      - name: Verify the production tree
+        run: |
+          mkdir -p verified-repair-tests
+          set -o pipefail
+          python -m unittest discover -s loyalty/tests -v 2>&1 | tee verified-repair-tests/python-tests.log
+          node --test key/refresh.test.mjs 2>&1 | tee verified-repair-tests/key-tests.log
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          github-token: ${{ github.token }}
+          run-id: 35378087590
+          name: mir-recheck-35378087590-1
+          path: mir-approved
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          github-token: ${{ github.token }}
+          run-id: 35380093960
+          name: source-repair-final-35380093960-1
+          path: repairs-approved
+      - name: Validate exact payloads, source jobs and reviewed code before destination authorization
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import hashlib,json,subprocess,sys,tarfile
+          from pathlib import Path
+          from datetime import datetime,timezone
+          sys.path.insert(0,'loyalty')
+          from sheets_normalized import prepare
+          repo='Floppa2003/key-privileges';out=Path('verified-repair-payloads');out.mkdir()
+          job=json.loads(subprocess.check_output(['gh','api',f'repos/{repo}/actions/jobs/105707481333']))
+          assert job['run_id']==35378087590 and job['conclusion']=='success' and job['name']=='mir-recheck'
+          run=json.loads(subprocess.check_output(['gh','api',f'repos/{repo}/actions/runs/35380093960']))
+          assert run['conclusion']=='success' and run['head_sha']=='72bd6947c84f02ff446d161aa2ec3f77ff3771e6'
+          intended=['loyalty/hse_alumni.py','loyalty/unified_normalization.py','loyalty/collect_normalized.py','loyalty/alfa_access.py','loyalty/tests/test_hse_unanchored.py','loyalty/tests/test_alfa_access.py']
+          with tarfile.open('repairs-approved/code.tar') as archive:
+              for name in intended:assert archive.extractfile(name).read()==Path(name).read_bytes(),name
+          historical=json.loads(Path('mir-approved/code_hashes.json').read_text())
+          changed={'loyalty/collect_normalized.py','loyalty/hse_alumni.py','loyalty/unified_normalization.py'}
+          for name,digest in historical.items():
+              assert name.startswith(('loyalty/','key/')) and '..' not in Path(name).parts
+              if name not in changed:assert hashlib.sha256(Path(name).read_bytes()).hexdigest()==digest,name
+          specifications=[
+              ('mir-approved/normalized.json','mir.json','a60994e5b6079db10afb4c1f4eb4487035c2df14fcbfd3492a11becaa42bd424','35378087590:1',184,{'mir'}),
+              ('repairs-approved/live-output/normalized.json','repairs.json','eae3c7a354f780bfc37b73c0b229d721f7a1da951d848754b80af9611a975564','35380093960:1',56,{'hse_alumni','t2_selection','alfa_only_partner_offers'})]
+          manifest=[]
+          for source,target,digest,run_id,count,ids in specifications:
+              raw=Path(source).read_bytes();assert hashlib.sha256(raw).hexdigest()==digest
+              bundle=json.loads(raw);prepare(bundle)
+              assert bundle['run_id']==run_id and len(bundle['records'])==count
+              assert {s['source_id'] for s in bundle['sources']}==ids
+              assert all(r['source_id'] in ids and r['observed_at']==bundle['observed_at'] for r in bundle['records'])
+              observed=datetime.fromisoformat(bundle['observed_at']);assert observed.tzinfo is not None
+              assert 0<=(datetime.now(timezone.utc)-observed).total_seconds()<86400
+              if target=='mir.json':assert bundle['sources'][0]['status']=='ok' and bundle['sources'][0]['errors']==[]
+              else:
+                  alpha=next(s for s in bundle['sources'] if s['source_id']=='alfa_only_partner_offers')
+                  assert alpha['status']=='failed' and alpha['normalized']==0
+                  assert alpha['errors'][0]['reason']=='alfa_bank_authentication_redirect'
+              (out/target).write_bytes(raw)
+              manifest.append({'file':target,'sha256':digest,'source_run_id':run_id,'original_observed_at':bundle['observed_at'],'records':count})
+          (out/'manifest.json').write_text(json.dumps({'publication_run':__import__('os').environ['GITHUB_RUN_ID'],'source_payloads':manifest,'sources_refetched':False,'source_timestamps_preserved':True},indent=2))
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: verified-repair-payloads-${{ github.run_id }}
+          path: verified-repair-payloads/
+          retention-days: 7
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: verified-repair-tests-${{ github.run_id }}
+          path: verified-repair-tests/
+          retention-days: 7
+  publish:
+    needs: verify
+    if: github.repository == 'Floppa2003/key-privileges' && github.ref == 'refs/heads/main' && vars.LOYALTY_SHEETS_SYNC == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with: {python-version: '3.12'}
+      - run: python -m pip install requests==2.32.5 beautifulsoup4==4.14.3
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: verified-repair-payloads-${{ github.run_id }}
+          path: verified-repair-payloads
+      - name: Revalidate the two immutable public bundles before Google authorization
+        run: |
+          python loyalty/sheets_normalized.py --input verified-repair-payloads/mir.json
+          python loyalty/sheets_normalized.py --input verified-repair-payloads/repairs.json
+      - name: Existing short-lived same-Sheet authorization
+        id: google
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093
+        with:
+          workload_identity_provider: ${{ vars.GOOGLE_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GOOGLE_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/spreadsheets
+          access_token_lifetime: 600s
+          create_credentials_file: false
+          export_environment_variables: false
+      - name: Publish only reviewed recovered sources and verify final common views
+        env:
+          GOOGLE_ACCESS_TOKEN: ${{ steps.google.outputs.access_token }}
+          DISCOUNTS_SPREADSHEET_ID: ${{ secrets.DISCOUNTS_SPREADSHEET_ID }}
+        run: |
+          python loyalty/sheets_normalized.py --input verified-repair-payloads/mir.json --publish
+          python loyalty/sheets_normalized.py --input verified-repair-payloads/repairs.json --publish
+          python loyalty/unified_publish.py --publish
