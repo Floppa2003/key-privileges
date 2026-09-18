@@ -12,7 +12,7 @@ from pypdf import PdfReader
 from normalized import make_offer, validate_offer
 
 CORE_URL = "https://alfabank.servicecdn.ru/site-upload/4b/2c/2366/prog_loyal_v47.pdf"
-CASHBACK_URL = "https://alfabank.servicecdn.ru/site-upload/22/13/2366/Loyalty_program_rules_revCashBack_03042026.pdf"
+CASHBACK_URL = "https://alfabank.servicecdn.ru/site-upload/c6/bb/2366/Loyalty_program_rules_revCashBack_25052026.pdf"
 ALLOWED = {CORE_URL, CASHBACK_URL}
 MAX_BYTES = 8_000_000
 PROGRAM = "Alfa Only"
@@ -213,7 +213,7 @@ def parse_cashback(data: bytes, observed_at: str) -> list[dict]:
     )
     row = _offer(
         "alfa_only_cashback_rules",
-        "cashback100:alfa-only-limits",
+        "cashback101:alfa-only-limits",
         "Alfa Only — лимиты программы кэшбэка",
         evidence,
         "Ставки конкретных категорий выбираются и отображаются в «Кэшбэк и сервисы»; публичный документ фиксирует минимальное количество категорий и общие лимиты, но не персональные ставки.",
@@ -244,7 +244,7 @@ async def collect_cashback(cfg, report, observed_at, limit):
     rows = parse_cashback(data, observed_at)
     rows = rows[:limit]
     report["discovered"] = len(rows)
-    report["coverage"] = "alfa_only_cashback_limits_from_public_reverse_cashback_rules_revision_100; personal_category_rates_not_read"
+    report["coverage"] = "alfa_only_cashback_limits_from_public_reverse_cashback_rules_revision_101; personal_category_rates_not_read"
     return rows
 
 
@@ -253,8 +253,8 @@ def validate_public_record(row: dict) -> None:
     if sid not in ("alfa_only_public_rules", "alfa_only_cashback_rules"):
         raise ValueError("alfa_public_record_wrong_source")
     expected_url = CORE_URL if sid == "alfa_only_public_rules" else CASHBACK_URL
-    expected_revision = 47 if sid == "alfa_only_public_rules" else 100
-    expected_from = "2026-05-01" if sid == "alfa_only_public_rules" else "2026-04-03"
+    expected_revision = 47 if sid == "alfa_only_public_rules" else 101
+    expected_from = "2026-05-01" if sid == "alfa_only_public_rules" else "2026-05-25"
     details = row.get("details", {})
     if (
         row.get("source_url") != expected_url
