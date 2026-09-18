@@ -163,6 +163,9 @@ def offer_rates(source_id, value):
     if source_id=='hse_alumni':
         from hse_alumni import hse_rates
         return hse_rates(value)
+    if source_id=='alfa_only_partner_pdf_offers':
+        from alfa_partner_rules import partner_rates
+        return partner_rates(value)
     return normalize_rates(value)
 
 
