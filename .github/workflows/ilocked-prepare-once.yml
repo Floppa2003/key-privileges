@@ -96,7 +96,7 @@ jobs:
           import json
           from pathlib import Path
           x=json.loads(Path('ilocked-verification/live-output/normalized.json').read_text())
-          assert len(x['records'])==9 and all(r['status']=='ok' for r in x['source_reports'])
+          assert len(x['records'])==9 and all(r['status']=='ok' for r in x['sources'])
           print('Real dispatcher: all nine registered pages yielded validated records')
           PY
       - name: Commit only the three configuration and dispatch changes on the isolated branch
