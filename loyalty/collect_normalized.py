@@ -38,6 +38,8 @@ def error_record(exc,phase,url=''):
     reason=str(exc) if isinstance(exc,RuntimeError) else type(exc).__name__
     marker=re.search(r'ERR_[A-Z_]+',str(exc))
     if marker:reason=marker[0]
+    alfa_marker=re.fullmatch(r'alfa_[a-z0-9_]{1,120}',str(exc))
+    if alfa_marker:reason=alfa_marker.group(0)
     return {'phase':phase,'path':urlsplit(url).path,'reason':reason[:180]}
 
 
