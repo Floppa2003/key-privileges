@@ -230,7 +230,7 @@ def parse_core(data: bytes, observed_at: str) -> list[dict]:
 
     smart_benefit = _must(
         text,
-        r"6\.4\..{0,180}?Участнику\s*3.{0,60}?Участнику\s*4.{0,60}?Участнику\s*5.{0,60}?Участнику\s*7\s*доступна\s*Услуга\s*доступа\s*к\s*контенту",
+        r"Участнику\s*3\s*,?\s*Участнику\s*4\s*,?\s*Участнику\s*5\s*и\s*Участнику\s*7\s*доступна\s*Услуга\s*доступа\s*к\s*контенту",
         "alfa_smart_benefit_missing",
     )
     smart_conditions = _must(
