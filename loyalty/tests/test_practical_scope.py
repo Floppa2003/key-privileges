@@ -49,4 +49,45 @@ class PracticalScopeTests(unittest.TestCase):
         kept,excluded=p.select_inputs(rows)
         self.assertEqual([r['id'] for r in kept],['b','c']);self.assertEqual(excluded,{'product_exclusion_list':1})
 
+
+class OfflinePracticalScopeTests(unittest.TestCase):
+    def test_real_offline_cli_excludes_bulk_but_preserves_short_pdf_and_legacy_code(self):
+        import subprocess,tempfile
+        from unified_inputs import HEADERS,inputs_from_tables
+        from unified_normalization import INPUT_TABS,digest
+        tables={name:[[] for _ in range(header-1)]+[[{'value':h} for h in HEADERS[name]]]
+                for name,(header,_) in INPUT_TABS.items()}
+        for ident,details in [('bulk',{'products_are_exclusions_not_offers':True}),
+                              ('short-pdf',{'live_document_text':True,'page_count':1})]:
+            row=['']*26
+            row[0]=ident;row[1]='Synthetic programme';row[3]=ident;row[5]='program_rules'
+            row[8]='Present the membership card';row[17]='https://example.test/'+ident
+            row[20]=json.dumps(details)
+            tables['parser_offers'].append([{'value':v} if v else {} for v in row])
+        tables['yandex_discounts_complete_all'].append([{'value':v} for v in
+            ['Synthetic partner','','https://example.test/offer','Discount 10%',
+             'FIXTURE_ONLY_PRIVATE','','Show employee badge']])
+        before=copy.deepcopy(tables);inputs,_=inputs_from_tables(tables)
+        with tempfile.TemporaryDirectory() as folder:
+            source=Path(folder)/'input.json';out=Path(folder)/'output'
+            source.write_text(json.dumps({'sheets':tables}),encoding='utf8')
+            original=source.read_bytes()
+            run=subprocess.run([sys.executable,str(Path(__file__).resolve().parents[1]/'unified_publish.py'),
+                '--offline-input',str(source),'--out',str(out),'--as-of','2026-09-18'],
+                capture_output=True,text=True,timeout=30)
+            self.assertEqual(run.returncode,0,run.stdout+run.stderr)
+            result=json.loads((out/'normalized.json').read_text())
+            self.assertEqual(len(result['records']),2)
+            self.assertNotIn('bulk',{r['id'] for r in result['records']})
+            self.assertIn('short-pdf',{r['id'] for r in result['records']})
+            self.assertTrue(any(c['value']=='FIXTURE_ONLY_PRIVATE' for r in result['records'] for c in r['codes']))
+            self.assertEqual(result['audit']['publication_scope'],p.VERSION)
+            self.assertEqual(result['audit']['input_records_before_scope'],3)
+            self.assertEqual(result['audit']['excluded_bulk_records'],{'product_exclusion_list':1})
+            self.assertEqual(result['audit']['source_snapshot_sha256'],digest(inputs))
+            self.assertEqual(json.loads(run.stdout)['records'],2)
+            self.assertNotIn('FIXTURE_ONLY_PRIVATE',run.stdout+run.stderr)
+            self.assertEqual(source.read_bytes(),original)
+        self.assertEqual(tables,before)
+
 if __name__=='__main__':unittest.main()
