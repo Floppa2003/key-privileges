@@ -8,57 +8,89 @@ permissions:
 jobs:
   probe:
     runs-on: ubuntu-24.04
-    timeout-minutes: 6
+    timeout-minutes: 7
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with: {persist-credentials: false}
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with: {python-version: '3.12'}
       - run: python -m pip install -r loyalty/requirements.txt
-      - name: Read one public Alfa Only page through no-key Jina Reader after source policy check
+      - name: Inspect cookies and browser XHRs through ScrapingAnt extended response
         env:
           SCRAPINGANT_API_KEY: ${{ secrets.SCRAPINGANT_API_KEY }}
         run: |
           mkdir -p alfa-public-probe
           python - <<'PY'
-          import hashlib,json,os,re,sys,time
+          import hashlib,json,os,re,sys
           from pathlib import Path
+          from urllib.parse import urlsplit
           import requests
           sys.path.insert(0,'loyalty')
           from protego import Protego
-          from free_access_probe import FreeReader,read_policy,ProbeError
+          from free_access_probe import FreeReader,read_policy,ProbeError,free_plan
           from public_transport import robots_document
 
           target='https://alfabank.ru/everyday/package/premium/'
-          reader=FreeReader(os.environ.get('SCRAPINGANT_API_KEY',''),[{'id':'alfa_public_root','url':target}],max_credits=1,max_requests=1)
-          report={'status':'started','target':target,'account_session_used':False,'publication':False,'reader':'jina_no_key'}
+          key=os.environ.get('SCRAPINGANT_API_KEY','')
+          policy_reader=FreeReader(key,[{'id':'alfa_public_root','url':target}],max_credits=1,max_requests=1)
+          report={'status':'started','target':target,'account_session_used':False,'publication':False,'endpoint':'v2/extended'}
           try:
-            reader.preflight()
+            policy_reader.preflight()
             info={'state':'fetching'}
-            rs,rr,rc=read_policy(reader,'https://alfabank.ru/robots.txt',info)
+            rs,rr,rc=read_policy(policy_reader,'https://alfabank.ru/robots.txt',info)
             rules_text,state=robots_document(rs,rr); rules=Protego.parse(rules_text)
             report['robots']={'origin_http_status':rs,'state':state,'credits':rc,'method':info.get('method')}
             if not rules.can_fetch(target,'LoyaltyCatalogResearchBot'): raise ProbeError('robots_disallow')
-            url='https://r.jina.ai/'+target
-            with requests.get(url,headers={'Accept':'application/json','X-No-Cache':'true','User-Agent':'LoyaltyCatalogResearchBot/1.0'},timeout=(10,60),allow_redirects=False,stream=True) as r:
-              if r.status_code!=200: raise ProbeError('jina_http_'+str(r.status_code))
-              buf=bytearray()
-              for block in r.iter_content(65536):
-                buf.extend(block)
-                if len(buf)>3_000_000: raise ProbeError('jina_response_bound')
-            payload=json.loads(bytes(buf))
-            data=payload.get('data',payload) if isinstance(payload,dict) else None
-            if not isinstance(data,dict): raise ProbeError('jina_shape')
-            content=str(data.get('content','')); title=str(data.get('title','')); final=str(data.get('url','') or data.get('source',''))
-            if len(content)<100: raise ProbeError('jina_empty_content')
-            if re.search(r'access denied|captcha|проверка безопасности|servicepipe',content[:3000],re.I): raise ProbeError('jina_access_challenge')
-            report.update(status='ok',title=title,reported_url=final,content_chars=len(content),content_sha256=hashlib.sha256(content.encode()).hexdigest(),
-              evidence_lines=[x.strip()[:500] for x in content.splitlines() if re.search(r'кэшбэк|скидк|РБК|Ultima|ЦУМ|ДЛТ|Альфа.?Мобайл|ресторан',x,re.I)][:120])
-            Path('alfa-public-probe/root.md').write_text(content)
+            params={'url':target,'browser':'true','proxy_country':'RU','proxy_type':'datacenter','timeout':'60','x-api-key':key}
+            with requests.get('https://api.scrapingant.com/v2/extended',params=params,headers={'Accept':'application/json'},timeout=(10,75),allow_redirects=False) as r:
+              if r.status_code!=200: raise ProbeError('extended_provider_http_'+str(r.status_code))
+              if len(r.content)>8_000_000: raise ProbeError('extended_response_bound')
+              payload=r.json()
+              cost=r.headers.get('Ant-credits-cost')
+            if not isinstance(payload,dict): raise ProbeError('extended_shape')
+            html=str(payload.get('html') or payload.get('content') or '')
+            text=str(payload.get('text') or '')
+            cookies=str(payload.get('cookies') or '')
+            xhrs=payload.get('xhrs') or []
+            if not isinstance(xhrs,list) or len(xhrs)>500: raise ProbeError('extended_xhr_bound')
+            cookie_names=[]
+            for part in cookies.split(';'):
+              name=part.strip().split('=',1)[0].strip()
+              if name and re.fullmatch(r'[A-Za-z0-9_.-]{1,128}',name) and name not in cookie_names: cookie_names.append(name)
+            safe_xhrs=[]
+            for x in xhrs:
+              if not isinstance(x,dict): continue
+              u=str(x.get('url') or '')
+              try: host=urlsplit(u).hostname or ''
+              except Exception: host=''
+              if not host or len(u)>1000: continue
+              body=str(x.get('body') or '')
+              # retain public response body only for Alfa-owned hosts; never cookies/authorization headers
+              item={'url':u,'host':host,'status':x.get('status'),'method':x.get('method'),
+                    'body_chars':len(body),'body_sha256':hashlib.sha256(body.encode()).hexdigest() if body else None}
+              if host.endswith('.alfabank.ru') or host=='alfabank.ru':
+                item['body_sample']=body[:4000]
+              safe_xhrs.append(item)
+            report.update(status='ok',provider_cost=cost,origin_status=payload.get('status_code'),
+              text_chars=len(text),html_chars=len(html),cookie_names=cookie_names,
+              xhr_count=len(xhrs),xhrs=safe_xhrs[:250],
+              html_markers=[m for m in ['servicepipe','premium','cashback','privilege','offer'] if m in html.lower()])
+            # One cookie-chain retry only if a challenge cookie was actually returned.
+            if cookies:
+              params2={**params,'cookies':cookies}
+              with requests.get('https://api.scrapingant.com/v2/extended',params=params2,headers={'Accept':'application/json'},timeout=(10,75),allow_redirects=False) as r2:
+                report['cookie_retry_provider_status']=r2.status_code
+                if r2.status_code==200 and len(r2.content)<=8_000_000:
+                  p2=r2.json();t2=str(p2.get('text') or '');h2=str(p2.get('html') or p2.get('content') or '')
+                  report['cookie_retry']={'origin_status':p2.get('status_code'),'text_chars':len(t2),'html_chars':len(h2),
+                    'title':str(p2.get('title') or ''),'url':str(p2.get('url') or ''),
+                    'text_sample':t2[:10000],
+                    'challenge_seen':bool(re.search(r'servicepipe|captcha|access denied|проверка безопасности',h2[:5000],re.I))}
+                  report['cookie_retry_cost']=r2.headers.get('Ant-credits-cost')
           except Exception as exc:
             report['status']='failed';report['error']=str(exc) if isinstance(exc,(ProbeError,RuntimeError)) else ('probe_'+type(exc).__name__)
           finally:
-            report.update(scrapingant_reserved_credits=reader.reserved,scrapingant_known_charged_credits=reader.known_charged_credits)
+            report['policy_scrapingant_charged']=policy_reader.known_charged_credits
             Path('alfa-public-probe/report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2))
           if report['status']!='ok': raise SystemExit(1)
           PY
