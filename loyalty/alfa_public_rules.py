@@ -192,6 +192,71 @@ def parse_core(data: bytes, observed_at: str) -> list[dict]:
         "alfa_rbc_conditions_missing",
     )
 
+    concierge_benefit = _must(
+        text,
+        r"6\.2\..{0,180}?Участнику\s*3.{0,60}?Участнику\s*4.{0,60}?Участнику\s*5.{0,60}?Участнику\s*7\s*доступна\s*Услуга\s*[«\"]Консьерж\s*сервис[»\"]",
+        "alfa_concierge_benefit_missing",
+    )
+    concierge_conditions = "\n".join([
+        _must(
+            text,
+            r"Для\s*получения\s*Услуги\s*[«\"]Консьерж\s*сервис[»\"].{0,650}?мобильного\s*номера\s*телефона.{0,650}?обратиться\s*по\s*Телефону\s*Партнера",
+            "alfa_concierge_activation_missing",
+        ),
+        _must(
+            text,
+            r"Телефон\s*Партнера.{0,120}?\+7\s*499-965-8083.{0,220}?Консьерж\s*сервис",
+            "alfa_concierge_phone_missing",
+        ),
+    ])
+
+    simple_benefit = _must(
+        text,
+        r"6\.3\..{0,260}?доступен\s*статус\s*Silver\s*в\s*программе\s*SimplePrivé",
+        "alfa_simple_benefit_missing",
+    )
+    simple_conditions = "\n".join([
+        _must(
+            text,
+            r"Для\s*получения\s*статуса\s*Silver\s*в\s*программе\s*SimplePrivé.{0,900}?уникальной\s*ссылке.{0,700}?мобильный\s*номер\s*телефона.{0,650}?персональному\s*менеджеру",
+            "alfa_simple_activation_missing",
+        ),
+        _must(
+            text,
+            r"Статус\s*Silver\s*в\s*программе\s*SimplePrivé\s*[–—-].{0,260}?https://simplewine\.ru",
+            "alfa_simple_definition_missing",
+        ),
+    ])
+
+    smart_benefit = _must(
+        text,
+        r"6\.4\..{0,180}?Участнику\s*3.{0,60}?Участнику\s*4.{0,60}?Участнику\s*5.{0,60}?Участнику\s*7\s*доступна\s*Услуга\s*доступа\s*к\s*контенту",
+        "alfa_smart_benefit_missing",
+    )
+    smart_conditions = _must(
+        text,
+        r"6\.4\.1\..{0,500}?раздел\s*[«\"]Alfa\s*Only[»\"].{0,140}?1001\+\s*книг\s*в\s*Smart\s*Reading.{0,600}?Alfa\s*ID",
+        "alfa_smart_activation_missing",
+    )
+
+    vzr_benefit = _must(
+        text,
+        r"Страхование\s*ВЗР\s*[–—-]\s*страхование\s*выезжающих\s*за\s*рубеж.{0,120}?АльфаСтрахование",
+        "alfa_vzr_benefit_missing",
+    )
+    vzr_conditions = "\n".join([
+        _must(
+            text,
+            r"Услуга\s*по\s*Страхованию\s*ВЗР.{0,180}?1\s*\(один\)\s*раз\s*[–—-]\s*1\s*Промо-балл",
+            "alfa_vzr_promo_limit_missing",
+        ),
+        _must(
+            text,
+            r"Единовременно\s*Участнику\s*Программы\s*может\s*предоставляться\s*не\s*более\s*одной\s*услуги\s*по\s*Страхованию\s*ВЗР",
+            "alfa_vzr_concurrent_limit_missing",
+        ),
+    ])
+
     return [
         _offer("alfa_only_public_rules", "core47:taxi-transfer-carsharing", "Alfa Only — такси, трансфер и каршеринг",
                taxi_benefit, taxi_conditions, CORE_URL, observed_at, revision=47,
@@ -208,6 +273,18 @@ def parse_core(data: bytes, observed_at: str) -> list[dict]:
         _offer("alfa_only_public_rules", "core47:rbc", "Alfa Only — подписка РБК",
                rbc_benefit, rbc_conditions, CORE_URL, observed_at, revision=47,
                effective_from="2026-05-01", sha=sha, partner="РБК"),
+        _offer("alfa_only_public_rules", "core47:concierge", "Alfa Only — консьерж-сервис",
+               concierge_benefit, concierge_conditions, CORE_URL, observed_at, revision=47,
+               effective_from="2026-05-01", sha=sha, partner="Quintessentially Nova"),
+        _offer("alfa_only_public_rules", "core47:simpleprive-silver", "Alfa Only — статус Silver в SimplePrivé",
+               simple_benefit, simple_conditions, CORE_URL, observed_at, revision=47,
+               effective_from="2026-05-01", sha=sha, partner="Simple"),
+        _offer("alfa_only_public_rules", "core47:smart-reading", "Alfa Only — Smart Reading",
+               smart_benefit, smart_conditions, CORE_URL, observed_at, revision=47,
+               effective_from="2026-05-01", sha=sha, partner="Smart Reading"),
+        _offer("alfa_only_public_rules", "core47:travel-insurance", "Alfa Only — страхование ВЗР",
+               vzr_benefit, vzr_conditions, CORE_URL, observed_at, revision=47,
+               effective_from="2026-05-01", sha=sha, partner="АльфаСтрахование"),
     ]
 
 
@@ -247,7 +324,7 @@ async def collect_core(cfg, report, observed_at, limit):
     rows = parse_core(data, observed_at)
     rows = rows[:limit]
     report["discovered"] = len(rows)
-    report["coverage"] = "five_practical_benefits_from_public_core_rules_revision_47; authenticated_partner_catalog_not_read"
+    report["coverage"] = "nine_practical_benefits_from_public_core_rules_revision_47; authenticated_partner_catalog_not_read"
     return rows
 
 
