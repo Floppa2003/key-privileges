@@ -8,86 +8,46 @@ permissions:
 jobs:
   alfa-trust:
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 3
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-        with: {persist-credentials: false}
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with: {python-version: '3.12'}
-      - run: python -m pip install -r loyalty/requirements.txt
-      - name: Official pinned root in bank-scoped temporary context; no system trust changes
+      - run: python -m pip install requests==2.32.5
+      - name: HEAD only, no response body, redirect follow or account access
         run: |
           python - <<'PY'
-          import hashlib,json,os,ssl,sys,time,tempfile
+          import hashlib,json,os,tempfile,ssl
           from pathlib import Path
           from datetime import datetime,timezone
-          from urllib.parse import urlsplit,urljoin
+          from urllib.parse import urljoin,urlsplit
           import requests,certifi
-          from bs4 import BeautifulSoup
-          from protego import Protego
-          sys.path.insert(0,'loyalty')
-          from public_transport import robots_document,check_response
-          from free_access_probe import sanitized_page
-          out=Path('source-repair-check');out.mkdir()
           now=lambda:datetime.now(timezone.utc).isoformat()
-          sha=lambda b:hashlib.sha256(b).hexdigest()
           audit={'run_id':os.environ['GITHUB_RUN_ID']+':'+os.environ['GITHUB_RUN_ATTEMPT'],'commit':os.environ['GITHUB_SHA'],
-                 'started_at':now(),'account_used':False,'activation_performed':False,'published':False,'requests':[],
-                 'prior_default_tls_failure':'35376775285:1','trust_scope':'temporary web.alfabank.ru requests only; no global/browser trust'}
-          host='web.alfabank.ru';root='https://'+host+'/partner-offers/'
-          def get(url,verify=True):
-              entry={'url':url,'started_at':now()};audit['requests'].append(entry)
-              try:
-                  with requests.get(url,verify=verify,timeout=(8,20),allow_redirects=False,stream=True,headers={'User-Agent':'LoyaltyCatalogResearchBot/1.0'}) as res:
-                      data=bytearray()
-                      for chunk in res.iter_content(65536):
-                          data.extend(chunk)
-                          if len(data)>2_000_000:raise ValueError('response_bound')
-                      data=bytes(data);entry.update(status=res.status_code,bytes=len(data),sha256=sha(data),content_type=res.headers.get('content-type',''))
-                      if res.headers.get('retry-after'):raise ValueError('retry_after_no_retry')
-                      if res.is_redirect:
-                          target=urljoin(url,res.headers.get('location',''));parts=urlsplit(target)
-                          entry['redirect']={'scheme':parts.scheme,'host':parts.hostname,'path':parts.path}
-                      return res.status_code,data,res.headers
-              except Exception as exc:
-                  entry['error']=type(exc).__name__
-                  if isinstance(exc,requests.exceptions.SSLError):entry['reason']='certificate_verification_failed'
-                  raise
-              finally:entry['finished_at']=now()
+                 'started_at':now(),'method':'HEAD','account_used':False,'activation_performed':False,'published':False,
+                 'response_body_read':False,'redirect_followed':False,'prior_verified_tls_policy_redirect':'35377249536:1'}
+          out=Path('source-repair-check');out.mkdir()
           try:
+              url='https://gu-st.ru/content/lending/russian_trusted_root_ca_pem.crt'
+              with requests.get(url,timeout=(8,15),stream=True,allow_redirects=False) as r:
+                  r.raise_for_status();data=r.raw.read(16385)
+              digest=hashlib.sha256(data).hexdigest()
+              if digest!='936a43fea6e8e525bcc0f81acd9c3d21b4fc4b9b68acea7906d698005afc6504':raise ValueError('official_root_identity_changed')
+              audit['root']={'url':url,'sha256':digest}
               with tempfile.TemporaryDirectory() as td:
-                  ca_url='https://gu-st.ru/content/lending/russian_trusted_root_ca_pem.crt'
-                  status,data,_=get(ca_url)
-                  if status!=200 or sha(data)!='936a43fea6e8e525bcc0f81acd9c3d21b4fc4b9b68acea7906d698005afc6504':raise ValueError('official_root_identity_changed')
-                  audit['official_root_sha256']=sha(data)
                   bundle=Path(td)/'bank-ca.pem';bundle.write_bytes(Path(certifi.where()).read_bytes()+b'\n'+data)
-                  context=ssl.create_default_context(cafile=str(bundle))
-                  assert context.check_hostname and context.verify_mode==ssl.CERT_REQUIRED
-                  status,raw,headers=get('https://'+host+'/robots.txt',str(bundle))
-                  audit['tls_verified']=True
-                  body=raw.decode('utf-8-sig');rules,state=robots_document(status,body)
-                  audit['policy']={'status':status,'state':state,'rules':rules}
-                  policy=Protego.parse(rules)
-                  if not policy.can_fetch(root,'LoyaltyCatalogResearchBot'):raise ValueError('robots_disallow')
-                  rate=policy.request_rate('LoyaltyCatalogResearchBot')
-                  delay=max(3,policy.crawl_delay('LoyaltyCatalogResearchBot') or 0,rate.seconds/rate.requests if rate else 0)
-                  if delay>30:raise ValueError('delay_exceeds_bound')
-                  time.sleep(delay)
-                  status,raw,headers=get(root,str(bundle))
-                  if not 200<=status<300:raise ValueError('main_status_'+str(status))
-                  body=raw.decode('utf-8');check_response(status,body)
-                  dom=BeautifulSoup(body,'html.parser')
-                  audit['public_document']={'status':status,'title':dom.title.get_text(' ',strip=True) if dom.title else '',
-                    'script_paths':[urlsplit(urljoin(root,n['src'])).path for n in dom.select('script[src]')][:30],
-                    'password_inputs':bool(dom.select('input[type=password]'))}
-                  if dom.select('input[type=password]'):audit['public_document']['state']='login_form_no_account_used'
-                  else:
-                      clean,identity=sanitized_page(body,root);data=clean.encode('utf8');file=sha(data)+'.html';(out/file).write_bytes(data)
-                      audit['public_document'].update(identity,file=file,sha256=sha(data),body_bytes=len(data))
-          except Exception as exc:audit['terminal_error']=str(exc) if isinstance(exc,ValueError) else type(exc).__name__
+                  ctx=ssl.create_default_context(cafile=str(bundle));assert ctx.check_hostname and ctx.verify_mode==ssl.CERT_REQUIRED
+                  target='https://web.alfabank.ru/partner-offers/'
+                  with requests.head(target,verify=str(bundle),timeout=(8,15),allow_redirects=False,
+                                     headers={'User-Agent':'LoyaltyCatalogResearchBot/1.0'}) as r:
+                      audit.update(url=target,status=r.status_code,tls_verified=True,content_type=r.headers.get('content-type',''))
+                      if r.is_redirect:
+                          parsed=urlsplit(urljoin(target,r.headers['location']))
+                          audit['redirect']={'scheme':parsed.scheme,'host':parsed.hostname,'path':parsed.path,'query_omitted':bool(parsed.query)}
+                          if parsed.hostname=='private.auth.alfabank.ru':audit['access_state']='bank_authentication_redirect'
+                      elif r.status_code==200:audit['access_state']='head_200_body_not_inspected'
+          except Exception as exc:audit['error']=str(exc) if isinstance(exc,ValueError) else type(exc).__name__
           finally:
-              audit['finished_at']=now();(out/'audit.json').write_text(json.dumps(audit,ensure_ascii=False,indent=2))
-              print(json.dumps({'requests':len(audit['requests']),'tls_verified':audit.get('tls_verified',False),'terminal_error':audit.get('terminal_error'),'public_document':audit.get('public_document')},ensure_ascii=False))
+              audit['finished_at']=now();(out/'audit.json').write_text(json.dumps(audit,ensure_ascii=False,indent=2));print(json.dumps(audit,ensure_ascii=False))
           PY
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
