@@ -237,11 +237,11 @@ def parse_document(spec: dict, data: bytes, observed_at: str) -> dict:
 
 def partner_rates(value: str) -> list[dict]:
     text = compact(value)
-    match = re.search(r"по\\s*ставке\\s*(\\d+(?:[.,]\\d+)?)\\s*%", text, re.I)
+    match = re.search(r"по\s*ставке\s*(\d+(?:[.,]\d+)?)\s*%", text, re.I)
     if not match:
         return []
     raw = match.group(1).replace(",", ".")
-    clause = must(text, r"3\\.2\\..{0,700}?по\\s*ставке\\s*\\d+(?:[.,]\\d+)?\\s*%.{0,520}?календарного\\s*месяца", "alfa_partner_pdf_rate_evidence_missing")
+    clause = must(text, r"3\.2\..{0,700}?по\s*ставке\s*\d+(?:[.,]\d+)?\s*%.{0,520}?календарного\s*месяца", "alfa_partner_pdf_rate_evidence_missing")
     return [{"kind":"cashback","value":raw.rstrip("0").rstrip(".") if "." in raw else raw,
              "unit":"percent","qualifier":"exact","basis_amount":None,"basis_unit":None,"evidence":clause}]
 
