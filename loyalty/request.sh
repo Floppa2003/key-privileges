@@ -17,5 +17,11 @@ for name in GOOGLE_SERVICE_ACCOUNT GOOGLE_WORKLOAD_IDENTITY_PROVIDER DISCOUNTS_S
   fi
 done
 
-gh workflow run loyalty.yml --repo "$GITHUB_REPOSITORY" --ref main -f limit=500 -f publish=true
+source_ids="$(python "$(dirname "$0")/source_selection.py" --sources "${LOYALTY_SOURCE_IDS:-}")"
+selection=()
+if [[ -n "$source_ids" ]]; then
+  selection=(-f "sources=$source_ids")
+fi
+
+gh workflow run loyalty.yml --repo "$GITHUB_REPOSITORY" --ref main -f limit=500 -f publish=true "${selection[@]}"
 printf '%s\n' 'DISPATCH_ACCEPTED: target workflow requested; this is not publication success. Verify its run and Sheets readback.'

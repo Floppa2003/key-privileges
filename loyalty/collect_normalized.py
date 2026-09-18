@@ -16,6 +16,7 @@ from playwright.async_api import async_playwright
 from adapters import extract,next_state,s7_catalog,s7_detail,mir_detail,PROGRAMS,node_text,ural_catalog,key_catalog,mir_page_url
 from normalized import VERSION,make_offer,content_hash,validate_offer,text
 from public_transport import PublicSource
+from source_selection import select_sources
 from mir_regions import collect_mir
 from reviewed_pdf import extract_rgo_pdf
 from t2_regions import collect_t2
@@ -179,9 +180,9 @@ async def bounded_source(factory,sem,timeout=420):
 
 
 async def main():
-    p=argparse.ArgumentParser();p.add_argument('--limit',type=int,default=200);p.add_argument('--out',default='loyalty-output');args=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--limit',type=int,default=200);p.add_argument('--out',default='loyalty-output');p.add_argument('--sources',default='',help='Comma-separated registered source IDs; blank retains the full scheduled scope');args=p.parse_args()
     if not 1<=args.limit<=500:p.error('limit must be 1..500')
-    cfgs=json.loads(Path(__file__).with_name('sources_normalized.json').read_text())
+    cfgs=select_sources(json.loads(Path(__file__).with_name('sources_normalized.json').read_text()),args.sources)
     now=datetime.now(timezone.utc).isoformat();run_id=os.getenv('GITHUB_RUN_ID',now)+':'+os.getenv('GITHUB_RUN_ATTEMPT','1')
     out=Path(args.out);out.mkdir(parents=True,exist_ok=True)
     async with async_playwright() as p:

@@ -62,6 +62,10 @@ def extract_partner_page(source,soup,url,observed_at):
     if not re.search(r'мил[ьяюеи]|милz|скидк',flat,re.I):raise ValueError('Missing actual partner benefit')
     details={'source_scope':'reviewed_partner_page_not_program_catalog',
              'partner_identity_origin':'reviewed_exact_partner_owned_url'}
+    if cfg.get('publication_selector'):
+        publication=text(content(required(soup,[cfg['publication_selector']])))
+        details['article_published_at']=datetime.strptime(publication,'%d.%m.%Y').date().isoformat()
+        details['publication_date_is_not_validity']=True
     date_from,date_until,date_evidence=explicit_period(terms,cfg.get('date_rule'))
     if date_evidence:details['validity_evidence']=date_evidence
     warnings=['publication_is_not_confirmation_of_current_user_eligibility']+cfg.get('warnings',[])
@@ -103,7 +107,8 @@ def extract_partner_page(source,soup,url,observed_at):
         return [make('offer',match[0],details={'earning_rule':{
             'value':match[2],'unit':'miles','basis_amount':match[1].replace(' ',''),'basis_unit':'RUB','evidence':match[0]}})]
     benefit=content(required(soup,cfg['benefit_selectors'])) if cfg.get('benefit_selectors') else terms
-    return [make('offer',benefit,valid_from=date_from,valid_until=date_until)]
+    redemption=content(required(soup,cfg['redemption_selectors'])) if cfg.get('redemption_selectors') else ''
+    return [make('offer',benefit,redemption=redemption,valid_from=date_from,valid_until=date_until)]
 
 
 def utair_partners(soup,url,observed_at):

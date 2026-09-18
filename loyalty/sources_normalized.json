@@ -601,5 +601,21 @@
     "url": "https://uralsib.ru/aktsii/privetstvennye-bally-rzhd-za-oformlenie-karty",
     "access_profile": "russian_nuc_pinned_2026_09",
     "timeout_seconds": 240
+  },
+  {
+    "id": "ekp_artflora",
+    "name": "Единая карта петербуржца (ЕКП) — АртФлора",
+    "url": "https://artflora.ru/news/skidka-7-dlya-vseh-derzhateley-edinoy-katy-peterburzhca/",
+    "mode": "html",
+    "coverage_scope": "one_reviewed_public_partner_page_not_authenticated_card",
+    "timeout_seconds": 120
+  },
+  {
+    "id": "ekp_litres",
+    "name": "Единая карта петербуржца (ЕКП) — Литрес",
+    "url": "https://www.litres.ru/collections/2-knigi-iz-podborki-v-podarok-i-skidka-20-ot-ekp-i-litres/",
+    "mode": "html",
+    "coverage_scope": "one_reviewed_public_partner_page_not_authenticated_card",
+    "timeout_seconds": 120
   }
 ]
