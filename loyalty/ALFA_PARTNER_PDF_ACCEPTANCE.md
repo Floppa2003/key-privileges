@@ -116,6 +116,13 @@ Expansion targeted live run **35402505220** on branch `loyalty/finish-catalogs`:
 
 The expansion workflow is temporary and is removed before merge.
 
+Final expansion regression **35402721789**:
+
+- **1026/1026 Python tests passed**;
+- **7/7 KEY tests passed**;
+- all **5** reviewed Alfa-owned partner PDFs were fetched and parsed again;
+- **5/5** normalized offer records were accepted with zero source errors.
+
 ## Deliberate incompleteness
 
 This is **not** claimed to be an exhaustive inventory of every public Alfa Only partner PDF.
