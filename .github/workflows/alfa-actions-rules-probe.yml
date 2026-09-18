@@ -31,7 +31,7 @@ jobs:
           from public_transport import robots_document,check_response
 
           root='https://alfabank.ru/actions/rules/'
-          reader=FreeReader(os.environ.get('SCRAPINGANT_API_KEY',''),[{'id':'alfa_actions','url':root}],max_credits=2,max_requests=2)
+          reader=FreeReader(os.environ.get('SCRAPINGANT_API_KEY',''),[{'id':'alfa_actions','url':root}],max_credits=11,max_requests=2)
           report={'status':'started','root':root,'account_session_used':False,'publication':False}
           try:
             reader.preflight()
@@ -39,7 +39,7 @@ jobs:
             rules_text,state=robots_document(rs,rr); rules=Protego.parse(rules_text)
             report['robots']={'origin_status':rs,'state':state,'credits':rc}
             if not rules.can_fetch(root,'LoyaltyCatalogResearchBot'): raise ProbeError('robots_disallow')
-            status,raw,credits=reader.read(root,browser=False)
+            status,raw,credits=reader.read(root,browser=True)
             check_response(status,raw)
             soup=BeautifulSoup(raw,'html.parser')
             text=' '.join(soup.stripped_strings)
