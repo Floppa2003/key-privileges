@@ -38,7 +38,12 @@ def required(soup,selectors):
 def explicit_period(value,rule):
     """Only an explicitly labelled offer interval, not all date-looking text."""
     flat=re.sub(r'\s+',' ',value)
-    if rule=='full_dmy':
+    if rule=='end_dmy':
+        matches=list(re.finditer(r'Срок действия предложения:\s*до (\d{2}\.\d{2}\.\d{4})(?!\d)',flat,re.I))
+        if len(matches)>1:raise ValueError('Ambiguous published end dates')
+        if matches:
+            m=matches[0];return None,datetime.strptime(m[1],'%d.%m.%Y').date().isoformat(),m[0]
+    elif rule=='full_dmy':
         m=re.search(r'Предложение действует с (\d{2}\.\d{2}\.\d{4}) (?:по|до) (\d{2}\.\d{2}\.\d{4})',flat,re.I)
         if m:return *(datetime.strptime(s,'%d.%m.%Y').date().isoformat() for s in m.groups()),m[0]
     elif rule=='shared_year_dmy':
@@ -54,6 +59,9 @@ def extract_partner_page(source,soup,url,observed_at):
     cfg=CONFIG[source]
     if canonical_url(url)!=canonical_url(cfg['url']):
         raise ValueError('Requested URL is not the reviewed partner offer URL')
+    if cfg.get('parser') == 'sacvoyage_loyalty':
+        from sacvoyage_loyalty import extract_sacvoyage
+        return extract_sacvoyage(source,soup,url,observed_at,cfg)
     if cfg.get('parser') in ('ilocked_ekp','ilocked_certificate'):
         from ilocked_ekp import extract_ilocked_ekp
         return extract_ilocked_ekp(source,soup,url,observed_at,cfg)
@@ -71,6 +79,14 @@ def extract_partner_page(source,soup,url,observed_at):
         details['publication_date_is_not_validity']=True
     date_from,date_until,date_evidence=explicit_period(terms,cfg.get('date_rule'))
     if date_evidence:details['validity_evidence']=date_evidence
+    if cfg.get('require_explicit_period') and not date_evidence:
+        raise ValueError('Required published period missing')
+    if cfg.get('link_selectors'):
+        links=[]
+        for node in required(soup,cfg['link_selectors']):
+            item={'label':text(node.get_text(' ',strip=True)),'href':node.get('href','')}
+            if item not in links:links.append(item)
+        details['published_links']=links
     warnings=['publication_is_not_confirmation_of_current_user_eligibility']+cfg.get('warnings',[])
     if cfg.get('date_rule') and not date_evidence:warnings.append('explicit_period_not_extracted')
     def make(native,benefit,**kwargs):

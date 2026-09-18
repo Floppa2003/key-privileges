@@ -263,5 +263,37 @@
     "url": "https://ilocked.ru/certificate",
     "parser": "ilocked_certificate",
     "category": "Квесты"
+  },
+  "sacvoyage_loyalty": {
+    "url": "https://sacvoyage.ru/aktsii/",
+    "program": "Саквояж впечатлений — собственная программа",
+    "partner": "Саквояж впечатлений",
+    "category": "Отели",
+    "parser": "sacvoyage_loyalty"
+  },
+  "rzd_sacvoyage_public": {
+    "url": "https://sacvoyage.ru/partners/rzhd-bonus/",
+    "program": "РЖД Бонус — публичная страница отеля",
+    "partner": "Саквояж впечатлений",
+    "category": "Отели",
+    "selectors": [
+      "main .news-content"
+    ],
+    "benefit_selectors": [
+      "main .news-content > h1.card-room__title + p"
+    ],
+    "redemption_selectors": [
+      "main .news-content-text"
+    ],
+    "link_selectors": [
+      "main .news-content-text a[href]"
+    ],
+    "date_rule": "end_dmy",
+    "require_explicit_period": true,
+    "warnings": [
+      "independent_partner_page_not_authenticated_programme_card",
+      "no_equivalence_with_unread_programme_card_verified",
+      "check_published_link_destinations_not_only_labels"
+    ]
   }
 }
