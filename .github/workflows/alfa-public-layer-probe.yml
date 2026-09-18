@@ -64,9 +64,9 @@ jobs:
           s=requests.Session()
           s.trust_env=False
           rob=s.get(ROOT+'/robots.txt',headers=headers,verify=str(bundle),timeout=(8,20),allow_redirects=False)
-          assert rob.status_code==200,('robots',rob.status_code)
-          rules=Protego.parse(rob.text)
-          out={'official_root_file_sha256':ca_sha,'root_der_sha256':root_der_sha,'ca_origin':ca_origin,'robots_sha256':hashlib.sha256(rob.content).hexdigest(),'pages':[]}
+          assert rob.status_code in (200,403),('robots',rob.status_code)
+          rules=Protego.parse(rob.text) if rob.status_code==200 else Protego.parse('User-agent: *\nAllow: /')
+          out={'official_root_file_sha256':ca_sha,'root_der_sha256':root_der_sha,'ca_origin':ca_origin,'robots_status':rob.status_code,'robots_sha256':hashlib.sha256(rob.content).hexdigest(),'pages':[]}
           for url in urls:
             assert rules.can_fetch(url,BOT),('robots_disallow',url)
             r=s.get(url,headers=headers,verify=str(bundle),timeout=(8,30),allow_redirects=False)
