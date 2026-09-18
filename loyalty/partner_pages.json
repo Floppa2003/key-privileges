@@ -263,5 +263,12 @@
     "url": "https://ilocked.ru/certificate",
     "parser": "ilocked_certificate",
     "category": "Квесты"
+  },
+  "sacvoyage_loyalty": {
+    "url": "https://sacvoyage.ru/aktsii/",
+    "program": "Саквояж впечатлений — собственная программа",
+    "partner": "Саквояж впечатлений",
+    "category": "Отели",
+    "parser": "sacvoyage_loyalty"
   }
 }

@@ -672,5 +672,11 @@
     "mode": "html",
     "url": "https://ilocked.ru/certificate",
     "coverage_scope": "one_short_discount_restriction_not_full_contract"
+  },
+  {
+    "id": "sacvoyage_loyalty",
+    "name": "Саквояж впечатлений — собственные скидки",
+    "mode": "html",
+    "url": "https://sacvoyage.ru/aktsii/"
   }
 ]

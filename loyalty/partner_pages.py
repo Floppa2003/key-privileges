@@ -54,6 +54,9 @@ def extract_partner_page(source,soup,url,observed_at):
     cfg=CONFIG[source]
     if canonical_url(url)!=canonical_url(cfg['url']):
         raise ValueError('Requested URL is not the reviewed partner offer URL')
+    if cfg.get('parser') == 'sacvoyage_loyalty':
+        from sacvoyage_loyalty import extract_sacvoyage
+        return extract_sacvoyage(source,soup,url,observed_at,cfg)
     if cfg.get('parser') in ('ilocked_ekp','ilocked_certificate'):
         from ilocked_ekp import extract_ilocked_ekp
         return extract_ilocked_ekp(source,soup,url,observed_at,cfg)
