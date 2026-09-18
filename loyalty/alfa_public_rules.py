@@ -168,11 +168,18 @@ def parse_core(data: bytes, observed_at: str) -> list[dict]:
         r"6\.8\.2\..{0,500}?количество\s*лиц,\s*сопровождающих\s*Участника\s*\(не\s*более\s*3.{0,220}?нажать\s*на\s*кнопку\s*[«\"]Выпустить\s*QR\s*-\s*код[»\"]",
         "alfa_qr_lounge_missing",
     )
-    qr_conditions = _must(
-        text,
-        r"6\.8\.3\..{0,900}?в\s*течение\s*24\s*часов.{0,500}?Вернуть.{0,350}?24\s*часов",
-        "alfa_qr_return_missing",
-    )
+    qr_conditions = "\n".join([
+        _must(
+            text,
+            r"6\.8\.3\..{0,520}?не\s*смогут\s*посетить.{0,220}?в\s*течение\s*24\s*часов.{0,280}?подлежат\s*восстановлению",
+            "alfa_qr_restore_missing",
+        ),
+        _must(
+            text,
+            r"нажать\s*на\s*кнопку\s*[«\"]Вернуть[»\"]\s*в\s*течение\s*24\s*часов",
+            "alfa_qr_return_action_missing",
+        ),
+    ])
 
     rbc_benefit = _must(
         text,
