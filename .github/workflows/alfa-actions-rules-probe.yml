@@ -8,14 +8,14 @@ permissions:
 jobs:
   probe:
     runs-on: ubuntu-24.04
-    timeout-minutes: 6
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with: {persist-credentials: false}
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with: {python-version: '3.12'}
       - run: python -m pip install -r loyalty/requirements.txt
-      - name: Read public action rules with the existing free provider
+      - name: Read action rules through no-key Jina after policy check
         env:
           SCRAPINGANT_API_KEY: ${{ secrets.SCRAPINGANT_API_KEY }}
         run: |
@@ -23,43 +23,43 @@ jobs:
           python - <<'PY'
           import hashlib,json,os,re,sys
           from pathlib import Path
-          from urllib.parse import urljoin,urlsplit
+          import requests
           sys.path.insert(0,'loyalty')
-          from bs4 import BeautifulSoup
           from protego import Protego
           from free_access_probe import FreeReader,ProbeError
-          from public_transport import robots_document,check_response
+          from public_transport import robots_document
 
           root='https://alfabank.ru/actions/rules/'
-          reader=FreeReader(os.environ.get('SCRAPINGANT_API_KEY',''),[{'id':'alfa_actions','url':root}],max_credits=11,max_requests=2)
-          report={'status':'started','root':root,'account_session_used':False,'publication':False}
+          reader=FreeReader(os.environ.get('SCRAPINGANT_API_KEY',''),[{'id':'alfa_actions','url':root}],max_credits=1,max_requests=1)
+          report={'status':'started','root':root,'reader':'jina_no_key','account_session_used':False,'publication':False}
           try:
             reader.preflight()
             rs,rr,rc=reader.read('https://alfabank.ru/robots.txt',browser=False)
-            rules_text,state=robots_document(rs,rr); rules=Protego.parse(rules_text)
+            rules_text,state=robots_document(rs,rr);rules=Protego.parse(rules_text)
             report['robots']={'origin_status':rs,'state':state,'credits':rc}
-            if not rules.can_fetch(root,'LoyaltyCatalogResearchBot'): raise ProbeError('robots_disallow')
-            status,raw,credits=reader.read(root,browser=True)
-            check_response(status,raw)
-            soup=BeautifulSoup(raw,'html.parser')
-            text=' '.join(soup.stripped_strings)
+            if not rules.can_fetch(root,'LoyaltyCatalogResearchBot'):raise ProbeError('robots_disallow')
+            with requests.get('https://r.jina.ai/'+root,headers={'Accept':'text/plain','X-No-Cache':'true','User-Agent':'LoyaltyCatalogResearchBot/1.0'},timeout=(10,60),allow_redirects=False,stream=True) as r:
+              if r.status_code!=200:raise ProbeError('jina_http_'+str(r.status_code))
+              raw=bytearray()
+              for b in r.iter_content(65536):
+                raw.extend(b)
+                if len(raw)>5_000_000:raise ProbeError('jina_response_bound')
+            text=bytes(raw).decode('utf-8','replace')
             links=[]
-            for a in soup.select('a[href]'):
-              u=urljoin(root,a['href'])
-              p=urlsplit(u)
-              if p.scheme=='https' and p.hostname in ('alfabank.servicecdn.ru','alfabank.st'):
-                label=' '.join(a.stripped_strings)
-                links.append({'label':label[:600],'url':u[:1000]})
-            alfa_only=[x for x in links if re.search(r'Alfa\s*Only|Only\b',x['label'],re.I)]
-            report.update(status='ok',origin_status=status,credits=credits,html_sha256=hashlib.sha256(raw.encode()).hexdigest(),
-              bytes=len(raw.encode()),visible_text_chars=len(text),servicecdn_links=len(links),alfa_only_labeled_links=len(alfa_only),
-              alfa_only_links=alfa_only[:300],title=(soup.title.get_text(' ',strip=True) if soup.title else ''))
+            for m in re.finditer(r'https://alfabank\.servicecdn\.ru/[^\s)\]>]+',text):
+              u=m.group(0).rstrip('.,;')
+              if u not in links:links.append(u)
+            lines=[x.strip() for x in text.splitlines() if re.search(r'Alfa\s*Only|Only\b',x,re.I)]
+            if len(text)<500:raise ProbeError('jina_empty_content')
+            report.update(status='ok',chars=len(text),sha256=hashlib.sha256(text.encode()).hexdigest(),
+              servicecdn_links=len(links),alfa_only_lines=len(lines),sample_lines=lines[:250],links=links[:500])
+            Path('alfa-actions-probe/rules.md').write_text(text)
           except Exception as exc:
             report['status']='failed';report['error']=str(exc) if isinstance(exc,(ProbeError,RuntimeError)) else ('probe_'+type(exc).__name__)
           finally:
-            report['known_charged_credits']=reader.known_charged_credits
+            report['known_scrapingant_credits']=reader.known_charged_credits
             Path('alfa-actions-probe/report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2))
-          if report['status']!='ok': raise SystemExit(1)
+          if report['status']!='ok':raise SystemExit(1)
           PY
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
