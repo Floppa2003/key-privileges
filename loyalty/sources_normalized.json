@@ -684,5 +684,18 @@
     "name": "РЖД Бонус — публичные условия Саквояжа",
     "mode": "html",
     "url": "https://sacvoyage.ru/partners/rzhd-bonus/"
+  },
+  {
+    "id": "hse_alumni",
+    "name": "Карта выпускника НИУ ВШЭ",
+    "mode": "hse",
+    "url": "https://alumni.hse.ru/loyalty/partners/"
+  },
+  {
+    "id": "alfa_only_partner_offers",
+    "name": "Alfa Only — предложения партнёров (доступ не подтверждён)",
+    "mode": "probe",
+    "url": "https://web.alfabank.ru/partner-offers/",
+    "timeout_seconds": 45
   }
 ]

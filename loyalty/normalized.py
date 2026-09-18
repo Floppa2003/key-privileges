@@ -33,6 +33,8 @@ for _key,_cfg in KNOWN_RULES.items():
 HOSTS['utair_media']=['media.utair.ru']
 HOSTS['utair']=['www.utair.ru']
 HOSTS['nordwind']=['nordwindairlines.ru']
+HOSTS['hse_alumni']=['alumni.hse.ru']
+HOSTS['alfa_only_partner_offers']=['web.alfabank.ru']
 HOSTS['ekp']=['ekp.spb.ru']
 HOSTS['ekp_linked_rules']=['ekp.spb.ru','xn--b1abfnwkklk1gdn5a.xn--p1ai','mpclinic.ru','vamprivet.ru']
 HOSTS['rzd']=['rzd-bonus.ru']
@@ -154,6 +156,13 @@ def content_hash(record: dict) -> str:
     return hashlib.sha256(json.dumps(content,ensure_ascii=False,sort_keys=True,separators=(',',':')).encode()).hexdigest()
 
 
+def offer_rates(source_id, value):
+    if source_id=='hse_alumni':
+        from hse_alumni import hse_rates
+        return hse_rates(value)
+    return normalize_rates(value)
+
+
 def make_offer(source_id: str, native_id: str, program: str, partner_name: str | None,
                benefit: str, url: str, observed_at: str, *, conditions: str = '',
                redemption: str = '', title: str = '', category: str | None = None,
@@ -185,7 +194,11 @@ def make_offer(source_id: str, native_id: str, program: str, partner_name: str |
     if any(len(s)>40000 for s in (benefit,conditions,redemption)):
         raise ValueError('Oversized text; refusing to truncate conditions')
     all_text = '\n'.join((benefit,conditions,redemption))
-    promo = extract_promocodes(all_text, tables)
+    if source_id=='hse_alumni':
+        from hse_alumni import hse_codes
+        promo=hse_codes(all_text,tables,preview=record_kind=='source_observation')
+    else:
+        promo = extract_promocodes(all_text, tables)
     codes = promo['codes']
     r = {'schema_version':2,'adapter_version':VERSION,
          'id':hashlib.sha256((source_id+'\n'+native_id).encode()).hexdigest(),
@@ -194,7 +207,7 @@ def make_offer(source_id: str, native_id: str, program: str, partner_name: str |
          'title':text(title) or text(partner_name) or native_id,'category':text(category) or None,
          'benefit_text':benefit,'conditions_text':conditions,'redemption_text':redemption,
          'benefit_types':[k for k,p in TYPES.items() if re.search(p,benefit,re.I)],
-         'rates':normalize_rates(benefit),'promo_codes':codes,
+         'rates':offer_rates(source_id,benefit),'promo_codes':codes,
          'valid_from':valid_from,'valid_until':valid_until,'validity_status':validity,
          'source_status':source_status,'source_url':url,
          'benefit_url':url if link_kind in ('detail_page','page_anchor') else None,
@@ -233,9 +246,13 @@ def validate_offer(r: dict) -> None:
         raise ValueError('Stable ID mismatch')
     if r.get('content_sha256')!=content_hash(r):
         raise ValueError('Evidence hash mismatch')
-    if r.get('rates')!=normalize_rates(r.get('benefit_text','')):
+    if r.get('rates')!=offer_rates(r['source_id'],r.get('benefit_text','')):
         raise ValueError('Rate evidence mismatch')
-    promo=extract_promocodes('\n'.join(r.get(k,'') for k in ('benefit_text','conditions_text','redemption_text')),r.get('tables',[]))
+    if r['source_id']=='hse_alumni':
+        from hse_alumni import hse_codes
+        promo=hse_codes('\n'.join(r.get(k,'') for k in ('benefit_text','conditions_text','redemption_text')),r.get('tables',[]),preview=r['record_kind']=='source_observation')
+    else:
+        promo=extract_promocodes('\n'.join(r.get(k,'') for k in ('benefit_text','conditions_text','redemption_text')),r.get('tables',[]))
     if (r.get('promo_codes')!=promo['codes']
         or r.get('details',{}).get('promo_code_evidence')!=promo['evidence']
         or r.get('details',{}).get('promo_code_delivery')!=promo['delivery']
@@ -269,6 +286,9 @@ def validate_offer(r: dict) -> None:
         validate_record(r)
     if r['source_id']=='ekp':
         from ekp_catalog import validate_record
+        validate_record(r)
+    if r['source_id']=='hse_alumni':
+        from hse_alumni import validate_record
         validate_record(r)
     if r['source_id']=='nordwind':
         from nordwind_catalog import validate_catalog_record
