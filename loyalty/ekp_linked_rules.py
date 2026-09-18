@@ -48,7 +48,7 @@ def checked_url(value):
         if not allowed:raise ValueError('el_unreviewed_path')
     return urlunsplit(('https',host,path,'',''))
 
-def discover(base,clock):
+def discover(base,clock,*,practical_only=False):
     prepare(base)
     if not 0<=(clock-instant(base['observed_at'])).total_seconds()<=604800:raise ValueError('el_parent_snapshot_age')
     targets={};inventory={};gated=0
@@ -63,6 +63,8 @@ def discover(base,clock):
                 original=a['href'];label=a.get_text(' ',strip=True)
                 entry=inventory.setdefault(original,{'url':original,'labels':[],'classification':'merchant_or_redemption_reference'})
                 if label not in entry['labels']:entry['labels'].append(label)
+                if practical_only and urlsplit(original).path.lower().endswith('.pdf'):
+                    entry['classification']='out_of_scope_bulk_appendix';continue
                 if not (urlsplit(original).path.lower().endswith('.pdf') or RULE_LABEL.search(label)):continue
                 try:url=checked_url(original)
                 except ValueError as exc:
@@ -240,7 +242,7 @@ def rows_for(data,entry,receipt,observed_at):
     return rows
 
 def assemble(base,audit,folder):
-    entries,inventory=discover(base,instant(audit['started_at']))
+    entries,inventory=discover(base,instant(audit['started_at']),practical_only=audit.get('practical_only',False))
     if inventory!=audit['inventory'] or [e['url'] for e in entries]!=[r['url'] for r in audit['results']]:raise ValueError('el_inventory_mismatch')
     rows=[];errors=[];downloaded=0
     for i,(entry,result) in enumerate(zip(entries,audit['results'])):
@@ -345,12 +347,12 @@ def validate_record(r):
 
 def main():
     parser=argparse.ArgumentParser();parser.add_argument('--input',default='ekp-upstream/normalized.json');parser.add_argument('--out',default='ekp-linked-output')
-    args=parser.parse_args();base=json.loads(Path(args.input).read_text());started=now();entries,inventory=discover(base,instant(started))
+    args=parser.parse_args();base=json.loads(Path(args.input).read_text());started=now();entries,inventory=discover(base,instant(started),practical_only=True)
     folder=Path(args.out);folder.mkdir(parents=True,exist_ok=True);(folder/'objects').mkdir(exist_ok=True)
     (folder/'parents.json').write_text(json.dumps(base,ensure_ascii=False))
     reader=Reader(os.getenv('SCRAPINGANT_API_KEY',''))
     audit={'run_id':os.environ['GITHUB_RUN_ID']+':'+os.environ['GITHUB_RUN_ATTEMPT'],'commit':os.environ['GITHUB_SHA'],
-        'started_at':started,'inventory':inventory,'results':[],'requests':reader.receipts,'reserved':0,'source_account_used':False}
+        'started_at':started,'practical_only':True,'inventory':inventory,'results':[],'requests':reader.receipts,'reserved':0,'source_account_used':False}
     for i,entry in enumerate(entries):
         result={'url':entry['url']};audit['results'].append(result)
         try:

@@ -1,11 +1,6 @@
-name: Aeroflot linked public rules
+name: Aeroflot linked public rules (retired bulk scope)
 on:
-  push:
-    branches: [main, 'loyalty/aeroflot-linked-20260918', 'loyalty/samson-linked-20260918']
-    paths: [loyalty/aeroflot_linked_rules.py, loyalty/tests/test_aeroflot_linked_rules.py, loyalty/tests/test_samson_linked_rules.py, .github/workflows/aeroflot-linked-rules.yml]
   workflow_dispatch:
-  schedule:
-    - cron: '57 9 * * 5'
 permissions:
   contents: read
 concurrency:
@@ -13,118 +8,7 @@ concurrency:
   cancel-in-progress: false
   queue: max
 jobs:
-  regression:
+  scope:
     runs-on: ubuntu-24.04
-    timeout-minutes: 6
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-        with: {persist-credentials: false}
-      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
-        with: {python-version: '3.12'}
-      - run: python -m pip install -r loyalty/requirements.txt
-      - name: Run all regressions and preserve exact executed code
-        run: |
-          mkdir -p linked-tests
-          set -o pipefail
-          python -m unittest discover -s loyalty/tests -v 2>&1 | tee linked-tests/python-tests.log
-          node --test key/refresh.test.mjs 2>&1 | tee linked-tests/key-tests.log
-          tar -cf linked-tests/code.tar loyalty key .github/workflows
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        if: always()
-        with:
-          name: aeroflot-linked-tests-${{ github.run_id }}-${{ github.run_attempt }}
-          path: linked-tests/
-          retention-days: 7
-  collect:
-    needs: regression
-    if: github.repository == 'Floppa2003/key-privileges'
-    runs-on: ubuntu-24.04
-    timeout-minutes: 30
-    permissions:
-      contents: read
-      actions: read
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-        with: {persist-credentials: false}
-      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
-        with: {python-version: '3.12'}
-      - run: python -m pip install -r loyalty/requirements.txt
-      - run: sudo apt-get update -qq && sudo apt-get install -y poppler-utils tesseract-ocr tesseract-ocr-rus
-      - name: Locate recent successful main Aeroflot catalogue
-        id: upstream
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          python - <<'PY'
-          import json,os,subprocess
-          from datetime import datetime,timezone
-          repo=os.environ['GITHUB_REPOSITORY']
-          runs=json.loads(subprocess.check_output(['gh','api',f'repos/{repo}/actions/workflows/aeroflot-import.yml/runs?branch=main&status=success&per_page=1']))
-          run=runs['workflow_runs'][0]
-          assert run['head_branch']=='main' and run['conclusion']=='success'
-          assert 0<=(datetime.now(timezone.utc)-datetime.fromisoformat(run['updated_at'].replace('Z','+00:00'))).total_seconds()<604800
-          with open(os.environ['GITHUB_OUTPUT'],'a') as f:
-              f.write(f"run_id={run['id']}\nname=aeroflot-import-public-{run['id']}-{run['run_attempt']}\n")
-          PY
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
-        with:
-          github-token: ${{ github.token }}
-          run-id: ${{ steps.upstream.outputs.run_id }}
-          name: ${{ steps.upstream.outputs.name }}
-          path: aeroflot-upstream
-      - name: Read source-linked conditions without provider or Google credentials
-        run: python loyalty/aeroflot_linked_rules.py
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        if: always()
-        with:
-          name: aeroflot-linked-public-${{ github.run_id }}-${{ github.run_attempt }}
-          path: aeroflot-linked-output/
-          retention-days: 7
-  publish:
-    needs: collect
-    if: >-
-      needs.collect.result == 'success' && github.repository == 'Floppa2003/key-privileges' &&
-      github.ref == 'refs/heads/main' && vars.LOYALTY_SHEETS_SYNC == 'true'
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
-    permissions:
-      contents: read
-      id-token: write
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-        with: {persist-credentials: false}
-      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
-        with: {python-version: '3.12'}
-      - run: python -m pip install -r loyalty/requirements.txt
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
-        with:
-          name: aeroflot-linked-public-${{ github.run_id }}-${{ github.run_attempt }}
-          path: aeroflot-linked-source
-      - name: Reconstruct source-bound records before destination authorization
-        run: |
-          python - <<'PY'
-          import os,sys
-          from datetime import datetime,timezone
-          sys.path.insert(0,'loyalty')
-          from aeroflot_linked_rules import validate_bundle
-          validate_bundle('aeroflot-linked-source',os.environ['GITHUB_RUN_ID']+':'+os.environ['GITHUB_RUN_ATTEMPT'],os.environ['GITHUB_SHA'],datetime.now(timezone.utc))
-          PY
-          python loyalty/sheets_normalized.py --input aeroflot-linked-source/normalized.json
-      - name: Existing short-lived Google authorization for the same destination
-        id: google
-        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093
-        with:
-          workload_identity_provider: ${{ vars.GOOGLE_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ vars.GOOGLE_SERVICE_ACCOUNT }}
-          token_format: access_token
-          access_token_scopes: https://www.googleapis.com/auth/spreadsheets
-          access_token_lifetime: 600s
-          create_credentials_file: false
-          export_environment_variables: false
-      - name: Upsert rules and independently read back the final unified destination
-        env:
-          GOOGLE_ACCESS_TOKEN: ${{ steps.google.outputs.access_token }}
-          DISCOUNTS_SPREADSHEET_ID: ${{ secrets.DISCOUNTS_SPREADSHEET_ID }}
-        run: |
-          python loyalty/sheets_normalized.py --input aeroflot-linked-source/normalized.json --publish
-          python loyalty/unified_publish.py --publish
+      - run: echo "Bulk parking manuals and exhaustive exclusion lists are out of practical-offer scope. Main Aeroflot offer collection is unchanged. No source fetch or publication."

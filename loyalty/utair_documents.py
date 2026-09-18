@@ -11,6 +11,7 @@ from bs4 import BeautifulSoup
 from document_text import extract_pdf,document_records,MAX_BYTES
 from normalized import content_hash,text
 from read_budget import within_source_budget
+from practical_scope import follow_document_link
 
 from utair_document_routes import ROOT, direct_resource
 HEADERS={'User-Agent':'Mozilla/5.0'}
@@ -116,7 +117,10 @@ async def collect_documents(client,cfg,report,now,limit):
     if cfg['id']!='utair_rule_documents' or cfg['url']!=ROOT:
         raise ValueError('unreviewed_document_source')
     raw=await within_source_budget(client,lambda:client.read(ROOT,render=True))
-    entries=discover_documents(raw);parent_sha=hashlib.sha256(raw.encode()).hexdigest()
+    discovered=discover_documents(raw)
+    entries=[e for e in discovered if follow_document_link(e['url'],'; '.join(e['labels']+e['contexts']))]
+    omitted=[{'url':e['url'],'labels':e['labels'],'reason':'out_of_scope_general_programme_rules'} for e in discovered if e not in entries]
+    parent_sha=hashlib.sha256(raw.encode()).hexdigest()
     records=[];attempted=0;read=0
     for entry in entries:
         if len(records)>=limit:
@@ -145,7 +149,7 @@ async def collect_documents(client,cfg,report,now,limit):
     report['coverage']=json.dumps({'method':'live_shortlink_and_direct_PDF_discovery_native_or_OCR',
         'shortlinks_discovered':sum(e['kind']=='shortlink' for e in entries),
         'direct_links_discovered':sum(e['kind']=='direct_pdf' for e in entries),
-        'discovered_links':len(entries),'links_attempted':attempted,'links_read':read,
+        'discovered_links':len(entries),'out_of_scope_references':omitted,'links_attempted':attempted,'links_read':read,
         'identical_pdf_aliases_merged':len(records)-len(rows),'output_records':len(rows),
         'signed_urls_persisted':False,'recursive_document_links_followed':False},ensure_ascii=False)
     return rows

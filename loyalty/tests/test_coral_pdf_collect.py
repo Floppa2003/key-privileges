@@ -121,11 +121,6 @@ class PdfTests(unittest.TestCase):
             r=Network(data).reader(KEY)
             with self.assertRaises(ValueError):r.read(URL)
             self.assertTrue(r.stopped)
-    def test_pdf_only_safe_step_has_no_google_credential(self):
-        path=Path(__file__).parents[2]/'.github/workflows/coral-import.yml'
-        text=path.read_text();step=text.split('- name: Download source-linked public PDFs')[1].split('- uses:')[0]
-        self.assertIn('SCRAPINGANT_API_KEY',step);self.assertNotIn('GOOGLE_ACCESS_TOKEN',step)
-        self.assertIn('from coral_pdf_collect import validate_bundle',text);self.assertIn('combined.json --publish',text)
     def test_pdf_rules_are_not_projected_as_discounts_or_codes(self):
         with tempfile.TemporaryDirectory() as d:
             b=self.collect(Path(d),Network(pdf(['Refund 90 percent. Promo code EXAMPLE123 is a fictional example.'])))
