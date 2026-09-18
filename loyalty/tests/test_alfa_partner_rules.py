@@ -95,6 +95,22 @@ class AlfaPartnerPdfTests(unittest.TestCase):
         self.assertEqual(row['validity_status'],'within_published_period')
         self.assertEqual(row['rates'][0]['value'],'10')
 
+    def test_mamatuta_probka_accepts_source_missing_left_quote_but_checks_ogrn_and_name(self):
+        spec=a.BY_ID['mamatuta_probka_spb_0126']
+        raw=fixture(start='01 января 2026',end='31 октября 2026',legal='ООО Пробка-Север»',
+                    ogrn=spec['ogrn'],city='г.Санкт-Петербург',
+                    address='1 Ресторан Mama Tuta г. Санкт-Петербург, Зоологический пер. 2-4; 2 Ресторан Probka г. Санкт-Петербург, Зоологический пер. 2-4',
+                    scope='первой',first=True)
+        with patch.object(a,'pdf_text',return_value=raw):
+            row=a.parse_document(spec,b'%PDF-probka',NOW)
+        self.assertEqual(row['partner_name'],'Mama Tuta / Probka')
+        self.assertEqual(row['valid_until'],'2026-10-31')
+        self.assertEqual(row['details']['transaction_scope'],'first_transaction_each_calendar_month')
+        bad=raw.replace('Пробка-Север','Другая компания')
+        with patch.object(a,'pdf_text',return_value=bad):
+            with self.assertRaisesRegex(ValueError,'alfa_partner_pdf_legal_name_mismatch'):
+                a.parse_document(spec,b'%PDF-probka',NOW)
+
     def test_takhauli_expiry_is_source_derived_not_search_inferred(self):
         spec=a.DOCS[2]
         raw=fixture(start='01 февраля 2026',end='31 августа 2026',legal='ООО «ОЛИВЬЕ»',
@@ -135,6 +151,9 @@ class AlfaPartnerPdfTests(unittest.TestCase):
             'fresa_0226':fixture(start='01 февраля 2026',end='30 ноября 2026',legal='ООО «СОМ»',
                                 ogrn='1237800072377',city='г.Москва, г.Санкт-Петербург, г.Владивосток',
                                 address='1 «FRESA» г. Санкт-Петербург, Вознесенский пр, 6',scope='первой',first=True),
+            'mamatuta_probka_spb_0126':fixture(start='01 января 2026',end='31 октября 2026',legal='ООО Пробка-Север»',
+                                             ogrn='1137847157436',city='г.Санкт-Петербург',
+                                             address='1 Ресторан Mama Tuta г. Санкт-Петербург, Зоологический пер. 2-4',scope='первой',first=True),
         }
         original_parse=a.parse_document
         async def exercise():
@@ -146,8 +165,8 @@ class AlfaPartnerPdfTests(unittest.TestCase):
             with patch.object(a,'fetch_pdf',side_effect=fake_fetch),patch.object(a,'parse_document',side_effect=fake_parse):
                 return await a.collect(cfg,report,NOW,20)
         rows=asyncio.run(exercise())
-        self.assertEqual(len(rows),3)
-        self.assertEqual(report['discovered'],4)
+        self.assertEqual(len(rows),4)
+        self.assertEqual(report['discovered'],5)
         self.assertEqual(report['errors'][0]['native_id'],'takhauli_0226')
 
 if __name__=='__main__':unittest.main()
