@@ -27,7 +27,19 @@ jobs:
           Path('practical-verification/red-integration.log').write_text(r.stdout+r.stderr)
           assert r.returncode!=0 and ('AssertionError' in r.stderr or 'unexpected keyword' in r.stderr)
           PY
-      - run: python loyalty/practical_prepare_once.py
+      - name: Apply reviewed changes and preserve unrelated test assertions
+        run: |
+          python loyalty/practical_prepare_once.py
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('loyalty/tests/test_daily_coverage.py');s=p.read_text()
+          accidental="before['loyalty_partner_benefits']['values'] if False else before['loyalty_partner_benefits']"
+          assert s.count(accidental)==1
+          p.write_text(s.replace(accidental,"before['loyalty_partner_benefits']"))
+          p=Path('practical-verification/changed-paths.json');paths=json.loads(p.read_text())
+          paths.append('loyalty/tests/test_daily_coverage.py');p.write_text(json.dumps(paths))
+          PY
       - name: Run all regressions without live sources
         run: |
           set -o pipefail
@@ -45,7 +57,7 @@ jobs:
           assert os.environ['GITHUB_REPOSITORY']=='Floppa2003/key-privileges'
           assert os.environ['GITHUB_REF']=='refs/heads/maintenance/practical-scope-20260918'
           folder=Path('practical-verification');paths=json.loads((folder/'changed-paths.json').read_text())
-          assert len(paths)==15 and len(set(paths))==15
+          assert len(paths)==16 and len(set(paths))==16
           objects=[]
           for path in paths:
               data=Path(path).read_bytes()
