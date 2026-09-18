@@ -678,5 +678,11 @@
     "name": "Саквояж впечатлений — собственные скидки",
     "mode": "html",
     "url": "https://sacvoyage.ru/aktsii/"
+  },
+  {
+    "id": "rzd_sacvoyage_public",
+    "name": "РЖД Бонус — публичные условия Саквояжа",
+    "mode": "html",
+    "url": "https://sacvoyage.ru/partners/rzhd-bonus/"
   }
 ]
