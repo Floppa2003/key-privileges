@@ -19,9 +19,11 @@ jobs:
         run: |
           mkdir -p alfa-public-probe
           python - <<'PY'
-          import hashlib,json,re
+          import hashlib,json,re,tempfile
+          from pathlib import Path
           from urllib.parse import urljoin,urlsplit
-          import requests
+          import certifi,requests
+          from recovered_contract import CA_FILES
           from bs4 import BeautifulSoup
           from protego import Protego
 
@@ -33,23 +35,34 @@ jobs:
             ROOT+'/everyday/package/premium/restaurants/',
             ROOT+'/everyday/package/premium/lounge/',
           ]
+          headers={'User-Agent':BOT+'/1.0'}
+          ca_url,ca_sha=CA_FILES[0]
+          with requests.Session() as ca:
+            ca.trust_env=False
+            cr=ca.get(ca_url,timeout=(5,12),allow_redirects=False)
+            assert cr.status_code==200,('ca',cr.status_code)
+            assert len(cr.content)<=16384,'ca_oversized'
+            assert hashlib.sha256(cr.content).hexdigest()==ca_sha,'ca_digest_changed'
+            ca_bytes=cr.content
+          td=tempfile.TemporaryDirectory()
+          bundle=Path(td.name)/'bank-ca.pem'
+          bundle.write_bytes(Path(certifi.where()).read_bytes()+b'\n'+ca_bytes)
           s=requests.Session()
           s.trust_env=False
-          headers={'User-Agent':BOT+'/1.0'}
-          rob=s.get(ROOT+'/robots.txt',headers=headers,timeout=(8,20),allow_redirects=False)
+          rob=s.get(ROOT+'/robots.txt',headers=headers,verify=str(bundle),timeout=(8,20),allow_redirects=False)
           assert rob.status_code==200,('robots',rob.status_code)
           rules=Protego.parse(rob.text)
-          out={'robots_sha256':hashlib.sha256(rob.content).hexdigest(),'pages':[]}
+          out={'official_root_sha256':ca_sha,'robots_sha256':hashlib.sha256(rob.content).hexdigest(),'pages':[]}
           for url in urls:
             assert rules.can_fetch(url,BOT),('robots_disallow',url)
-            r=s.get(url,headers=headers,timeout=(8,30),allow_redirects=False)
+            r=s.get(url,headers=headers,verify=str(bundle),timeout=(8,30),allow_redirects=False)
             assert r.status_code in (200,301,302,307,308),(url,r.status_code)
             if r.status_code!=200:
               target=urljoin(url,r.headers.get('Location',''))
               u=urlsplit(target)
               assert u.scheme=='https' and u.netloc=='alfabank.ru',(url,'foreign_redirect',target)
               assert rules.can_fetch(target,BOT),('robots_disallow_redirect',target)
-              r=s.get(target,headers=headers,timeout=(8,30),allow_redirects=False)
+              r=s.get(target,headers=headers,verify=str(bundle),timeout=(8,30),allow_redirects=False)
               assert r.status_code==200,(target,r.status_code)
               url=target
             assert len(r.content)<=4_000_000,(url,'oversized')
