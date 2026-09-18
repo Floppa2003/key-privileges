@@ -8,7 +8,8 @@ import alfa_public_rules as a
 import collect_normalized as c
 from normalized import content_hash,validate_offer
 from source_selection import select_sources
-from test_hse_alumni import NOW
+
+NOW='2026-09-18T00:00:00+00:00'
 
 
 CORE_TEXT = """
