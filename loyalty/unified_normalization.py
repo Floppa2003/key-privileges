@@ -240,6 +240,9 @@ def normalize_record(raw, *, as_of):
     def condition(kind,path,**kw):return add('conditions',kind,path,**kw)
     def code(value,path,scope=None,delivery='literal',fragment=None):
         return add('codes','promo_code',path,value=value,scope=scope,delivery=delivery,fragment=fragment)
+    if d.get('retrieval_method')=='konsierge_public_browser_capture_v1':
+        from konsierge_catalog import project_common
+        return project_common(raw,n,benefit,condition,code)
     if 'tsum_evidence' in d:
         from tsum_alfa import URL, derived
         tier=d.get('tsum_tier')
