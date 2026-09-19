@@ -1,10 +1,10 @@
 """Bounded public Only Assist APK download and static compatibility inspection.
 
 References: mdast-cli rustore.py; apkeep PR226; rustore-apk client.py.
-No account credentials, client-signature forging or publication of app binaries.
+No account credentials or publication of app binaries.
 """
 from __future__ import annotations
-import hashlib, io, json, os, re, subprocess, zipfile
+import hashlib, io, json, os, re, subprocess, time, zipfile
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urlsplit, urljoin
@@ -52,19 +52,28 @@ def run_tool(path,*args):
 
 
 def download_link(meta):
-    payload={'appId':meta['appId'],'firstInstall':True,'mobileServices':['GMS'],
-             'supportedAbis':['x86_64','arm64-v8a','armeabi-v7a'],'screenDensity':420,
-             'supportedLocales':['ru_RU'],'sdkVersion':35,'withoutSplits':True,'signatureFingerprint':None}
-    result=json.loads(request('POST','https://backapi.rustore.ru/applicationData/v2/download-link',payload))
-    body=result.get('body') or {}
-    REPORT['download_envelope']={'keys':list(result),'body_keys':list(body) if isinstance(body,dict) else [],
-                                 'code':result.get('code'),'message':str(result.get('message',''))[:300]}
-    links=result.get('downloadUrls') or body.get('downloadUrls') or []
-    REPORT['download_link_count']=len(links)
-    if len(links)!=1 or not isinstance(links[0].get('url'),str):
-        raise RuntimeError('single_universal_apk_not_returned')
-    REPORT['store_version_code']=result.get('versionCode') or body.get('versionCode')
-    return links[0]['url']
+    payload={'appId':meta['appId'],'firstInstall':True,'mobileServices':['GMS','HMS'],
+             'supportedAbis':['arm64-v8a'],'screenDensity':420,
+             'supportedLocales':['ru_RU'],'sdkVersion':35,'withoutSplits':False,'signatureFingerprint':None}
+    profiles=[('arm64_split_v2','/applicationData/v2/download-link',payload),
+              ('current_v3','/v3/showcase/apps/download-link',{'appId':meta['appId'],'firstInstall':True})]
+    REPORT['distribution_profiles']=[]
+    for label,path,body_request in profiles:
+        time.sleep(1)
+        result=json.loads(request('POST','https://backapi.rustore.ru'+path,body_request))
+        body=result.get('body') or {}
+        links=result.get('downloadUrls') or body.get('downloadUrls') or []
+        REPORT['distribution_profiles'].append({'profile':label,'keys':list(result),
+            'body_keys':list(body) if isinstance(body,dict) else [],'code':result.get('code'),
+            'message':str(result.get('message',''))[:300],'download_link_count':len(links),
+            'downloads':[{'host':urlsplit(x.get('url','')).hostname,'path':urlsplit(x.get('url','')).path,
+                          'size':x.get('size')} for x in links]})
+        if not links: continue
+        if len(links)!=1 or not isinstance(links[0].get('url'),str):
+            raise RuntimeError('split_apks_need_multi_install')
+        REPORT['store_version_code']=result.get('versionCode') or body.get('versionCode')
+        return links[0]['url']
+    raise RuntimeError('store_returned_no_downloads_for_reviewed_profiles')
 
 
 def main():
