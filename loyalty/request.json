@@ -1,8 +1,9 @@
 {
-  "request_id": "2026-09-19-greatlist-alfa-71",
+  "request_id": "2026-09-19-alfa-public-frontier-72",
   "source_ids": [
-    "greatlist_alfa_only"
+    "alfa_only_tsum",
+    "alfa_only_announcements"
   ],
-  "reason": "Publish PR71 through the existing serialized collector and Sheets pipeline: discover the actual GreatList Alfa Only city tabs and fetch each listed restaurant's own public benefit block. Acceptance run35433752712 verified38/38 details,1051Python and7KEY tests. Preserve source-derived up-to cashback, exact booking discounts, compliments and booking-only privileges without merging bank PDF conditions. Verify actual CURRENT common conditions and all existing inputs/manual fields. No bank authentication, OTP, account cookies, activation, provider credits, new schedule or unrelated source crawl.",
+  "reason": "Publish merged PR72 through the existing serialized main collector and Sheets pipeline, running its full regression. Exact live artifact35442309775 was independently verified by35442472548:2TSUM merchant-loyalty tiers plus18announcements;1069Python and7KEY tests. Preserve TSUM loyalty-credit versus bank-cash distinction and Orange/Black scope; keep announcement validity/eligibility unverified. Validate source and common-view readbacks and preserve unrelated records/manual fields. No bank/app authentication, coupon activation, provider credits, new schedules or unrelated source crawl.",
   "publish": true
 }
