@@ -30,6 +30,7 @@ from utair_documents import collect_documents
 from recovered_sources import collect_recovered
 from utair_support import collect_utair
 from hse_alumni import collect_hse
+from greatlist_alfa import collect as collect_greatlist
 from alfa_access import collect_access as collect_alfa_access
 from alfa_public_rules import collect_core as collect_alfa_public_core, collect_cashback as collect_alfa_public_cashback
 from alfa_partner_rules import collect as collect_alfa_partner_pdfs
@@ -135,7 +136,8 @@ async def one(browser,cfg,now,limit):
                 client.deadline=deadline
                 if cfg['mode'] not in ('t2','mir','selection'):await client.robots()
                 mode=cfg['mode']
-                if mode=='hse':records=await collect_hse(client,cfg,report,now,limit)
+                if mode=='greatlist':records=await collect_greatlist(client,cfg,report,now,limit)
+                elif mode=='hse':records=await collect_hse(client,cfg,report,now,limit)
                 elif mode=='s7':records=await collect_s7(client,cfg,report,now,limit)
                 elif mode=='ural':records=await collect_ural(client,cfg,report,now,limit)
                 elif mode=='rgo':records=await collect_rgo(client,cfg,report,now,limit)
