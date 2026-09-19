@@ -24,8 +24,9 @@ def detail(cashback=True,extra=''):
     body=f'<h1>Ресторан Fixture</h1><article class="contacts"><div class="contacts_item_address">Улица Примерная, 1</div></article><div class="alfa-section-hide"><div class="alfa-section-text">Привилегии для клиентов Alfa Only:<ul>{rate}<li>приоритетная бронь через консьерж-сервис</li></ul>В меню — фирменный коктейль и десерт, созданные вместе с шефами</div></div>'
     return wrap(body,CARD['url'],'single-restaurant postid-123',extra)
 def common(row):
-    report={'source_id':g.SOURCE_ID,'name':'GreatList','root':g.ROOT,'status':'ok','normalized':1,'discovered':1,'failed':0,'coverage':'fixture','errors':[],'region':None,'observed_at':NOW}
-    bundle={'schema_version':2,'run_id':'fixture:1','observed_at':NOW,'records':[row],'sources':[report]}
+    observed=row['observed_at']
+    report={'source_id':g.SOURCE_ID,'name':'GreatList','root':g.ROOT,'status':'ok','normalized':1,'discovered':1,'failed':0,'coverage':'fixture','errors':[],'region':None,'observed_at':observed}
+    bundle={'schema_version':2,'run_id':'fixture:1','observed_at':observed,'records':[row],'sources':[report]}
     values=prepare(bundle)['parser_offers'][0]
     raw=make_input({'id':row['id'],'origin':'parser_offers','row':2,'fields':{h:{'value':v} for h,v in zip(SCHEMAS['parser_offers'],values)}})
     return normalize_record(raw,as_of='2026-09-19')
@@ -107,6 +108,25 @@ class GreatListTests(unittest.TestCase):
         report={'errors':[]}
         asyncio.run(g.collect(Client(),{'id':g.SOURCE_ID,'url':g.ROOT},report,NOW,20))
         self.assertEqual(seen,[g.ROOT,CITY['url']])
+    def test_quoted_detail_heading_keeps_exact_native_id(self):
+        for role in ('Ресторан','Бар'):
+            row=g.parse_detail(detail().replace('Ресторан Fixture',role+' &quot;Fixture&quot;'),CARD,NOW)
+            self.assertEqual(row['native_id'],'spb:123')
+    def test_paragraph_benefit_excludes_menu_description(self):
+        from bs4 import BeautifulSoup
+        dom=BeautifulSoup(detail(False),'html.parser');block=dom.select_one('.alfa-section-text');block.clear()
+        block.append('Клиентам Alfa Only доступна приоритетная бронь через консьерж-сервис. В меню — фирменный коктейль')
+        row=g.parse_detail(str(dom),CARD,NOW);validate_offer(row)
+        self.assertEqual(row['rates'],[]);self.assertNotIn('В меню',row['benefit_text'])
+        self.assertIn('В меню',row['conditions_text'])
+    def test_booking_discount_and_cashback_are_separate_rates(self):
+        row=g.parse_detail(detail().replace('бронь через консьерж-сервис','бронь через консьерж-сервис — со скидкой 7%'),CARD,NOW)
+        self.assertEqual([(r['kind'],r['value'],r['qualifier']) for r in row['rates']],[('cashback','12','up_to'),('discount','7','exact')])
+    def test_missing_contact_address_is_unknown_not_offer_failure(self):
+        raw=detail().replace('contacts_item_address','unreviewed_address')
+        row=g.parse_detail(raw,CARD,NOW);validate_offer(row)
+        self.assertEqual(row['details']['limitations'],'Санкт-Петербург')
+        self.assertIn('address_not_extracted_from_reviewed_contact_block',row['warnings'])
     def test_registration(self):
         configs=json.loads(Path(__file__).resolve().parents[1].joinpath('sources_normalized.json').read_text())
         self.assertEqual([c['url'] for c in configs if c['id']==g.SOURCE_ID],[g.ROOT])
