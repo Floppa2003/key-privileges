@@ -742,5 +742,13 @@
     "lookback_days": 180,
     "max_pages": 60,
     "timeout_seconds": 240
+  },
+  {
+    "id": "konsierge_public",
+    "name": "Konsierge — публичные привилегии",
+    "mode": "konsierge",
+    "url": "https://konsierge.com/benefits",
+    "robots_policy": "skip_konsierge_public_by_user_2026_09_19",
+    "timeout_seconds": 420
   }
 ]
