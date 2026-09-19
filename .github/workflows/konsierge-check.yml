@@ -13,47 +13,49 @@ jobs:
         with: {persist-credentials: false}
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with: {python-version: '3.12'}
-      - run: python -m pip install requests==2.32.5
-      - name: Public catalogue request syntax, without configuration values
+      - run: python -m pip install -r loyalty/requirements.txt
+      - name: One anonymous native catalogue endpoint read
         run: |
           mkdir -p konsierge-check
           python - <<'PY'
-          import hashlib,json,re
+          import hashlib,json,sys,time
           from datetime import datetime,timezone
           from pathlib import Path
           import requests
-          roots=['https://konsierge.com/1.d19ac291fe76ecbf05cf.js','https://konsierge.com/2.79fd00a7f40471181929.js']
-          report={'observed_at':datetime.now(timezone.utc).isoformat(),'source_credentials_used':False,'published':False,'sources':[]}
-          pattern=r'"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\''
-          def red(m):
-              value=m[0][1:-1]
-              safe=re.fullmatch(r'/?(?:api/)?(?:v\d/)?(?:benefits?|rubrics|categories)(?:[/?.=&a-zA-Z0-9_-]{0,80})',value)
-              return json.dumps(value) if safe or value in ('id','name','title','page','per','per_page','offset','limit','total','count','offer','rubric','/','?','&','=') else '"[omitted]"'
-          for url in roots:
-              item={'url':url};report['sources'].append(item)
-              try:
-                  with requests.Session() as s:
-                      s.trust_env=False;r=s.get(url,timeout=(6,22),allow_redirects=False)
-                      item['status']=r.status_code
-                      if r.status_code!=200 or r.headers.get('Retry-After') or len(r.content)>1000000:continue
-                      item['sha256']=hashlib.sha256(r.content).hexdigest()
-                      paths=[]
-                      for m in re.finditer(pattern,r.text):
-                          v=m[0][1:-1]
-                          if re.fullmatch(r'/[a-z0-9_/.-]{1,140}',v,re.I) and re.search('benefit|rubric|categor|/api/',v,re.I):paths.append(v)
-                      item['public_path_literals']=sorted(set(paths));item['snippets']=[]
-                      for m in list(re.finditer(r'getBenefits|getBenefitsRubrics|benefitsService|loadNext',r.text))[:12]:
-                          fragment=r.text[max(0,m.start()-80):m.start()+1100]
-                          fragment=re.sub(pattern,red,fragment)
-                          fragment=re.sub(r'(?i)(?:Basic|Bearer)\s+[^\s,;"\']+','[omitted]',fragment)
-                          fragment=re.sub(r'\b[A-Za-z0-9+/_=-]{28,}\b','[omitted]',fragment)
-                          item['snippets'].append(fragment)
-              except Exception as e:item['error']=type(e).__name__
+          from protego import Protego
+          sys.path.insert(0,'loyalty')
+          from public_transport import robots_document
+          origin='https://benefits.konsierge.com';url=origin+'/api/client/v1/benefits'
+          report={'observed_at':datetime.now(timezone.utc).isoformat(),'url':url,'source_credentials_used':False,'cookie_replay':False,'published':False,'catalogue_complete':False}
+          try:
+              with requests.Session() as s:
+                  s.trust_env=False;s.headers['User-Agent']='LoyaltyCatalogResearchBot/1.0'
+                  r=s.get(origin+'/robots.txt',timeout=(6,15),allow_redirects=False)
+                  rules,state=robots_document(r.status_code,r.text);report['robots']={'status':r.status_code,'state':state}
+                  if r.headers.get('Retry-After'):raise RuntimeError('robots_retry_after')
+                  if not Protego.parse(rules).can_fetch(url,'LoyaltyCatalogResearchBot'):raise RuntimeError('robots_disallow')
+                  s.cookies.clear();time.sleep(.5)
+                  with s.get(url,timeout=(6,20),allow_redirects=False,stream=True) as r:
+                      report['status']=r.status_code;report['retry_after_present']=bool(r.headers.get('Retry-After'))
+                      if r.status_code in (401,403):report['outcome']='authentication_or_access_required_no_retry'
+                      elif r.status_code==200 and not report['retry_after_present']:
+                          raw=bytearray()
+                          for part in r.iter_content(65536):
+                              raw.extend(part)
+                              if len(raw)>1500000:raise RuntimeError('size_bound')
+                          data=json.loads(raw);report['response_sha256']=hashlib.sha256(raw).hexdigest()
+                          report['top_level_fields']=list(data) if isinstance(data,dict) else ['list']
+                          items=data.get('result',[]) if isinstance(data,dict) else []
+                          report['item_count']=len(items) if isinstance(items,list) else None
+                          report['public_card_previews']=[{k:x[k] for k in ('id','name','offer','link') if k in x} for x in items[:12] if isinstance(x,dict)]
+                          report['outcome']='json_read_not_yet_scope_verified'
+                      else:report['outcome']='http_not_accepted'
+          except Exception as e:report['error']=str(e) if isinstance(e,RuntimeError) else type(e).__name__
           Path('konsierge-check/report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2));print(json.dumps(report,ensure_ascii=False))
           PY
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
-          name: konsierge-last-read-shapes-${{ github.run_id }}
+          name: konsierge-anonymous-api-${{ github.run_id }}
           path: konsierge-check/
           retention-days: 7
