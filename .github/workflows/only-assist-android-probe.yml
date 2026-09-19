@@ -5,89 +5,44 @@ on:
     paths: ['.github/workflows/only-assist-android-probe.yml']
 permissions: {contents: read}
 jobs:
-  probe:
+  static-origin:
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 7
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with: {persist-credentials: false}
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with: {python-version: '3.12'}
-      - run: |
-          python -m pip install requests==2.32.5
-          echo "$ANDROID_HOME/platform-tools" >> "$GITHUB_PATH"
-          echo "$ANDROID_HOME/emulator" >> "$GITHUB_PATH"
-          python -m py_compile diagnostics/only_assist_package.py diagnostics/only_assist_ui_probe.py
-      - name: Read verified free split APK set from RuStore
-        id: package
-        run: python diagnostics/only_assist_package.py > "$RUNNER_TEMP/package-console.log"
-      - name: Inspect discount call chain statically without reading any account
-        if: steps.package.outputs.apk_ready == 'true'
-        timeout-minutes: 5
+      - name: Read only the exact base APK already identity/signature verified
         run: |
+          mkdir -p only-assist-evidence
+          curl --fail --silent --show-error --max-time 90 'https://static.rustore.ru/2026/8/19/88/7a247b98-2174-4348-ad1b-bd047304af5c.apk' -o "$RUNNER_TEMP/only-base.apk"
+          echo "856870ddb0197451612a36cdc86d6a6b46d6880ee25a32c44d0a30f1c2447952  $RUNNER_TEMP/only-base.apk" | sha256sum -c -
           curl --fail --silent --show-error --location --max-time 90 'https://github.com/skylot/jadx/releases/download/v1.5.6/jadx-1.5.6.zip' -o "$RUNNER_TEMP/jadx.zip"
           echo "545ea2be9c242511bc145755cf4bda2485ade42966e096f8b4d3da2a230e8974  $RUNNER_TEMP/jadx.zip" | sha256sum -c -
           unzip -q "$RUNNER_TEMP/jadx.zip" -d "$RUNNER_TEMP/jadx"
           chmod +x "$RUNNER_TEMP/jadx/bin/jadx"
-          python - <<'PY'
-          import hashlib,json,os,re,subprocess
-          from pathlib import Path
-          tmp=Path(os.environ['RUNNER_TEMP']); install=json.loads((tmp/'only-assist-install.json').read_text())
-          result={'tool':'jadx-1.5.6','source_account_login':False,'api_calls':0,'credential_values_retained':False,'files':[]}
-          with (tmp/'jadx.log').open('w') as log:
-              p=subprocess.run([str(tmp/'jadx/bin/jadx'),'--no-res','--decompilation-mode','simple','-j','2','-d',str(tmp/'only-static'),install['base']],stdout=log,stderr=log,timeout=200,env={**os.environ,'JAVA_OPTS':'-Xmx4g'})
-          result['decompiler_exit_code']=p.returncode
-          root=tmp/'only-static/sources'
-          pattern=re.compile(r'getBenefits|getRubrics|getTariff|tariffId|tariff_id|[Aa]uthorization|[Aa]uthToken|[Aa]ccessToken|BENEFITS_URL|/api/.{0,40}(?:benefits|rubrics)')
-          def redact(m):
-              v=m[1]
-              if v in ('Authorization','Bearer ','tariff_id','rubric_id','page','per','datetime_from') or re.fullmatch(r'(?:https://benefits\.konsierge\.com)?/api/[A-Za-z0-9/_{}.-]+',v) or v=='https://benefits.konsierge.com':return m[0]
-              return '"[literal omitted]"'
-          candidates=[]
-          for f in (root/'com/konsierge/konsierge').rglob('*.java'):
-              s=f.read_text(errors='replace')
-              if ('Benefit' in f.name or 'benefits' in f.parts) and pattern.search(s):candidates.append((f,s))
-          result['matching_files']=len(candidates)
-          for f,s in candidates[:35]:
-              lines=[]
-              for n,line in enumerate(s.splitlines(),1):
-                  if line.lstrip().startswith(('@Metadata','import ','package ')) or not pattern.search(line):continue
-                  line=re.sub(r'"([^"\\]*(?:\\.[^"\\]*)*)"',redact,line.strip())
-                  if len(line)>650:continue
-                  lines.append({'line':n,'structure':line})
-              if lines:result['files'].append({'file':str(f.relative_to(root)),'sha256':hashlib.sha256(s.encode()).hexdigest(),'lines':lines[:60],'truncated':len(lines)>60})
-          Path('only-assist-evidence/discount_call_chain.json').write_text(json.dumps(result,ensure_ascii=False,indent=2))
-          print('Discount-related structural files:',len(result['files']))
-          PY
-      - name: Enable existing hardware acceleration
-        if: always() && steps.package.outputs.apk_ready == 'true'
+      - name: Inspect only auth/tariff origins and redact every non-structural literal
         run: |
-          test -c /dev/kvm
-          sudo chmod 666 /dev/kvm
-      - name: Boot isolated Android and read app UI without logging in
-        if: always() && steps.package.outputs.apk_ready == 'true'
-        uses: ReactiveCircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d
-        with:
-          api-level: 35
-          target: google_apis
-          arch: x86_64
-          profile: pixel_6
-          avd-name: only-assist-probe
-          emulator-port: 5554
-          emulator-boot-timeout: 300
-          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none -camera-front none
-          disable-animations: true
-          script: python diagnostics/only_assist_ui_probe.py
-      - name: Record execution identity and destroy ephemeral emulator
+          python - <<'PY'
+          import json,os,subprocess
+          from pathlib import Path
+          from datetime import datetime,timezone
+          tmp=Path(os.environ['RUNNER_TEMP'])
+          with (tmp/'jadx.log').open('w') as log:
+              p=subprocess.run([str(tmp/'jadx/bin/jadx'),'--no-res','--decompilation-mode','simple','-j','2','-d',str(tmp/'only-static'),str(tmp/'only-base.apk')],stdout=log,stderr=log,timeout=200,env={**os.environ,'JAVA_OPTS':'-Xmx4g'})
+          Path('only-assist-evidence/execution.json').write_text(json.dumps({'observed_at':datetime.now(timezone.utc).isoformat(),'base_apk_sha256':'856870ddb0197451612a36cdc86d6a6b46d6880ee25a32c44d0a30f1c2447952','decompiler_exit_code':p.returncode,'account_access':False,'source_service_requests':0},indent=2))
+          PY
+          python diagnostics/only_assist_auth_structure.py "$RUNNER_TEMP/only-static/sources"
+      - name: Record execution identity
         if: always()
         run: |
           mkdir -p only-assist-evidence
           git rev-parse HEAD > only-assist-evidence/commit.txt
-          sha256sum diagnostics/only_assist_package.py diagnostics/only_assist_ui_probe.py > only-assist-evidence/code_hashes.txt
-          "$ANDROID_HOME/platform-tools/adb" -s emulator-5554 emu kill >/dev/null 2>&1 || true
+          sha256sum diagnostics/only_assist_auth_structure.py > only-assist-evidence/code_hashes.txt
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
-          name: only-assist-android-${{ github.run_id }}
+          name: only-assist-origin-${{ github.run_id }}
           path: only-assist-evidence/
           retention-days: 7
