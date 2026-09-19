@@ -8,25 +8,85 @@ permissions:
 jobs:
   inspect:
     runs-on: ubuntu-24.04
-    timeout-minutes: 6
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with: {persist-credentials: false}
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with: {python-version: '3.12'}
       - run: python -m pip install -r loyalty/requirements.txt
-      - name: Inspect catalogue and sampled details
-        run: python loyalty/greatlist_probe.py
-      - name: Package public evidence and exact code
+      - name: Verify reviewed bytes
+        run: |
+          sha256sum -c <<'EOF'
+          6b6a0475eaa046a72633f3884c9a1c9d588212f6d5fec794cafa11b186811029  loyalty/greatlist_alfa.py
+          2e51320091b5fa87ff8891949cf3b1d3710c266bb599d75fdeffeecad4d0f438  loyalty/tests/test_greatlist_alfa.py
+          81209863e491f1d6949ff1152bfebc655ef32efb38f0a1e21fa67a0748ce515b  loyalty/normalized.py
+          e673e3c91f181213283411600fb9f55dd0989036c80de8bbffc434b29185cde5  loyalty/collect_normalized.py
+          3e854684ec0b5087b80519c3d63855a70b60e0ce8964836e95af1f202cc64456  loyalty/sources_normalized.json
+          EOF
+      - name: Regression tests
+        run: |
+          python -m unittest discover -s loyalty/tests -v
+          node --test key/refresh.test.mjs
+      - run: python -m playwright install --with-deps chromium
+      - name: Collect only GreatList with source-field DOM evidence
+        run: |
+          python - <<'PY'
+          import asyncio,hashlib,html,json,sys
+          from pathlib import Path
+          from bs4 import BeautifulSoup
+          sys.path.insert(0,'loyalty')
+          import collect_normalized as c
+          from public_transport import PublicSource
+          folder=Path('greatlist-output/snapshots');folder.mkdir(parents=True,exist_ok=True)
+          original=PublicSource.read;index=[]
+          async def read(self,url,**kwargs):
+              raw=await original(self,url,**kwargs)
+              s=BeautifulSoup(raw,'html.parser');canon=s.select_one('link[rel="canonical"][href]')
+              parts=[]
+              for el in s.select('.psevdo_select_area_city,.places_mansory.js_get_cards,h1,article.contacts,.alfa-section-hide'):
+                  clone=BeautifulSoup(str(el),'html.parser')
+                  for node in clone.select('img,svg,script,style,iframe,video,audio'):
+                      if node.parent is not None:node.decompose()
+                  parts.append(str(clone))
+              parts += [str(x) for x in s.select('a[data-id="alfa-only"]')]
+              bodyclasses=' '.join(s.body.get('class',[])) if s.body else ''
+              minimal='<html><head><title>'+html.escape(s.title.get_text() if s.title else '')+'</title><link rel="canonical" href="'+html.escape(canon['href'] if canon else '',quote=True)+'"/></head><body class="'+html.escape(bodyclasses,quote=True)+'">'+''.join(parts)+'</body></html>'
+              name=hashlib.sha256(url.encode()).hexdigest()[:16]+'.html'
+              (folder/name).write_text(minimal)
+              index.append({'url':url,'raw_sha256':hashlib.sha256(raw.encode()).hexdigest(),'minimized_dom_file':name,'minimized_dom_sha256':hashlib.sha256(minimal.encode()).hexdigest(),'raw_bytes':len(raw.encode())})
+              return raw
+          PublicSource.read=read
+          sys.argv=['collect_normalized.py','--sources','greatlist_alfa_only','--limit','500','--out','greatlist-output']
+          try:asyncio.run(c.main())
+          finally:(folder/'index.json').write_text(json.dumps(index,ensure_ascii=False,indent=2))
+          PY
+      - name: Validate publication and visible common conditions
+        run: |
+          python loyalty/sheets_normalized.py --input greatlist-output/normalized.json
+          python - <<'PY'
+          import json,sys
+          from pathlib import Path
+          sys.path.insert(0,'loyalty');sys.path.insert(0,'loyalty/tests')
+          from test_greatlist_alfa import common
+          b=json.loads(Path('greatlist-output/normalized.json').read_text());s=b['sources'][0]
+          print(json.dumps(s,ensure_ascii=False))
+          assert len(b['sources'])==1 and s['status']=='ok' and s['normalized']==s['discovered'] and not s['errors']
+          for r in b['records']:
+              n=common(r);conditions=json.dumps(n['conditions'],ensure_ascii=False)
+              assert r['details']['limitations'] in conditions and n['eligibility_verified'] is None
+              assert not r['rates'] or all(x['qualifier']=='up_to' for x in r['rates'])
+          print('live_and_common_views_verified')
+          PY
+      - name: Save exact public code and manifest
         if: always()
         run: |
-          mkdir -p discovery/wheels
-          python -m pip download --no-deps protego==0.6.2 -d discovery/wheels
-          tar -cf discovery/main-code.tar loyalty key .github/workflows
-          git rev-parse HEAD > discovery/commit.txt
+          mkdir -p greatlist-output
+          tar -cf greatlist-output/code.tar loyalty key .github/workflows
+          git rev-parse HEAD > greatlist-output/commit.txt
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
-          name: greatlist-discovery-${{ github.run_id }}
-          path: discovery/
+          name: greatlist-acceptance-${{ github.run_id }}
+          path: greatlist-output/
           retention-days: 7
