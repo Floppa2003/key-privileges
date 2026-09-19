@@ -2,7 +2,7 @@ name: Only Assist Android compatibility probe
 on:
   push:
     branches: ['diagnostics/only-assist-android-20260920']
-    paths: ['.github/workflows/only-assist-android-probe.yml']
+    paths: ['.github/workflows/only-assist-android-probe.yml', 'diagnostics/only_assist_*.py']
 permissions: {contents: read}
 jobs:
   probe:
