@@ -1,5 +1,11 @@
 # Current coverage — practical discounts, 19 September 2026
 
+## Concierge-source priority: Konsierge public catalogue, owner-approved 19 September 2026
+
+The owner requested switching the concierge collection target from Only Assist to **https://konsierge.com/benefits** and reported substantial overlap with their app. **Prefer the public Konsierge catalogue; pause further Only Assist APK/login/endpoint investigation.** This changes the collection priority, not the identity or proven eligibility of any offer. Keep the separate bank, GreatList, TSUM and Alfa rules/announcement sources unchanged.
+
+See **KONSIERGE_PUBLIC_SWITCH.md** for the live evidence and exact limits. The public HTML yields **12 named first-screen cards (8 discount labels, 4 unspecified privileges)**. The native API was discovered but an anonymous request returned **401**; the main site's robots endpoint timed out. Full pagination/details and a policy-compliant recurring transport are **not yet accepted**. No Konsierge collector was enabled, no new schedule was created and no spreadsheet rows were published by this investigation. The completed publication checkpoint below remains PR72.
+
 ## Latest accepted release: PR72, published and independently verified
 
 Read **ALFA_FRONTIER_PUBLICATION_ACCEPTANCE.md** for actual main execution, destination, preservation checks and completed readback. **ALFA_PUBLIC_FRONTIER_ACCEPTANCE.md** preserves source/test acceptance and the still-unread Only Assist investigation; its pre-publication boundary is superseded by the publication report.
@@ -48,7 +54,7 @@ The earlier anonymous bank spike covered direct TLS, ScrapingAnt datacenter/brow
 
 Prioritise **programmes with little useful coverage**, not isolated unexplained URLs in well-covered catalogues. Establish what a normal user sees. Old sitemap entries, login pages, obsolete PDFs and unlisted cards are not automatically missing current offers. Registry now has **111 routes**, not111 independent programmes. The earlier105-route historical audit found Alfa's exact bank route the only never-positive route; no historically10+-item route had a best normalization ratio below80%. Those are not independent complete programme denominators. Failed alternate probes do not erase successful coverage; NORDWIND previously had7/7 visible cards, and RZD/Aeroflot/EKP substantial alternate/public coverage.
 
-**Highest-value Alfa remainder:** a genuinely distinct readable app/bank catalogue route; source-owned practical non-restaurant merchant conditions discovered from the announcement leads; and a dependable current-PDF revision index with reviewed migration. **Automatic new-PDF revision discovery is not implemented by PR72.** Preserve exact-URL revision warnings. Generic continuation does not authorize bank authentication/SMS forwarding or private session publication.
+**Highest-value remainder:** complete the owner-approved public Konsierge catalogue route before resuming any Only Assist app work; preserve the separate unread bank catalogue boundary; collect source-owned practical non-restaurant merchant conditions from announcement leads; and establish a dependable current-PDF revision index with reviewed migration. **Automatic new-PDF revision discovery is not implemented by PR72.** Preserve exact-URL revision warnings. Generic continuation does not authorize bank authentication/SMS forwarding or private session publication.
 
 **Other historical residuals, not re-audited by PR72:**
 - HSE55 listed/52details/3previews:skyeng,skillcup,academiya. PR64 fixed mordapechat ownership; studio15%/HSEALUMNI remains separate from KubKvadrat10%. Preserve expired MA-MA2026-01-01/Gruzovichkof2025-12-31 and Sila Vetra10% SV20/HSExSilaSport10/end2026-12-31 separately from its August-only20%. Full payment100% is not a100%discount.
