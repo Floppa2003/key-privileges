@@ -725,5 +725,22 @@
     "mode": "greatlist",
     "url": "https://greatlist.ru/spb/alfa-only/",
     "timeout_seconds": 420
+  },
+  {
+    "id": "alfa_only_tsum",
+    "name": "Alfa Only — ЦУМ / ДЛТ, условия магазина",
+    "url": "https://www.tsum.ru/lp/alfa-only/",
+    "mode": "html",
+    "coverage_scope": "two_merchant_loyalty_tiers_not_bank_cash_or_full_partner_catalog"
+  },
+  {
+    "id": "alfa_only_announcements",
+    "name": "Alfa Only — публичные объявления",
+    "channel": "aaa_only",
+    "url": "https://t.me/s/aaa_only",
+    "mode": "announcements",
+    "lookback_days": 180,
+    "max_pages": 60,
+    "timeout_seconds": 240
   }
 ]

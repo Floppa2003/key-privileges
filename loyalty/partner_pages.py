@@ -65,6 +65,9 @@ def extract_partner_page(source,soup,url,observed_at):
     if cfg.get('parser') in ('ilocked_ekp','ilocked_certificate'):
         from ilocked_ekp import extract_ilocked_ekp
         return extract_ilocked_ekp(source,soup,url,observed_at,cfg)
+    if cfg.get('parser') == 'tsum_alfa':
+        from tsum_alfa import extract_tsum
+        return extract_tsum(source,soup,url,observed_at,cfg)
     blocks=required(soup,cfg['selectors']);terms=content(blocks)
     flat=re.sub(r'\s+',' ',terms)
     program_rx=r'Аэрофлот.{0,5}Бону[сc]' if source.startswith('af_') else r'РЖД.{0,5}Бонус' if source.startswith('rzd_') else r'Един\w* карт\w* петербуржца|ЕКП'
