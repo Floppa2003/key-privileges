@@ -295,5 +295,12 @@
       "no_equivalence_with_unread_programme_card_verified",
       "check_published_link_destinations_not_only_labels"
     ]
+  },
+  "alfa_only_tsum": {
+    "url": "https://www.tsum.ru/lp/alfa-only/",
+    "program": "Alfa Only",
+    "partner": "ЦУМ / ДЛТ",
+    "category": "Покупки",
+    "parser": "tsum_alfa"
   }
 }

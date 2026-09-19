@@ -13,7 +13,7 @@ from bs4 import BeautifulSoup
 from normalized import canonical_url, make_offer
 
 CHANNELS = {'ekp_announcements':'ekpcard', 'rzd_announcements':'fpcrussia',
-            'mir_announcements':'promomir', 'bspb_announcements':'mybspb'}
+            'mir_announcements':'promomir', 'bspb_announcements':'mybspb', 'alfa_only_announcements':'aaa_only'}
 LOYALTY = re.compile(r'\bЕКП\b|един\w*\s+карт\w*\s+петербуржц', re.I)
 RZD = re.compile(r'РЖД[\s«»"-]*Бонус', re.I)
 NUMERIC_BENEFIT = re.compile(r'\d\s*%|промокод|скидк\w*\s+(?:до\s+)?\d|\d+\s+(?:бонус\w*|балл\w*|мил[ьяиюе]\w*)', re.I)
@@ -33,6 +33,14 @@ def checked_config(cfg):
 def relevant(body, cfg, cards):
     if CONTEST.search(body):
         return False
+    if cfg['id'] == 'alfa_only_announcements':
+        # Channel provenance is not customer eligibility. Do not turn a random
+        # privilege wheel, deposit yield or lifestyle story into a guaranteed perk.
+        if re.search(r'барабан|лотере|разыгр|опрос|голосован', body, re.I):
+            return False
+        context = re.search(r'Alfa\s+Only|Альфа[ -]Тревел', body, re.I)
+        reward = re.search(r'скидк|к[еэ]шб[еэ]к|промокод|комплимент', body, re.I)
+        return bool(context and reward and (NUMERIC_BENEFIT.search(body) or re.search(r'комплимент', body, re.I)))
     if cfg['id'] == 'rzd_announcements':
         without_footer = GENERIC_RZD_FOOTER.sub('', body)
         return bool(RZD.search(without_footer) and NUMERIC_BENEFIT.search(without_footer))

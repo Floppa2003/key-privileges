@@ -55,6 +55,7 @@ HOSTS['ekp_announcements']=['t.me']
 HOSTS['rzd_announcements']=['t.me']
 HOSTS['mir_announcements']=['t.me']
 HOSTS['bspb_announcements']=['t.me']
+HOSTS['alfa_only_announcements']=['t.me']
 for _source in ('t2_bolshe','t2_mixx','t2_selection','t2_mixx_s','t2_powerbank'):
     HOSTS[_source]=['msk.t2.ru']
 HOSTS['t2_bolshe'].append('spb.t2.ru')
@@ -297,6 +298,9 @@ def validate_offer(r: dict) -> None:
     if r['source_id']=='hse_alumni':
         from hse_alumni import validate_record
         validate_record(r)
+    if r['source_id']=='alfa_only_tsum':
+        from tsum_alfa import validate_record
+        validate_record(r)
     if r['source_id']=='greatlist_alfa_only':
         from greatlist_alfa import validate_record
         validate_record(r)
@@ -324,8 +328,8 @@ def validate_offer(r: dict) -> None:
     if r['source_id']=='t2_selection_public':
         if r['record_kind']!='tier_benefit' or r['link_kind']!='page_block' or r['source_status']!='public_preview_requires_login' or r['benefit_url'] is not None or urlsplit(r['source_url']).path!='/bolshe/selection':
             raise ValueError('Selection preview cannot certify private catalogue eligibility')
-    if r['source_id'] in ('ekp_announcements','rzd_announcements','mir_announcements','bspb_announcements') or r['link_kind']=='source_post':
-        channel={'ekp_announcements':'ekpcard','rzd_announcements':'fpcrussia','mir_announcements':'promomir','bspb_announcements':'mybspb'}.get(r['source_id'])
+    if r['source_id'] in ('ekp_announcements','rzd_announcements','mir_announcements','bspb_announcements','alfa_only_announcements') or r['link_kind']=='source_post':
+        channel={'ekp_announcements':'ekpcard','rzd_announcements':'fpcrussia','mir_announcements':'promomir','bspb_announcements':'mybspb','alfa_only_announcements':'aaa_only'}.get(r['source_id'])
         if r['link_kind']!='source_post' or not channel or not re.fullmatch('/'+channel+r'/[0-9]+',urlsplit(r['source_url']).path) or r['benefit_url'] is not None or r['record_kind']!='announcement' or r['source_status']!='announced_unverified':
             raise ValueError('Invalid announcement identity or evidence status')
     if r['link_kind']=='page_block' and r['benefit_url'] is not None:

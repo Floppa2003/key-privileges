@@ -240,6 +240,26 @@ def normalize_record(raw, *, as_of):
     def condition(kind,path,**kw):return add('conditions',kind,path,**kw)
     def code(value,path,scope=None,delivery='literal',fragment=None):
         return add('codes','promo_code',path,value=value,scope=scope,delivery=delivery,fragment=fragment)
+    if 'tsum_evidence' in d:
+        from tsum_alfa import URL, derived
+        tier=d.get('tsum_tier')
+        claim,terms,activation=derived(d['tsum_evidence'],tier)
+        if (raw['program']!='Alfa Only' or raw['source_url']!=URL or raw['kind']!='partner_offer'
+            or raw['benefit']!=claim or raw['conditions']!=terms or raw['activation']!=activation):
+            raise ValueError('TSUM owned evidence changed')
+        scope={'merchant_tier':tier,'reward_program':'TSUM_DLT','eligibility_not_verified':True}
+        rule=condition('owned_merchant_rules','/conditions',scope=scope)
+        action=condition('activation_step','/activation',scope=scope)
+        rates=normalize_rates(claim)
+        if len(rates)!=1:raise ValueError('TSUM tier rate count')
+        rate=rates[0]
+        b=benefit('earn_points','/benefit',value=rate['value'],unit='percent',qualifier='exact',
+            reward_unit='TSUM_DLT_loyalty_credit',scope=scope,method='owned_source_clause')
+        b.update(condition_ids=[rule['id'],action['id']],condition_linkage='full_owned_record_rules',remaining_record_rules_require_review=True)
+        n['quality']['level']='structured_with_review'
+        n['quality']['issues'].append('shop_loyalty_not_cash_baseline_rates_remain_conditions')
+        n['content_sha256']=digest({k:v for k,v in n.items() if k!='content_sha256'})
+        validate_normalized(n);return n
     if d.get('scope')=='only_cards_in_current_public_partner_inventory':
         from hse_alumni import PROGRAM,ROOT,claim_text,hse_rates,source_location
         block=d.get('public_catalog_block',{})
