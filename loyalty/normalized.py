@@ -236,6 +236,7 @@ def make_offer(source_id: str, native_id: str, program: str, partner_name: str |
 
 
 HOSTS['utair_rule_documents']=['ut0.ru','media.utair.ru']
+HOSTS['konsierge_public']=['konsierge.com']
 
 def validate_offer(r: dict) -> None:
     if r.get('schema_version')!=2 or r.get('adapter_version')!=VERSION:
@@ -297,6 +298,9 @@ def validate_offer(r: dict) -> None:
         validate_record(r)
     if r['source_id']=='hse_alumni':
         from hse_alumni import validate_record
+        validate_record(r)
+    if r['source_id']=='konsierge_public':
+        from konsierge_catalog import validate_record
         validate_record(r)
     if r['source_id']=='alfa_only_tsum':
         from tsum_alfa import validate_record
