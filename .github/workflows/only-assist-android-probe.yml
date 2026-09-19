@@ -20,8 +20,8 @@ jobs:
           python -m py_compile diagnostics/only_assist_package.py diagnostics/only_assist_ui_probe.py
       - name: Read verified free split APK set from RuStore
         id: package
-        run: python diagnostics/only_assist_package.py
-      - name: Inspect discount API declarations statically, without calling app services
+        run: python diagnostics/only_assist_package.py > "$RUNNER_TEMP/package-console.log"
+      - name: Inspect discount call chain statically without reading any account
         if: steps.package.outputs.apk_ready == 'true'
         timeout-minutes: 5
         run: |
@@ -33,50 +33,51 @@ jobs:
           import hashlib,json,os,re,subprocess
           from pathlib import Path
           tmp=Path(os.environ['RUNNER_TEMP']); install=json.loads((tmp/'only-assist-install.json').read_text())
-          result={'tool':'jadx-1.5.6','tool_sha256':'545ea2be9c242511bc145755cf4bda2485ade42966e096f8b4d3da2a230e8974','source_account_login':False,'api_calls':0,'files':[]}
+          result={'tool':'jadx-1.5.6','source_account_login':False,'api_calls':0,'credential_values_retained':False,'files':[]}
           with (tmp/'jadx.log').open('w') as log:
               p=subprocess.run([str(tmp/'jadx/bin/jadx'),'--no-res','--decompilation-mode','simple','-j','2','-d',str(tmp/'only-static'),install['base']],stdout=log,stderr=log,timeout=200,env={**os.environ,'JAVA_OPTS':'-Xmx4g'})
           result['decompiler_exit_code']=p.returncode
-          for f in (tmp/'only-static/sources').rglob('*.java'):
+          root=tmp/'only-static/sources'
+          pattern=re.compile(r'getBenefits|getRubrics|getTariff|tariffId|tariff_id|[Aa]uthorization|[Aa]uthToken|[Aa]ccessToken|BENEFITS_URL|/api/.{0,40}(?:benefits|rubrics)')
+          def redact(m):
+              v=m[1]
+              if v in ('Authorization','Bearer ','tariff_id','rubric_id','page','per','datetime_from') or re.fullmatch(r'(?:https://benefits\.konsierge\.com)?/api/[A-Za-z0-9/_{}.-]+',v) or v=='https://benefits.konsierge.com':return m[0]
+              return '"[literal omitted]"'
+          candidates=[]
+          for f in (root/'com/konsierge/konsierge').rglob('*.java'):
               s=f.read_text(errors='replace')
-              if not re.search(r'benefits\.konsierge\.com|/benefits|/rubrics',s):continue
-              # Save only short structural routes/parameter names. Never preserve
-              # credentials, token values, service keys, or complete app source.
-              evidence=[]
+              if ('Benefit' in f.name or 'benefits' in f.parts) and pattern.search(s):candidates.append((f,s))
+          result['matching_files']=len(candidates)
+          for f,s in candidates[:35]:
+              lines=[]
               for n,line in enumerate(s.splitlines(),1):
-                  if re.search(r'benefits\.konsierge\.com|/benefits|/rubrics|@(?:Query|Path|Header)\(',line):
-                      if re.search(r'secret|api.?key|Bearer\s+[A-Za-z0-9]|token\s*=|Authorization\s*:',line,re.I):continue
-                      if len(line)>500:continue
-                      evidence.append({'line':n,'text':line.strip()})
-              if evidence:
-                  result['files'].append({'file':str(f.relative_to(tmp/'only-static/sources')),'sha256':hashlib.sha256(s.encode()).hexdigest(),'declarations':evidence[:45],'declarations_truncated':len(evidence)>45,'authorization_name_present':'Authorization' in s,'bearer_name_present':'Bearer' in s})
-          result['source_files_examined']=sum(1 for _ in (tmp/'only-static/sources').rglob('*.java'))
-          Path('only-assist-evidence/discount_api_structure.json').write_text(json.dumps(result,ensure_ascii=False,indent=2))
-          print(json.dumps(result,ensure_ascii=False,indent=2))
+                  if line.lstrip().startswith(('@Metadata','import ','package ')) or not pattern.search(line):continue
+                  line=re.sub(r'"([^"\\]*(?:\\.[^"\\]*)*)"',redact,line.strip())
+                  if len(line)>650:continue
+                  lines.append({'line':n,'structure':line})
+              if lines:result['files'].append({'file':str(f.relative_to(root)),'sha256':hashlib.sha256(s.encode()).hexdigest(),'lines':lines[:60],'truncated':len(lines)>60})
+          Path('only-assist-evidence/discount_call_chain.json').write_text(json.dumps(result,ensure_ascii=False,indent=2))
+          print('Discount-related structural files:',len(result['files']))
           PY
-      - name: Prepare disposable Android 15 emulator
-        if: steps.package.outputs.apk_ready == 'true'
-        timeout-minutes: 9
+      - name: Enable existing hardware acceleration
+        if: always() && steps.package.outputs.apk_ready == 'true'
         run: |
           test -c /dev/kvm
           sudo chmod 666 /dev/kvm
-          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'emulator' 'platform-tools' 'system-images;android-35;google_apis;x86_64' > "$RUNNER_TEMP/sdk-install.log" 2>&1
-          echo no | "$ANDROID_HOME/cmdline-tools/latest/bin/avdmanager" create avd -n only-assist-probe -k 'system-images;android-35;google_apis;x86_64' --device pixel_6
-          "$ANDROID_HOME/emulator/emulator" -avd only-assist-probe -port 5554 -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -no-snapshot -no-metrics -camera-back none -camera-front none > "$RUNNER_TEMP/emulator.log" 2>&1 &
-          timeout 180 adb -s emulator-5554 wait-for-device
-          python - <<'PY'
-          import subprocess,time
-          for _ in range(90):
-              p=subprocess.run(['adb','-s','emulator-5554','shell','getprop','sys.boot_completed'],capture_output=True,text=True,timeout=10)
-              if p.stdout.strip()=='1':break
-              time.sleep(2)
-          else:raise RuntimeError('emulator_boot_timeout')
-          PY
-          adb -s emulator-5554 shell input keyevent 82
-      - name: Install verified APKs and read pre-login UI only
-        if: steps.package.outputs.apk_ready == 'true'
-        timeout-minutes: 4
-        run: python diagnostics/only_assist_ui_probe.py
+      - name: Boot isolated Android and read app UI without logging in
+        if: always() && steps.package.outputs.apk_ready == 'true'
+        uses: ReactiveCircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          avd-name: only-assist-probe
+          emulator-port: 5554
+          emulator-boot-timeout: 300
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none -camera-front none
+          disable-animations: true
+          script: python diagnostics/only_assist_ui_probe.py
       - name: Record execution identity and destroy ephemeral emulator
         if: always()
         run: |
