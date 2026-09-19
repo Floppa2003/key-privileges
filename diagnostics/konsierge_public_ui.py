@@ -3,9 +3,9 @@ from __future__ import annotations
 import asyncio, hashlib, json, re
 from datetime import datetime, timezone
 from pathlib import Path
-from urllib.parse import urlsplit, parse_qs, urlencode
+from urllib.parse import urlsplit, parse_qs
 from bs4 import BeautifulSoup
-from playwright.async_api import async_playwright
+from playwright.async_api import async_playwright, TimeoutError as BrowserTimeout
 
 OUT = Path('category-check')
 HOST = 'konsierge.com'
@@ -17,21 +17,20 @@ def compact(value):
 
 
 def page_query(url):
-    p = urlsplit(url)
-    q = parse_qs(p.query)
+    q = parse_qs(urlsplit(url).query)
     return {k: v[0] for k, v in q.items() if k in ('rubric_id', 'per', 'page')
             and len(v) == 1 and re.fullmatch(r'\d+', v[0])}
 
 
 def public_item(item):
-    # Whitelist public catalogue fields; never retain headers, cookies, client
-    # configuration, full JSON bodies, contact data or account-related fields.
-    result = {k: item[k] for k in ('id', 'name', 'offer', 'link', 'rubric_id', 'rubric_ids') if k in item}
-    for key in ('description', 'conditions', 'terms', 'redemption', 'instructions'):
-        value = item.get(key)
-        if isinstance(value, str) and len(value) <= 12000:
-            result[key] = value
-    result['field_names'] = sorted(item)
+    # Values only from the explicitly reviewed public catalogue field allowlist.
+    result = {k: item[k] for k in ('id', 'name', 'offer', 'link', 'description', 'enabled',
+              'date_of_expiry', 'date_of_release', 'created_at', 'updated_at') if k in item}
+    rubrics = item.get('rubrics')
+    if isinstance(rubrics, list):
+        result['rubrics'] = [{k: r[k] for k in ('id', 'name') if k in r} if isinstance(r, dict) else r for r in rubrics]
+    if any(isinstance(v, str) and len(v) > 20000 for v in result.values()):
+        raise ValueError('public_field_size_bound')
     return result
 
 
@@ -55,15 +54,10 @@ def dom_capture(raw):
             n = c.select_one(sel)
             return compact(n.get_text(' ', strip=True)) if n else ''
         a = c.select_one('.BenefitTeaser-Title a')
-        cards.append({'name': text('.BenefitTeaser-Title'),
-                      'category': text('.BenefitTeaser-Rubric'),
-                      'offer': text('.BenefitTeaser-OfferText'),
-                      'link': a.get('href', '') if a else '',
+        cards.append({'name': text('.BenefitTeaser-Title'), 'category': text('.BenefitTeaser-Rubric'),
+                      'offer': text('.BenefitTeaser-OfferText'), 'link': a.get('href', '') if a else '',
                       'text': compact(c.get_text(' ', strip=True))})
-    controls = []
-    for n in node.select('input,select,option,label,[role="radio"],a[href]'):
-        if n.find_parent('qy-benefit-teaser') is None:
-            controls.append({'tag': n.name, 'text': compact(n.get_text(' ', strip=True)), 'attrs': dict(n.attrs)})
+    controls = [{'value': n.get('value'), 'type': n.get('type')} for n in node.select('input[type="radio"]')]
     return str(node), cards, controls
 
 
@@ -111,9 +105,7 @@ async def main():
                     report['rubrics'] = rubrics
                 else:
                     meta = data.get('page', {})
-                    event['page'] = {k: v for k, v in meta.items() if v is None or isinstance(v, (bool, int))
-                                     or isinstance(v, str) and re.fullmatch(r'\d+', v)} if isinstance(meta, dict) else meta
-                    event['page_field_names'] = sorted(meta) if isinstance(meta, dict) else []
+                    event['page'] = {k: meta[k] for k in ('total_pages', 'count', 'total_count', 'current_page', 'next_page') if k in meta}
                     event['items'] = [public_item(x) for x in data['result']]
                     report['network_pages'].append(event)
             except Exception as e:
@@ -122,7 +114,7 @@ async def main():
             tasks.append(asyncio.create_task(response(res)))
         page.on('response', enqueue)
         async def settle():
-            await page.wait_for_timeout(900)
+            await page.wait_for_timeout(600)
             if tasks:
                 await asyncio.gather(*tasks)
         async def capture(url, name):
@@ -132,35 +124,42 @@ async def main():
                 raise RuntimeError('public_page_not_ready')
             await settle()
             await page.wait_for_selector('qy-benefit-teaser', timeout=15000)
-            stable = 0
-            previous = -1
+            stalls = 0
+            complete = False
             for _ in range(55):
-                count = await page.locator('qy-benefit-teaser').count()
-                if count > 500:
-                    raise RuntimeError('card_budget')
-                if count == previous:
-                    stable += 1
-                else:
-                    stable = 0
-                if stable >= 3:
-                    break
-                previous = count
-                await page.evaluate('window.scrollTo(0,0)')
-                await page.wait_for_timeout(250)
-                await page.evaluate('window.scrollTo(0,document.body.scrollHeight)')
                 await settle()
+                current = report['network_pages'][start:]
+                count = await page.locator('qy-benefit-teaser').count()
+                if current and count == current[-1]['page']['total_count'] and current[-1]['page']['next_page'] is None:
+                    complete = True
+                    break
+                if count > 500 or report['errors']:
+                    raise RuntimeError('native_read_failed_or_card_budget')
+                await page.evaluate('window.scrollTo(0,0)')
+                await page.wait_for_timeout(300)
+                await page.evaluate('window.scrollTo(0,document.body.scrollHeight)')
+                try:
+                    await page.wait_for_function('(n)=>document.querySelectorAll("qy-benefit-teaser").length>n', arg=count, timeout=12000)
+                    stalls = 0
+                except BrowserTimeout:
+                    stalls += 1
+                    if stalls >= 2:
+                        break
+            await settle()
             raw, cards, controls = dom_capture(await page.content())
             (OUT / (name + '.html')).write_text(raw)
             current = report['network_pages'][start:]
             r = {'url': url, 'file': name + '.html', 'sha256': hashlib.sha256(raw.encode()).hexdigest(),
                  'cards': cards, 'controls': controls, 'native_pages': len(current),
-                 'native_item_count': sum(len(x['items']) for x in current), 'scroll_stop': 'stable' if stable >= 3 else 'budget',
+                 'native_item_count': sum(len(x['items']) for x in current),
+                 'scroll_stop': 'native_last_page_and_count' if complete else 'incomplete',
                  'loader_present': bool(await page.locator('qy-benefits-page qy-loader').count())}
             report['catalogues'].append(r)
             print(json.dumps({k: v for k, v in r.items() if k not in ('cards', 'controls')}, ensure_ascii=False), flush=True)
+            if not complete:
+                raise RuntimeError('catalogue_not_complete')
         try:
             await capture(ROOT, 'all')
-            # Exact category IDs come from the site's own response, never a range scan.
             for rubric in report['rubrics']:
                 ident = str(rubric.get('id', ''))
                 if not re.fullmatch(r'[1-9]\d{0,6}', ident) or not rubric.get('name'):
