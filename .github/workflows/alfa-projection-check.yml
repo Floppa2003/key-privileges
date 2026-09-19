@@ -1,0 +1,82 @@
+name: Alfa visible-clause acceptance
+on:
+  push:
+    branches: [loyalty/alfa-clause-projection-20260919]
+    paths: [.github/workflows/alfa-projection-check.yml, loyalty/alfa_partner_rules.py, loyalty/tests/test_alfa_partner_clauses.py]
+permissions:
+  contents: read
+concurrency:
+  group: alfa-projection-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with: {python-version: '3.12'}
+      - run: python -m pip install -r loyalty/requirements.txt
+      - run: python -m unittest discover -s loyalty/tests -v > tests.log 2>&1 || { tail -70 tests.log; exit 1; }
+      - run: node --test key/refresh.test.mjs
+      - name: Save tested public code
+        run: |
+          mkdir -p alfa-projection/code
+          git archive HEAD loyalty key .github/workflows | tar -x -C alfa-projection/code
+          cp tests.log alfa-projection/
+          git rev-parse HEAD > alfa-projection/commit.txt
+      - name: Fresh-source visible common-condition acceptance
+        run: |
+          python - <<'PY'
+          import sys,json,os
+          from pathlib import Path
+          from datetime import datetime,timezone
+          import requests
+          from protego import Protego
+          sys.path.insert(0,'loyalty')
+          import alfa_partner_rules as p
+          from public_transport import robots_document
+          from normalized import validate_offer
+          from sheets_normalized import prepare,SCHEMAS
+          from unified_normalization import make_input,normalize_record
+          out=Path('alfa-projection'); (out/'pdfs').mkdir(exist_ok=True)
+          now=datetime.now(timezone.utc).isoformat()
+          root='https://alfabank.servicecdn.ru'
+          with requests.get(root+'/robots.txt',headers={'User-Agent':'LoyaltyCatalogResearchBot/1.0'},timeout=(8,20),allow_redirects=False) as res:
+              assert len(res.content)<100000
+              rules,state=robots_document(res.status_code,res.text)
+              policy=Protego.parse(rules)
+              policy_report={'status':res.status_code,'state':state}
+          rows=[]
+          for spec in p.DOCS:
+              assert policy.can_fetch(spec['url'],'LoyaltyCatalogResearchBot')
+              data=p.fetch_pdf(spec['url'])
+              (out/'pdfs'/(spec['native_id']+'.pdf')).write_bytes(data)
+              row=p.parse_document(spec,data,now); validate_offer(row)
+              assert row['redemption_text'].startswith('2.3.') and '\n3.1.' in row['redemption_text']
+              rows.append(row)
+          assert len(rows)==5
+          report={'source_id':p.SOURCE_ID,'name':'Alfa Only public partner PDFs','root':root+'/',
+                  'status':'ok','discovered':5,'normalized':5,'failed':0,'coverage':'five_reviewed_documents_with_visible_practical_clauses',
+                  'region':None,'errors':[],'observed_at':now}
+          bundle={'schema_version':2,'run_id':os.environ['GITHUB_RUN_ID']+':1','observed_at':now,'records':rows,'sources':[report]}
+          prepared=prepare(bundle); by_id={r['id']:r for r in rows}
+          for r in prepared['parser_offers']:
+              raw=make_input({'id':r[0],'origin':'parser_offers','row':1,'fields':{h:{'value':v} for h,v in zip(SCHEMAS['parser_offers'],r)}})
+              common=normalize_record(raw,as_of=now[:10])
+              visible={c['kind']:c['evidence']['text'] for c in common['conditions']}
+              assert visible.get('activation')==by_id[r[0]]['redemption_text']
+              assert visible.get('limitations')==by_id[r[0]]['details']['practical_clauses']['territory']
+              assert common['eligibility_verified'] is None
+              if by_id[r[0]]['native_id']=='fresa_0226':assert 'Владивосток' in visible['limitations']
+          (out/'normalized.json').write_text(json.dumps(bundle,ensure_ascii=False,indent=2))
+          (out/'report.json').write_text(json.dumps({'policy':policy_report,'rows':len(rows),'visible_condition_components_verified':True,'observed_at':now},ensure_ascii=False,indent=2))
+          print(json.dumps({'rows':len(rows),'visible_condition_components_verified':True,'observed_at':now}))
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: alfa-projection-${{ github.run_id }}
+          path: alfa-projection/
+          retention-days: 7
