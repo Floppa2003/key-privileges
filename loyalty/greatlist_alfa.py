@@ -94,17 +94,23 @@ def source_fields(e):
         or not re.fullmatch(r'https://greatlist.ru/[a-z]{2,12}/',city['url'])
         or e['catalogue_url']!=city['url']+'alfa-only/'
         or not re.fullmatch(re.escape(city['url'])+r'restaurant/[a-z0-9-]+/',url)
-        or not e['name'] or not city['name'] or not e['address']
+        or not e['name'] or not city['name'] or not isinstance(e['address'],str)
         or not re.fullmatch(r'[a-f0-9]{64}',e['page_sha256'])):
         raise ValueError('greatlist_evidence_identity')
     bullets=e['bullets']
     if not isinstance(bullets,list) or not 1<=len(bullets)<=12 or any(not isinstance(x,str) or not x for x in bullets):
         raise ValueError('greatlist_benefit_bullets')
-    if not e['block_text'].startswith('Привилегии для клиентов Alfa Only:') or any(x not in e['block_text'] for x in bullets):
-        raise ValueError('greatlist_wrong_benefit_owner')
-    benefit='Привилегии для клиентов Alfa Only:\n'+'\n'.join(bullets)
+    if e.get('presentation')=='list':
+        if not e['block_text'].startswith('Привилегии для клиентов Alfa Only:') or any(x not in e['block_text'] for x in bullets):
+            raise ValueError('greatlist_wrong_benefit_owner')
+        benefit='Привилегии для клиентов Alfa Only:\n'+'\n'.join(bullets)
+    elif e.get('presentation')=='paragraph':
+        benefit=e['block_text'].partition('В меню')[0].strip()
+        if not benefit.startswith('Клиентам Alfa Only доступна ') or bullets!=[benefit]:
+            raise ValueError('greatlist_wrong_benefit_owner')
+    else:raise ValueError('greatlist_unknown_benefit_layout')
     redemption='\n'.join(x for x in bullets if re.search(r'брон|бронир|консьерж',x,re.I))
-    location=city['name']+' — '+e['address']
+    location=city['name']+(' — '+e['address'] if e['address'] else '')
     return {'benefit_text':benefit,'conditions_text':location+'\n'+e['block_text'],
             'redemption_text':redemption,'location':location}
 
@@ -113,16 +119,18 @@ def parse_detail(raw,card,observed_at):
     soup=page(raw,card['url']);classes=soup.body.get('class',[])
     headings=soup.select('h1')
     if ('single-restaurant' not in classes or 'postid-'+card['post_id'] not in classes
-        or len(headings)!=1 or not text(headings[0].get_text(' ',strip=True)).casefold().endswith(card['name'].casefold())):
+        or len(headings)!=1 or re.sub(r'^(?:Ресторан|Бар|Кафе|Кофейня|Городское кафе)\s+', '', text(headings[0].get_text(' ',strip=True)), flags=re.I).strip('«»\"“” ').casefold()!=card['name'].strip('«»\"“” ').casefold()):
         raise ValueError('greatlist_detail_identity')
     blocks=soup.select('.alfa-section-hide .alfa-section-text')
     addresses=soup.select('article.contacts .contacts_item_address')
-    if len(blocks)!=1 or len(addresses)!=1:raise ValueError('greatlist_owned_block_missing_or_ambiguous')
-    block=clean_block(blocks[0]);address=text(addresses[0].get_text(' ',strip=True))
+    if len(blocks)!=1 or len(addresses)>1:raise ValueError('greatlist_owned_block_missing_or_ambiguous')
+    block=clean_block(blocks[0]);address=text(addresses[0].get_text(' ',strip=True)) if addresses else ''
     bullets=[text(li.get_text(' ',strip=True)) for li in block.select('ul > li')]
     full=text(block.get_text(' ',strip=True))
+    presentation='list' if block.select('ul') else 'paragraph'
+    if presentation=='paragraph':bullets=[full.partition('В меню')[0].strip()]
     if len(full)>6000:raise ValueError('greatlist_block_too_large')
-    evidence={**card,'address':address,'bullets':bullets,'block_text':full,
+    evidence={**card,'address':address,'bullets':bullets,'block_text':full,'presentation':presentation,
               'page_sha256':hashlib.sha256(raw.encode()).hexdigest()}
     fields=source_fields(evidence)
     return make_offer(SOURCE_ID,city_id(card)+':'+card['post_id'],'Alfa Only',card['name'],
@@ -130,7 +138,8 @@ def parse_detail(raw,card,observed_at):
         conditions=fields['conditions_text'],redemption=fields['redemption_text'],category='Рестораны',
         locator='.alfa-section-hide .alfa-section-text',source_status='public_partner_guide',
         details={'greatlist_evidence':evidence,'activation':fields['redemption_text'],
-                 'limitations':fields['location'],'authenticated_catalogue_equivalence':False},warnings=list(WARNINGS))
+                 'limitations':fields['location'],'authenticated_catalogue_equivalence':False},
+        warnings=list(WARNINGS)+(['address_not_extracted_from_reviewed_contact_block'] if not address else []))
 
 
 def city_id(card):return urlsplit(card['city']['url']).path.strip('/')
@@ -150,7 +159,8 @@ def validate_record(row):
         or row['details'].get('activation')!=expected['redemption_text']
         or row['details'].get('limitations')!=expected['location']
         or row['details'].get('authenticated_catalogue_equivalence') is not False
-        or not set(WARNINGS).issubset(row.get('warnings',[]))):raise ValueError('greatlist_source_evidence_mismatch')
+        or not set(WARNINGS).issubset(row.get('warnings',[]))
+        or (not e['address'] and 'address_not_extracted_from_reviewed_contact_block' not in row.get('warnings',[]))):raise ValueError('greatlist_source_evidence_mismatch')
 
 
 async def collect(client,cfg,report,observed_at,limit):
@@ -180,5 +190,6 @@ async def collect(client,cfg,report,observed_at,limit):
         'cities_discovered':len(cities),'catalogues_read':inventories,'listed_cards':len(cards),
         'detail_pages_parsed':len(rows),'cashback_cards':sum(any(r['kind']=='cashback' for r in x['rates']) for x in rows),
         'all_discovered_cards_parsed':not report['errors'] and len(rows)==len(cards),
+        'cards_without_extracted_address':sum(not x['details']['greatlist_evidence']['address'] for x in rows),
         'bank_catalogue_equivalence':False},ensure_ascii=False,sort_keys=True)
     return rows
