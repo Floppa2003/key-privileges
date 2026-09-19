@@ -7,96 +7,127 @@ permissions: {contents: read}
 jobs:
   probe:
     runs-on: ubuntu-24.04
-    timeout-minutes: 8
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with: {persist-credentials: false}
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with: {python-version: '3.12'}
       - run: python -m pip install -r loyalty/requirements.txt
-      - name: Bounded static inspection of publicly distributed Android package
+      - name: Capture finite public alternatives without Google or provider credentials
         run: |
           mkdir -p only-probe
           python - <<'PY'
-          import hashlib,io,json,re,sys,zipfile
+          import concurrent.futures,hashlib,io,json,re,sys,time,zipfile
           from pathlib import Path
-          from datetime import datetime,timezone
-          from urllib.parse import urljoin,urlsplit
+          from datetime import datetime,timezone,timedelta
+          from urllib.parse import urljoin,urlsplit,parse_qs
           import requests
           from bs4 import BeautifulSoup
           from protego import Protego
           sys.path.insert(0,'loyalty')
           from public_transport import robots_document,check_response
-          out=Path('only-probe');report={'observed_at':datetime.now(timezone.utc).isoformat(),'authenticated':False,'executed_app':False,'provider_calls':0,'catalogue_records':0,'requests':[]}
-          hosts={'apkpure.net','d.apkpure.net','data.winudf.com'}
-          def clean(url):
-              p=urlsplit(url);return p.scheme+'://'+p.netloc+p.path
-          def get(url,limit=100000000):
-              for step in range(4):
-                  p=urlsplit(url)
-                  if p.scheme!='https' or p.netloc not in hosts:raise RuntimeError('unreviewed_distribution_redirect')
-                  with requests.Session() as s:
-                      s.trust_env=False
-                      with s.get(url,headers={'User-Agent':'LoyaltyCatalogResearchBot/1.0'},timeout=(8,35),allow_redirects=False,stream=True) as r:
-                          report['requests'].append({'url':clean(url),'status':r.status_code})
-                          if r.status_code in (401,403,429) or r.headers.get('Retry-After'):raise RuntimeError('access_or_rate_stop')
-                          if r.status_code in (301,302,303,307,308):
-                              url=urljoin(url,r.headers.get('Location',''));continue
-                          data=bytearray()
-                          for part in r.iter_content(65536):
-                              data.extend(part)
-                              if len(data)>limit:raise RuntimeError('size_bound')
-                          return r.status_code,bytes(data)
-              raise RuntimeError('redirect_bound')
-          try:
-              status,raw=get('https://apkpure.net/robots.txt',500000)
-              rules,state=robots_document(status,raw.decode('utf-8'));pol=Protego.parse(rules)
-              page='https://apkpure.net/ru/only-assist/com.konsierge.assist.only/download'
-              if not pol.can_fetch(page,'LoyaltyCatalogResearchBot'):raise RuntimeError('robots_disallow')
-              status,raw=get(page,2500000);check_response(status,raw.decode('utf-8'))
-              soup=BeautifulSoup(raw,'html.parser')
-              report['distribution_page_sha256']=hashlib.sha256(raw).hexdigest()
-              links=list(dict.fromkeys(urljoin(page,a['href']) for a in soup.select('a[href]') if 'd.apkpure.net/b/XAPK/com.konsierge.assist.only' in a['href']))
-              report['distribution_links_found']=len(links)
-              link=next((u for u in links if 'arm64-v8a' in u and 'versionCode=34' in u),None)
-              if not link:raise RuntimeError('reviewed_version_link_missing')
-              # An explicitly selected public distribution file, not an API/login endpoint.
-              status,package=get(link)
-              if status!=200 or not package.startswith(b'PK'):raise RuntimeError('distribution_not_zip')
-              report['package_sha256']=hashlib.sha256(package).hexdigest();report['package_sha1']=hashlib.sha1(package).hexdigest();report['package_bytes']=len(package)
-              if report['package_sha1']!='a8d31e5821299cbe5b3191b0e903d8eba8e4d5e9':raise RuntimeError('published_package_digest_mismatch')
-              with zipfile.ZipFile(io.BytesIO(package)) as z:
-                  report['package_members']=[{'name':i.filename,'bytes':i.file_size} for i in z.infolist()]
-                  if sum(i.file_size for i in z.infolist())>300000000:raise RuntimeError('expanded_size_bound')
-                  names=z.namelist()
-                  if 'manifest.json' in names:
-                      meta=json.loads(z.read('manifest.json'))
-                      report['package_metadata']={k:meta[k] for k in ('package_name','version_name','version_code','min_sdk_version') if k in meta}
-                      if meta.get('package_name')!='com.konsierge.assist.only':raise RuntimeError('package_identity_mismatch')
-                  apk=next((n for n in names if n.endswith('com.konsierge.assist.only.apk')),None)
-                  if not apk:raise RuntimeError('base_apk_missing')
-                  base=z.read(apk)
-              # Nothing is installed or executed. No credentials are used, extracted or published.
-              with zipfile.ZipFile(io.BytesIO(base)) as z:
-                  relevant=[i for i in z.infolist() if i.filename.startswith(('assets/','lib/')) or i.filename.endswith(('.dex','.dll'))]
-                  report['base_members']=[{'name':i.filename,'bytes':i.file_size} for i in relevant]
-                  routes=[]
-                  for member in relevant:
-                      if member.file_size>45000000:continue
-                      raw=z.read(member)
-                      for pattern in (rb'https?://[^\s\x00-\x20<>"\x27\\]{4,240}',):
-                          for b in re.findall(pattern,raw):
-                              try:u=b.decode('utf-8');p=urlsplit(u)
+          from announcements import own_message_parts,caption_text
+          out=Path('only-probe');now=datetime.now(timezone.utc)
+          report={'observed_at':now.isoformat(),'authenticated':False,'provider_calls':0,'published':False,'sources':[]}
+          class PublicRead:
+              def __init__(self,origin):self.origin=origin;self.requests=[];self.policy=None;self.delay=0.5
+              def raw(self,url,limit=6000000,extra_hosts=()):
+                  for attempt in range(4):
+                      p=urlsplit(url)
+                      if p.scheme!='https' or p.username or p.password or p.netloc not in (urlsplit(self.origin).netloc,*extra_hosts):raise RuntimeError('unreviewed_redirect')
+                      time.sleep(self.delay)
+                      with requests.Session() as s:
+                          s.trust_env=False
+                          with s.get(url,headers={'User-Agent':'LoyaltyCatalogResearchBot/1.0'},timeout=(8,25),allow_redirects=False,stream=True) as r:
+                              self.requests.append({'url':p.scheme+'://'+p.netloc+p.path,'status':r.status_code})
+                              if r.status_code==429 or r.headers.get('Retry-After'):raise RuntimeError('rate_stop')
+                              if r.status_code in (301,302,303,307,308):url=urljoin(url,r.headers.get('Location',''));continue
+                              data=bytearray()
+                              for part in r.iter_content(65536):
+                                  data.extend(part)
+                                  if len(data)>limit:raise RuntimeError('size_bound')
+                              return r.status_code,bytes(data)
+                  raise RuntimeError('redirect_bound')
+              def robots(self):
+                  status,data=self.raw(self.origin+'/robots.txt',1000000)
+                  rules,state=robots_document(status,data.decode('utf-8',errors='replace'))
+                  self.policy=Protego.parse(rules);self.delay=max(.5,self.policy.crawl_delay('LoyaltyCatalogResearchBot') or 0)
+                  return {'http_status':status,'state':state,'sha256':hashlib.sha256(data).hexdigest()}
+              def read(self,url):
+                  if self.policy is None or not self.policy.can_fetch(url,'LoyaltyCatalogResearchBot'):raise RuntimeError('robots_disallow')
+                  st,raw=self.raw(url);check_response(st,raw.decode('utf-8',errors='replace'))
+                  return raw
+          def capture(source,url):
+              reader=PublicRead('https://'+urlsplit(url).netloc);r={'source':source,'url':url,'pages':[]}
+              try:
+                  r['robots']=reader.robots();current=url;cutoff=now-timedelta(days=180);visited=set()
+                  for i in range(80 if source=='alfa_channel' else 1):
+                      if current in visited:raise RuntimeError('repeated_cursor')
+                      visited.add(current);raw=reader.read(current)
+                      name=f'{source}-{i:03}.html';(out/name).write_bytes(raw)
+                      soup=BeautifulSoup(raw,'html.parser')
+                      page={'url':current,'file':name,'sha256':hashlib.sha256(raw).hexdigest(),'bytes':len(raw)};r['pages'].append(page)
+                      if source!='alfa_channel':break
+                      dates=[];posts=[];ids=[]
+                      for n in soup.select('.tgme_widget_message[data-post]'):
+                          pid=n['data-post']
+                          if not re.fullmatch(r'aaa_only/\d+',pid):continue
+                          ids.append(int(pid.split('/')[-1]));clock=n.select_one('.tgme_widget_message_date time[datetime]')
+                          if clock:
+                              date=datetime.fromisoformat(clock['datetime'].replace('Z','+00:00'));dates.append(date)
+                          else:continue
+                          parts=own_message_parts(n,'aaa_only')
+                          body='\n\n'.join(caption_text(content) for _,content in parts)
+                          posts.append({'native_id':pid,'published_at':date.isoformat(),'forwarded':bool(n.select_one('.tgme_widget_message_forwarded_from')),'text':body})
+                      page['posts']=posts
+                      if not ids:raise RuntimeError('no_messages')
+                      if dates and max(dates)<cutoff:r['stop_reason']='lookback_boundary_reached';break
+                      more=soup.select_one('a.tme_messages_more[data-before]')
+                      if not more:r['stop_reason']='archive_end';break
+                      u=urlsplit(urljoin(url,more.get('href','')));q=parse_qs(u.query);before=q.get('before',[])
+                      if not(u.scheme=='https' and u.netloc=='t.me' and u.path=='/s/aaa_only' and set(q)=={'before'} and len(before)==1 and before[0].isdigit() and 0<int(before[0])<=min(ids)):raise RuntimeError('untrusted_cursor')
+                      current=f'https://t.me/s/aaa_only?before={before[0]}'
+                  else:r['stop_reason']='page_limit'
+              except Exception as e:r['error']=str(e) if isinstance(e,RuntimeError) else type(e).__name__
+              r['requests']=reader.requests;return r
+          def package_probe():
+              reader=PublicRead('https://apkpure.net');r={'source':'app_distribution','executed_app':False}
+              try:
+                  r['robots']=reader.robots();page='https://apkpure.net/ru/only-assist/com.konsierge.assist.only/download';raw=reader.read(page)
+                  soup=BeautifulSoup(raw,'html.parser');links=[urljoin(page,a['href']) for a in soup.select('a[href]') if 'd.apkpure.net/b/XAPK/com.konsierge.assist.only' in a['href']]
+                  link=next((u for u in links if 'arm64-v8a' in u and 'versionCode=34' in u),None)
+                  if not link:raise RuntimeError('reviewed_link_missing')
+                  status,package=reader.raw(link,100000000,('d.apkpure.net','data.winudf.com'))
+                  if status!=200 or not package.startswith(b'PK'):raise RuntimeError('not_a_package')
+                  r['sha1']=hashlib.sha1(package).hexdigest();r['sha256']=hashlib.sha256(package).hexdigest();r['bytes']=len(package)
+                  if r['sha1']!='a8d31e5821299cbe5b3191b0e903d8eba8e4d5e9':raise RuntimeError('published_digest_mismatch')
+                  with zipfile.ZipFile(io.BytesIO(package)) as z:
+                      if sum(i.file_size for i in z.infolist())>300000000:raise RuntimeError('zip_bound')
+                      meta=json.loads(z.read('manifest.json'));r['package_name']=meta.get('package_name');r['version']=meta.get('version_name')
+                      if r['package_name']!='com.konsierge.assist.only':raise RuntimeError('wrong_package')
+                      apk=next(n for n in z.namelist() if n.endswith('com.konsierge.assist.only.apk'));base=z.read(apk)
+                  with zipfile.ZipFile(io.BytesIO(base)) as z:
+                      r['members']=[{'name':i.filename,'bytes':i.file_size} for i in z.infolist()];routes=set()
+                      for member in z.infolist():
+                          if member.file_size>45000000 or not(member.filename.startswith(('assets/','lib/')) or member.filename.endswith('.dex')):continue
+                          raw=z.read(member)
+                          for value in re.findall(rb'https?://[^\s\x00-\x20<>"\x27\\]{4,240}',raw):
+                              try:u=value.decode('utf-8');p=urlsplit(u)
                               except (UnicodeError,ValueError):continue
                               if p.username or p.password or not p.hostname:continue
-                              if any(x in p.hostname.lower() for x in ('konsierge','assist','apcg','quintessentially')):
-                                  path=p.path if not re.search(r'token|secret|password|session',p.path,re.I) else '/[sensitive-path-omitted]'
-                                  routes.append({'member':member.filename,'url':p.scheme+'://'+p.netloc+path})
-                  report['service_routes']=list({json.dumps(r,sort_keys=True):r for r in routes}.values())
-                  report['static_inspection_complete']=True
-          except Exception as e:report['error']=str(e) if isinstance(e,RuntimeError) else type(e).__name__
+                              if any(v in p.hostname.lower() for v in ('konsierge','assist','apcg','quintessentially')):
+                                  path=p.path if not re.search(r'token|secret|password|session',p.path,re.I) else '/[omitted]'
+                                  routes.add((member.filename,p.scheme+'://'+p.netloc+path))
+                      r['service_routes']=[{'member':m,'url':u} for m,u in sorted(routes)]
+                  r['static_inspection_complete']=True
+              except Exception as e:r['error']=str(e) if isinstance(e,RuntimeError) else type(e).__name__
+              r['requests']=reader.requests;return r
+          with concurrent.futures.ThreadPoolExecutor(max_workers=3) as pool:
+              tasks=[pool.submit(capture,'alfa_channel','https://t.me/s/aaa_only'),pool.submit(capture,'tsum','https://www.tsum.ru/lp/alfa-only/'),pool.submit(package_probe)]
+              report['sources']=[f.result() for f in tasks]
           (out/'report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2))
-          print(json.dumps(report,ensure_ascii=False))
+          print(json.dumps([{k:v for k,v in r.items() if k not in ('pages','members','requests')}|{'pages':len(r.get('pages',[]))} for r in report['sources']],ensure_ascii=False))
           PY
           git rev-parse HEAD > only-probe/commit.txt
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
