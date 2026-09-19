@@ -1,8 +1,8 @@
 {
-  "request_id": "2026-09-19-alfa-partner-pdf-offers-68",
+  "request_id": "2026-09-19-alfa-practical-clauses-69",
   "source_ids": [
     "alfa_only_partner_pdf_offers"
   ],
-  "reason": "Collect and publish the five reviewed public Alfa Only partner promotion PDFs after PR68. Fresh-fetch exact Alfa-owned PDFs, including newly added FRESA and Mama Tuta / Probka; preserve source-derived validity, exact 10% rate/cap/scope, and verify Sheet readback. Do not authenticate to Alfa-Bank, infer personalized offers or user tier, activate offers, or crawl unrelated programs.",
+  "reason": "Publish PR69: refresh exactly the five reviewed Alfa partner PDFs with complete geography and source joining/card-payment clauses 2.3 and 3.1. Preserve existing IDs, source rates, caps, validity, monthly transaction scope and TSP appendices; independently verify the resulting Sheet rows. No bank account, OTP, cookie, activation, new schedule or unrelated source crawl.",
   "publish": true
 }
