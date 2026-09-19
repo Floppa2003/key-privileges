@@ -718,5 +718,12 @@
     "mode": "probe",
     "url": "https://alfabank.servicecdn.ru/",
     "timeout_seconds": 90
+  },
+  {
+    "id": "greatlist_alfa_only",
+    "name": "Alfa Only — публичные привилегии GreatList",
+    "mode": "greatlist",
+    "url": "https://greatlist.ru/spb/alfa-only/",
+    "timeout_seconds": 420
   }
 ]
