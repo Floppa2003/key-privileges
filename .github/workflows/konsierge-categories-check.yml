@@ -15,106 +15,14 @@ jobs:
         with: {python-version: '3.12'}
       - run: python -m pip install -r loyalty/requirements.txt
       - run: python -m playwright install --with-deps chromium
-      - name: Observe exact supplied public page, category controls and one detail
+      - name: Read normal public website and verify its native category/page inventory
         run: |
           mkdir -p category-check
-          python - <<'PY'
-          import asyncio,hashlib,json,re,sys,time
-          from pathlib import Path
-          from urllib.parse import urlsplit,parse_qs,urlencode
-          from datetime import datetime,timezone
-          import requests
-          from bs4 import BeautifulSoup
-          from playwright.async_api import async_playwright
-          sys.path.insert(0,'loyalty')
-          from public_transport import robots_document
-          out=Path('category-check')
-          url='https://konsierge.com/benefits?rubric_id=24'
-          report={'observed_at':datetime.now(timezone.utc).isoformat(),'inspection_only':True,'published':False,'source_account_login':False,'provider_calls':0,'requests':[],'snapshots':[]}
-          def safe_url(u):
-              p=urlsplit(u);q=parse_qs(p.query)
-              keep={k:v[0] for k,v in q.items() if k in ('rubric_id','page','per') and len(v)==1 and re.fullmatch(r'\d+',v[0])}
-              return p.scheme+'://'+p.netloc+p.path+('?' + urlencode(keep) if keep else '')
-          def snapshot(raw,name,source_url):
-              soup=BeautifulSoup(raw,'html.parser')
-              for n in soup.select('script,style,noscript,svg,form,input,textarea'):
-                  if n.parent is not None:n.decompose()
-              for n in soup.find_all(True):
-                  n.attrs={k:v for k,v in n.attrs.items() if k in ('class','href','src','data-src','alt','role','aria-label')}
-              text=str(soup)
-              (out/(name+'.html')).write_text(text)
-              cards=[]
-              for c in soup.select('qy-benefit-teaser'):
-                  def val(sel):
-                      n=c.select_one(sel);return n.get_text(' ',strip=True) if n else None
-                  images=[n.get('data-src',n.get('src','')) for n in c.select('img')]
-                  ids=[m.group(1) for v in images for m in [re.search(r'/benefit/image/(\d+)/',v)] if m]
-                  cards.append({'name':val('.BenefitTeaser-Title'),'category':val('.BenefitTeaser-Rubric'),'benefit':val('.BenefitTeaser-OfferText'),'image_ids':ids})
-              links=[{'text':a.get_text(' ',strip=True),'href':a.get('href')} for a in soup.select('a[href]') if a.get('href') and not a['href'].startswith(('mailto:','tel:'))]
-              controls=[{'tag':n.name,'class':n.get('class',[]),'text':n.get_text(' ',strip=True)} for n in soup.select('button,select,[role="button"]')]
-              item={'name':name,'source_url':safe_url(source_url),'file':name+'.html','sha256':hashlib.sha256(text.encode()).hexdigest(),'cards':cards,'links':links,'controls':controls}
-              report['snapshots'].append(item)
-              return item
-          def policy_probe():
-              r={'url':'https://konsierge.com/robots.txt','method':'requests_get_stream','observed_at':datetime.now(timezone.utc).isoformat()}
-              try:
-                  with requests.Session() as s:
-                      s.trust_env=False
-                      with s.get(r['url'],headers={'User-Agent':'LoyaltyCatalogResearchBot/1.0'},timeout=(5,10),stream=True,allow_redirects=False) as res:
-                          r['http_status']=res.status_code
-                          raw=res.raw.read(1024*1024+1,decode_content=True)
-                          rules,state=robots_document(res.status_code,raw.decode('utf-8',errors='replace'))
-                          r.update(state=state,rules=rules)
-              except Exception as e:r.update(error=type(e).__name__)
-              return r
-          async def main():
-              report['robots']=await asyncio.to_thread(policy_probe)
-              async with async_playwright() as p:
-                  browser=await p.chromium.launch(headless=True)
-                  context=await browser.new_context(locale='ru-RU',viewport={'width':1440,'height':1000})
-                  page=await context.new_page()
-                  async def route(r):
-                      u=urlsplit(r.request.url)
-                      if u.scheme not in ('https','data','blob') or r.request.method not in ('GET','HEAD','OPTIONS'):
-                          return await r.abort()
-                      if u.scheme=='https' and u.netloc not in ('konsierge.com','benefits.konsierge.com','news.konsierge.com','files-kons.s3.amazonaws.com'):
-                          return await r.abort()
-                      if re.search(r'/(?:auth|login|register|activate|account)(?:/|$)',u.path,re.I):return await r.abort()
-                      await r.continue_()
-                  await context.route('**/*',route)
-                  def response(res):
-                      if res.request.resource_type in ('document','xhr','fetch'):
-                          report['requests'].append({'url':safe_url(res.url),'status':res.status,'type':res.request.resource_type})
-                  page.on('response',response)
-                  try:
-                      res=await page.goto(url,wait_until='domcontentloaded',timeout=30000)
-                      report['navigation_status']=res.status if res else None
-                      await page.wait_for_timeout(3500)
-                      if urlsplit(page.url).netloc!='konsierge.com':raise RuntimeError('unexpected_navigation')
-                      first=snapshot(await page.content(),'category24-first',page.url)
-                      report['initial_count']=len(first['cards'])
-                      # One normal scroll observes whether the site can load a next page.
-                      await page.evaluate('window.scrollTo(0,document.body.scrollHeight)')
-                      await page.wait_for_timeout(3500)
-                      second=snapshot(await page.content(),'category24-scrolled',page.url)
-                      report['after_scroll_count']=len(second['cards'])
-                      offers=page.locator('qy-benefit-teaser .BenefitTeaser-OfferText')
-                      if await offers.count():
-                          await offers.first.click(timeout=5000)
-                          await page.wait_for_timeout(1500)
-                          snapshot(await page.content(),'category24-detail',page.url)
-                  except Exception as e:report['browser_error']=type(e).__name__+(':'+str(e) if isinstance(e,RuntimeError) else '')
-                  await context.close();await browser.close()
-              (out/'report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2))
-              print(json.dumps({k:v for k,v in report.items() if k not in ('snapshots','requests')},ensure_ascii=False))
-              print(json.dumps([{'name':s['name'],'cards':len(s['cards']),'controls':s['controls']} for s in report['snapshots']],ensure_ascii=False))
-          asyncio.run(main())
-          PY
+          python diagnostics/konsierge_public_ui.py
           git rev-parse HEAD > category-check/commit.txt
-          git archive HEAD loyalty key > category-check/repo-code.tar
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
-          name: konsierge-categories-${{ github.run_id }}
+          name: konsierge-full-ui-${{ github.run_id }}
           path: category-check/
           retention-days: 3
