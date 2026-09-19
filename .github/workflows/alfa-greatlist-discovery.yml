@@ -18,16 +18,18 @@ jobs:
       - name: Verify reviewed bytes
         run: |
           sha256sum -c <<'EOF'
-          6b6a0475eaa046a72633f3884c9a1c9d588212f6d5fec794cafa11b186811029  loyalty/greatlist_alfa.py
-          2e51320091b5fa87ff8891949cf3b1d3710c266bb599d75fdeffeecad4d0f438  loyalty/tests/test_greatlist_alfa.py
+          5efdf793db3141fecb1520083162fd4fd0b1bdf99ed01f8d1f3437b3dcb1053c  loyalty/greatlist_alfa.py
+          131be99683e0b4ed12839f45a3f1afd08df102a795c36d2f4b899bf221150943  loyalty/tests/test_greatlist_alfa.py
           81209863e491f1d6949ff1152bfebc655ef32efb38f0a1e21fa67a0748ce515b  loyalty/normalized.py
           e673e3c91f181213283411600fb9f55dd0989036c80de8bbffc434b29185cde5  loyalty/collect_normalized.py
           3e854684ec0b5087b80519c3d63855a70b60e0ce8964836e95af1f202cc64456  loyalty/sources_normalized.json
           EOF
       - name: Regression tests
         run: |
-          python -m unittest discover -s loyalty/tests -v
-          node --test key/refresh.test.mjs
+          set -o pipefail
+          mkdir -p greatlist-output
+          python -m unittest discover -s loyalty/tests -v 2>&1 | tee greatlist-output/python-tests.log
+          node --test key/refresh.test.mjs | tee greatlist-output/key-tests.log
       - run: python -m playwright install --with-deps chromium
       - name: Collect only GreatList with source-field DOM evidence
         run: |
@@ -69,13 +71,15 @@ jobs:
           from pathlib import Path
           sys.path.insert(0,'loyalty');sys.path.insert(0,'loyalty/tests')
           from test_greatlist_alfa import common
+          from normalized import validate_offer
           b=json.loads(Path('greatlist-output/normalized.json').read_text());s=b['sources'][0]
           print(json.dumps(s,ensure_ascii=False))
           assert len(b['sources'])==1 and s['status']=='ok' and s['normalized']==s['discovered'] and not s['errors']
           for r in b['records']:
+              validate_offer(r)
               n=common(r);conditions=json.dumps(n['conditions'],ensure_ascii=False)
               assert r['details']['limitations'] in conditions and n['eligibility_verified'] is None
-              assert not r['rates'] or all(x['qualifier']=='up_to' for x in r['rates'])
+              assert r['redemption_text'] in conditions
           print('live_and_common_views_verified')
           PY
       - name: Save exact public code and manifest
