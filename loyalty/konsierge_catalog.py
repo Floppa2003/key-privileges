@@ -1,6 +1,6 @@
 """Validate a finite, anonymous public-browser capture; never call the private API.
 
-Collection is manual until the main-origin robots transport is accepted. Root and
+Manual and recurring captures preserve distinct acquisition provenance. Root and
 rubric pagination are independently reconciled. UI labels are not entitlements.
 """
 from __future__ import annotations
@@ -18,11 +18,13 @@ SOURCE = 'konsierge_public'
 PROGRAM = 'Konsierge — публичные привилегии'
 ROOT = 'https://konsierge.com/benefits'
 METHOD = 'konsierge_public_browser_capture_v1'
+RECURRING_MODE = 'recurring_public_browser'
+ROBOTS_POLICY = 'skip_konsierge_public_by_user_2026_09_19'
 ITEM_KEYS = {'id','name','offer','link','description','enabled','date_of_expiry',
              'date_of_release','created_at','updated_at','rubrics'}
 WARNINGS = ['user_eligibility_not_verified','only_assist_equivalence_not_asserted',
             'public_website_response_not_customer_account','full_description_scope_requires_review',
-            'manual_capture_not_recurring_collection','source_cache_age_not_provided']
+            'source_cache_age_not_provided']
 
 
 def digest(value):
@@ -79,9 +81,20 @@ def code_words(description):
     return result
 
 
-def derived(item, observed_at):
+def record_mode(details):
+    mode = details.get('collection_mode', 'manual')
+    require(mode in ('manual', RECURRING_MODE), 'collection_mode')
+    if mode == RECURRING_MODE:
+        require(details.get('robots_policy') == ROBOTS_POLICY, 'recurring_robots_policy')
+    return mode
+
+
+def derived(item, observed_at, collection_mode='manual'):
     item_fields(item)
+    require(collection_mode in ('manual', RECURRING_MODE), 'collection_mode')
     body = text(item['description']); warnings = list(WARNINGS)
+    warnings.insert(4, 'manual_capture_not_recurring_collection' if collection_mode == 'manual'
+                    else 'robots_preflight_skipped_by_project_owner')
     dates = sorted({datetime.strptime(m,'%d.%m.%Y').date().isoformat()
                     for m in re.findall(r'\bдо\s+(\d{2}\.\d{2}\.\d{4})',body)})
     end = dates[0] if len(dates) == 1 else None
@@ -108,7 +121,7 @@ def derived(item, observed_at):
 
 def validate_record(row):
     d = row.get('details',{}); item = d.get('public_item',{})
-    label,body,activation,end,warnings,words = derived(item,row['observed_at'])
+    label,body,activation,end,warnings,words = derived(item,row['observed_at'],record_mode(d))
     require(row['source_id'] == SOURCE and row['native_id'] == str(item['id'])
             and row['program'] == PROGRAM and row['partner_name'] == text(item['name'])
             and row['title'] == text(item['name']) and row['record_kind'] == 'partner_offer'
@@ -130,7 +143,10 @@ def validate_record(row):
 
 
 def parse_capture(report, directory, source_run):
-    require(report.get('one_off_public_ui_inspection') is True and report.get('source_account_login') is False
+    mode = record_mode(report)
+    require(report.get('one_off_public_ui_inspection') is (mode == 'manual')
+            and (mode == 'manual' or report.get('robots_requests') == 0)
+            and report.get('source_account_login') is False
             and report.get('direct_api_requests') == 0 and report.get('credential_values_read_or_replayed') is False
             and report.get('published') is False and not report.get('errors'),'capture_not_accepted')
     observed = stamp(report['observed_at'])
@@ -183,18 +199,19 @@ def parse_capture(report, directory, source_run):
     rows=[]; sha=digest(report)
     original=[i for p in pages[None] for i in p['items']]
     for item in original:
-        label,body,activation,end,warnings,words=derived(item,report['observed_at'])
+        label,body,activation,end,warnings,words=derived(item,report['observed_at'],mode)
         cats=[{'id':k,'name':v,'url':ROOT+'?rubric_id='+str(k)} for k,v in names.items() if k in memberships.get(item['id'],[])]
         if not cats: warnings.append('root_only_not_in_public_category_tabs')
         rows.append(make_offer(SOURCE,str(item['id']),PROGRAM,item['name'],label,ROOT,report['observed_at'],
             title=item['name'],conditions=body,redemption=activation,category=' / '.join(x['name'] for x in cats) or None,
             link_kind='page_block',locator='public benefit id='+str(item['id']),valid_until=end,
             source_status='public_catalogue_terms_unverified_eligibility',warnings=warnings,
-            details={'retrieval_method':METHOD,'public_item':item,'item_sha256':digest(item),
+            details={**({'collection_mode':mode,'robots_policy':ROBOTS_POLICY} if mode == RECURRING_MODE else {}),
+                     'retrieval_method':METHOD,'public_item':item,'item_sha256':digest(item),
                      'public_categories':cats,'only_assist_equivalence':False,'code_words':words,
                      'capture_sha256':sha,'source_run':source_run,'_source':{'source_id':SOURCE}}))
     coverage={'source_id':SOURCE,'name':PROGRAM,'root':ROOT,'status':'ok','discovered':len(rows),
-              'normalized':len(rows),'failed':0,'coverage':'complete_public_root_and_all_visible_rubrics; manual_capture; eligibility_not_verified',
+              'normalized':len(rows),'failed':0,'coverage':'complete_public_root_and_all_visible_rubrics; '+('manual_capture' if mode == 'manual' else 'recurring_public_browser; robots_preflight_not_requested')+'; eligibility_not_verified',
               'region':None,'errors':[],'observed_at':report['observed_at'],
               'categories':[{'id':k,'name':names[k],'count':len(v)} for k,v in inventories.items() if k is not None],
               'root_only':len(set(root)-set(memberships))}
@@ -210,7 +227,7 @@ def project_common(raw,n,benefit,condition,code):
     from unified_normalization import digest as common_digest, validate_normalized
     from promo_codes import extract_promocodes
     d=raw['details']; item=d['public_item']
-    label,body,activation,end,warnings,words=derived(item,raw['observed_at'])
+    label,body,activation,end,warnings,words=derived(item,raw['observed_at'],record_mode(d))
     require(raw['program']==PROGRAM and raw['partner']==text(item['name']) and raw['title']==text(item['name'])
             and raw['kind']=='partner_offer' and raw['source_url']==ROOT and raw['link_kind']=='page_block'
             and raw['benefit_url'] is None and raw['benefit']==label and raw['conditions']==body
