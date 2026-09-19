@@ -133,6 +133,21 @@ def must(text: str, pattern: str, code: str) -> str:
     return compact(match.group(0))
 
 
+def numbered_clause(text: str, number: str, following: str, opening: str) -> str:
+    """Keep the complete reviewed clause, not a punctuation-delimited city name."""
+    starts = list(re.finditer(r"(?<![\d.])" + re.escape(number) + r"\.\s*" + opening, text, re.I))
+    if len(starts) != 1:
+        raise ValueError("alfa_partner_pdf_clause_" + number + "_identity")
+    start = starts[0]
+    end = re.search(r"(?<![\d.])" + re.escape(following) + r"\.\s", text[start.end():])
+    if end is None:
+        raise ValueError("alfa_partner_pdf_clause_" + number + "_end_missing")
+    clause = compact(text[start.start():start.end() + end.start()])
+    if len(clause) > 2500:
+        raise ValueError("alfa_partner_pdf_clause_" + number + "_bound")
+    return clause
+
+
 def source_date(day: str, month: str, year: str) -> str:
     m = MONTHS.get(month.casefold())
     if not m:
@@ -185,11 +200,9 @@ def parse_document(spec: dict, data: bytes, observed_at: str) -> dict:
         r"Участник\s*Акции\s*[–—-]\s*Клиент.{0,260}?обслуживающ[ийе][йся]*\s*в\s*рамках\s*Пакета\s*услуг\s*[«\"]Alfa\s*Only[»\"].{0,260}?присоединился\s*к\s*участию\s*в\s*Акции",
         "alfa_partner_pdf_eligibility_missing",
     )
-    territory = must(
-        text,
-        r"2\.2\..{0,260}?Акция\s*Партнера\s*проводится.{0,260}?(?:г\.|город)[А-Яа-яё .-]+",
-        "alfa_partner_pdf_territory_missing",
-    )
+    territory = numbered_clause(text, "2.2", "2.3", r"Акция\s*Партнера\s*проводится")
+    joining = numbered_clause(text, "2.3", "2.4", r"Совершение\s*Клиентом")
+    payment = numbered_clause(text, "3.1", "3.2", r"Для\s*получения")
     benefit_clause = must(
         text,
         r"3\.2\..{0,420}?получают\s*Альфа\s*-\s*Баллы/\s*Бонусные\s*Мили.{0,120}?по\s*ставке\s*10\s*%.{0,220}?не\s*более\s*1\s*500.{0,260}?от\s*суммы\s*(?:всех|первой)\s*Расходн[а-я]+\s*операц[а-я]+.{0,220}?календарного\s*месяца",
@@ -219,6 +232,9 @@ def parse_document(spec: dict, data: bytes, observed_at: str) -> dict:
 
     benefit = title + ". " + benefit_clause
     conditions = "\n".join([eligibility, territory, stacking, payout, appendix])
+    redemption = "\n".join([joining, payment])
+    clauses = dict(eligibility=eligibility, territory=territory, stacking=stacking,
+                   payout=payout, appendix=appendix, joining=joining, payment=payment)
 
     row = make_offer(
         SOURCE_ID,
@@ -230,6 +246,7 @@ def parse_document(spec: dict, data: bytes, observed_at: str) -> dict:
         observed_at,
         title=f"Alfa Only → {spec['display_name']} — 10%",
         conditions=conditions,
+        redemption=redemption,
         link_kind="document_section",
         locator="partner_rules:3.2",
         record_kind="partner_offer",
@@ -244,6 +261,7 @@ def parse_document(spec: dict, data: bytes, observed_at: str) -> dict:
             "authenticated_catalogue_equivalence": False,
             "search_discovery_inventory_complete": False,
             "tsp_appendix": appendix,
+            "practical_clauses": clauses,
         },
         warnings=list(WARNINGS),
     )
@@ -289,6 +307,17 @@ def validate_partner_record(row: dict) -> None:
         or not set(WARNINGS).issubset(row.get("warnings", []))
     ):
         raise ValueError("alfa_partner_pdf_evidence_mismatch")
+    clauses = details.get("practical_clauses", {})
+    keys = ("eligibility", "territory", "stacking", "payout", "appendix", "joining", "payment")
+    if not isinstance(clauses, dict) or set(clauses) != set(keys) or any(
+        not isinstance(clauses[k], str) or not clauses[k] or len(clauses[k]) > 2500
+        for k in keys
+    ):
+        raise ValueError("alfa_partner_pdf_practical_clauses_missing")
+    if (row.get("conditions_text") != "\n".join(clauses[k] for k in keys[:5])
+            or row.get("redemption_text") != "\n".join(clauses[k] for k in keys[5:])
+            or clauses["appendix"] != details["tsp_appendix"]):
+        raise ValueError("alfa_partner_pdf_practical_clauses_mismatch")
 
 
 async def collect(cfg, report, observed_at: str, limit: int) -> list[dict]:
