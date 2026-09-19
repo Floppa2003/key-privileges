@@ -20,10 +20,37 @@ Only after those checks passed were the three integration edits committed to fea
 
 Artifact **10591735659**, ZIP SHA256 **dd9fc11533260497411d2ba7bb4f6ba2dc8a43cb41994d1354770549db8996d5**, was downloaded and independently checked. All five production/configuration/test file hashes match the reviewed local files exactly. The baseline current-checkpoint blob was independently recovered as **e6a97234013dbe4591e9b667c589499323f5dc9d**.
 
-## Publication boundary
+## Normal main publication — completed and independently verified
 
-This section records feature verification, not a completed post-merge Sheet update. The latest previously published snapshot is PR74. Append actual main-run and independent destination evidence after the first targeted publication; do not relabel the feature observation with the publication timestamp.
+PR **75** merged at **2026-09-19T20:09:59Z**, merge **dedd09e552c2ba076deac3a57ccf6d5084a9001f**, reviewed head **051c12d03756a9fdc4eb485e00dc60350b80ee90**. The existing request mechanism was updated by **2bfa03aa4f80f5a7e0f4d7aef3890bf86e352a4b**, request `2026-09-19-konsierge-recurring-75`, selecting only `konsierge_public` with publication enabled.
+
+Request run **35466565687** dispatched normal main **35466573005:1**, executing that same commit. This is the normal `loyalty.yml` workflow, not another one-time publication implementation. Collection job **105959885111** completed its full Python/KEY regressions, live collection and publication dry-run. Publication job **105960180080** completed source upsert and all common-view readback steps successfully. Both successful outcomes were read back through GitHub.
+
+The main source observation is **2026-09-19T20:11:23.957490+00:00**, with **159 records, six fully reconciled categories, two root-only items, zero source errors and zero robots requests**. It is a new live observation, not the earlier feature payload republished with a fresh date. All159 headline texts, full conditions and redemption instructions match the previous PR74 snapshot; provenance and observation time changed.
+
+Destination: **скидки**, spreadsheet **1uFR7croj7p6RRNPcoTRYlVl06hKsurkIgyu1IdMMB-4**. Native-cell reads showed the updated source run/time, recurring mode, explicit robots profile and still-unverified customer eligibility. An intermediate manifest was `publishing` and was not called complete. After the publisher finished, a fresh export was independently compared with the genuine before export:
+
+| Independent read-only check | Accepted result |
+|---|---|
+| Parser/source rows | **159 existing rows2670–2828 updated**, no new/duplicate IDs and no moved old ID. |
+| All parser records | **2800**, unchanged count. |
+| Other parser records | **2641 complete rows** unchanged, including manual cells. |
+| Other source/history/archive sheets | **9175 nonempty cells** unchanged; visibility and hidden archive preserved. |
+| Managed source/report fields | **3989 fields** match the actual main payload exactly:159x25 source fields plus14 coverage fields. |
+| Coverage | Row **1638**, run35466573005:1,159/159,zero errors. All earlier coverage values preserved. |
+| Current common views | **3448 records,3976 benefits,10266 conditions/costs,733 code/delivery rows**, all on the verified generation. |
+| Manual common-view cells | Preserved at their original positions. |
+| Formulas | All **eight** formulas preserved. |
+| Final manifest | **verified/current**. |
+
+The exporter reported modification time **2026-09-19T20:15:58.440Z**. That is the workbook modification time, not a claimed exact timestamp of the independent readback. This audit checked all managed source/report fields, old source/manual/formula preservation, component counts and every current component's generation. The normal publisher separately verified all its managed common fields; this independent audit does **not** claim a second full common-semantic recomputation or a rendered-layout/ACL audit. Private workbook exports remain local, not attached or committed.
+
+Main artifact **10591132599**, `loyalty-public-35466573005-1`, ZIP SHA256 **fc673467d3665b4f26e5167d0b3dfe04f49e570a7049a3a577613baa1e58cacc**; normalized.json SHA256 **d4791151580e2bd8debca00e7bf1fe4ee299b800b1959e946b492ab571d460b9**. ZIP digest/CRC were checked. The three changed production Python hashes match the reviewed local files; source registry blob **f85d8c163bf2f39aa07063518b919a278351677a** was independently read back and matches local bytes.
+
+Verified source fingerprint: **fb7e8704c1cf1ba1fb5d2e2fb1943f2b9ab5a66f02f562cf606255b0300a74fe**.
+
+Verified current generation: **e8bf15ac29b800010d51ac50786b550216f52d495b352a2eb4a771fbe3b44393**.
 
 ## Remaining limits
 
-A successful fresh control run and configured daily trigger do not prove every future unattended run will succeed. If the site's schema, page count, source totals or access behavior changes, the collector stops rather than publishing an incomplete replacement. An empty category/root is currently rejected conservatively. Expired/conflicting dates and unknown personal Only Assist eligibility retain PR74 semantics. Public catalogue identity remains separate from Alfa bank/app entitlements. No private bank/app route is enabled.
+The daily trigger is configured and the same main workflow has completed a fresh controlled run. A future cron-triggered execution has not yet been observed, and future success is not guaranteed. If the site's schema, page count, source totals or access behavior changes, the collector stops rather than publishing an incomplete replacement. An empty category/root is currently rejected conservatively. Expired/conflicting dates and unknown personal Only Assist eligibility retain PR74 semantics. Public catalogue identity remains separate from Alfa bank/app entitlements. No private bank/app route is enabled.
