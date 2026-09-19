@@ -1,9 +1,8 @@
 {
-  "request_id": "2026-09-19-alfa-public-frontier-72",
+  "request_id": "2026-09-19-konsierge-recurring-75",
   "source_ids": [
-    "alfa_only_tsum",
-    "alfa_only_announcements"
+    "konsierge_public"
   ],
-  "reason": "Publish merged PR72 through the existing serialized main collector and Sheets pipeline, running its full regression. Exact live artifact35442309775 was independently verified by35442472548:2TSUM merchant-loyalty tiers plus18announcements;1069Python and7KEY tests. Preserve TSUM loyalty-credit versus bank-cash distinction and Orange/Black scope; keep announcement validity/eligibility unverified. Validate source and common-view readbacks and preserve unrelated records/manual fields. No bank/app authentication, coupon activation, provider credits, new schedules or unrelated source crawl.",
+  "reason": "First normal main refresh of PR75. The owner explicitly disabled robots.txt preflight for the public Konsierge source only. Reuse the existing daily source registry, collector, full regression and serialized Sheets publication. Feature run35466313814:1 freshly accepted159 records across all six categories, no robots requests,1102Python+7KEY tests. Preserve native IDs, full public conditions, original dates and unknown customer eligibility; no account access, credential replay, code issuance, provider credits, new schedule or unrelated source crawl. Validate actual publication readback.",
   "publish": true
 }
