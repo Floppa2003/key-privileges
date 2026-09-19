@@ -2,7 +2,7 @@ name: Konsierge category acceptance check
 on:
   push:
     branches: ['loyalty/konsierge-categories-20260919']
-    paths: ['.github/workflows/konsierge-categories-check.yml']
+    paths: ['.github/workflows/konsierge-categories-check.yml', 'diagnostics/konsierge_public_ui.py']
 permissions: {contents: read}
 jobs:
   inspect:
