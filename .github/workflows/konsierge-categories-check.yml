@@ -2,27 +2,104 @@ name: Konsierge category acceptance check
 on:
   push:
     branches: ['loyalty/konsierge-categories-20260919']
-    paths: ['.github/workflows/konsierge-categories-check.yml', 'diagnostics/konsierge_public_ui.py']
+    paths: ['.github/workflows/konsierge-categories-check.yml']
 permissions: {contents: read}
 jobs:
-  inspect:
+  verify:
     runs-on: ubuntu-24.04
-    timeout-minutes: 8
+    timeout-minutes: 10
+    permissions: {contents: write, actions: read}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with: {persist-credentials: false}
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with: {python-version: '3.12'}
       - run: python -m pip install -r loyalty/requirements.txt
-      - run: python -m playwright install --with-deps chromium
-      - name: Read normal public website and verify its native category/page inventory
+      - name: Apply only reviewed wiring and recover hash-bound public fixture
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
-          mkdir -p category-check
-          python diagnostics/konsierge_public_ui.py
-          git rev-parse HEAD > category-check/commit.txt
+          mkdir -p category-check category-input
+          python - <<'PY'
+          import hashlib,io,json,os,zipfile
+          from pathlib import Path
+          import requests
+          root=Path('loyalty')
+          expected={'normalized.py':'54144ea05379005bf0ada1d8dcdf40eb7b015662301700888690b5cb72523f38','unified_normalization.py':'8a353abbaf9d08e957ea36decec27f47cfeb6a27e7aa40f2fcfe774ff1a8c128'}
+          for name,sha in expected.items():assert hashlib.sha256((root/name).read_bytes()).hexdigest()==sha,name
+          def edit(name,old,new):
+              p=root/name;s=p.read_text();assert s.count(old)==1;s=s.replace(old,new);p.write_text(s)
+          edit('normalized.py',"HOSTS['utair_rule_documents']=['ut0.ru','media.utair.ru']","HOSTS['utair_rule_documents']=['ut0.ru','media.utair.ru']\nHOSTS['konsierge_public']=['konsierge.com']")
+          edit('normalized.py',"    if r['source_id']=='alfa_only_tsum':","    if r['source_id']=='konsierge_public':\n        from konsierge_catalog import validate_record\n        validate_record(r)\n    if r['source_id']=='alfa_only_tsum':")
+          edit('unified_normalization.py',"    if 'tsum_evidence' in d:","    if d.get('retrieval_method')=='konsierge_public_browser_capture_v1':\n        from konsierge_catalog import project_common\n        return project_common(raw,n,benefit,condition,code)\n    if 'tsum_evidence' in d:")
+          url='https://api.github.com/repos/Floppa2003/key-privileges/actions/artifacts/10589993853/zip'
+          r=requests.get(url,headers={'Authorization':'Bearer '+os.environ['GITHUB_TOKEN'],'Accept':'application/vnd.github+json'},timeout=25,allow_redirects=False)
+          assert r.status_code==302 and r.headers['Location'].startswith('https://')
+          r=requests.get(r.headers['Location'],timeout=35);r.raise_for_status();data=r.content
+          sha='54ee476f6713710cf24baa65beb6b4cde09502df57e9bf9d848a094aaa78656e'
+          assert hashlib.sha256(data).hexdigest()==sha
+          z=zipfile.ZipFile(io.BytesIO(data));assert z.testzip() is None
+          report=json.loads(z.read('report.json'))
+          for name in ['report.json']+[c['file'] for c in report['catalogues']]:
+              assert Path(name).name==name
+              (Path('category-input')/name).write_bytes(z.read(name))
+          ids={2615,2616,2442,1842,2047,1838,2036,2037,1995,1583,2079,1912,2343,2623}
+          items=[i for p in report['network_pages'] if 'rubric_id' not in p['query'] for i in p['items'] if i['id'] in ids]
+          assert len(items)==len(ids)
+          rubrics=[x for x in report['rubrics'] if any(x['id'] in [v['id'] for v in i['rubrics']] for i in items)]
+          fixture={'source_run':'35463931323:1','public_source':'https://konsierge.com/benefits','artifact_sha256':sha,'items':items,'rubrics':rubrics}
+          (root/'tests/fixtures_live/konsierge-public.json').write_text(json.dumps(fixture,ensure_ascii=False,indent=2)+'\n')
+          PY
+      - name: Full regression and exact live-capture replay before branch commit
+        run: |
+          python -m unittest discover -s loyalty/tests -v > category-check/tests.log 2>&1
+          tail -5 category-check/tests.log
+          node --test key/refresh.test.mjs > category-check/key-tests.log 2>&1
+          tail -8 category-check/key-tests.log
+          python loyalty/konsierge_catalog.py --capture category-input --source-run 35463931323:1 --out category-check/normalized.json
+          python loyalty/sheets_normalized.py --input category-check/normalized.json
+          python - <<'PY'
+          import json,sys
+          from pathlib import Path
+          sys.path.insert(0,'loyalty')
+          from sheets_normalized import prepare,SCHEMAS
+          from unified_normalization import make_input,normalize_record
+          b=json.loads(Path('category-check/normalized.json').read_text());assert len(b['records'])==159
+          out=[]
+          for idx,row in enumerate(prepare(b)['parser_offers'],2):
+              raw=make_input({'id':row[0],'origin':'parser_offers','row':idx,'fields':{h:{'value':v} for h,v in zip(SCHEMAS['parser_offers'],row)}})
+              n=normalize_record(raw,as_of=b['observed_at'][:10]);assert len(n['benefits'])==1
+              assert n['benefits'][0]['condition_ids'] and n['eligibility_verified'] is None
+              out.append(n)
+          Path('category-check/common.json').write_text(json.dumps(out,ensure_ascii=False,indent=2))
+          result={'source_run':'35463931323:1','source_observed_at':b['observed_at'],'records':159,'categories':b['sources'][0]['categories'],'root_only':b['sources'][0]['root_only'],'components':{k:sum(len(r[k]) for r in out) for k in ('benefits','conditions','costs','codes')},'source_contracts':True,'common_view_contracts':True,'scheduled_collection_enabled':False,'published':False}
+          Path('category-check/acceptance.json').write_text(json.dumps(result,ensure_ascii=False,indent=2));print(json.dumps(result,ensure_ascii=False))
+          PY
+      - name: Commit validated wiring to the feature branch only
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import base64,hashlib,json,os,subprocess
+          from pathlib import Path
+          assert os.environ['GITHUB_REF_NAME']=='loyalty/konsierge-categories-20260919'
+          files=['loyalty/normalized.py','loyalty/unified_normalization.py','loyalty/tests/fixtures_live/konsierge-public.json']
+          subprocess.run(['git','config','user.name','github-actions[bot]'],check=True)
+          subprocess.run(['git','config','user.email','41898282+github-actions[bot]@users.noreply.github.com'],check=True)
+          subprocess.run(['git','add','--',*files],check=True)
+          subprocess.run(['git','commit','-m','Wire verified Konsierge public capture parser and scoped common views'],check=True)
+          auth=base64.b64encode(('x-access-token:'+os.environ['GITHUB_TOKEN']).encode()).decode()
+          result=subprocess.run(['git','-c','http.https://github.com/.extraheader=AUTHORIZATION: basic '+auth,'push','origin','HEAD:'+os.environ['GITHUB_REF_NAME']],capture_output=True,text=True)
+          if result.returncode:raise RuntimeError('feature_branch_push_failed')
+          sha=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip();Path('category-check/commit.txt').write_text(sha+'\n')
+          paths=files+['loyalty/konsierge_catalog.py','loyalty/tests/test_konsierge_catalog.py']
+          Path('category-check/code_hashes.json').write_text(json.dumps({p:hashlib.sha256(Path(p).read_bytes()).hexdigest() for p in paths},indent=2))
+          print('Validated feature commit:',sha)
+          PY
+          git archive HEAD loyalty key > category-check/repo-code.tar
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
-          name: konsierge-full-ui-${{ github.run_id }}
+          name: konsierge-parser-verified-${{ github.run_id }}
           path: category-check/
-          retention-days: 3
+          retention-days: 7
