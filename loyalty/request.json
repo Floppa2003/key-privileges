@@ -1,8 +1,8 @@
 {
-  "request_id": "2026-09-19-alfa-clause-projection-70",
+  "request_id": "2026-09-19-greatlist-alfa-71",
   "source_ids": [
-    "alfa_only_partner_pdf_offers"
+    "greatlist_alfa_only"
   ],
-  "reason": "Publish PR70: refresh only the five reviewed Alfa partner PDFs and project their exact joining/card-payment and geography clauses through the existing activation/limitations fields. Verify these as CURRENT normalized_conditions components, not merely raw data. Preserve IDs, rates, caps, validity, monthly transaction scope, TSP appendices and all unrelated inputs. No bank account, OTP, cookies, offer activation, new schedule or unrelated crawl.",
+  "reason": "Publish PR71 through the existing serialized collector and Sheets pipeline: discover the actual GreatList Alfa Only city tabs and fetch each listed restaurant's own public benefit block. Acceptance run35433752712 verified38/38 details,1051Python and7KEY tests. Preserve source-derived up-to cashback, exact booking discounts, compliments and booking-only privileges without merging bank PDF conditions. Verify actual CURRENT common conditions and all existing inputs/manual fields. No bank authentication, OTP, account cookies, activation, provider credits, new schedule or unrelated source crawl.",
   "publish": true
 }
