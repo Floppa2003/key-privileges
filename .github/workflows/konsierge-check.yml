@@ -14,56 +14,46 @@ jobs:
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with: {python-version: '3.12'}
       - run: python -m pip install requests==2.32.5
-      - name: Public read methods and native chunk names; no credentials retained
+      - name: Public catalogue request syntax only
         run: |
           mkdir -p konsierge-check
           python - <<'PY'
-          import hashlib,json,re,time
-          from pathlib import Path
+          import hashlib,json,re
           from datetime import datetime,timezone
+          from pathlib import Path
           import requests
-          report={'observed_at':datetime.now(timezone.utc).isoformat(),'source_credentials_used':False,'published':False,'assets':[],'read_methods':[]}
-          def get(url):
-              time.sleep(.5)
-              with requests.Session() as s:
-                  s.trust_env=False;r=s.get(url,timeout=(6,22),allow_redirects=False)
-                  report['assets'].append({'url':url,'status':r.status_code,'sha256':hashlib.sha256(r.content).hexdigest()})
-                  if r.status_code!=200 or r.headers.get('Retry-After') or len(r.content)>1000000:raise RuntimeError('asset_failed')
-                  return r.text
-          fields={'page','per','perPage','per_page','limit','offset','rubric','rubric_id','category_id','id','title','name','offer','description','sort','order','count','total','asc','desc','/','.json','?','&','='}
+          roots=['https://konsierge.com/main.ce1ad5b7d9563083e6bc.js','https://konsierge.com/common.92bdba30978f407e2edb.js']
+          report={'observed_at':datetime.now(timezone.utc).isoformat(),'source_credentials_used':False,'published':False,'sources':[]}
+          pattern=r'"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\''
           def red(m):
-              v=m[0][1:-1]
-              if v in fields or re.fullmatch(r'/?(?:api/)?(?:v\d/)?(?:benefits?|rubrics|categories)(?:[/?.=&a-zA-Z0-9_-]{0,60})',v):return json.dumps(v)
-              return '"[omitted]"'
-          def methods(body,url):
-              for m in re.finditer(r'(?:getBenefits(?:Rubrics)?|getElements|onValidScroll|loadElements|loadMore|loadPage)\([^)]{0,80}\)\{',body):
-                  start=m.start();pos=m.end();depth=1
-                  while pos<len(body) and depth and pos-start<4000:
-                      if body[pos]=='{':depth+=1
-                      elif body[pos]=='}':depth-=1
-                      pos+=1
-                  if depth:continue
-                  fragment=body[start:pos]
-                  if re.search('Basic|Bearer|token|secret|credential|cookie',fragment,re.I):
-                      report['read_methods'].append({'url':url,'method':m[0].split('(')[0],'omitted':'configuration_reference'});continue
-                  fragment=re.sub(r'"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\'',red,fragment)
-                  report['read_methods'].append({'url':url,'code':fragment})
-          try:
-              origin='https://konsierge.com';runtime=get(origin+'/runtime.a77998f0e7d2a878d619.js')
-              maps=[]
-              for part in re.findall(r'\{(?:\d+:"[A-Za-z0-9_-]+",?)+\}',runtime):maps.append(dict(re.findall(r'(\d+):"([A-Za-z0-9_-]+)"',part)))
-              report['native_chunk_maps']=maps
-              hashes=next(m for m in maps if '8' in m and re.fullmatch('[a-f0-9]{15,64}',m['8']))
-              names={k:v for m in maps for k,v in m.items() if not re.fullmatch('[a-f0-9]{15,64}',v)}
-              common=origin+'/'+names.get('0','0')+'.'+hashes['0']+'.js'
-              methods(get(common),common)
-              main=origin+'/main.ce1ad5b7d9563083e6bc.js';methods(get(main),main)
-          except Exception as e:report['error']=str(e) if isinstance(e,RuntimeError) else type(e).__name__
+              value=m[0][1:-1]
+              safe=re.fullmatch(r'/?(?:api/)?(?:v\d/)?(?:benefits?|rubrics|categories)(?:[/?.=&a-zA-Z0-9_-]{0,80})',value)
+              return json.dumps(value) if safe or value in ('id','name','title','page','per','per_page','offset','limit','total','count','offer','rubric','/','?','&','=') else '"[omitted]"'
+          for url in roots:
+              item={'url':url};report['sources'].append(item)
+              try:
+                  with requests.Session() as s:
+                      s.trust_env=False;r=s.get(url,timeout=(6,22),allow_redirects=False)
+                      item['status']=r.status_code
+                      if r.status_code!=200 or r.headers.get('Retry-After') or len(r.content)>1000000:continue
+                      item['sha256']=hashlib.sha256(r.content).hexdigest()
+                      paths=[]
+                      for m in re.finditer(pattern,r.text):
+                          v=m[0][1:-1]
+                          if re.fullmatch(r'/[a-z0-9_/.-]{1,140}',v,re.I) and re.search('benefit|rubric|categor|/api/',v,re.I):paths.append(v)
+                      item['public_path_literals']=sorted(set(paths));item['snippets']=[]
+                      for m in list(re.finditer(r'getBenefits|getBenefitsRubrics|benefitsService|loadNext',r.text))[:12]:
+                          fragment=r.text[max(0,m.start()-80):m.start()+1100]
+                          fragment=re.sub(pattern,red,fragment)
+                          fragment=re.sub(r'(?i)(?:Basic|Bearer)\s+[^\s,;"\']+','[omitted]',fragment)
+                          fragment=re.sub(r'\b[A-Za-z0-9+/_=-]{28,}\b','[omitted]',fragment)
+                          item['snippets'].append(fragment)
+              except Exception as e:item['error']=type(e).__name__
           Path('konsierge-check/report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2));print(json.dumps(report,ensure_ascii=False))
           PY
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
-          name: konsierge-methods-${{ github.run_id }}
+          name: konsierge-request-shapes-${{ github.run_id }}
           path: konsierge-check/
           retention-days: 7
