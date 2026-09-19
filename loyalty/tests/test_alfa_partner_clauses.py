@@ -77,5 +77,22 @@ class ClauseTests(unittest.TestCase):
         self.assertIn('2 (двух)', row['redemption_text'])
         self.assertNotIn('1 (одной)', row['redemption_text'])
 
+    def test_practical_clauses_are_visible_conditions_not_only_preserved_raw(self):
+        from sheets_normalized import prepare, SCHEMAS
+        from unified_normalization import make_input, normalize_record
+        row = record()
+        report = dict(source_id=a.SOURCE_ID, name='Alfa', root='https://alfabank.servicecdn.ru/',
+                      status='ok', discovered=1, normalized=1, failed=0, coverage='fixture',
+                      region=None, errors=[], observed_at=NOW)
+        bundle = dict(schema_version=2, run_id='fixture:1', observed_at=NOW, records=[row], sources=[report])
+        values = prepare(bundle)['parser_offers'][0]
+        raw = make_input(dict(id=row['id'], origin='parser_offers', row=2,
+            fields={h:{'value':v} for h,v in zip(SCHEMAS['parser_offers'],values)}))
+        common = normalize_record(raw, as_of='2026-09-19')
+        conditions = {c['kind']:c['evidence']['text'] for c in common['conditions']}
+        self.assertEqual(conditions.get('activation'), row['redemption_text'])
+        self.assertEqual(conditions.get('limitations'), row['details']['practical_clauses']['territory'])
+        self.assertIsNone(common['eligibility_verified'])
+
 if __name__ == '__main__':
     unittest.main()
