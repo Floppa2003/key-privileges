@@ -34,6 +34,7 @@ HOSTS['utair_media']=['media.utair.ru']
 HOSTS['utair']=['www.utair.ru']
 HOSTS['nordwind']=['nordwindairlines.ru']
 HOSTS['hse_alumni']=['alumni.hse.ru']
+HOSTS['greatlist_alfa_only']=['greatlist.ru']
 HOSTS['alfa_only_partner_offers']=['web.alfabank.ru']
 HOSTS['alfa_only_public_rules']=['alfabank.servicecdn.ru']
 HOSTS['alfa_only_cashback_rules']=['alfabank.servicecdn.ru']
@@ -295,6 +296,9 @@ def validate_offer(r: dict) -> None:
         validate_record(r)
     if r['source_id']=='hse_alumni':
         from hse_alumni import validate_record
+        validate_record(r)
+    if r['source_id']=='greatlist_alfa_only':
+        from greatlist_alfa import validate_record
         validate_record(r)
     if r['source_id'] in ('alfa_only_public_rules','alfa_only_cashback_rules'):
         from alfa_public_rules import validate_public_record
