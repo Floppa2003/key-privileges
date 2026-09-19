@@ -262,6 +262,9 @@ def parse_document(spec: dict, data: bytes, observed_at: str) -> dict:
             "search_discovery_inventory_complete": False,
             "tsp_appendix": appendix,
             "practical_clauses": clauses,
+            # Existing common-view fields, not new inferred conditions.
+            "activation": redemption,
+            "limitations": territory,
         },
         warnings=list(WARNINGS),
     )
@@ -316,7 +319,9 @@ def validate_partner_record(row: dict) -> None:
         raise ValueError("alfa_partner_pdf_practical_clauses_missing")
     if (row.get("conditions_text") != "\n".join(clauses[k] for k in keys[:5])
             or row.get("redemption_text") != "\n".join(clauses[k] for k in keys[5:])
-            or clauses["appendix"] != details["tsp_appendix"]):
+            or clauses["appendix"] != details["tsp_appendix"]
+            or details.get("activation") != row.get("redemption_text")
+            or details.get("limitations") != clauses["territory"]):
         raise ValueError("alfa_partner_pdf_practical_clauses_mismatch")
 
 
