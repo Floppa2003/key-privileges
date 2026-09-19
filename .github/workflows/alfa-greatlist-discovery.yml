@@ -1,0 +1,82 @@
+name: Public GreatList discovery
+on:
+  push:
+    branches: ['loyalty/alfa-public-discovery-20260919']
+    paths: ['.github/workflows/alfa-greatlist-discovery.yml']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with: {python-version: '3.12'}
+      - run: python -m pip install -r loyalty/requirements.txt
+      - name: Inspect only public pages and observed links
+        run: |
+          mkdir -p discovery
+          python - <<'PY'
+          import hashlib,json,re,sys,time
+          from datetime import datetime,timezone
+          from pathlib import Path
+          from urllib.parse import urljoin,urlsplit
+          import requests
+          from bs4 import BeautifulSoup
+          from protego import Protego
+          sys.path.insert(0,'loyalty')
+          from public_transport import robots_document
+          root='https://greatlist.ru';bot='LoyaltyCatalogResearchBot'
+          out=Path('discovery');report={'observed_at':datetime.now(timezone.utc).isoformat(),'pages':[]}
+          s=requests.Session();s.trust_env=False;s.headers['User-Agent']=bot+'/1.0'
+          def get(url):
+            with s.get(url,timeout=(8,25),allow_redirects=False,stream=True) as r:
+              data=bytearray()
+              for b in r.iter_content(65536):
+                data.extend(b)
+                if len(data)>4000000:raise RuntimeError('size_bound')
+              return r.status_code,bytes(data),dict(r.headers)
+          try:
+            status,body,headers=get(root+'/robots.txt')
+            rules,state=robots_document(status,body.decode('utf8','replace'))
+            policy=Protego.parse(rules);report['robots']={'status':status,'state':state}
+            (out/'robots.txt').write_text(rules)
+            queue=[root+'/',root+'/spb/alfa/'];seen=set()
+            for _ in range(6):
+              if not queue:break
+              url=queue.pop(0)
+              if url in seen:continue
+              seen.add(url);item={'url':url}
+              if not policy.can_fetch(url,bot):item['error']='robots_disallow';report['pages'].append(item);continue
+              try:
+                status,body,headers=get(url);item['status']=status
+                if status in (301,302,307,308):
+                  final=urljoin(url,headers.get('Location',''));p=urlsplit(final)
+                  item['redirect']=final
+                  if p.scheme=='https' and p.netloc=='greatlist.ru' and final not in seen:queue.append(final)
+                if status!=200:report['pages'].append(item);continue
+                raw=body.decode('utf8','replace');name=hashlib.sha256(url.encode()).hexdigest()[:12]+'.html'
+                (out/name).write_text(raw);soup=BeautifulSoup(raw,'html.parser')
+                links=[]
+                for a in soup.select('a[href]'):
+                  u=urljoin(url,a['href']);label=a.get_text(' ',strip=True);p=urlsplit(u)
+                  if p.scheme not in ('http','https'):continue
+                  links.append({'url':u,'label':label})
+                  if p.netloc=='greatlist.ru' and re.search(r'only|premium',p.path,re.I) and u not in queue and u not in seen:queue.append(u)
+                item.update(file=name,bytes=len(body),title=soup.title.get_text(' ',strip=True) if soup.title else '',links=links,scripts=[urljoin(url,a['src']) for a in soup.select('script[src]')],text=soup.get_text(' ',strip=True)[:15000])
+              except Exception as exc:item['error']=type(exc).__name__
+              report['pages'].append(item);time.sleep(1)
+          except Exception as exc:report['error']=str(exc) if isinstance(exc,RuntimeError) else type(exc).__name__
+          (out/'report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2))
+          print(json.dumps({'pages':[(x['url'],x.get('status'),x.get('error')) for x in report['pages']],'error':report.get('error')},ensure_ascii=False))
+          PY
+          tar -cf discovery/main-code.tar loyalty key .github/workflows
+          git rev-parse HEAD > discovery/commit.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: greatlist-discovery-${{ github.run_id }}
+          path: discovery/
+          retention-days: 7
