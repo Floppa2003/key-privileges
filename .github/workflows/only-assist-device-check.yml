@@ -1,0 +1,91 @@
+name: Only Assist device probe check
+on:
+  push:
+    branches: ['loyalty/only-assist-device-20260920']
+    paths: ['.github/workflows/only-assist-device-check.yml']
+permissions: {contents: read}
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with: {python-version: '3.12'}
+      - name: Offline canaries before any app execution
+        run: |
+          mkdir -p only-device-evidence
+          python -m unittest discover -s diagnostics/tests -p 'test_only_assist_device_probe.py' -v > only-device-evidence/tests.log 2>&1
+          tail -5 only-device-evidence/tests.log
+          echo "$ANDROID_HOME/platform-tools" >> "$GITHUB_PATH"
+      - name: Download only the exact three previously signed and identity-verified public APKs
+        run: |
+          mkdir -p "$RUNNER_TEMP/only-device-apks"
+          python - <<'PY'
+          import hashlib,json,os,subprocess
+          from pathlib import Path
+          tmp=Path(os.environ['RUNNER_TEMP'])
+          files=[('7a247b98-2174-4348-ad1b-bd047304af5c.apk','856870ddb0197451612a36cdc86d6a6b46d6880ee25a32c44d0a30f1c2447952'),('8005f96a-0681-4551-8bff-8e6031bf2ba0.apk','bb8e7bfda373cca513e02297b7d95e4fe354d7ef2b7951de7cdc0ca65eb128f5'),('cf73ebf4-a57c-4fa1-8a93-1fd174462db0.apk','96b28a45348773ab41e63d6a62406a560742225e1e590945d3b38167c91b9f05')]
+          for index,(name,expected) in enumerate(files):
+              path=tmp/'only-device-apks'/f'part-{index}.apk'
+              subprocess.run(['curl','--fail','--silent','--show-error','--max-time','90','--max-filesize','70000000','https://static.rustore.ru/2026/8/19/88/'+name,'-o',str(path)],check=True,timeout=95)
+              assert hashlib.sha256(path.read_bytes()).hexdigest()==expected
+          Path('only-device-evidence/package_hashes.json').write_text(json.dumps({'version':'1.16.0','version_code':34,'sha256':[x[1] for x in files],'baseline_identity_run':35474386130},indent=2))
+          PY
+      - name: Prepare empty-emulator-only harness
+        run: |
+          cat > "$RUNNER_TEMP/only-device-smoke.py" <<'PY'
+          import json,os,subprocess,time
+          from pathlib import Path
+          tmp=Path(os.environ['RUNNER_TEMP']);out=Path('only-device-evidence')
+          pkg='com.konsierge.assist.only'
+          def adb(*a):
+              p=subprocess.run(['adb','-s','emulator-5554',*a],capture_output=True,text=True,timeout=150)
+              assert p.returncode==0,'adb smoke command failed'
+              return p.stdout
+          assert adb('shell','getprop','ro.kernel.qemu').strip()=='1'
+          assert pkg not in adb('shell','pm','list','packages',pkg),'must not touch existing app data'
+          assert 'Success' in adb('install-multiple','--no-streaming',*[str(tmp/'only-device-apks'/f'part-{i}.apk') for i in range(3)])
+          adb('shell','am','start','-W','-n',pkg+'/com.konsierge.konsierge.ui.splash.SplashScreenActivity')
+          time.sleep(20)
+          script='diagnostics/only_assist_device_probe.py'
+          ready=subprocess.run(['python',script,'--serial','emulator-5554'],capture_output=True,text=True,timeout=60)
+          r=json.loads(ready.stdout);(out/'readiness.json').write_text(json.dumps(r,indent=2))
+          assert ready.returncode==0 and r['application_installed'] and r['application_foreground'],r
+          capture=subprocess.run(['python',script,'--serial','emulator-5554','--capture','--expected-title','Скидки','--out-dir',str(tmp/'only-device-private')],capture_output=True,text=True,timeout=90)
+          r=json.loads(capture.stdout);(out/'capture_status.json').write_text(json.dumps(r,indent=2))
+          assert capture.returncode==2 and r['outcome']=='login_required',r
+          assert 'elements' not in r and r['catalogue_records']==0 and r['login_attempted'] is False
+          assert not (tmp/'only-device-private').exists(),'no rejected-screen output directory'
+          remaining=adb('shell','find','/data/local/tmp','-maxdepth','1','-name','only-assist-probe-*.xml')
+          assert not remaining.strip(),'temporary XML was not removed'
+          (out/'acceptance.json').write_text(json.dumps({'real_signed_app_launched':True,'adb_readiness_verified':True,'real_login_screen_detected':True,'login_attempted':False,'private_ui_published':False,'temporary_screen_xml_removed':True,'catalogue_records':0,'scope':'startup_and_login_stop_only_not_authenticated_catalogue'},indent=2))
+          PY
+          test -c /dev/kvm
+          sudo chmod 666 /dev/kvm
+      - name: Run the new probe against the actual app, with no account login
+        uses: ReactiveCircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          avd-name: only-assist-device-check
+          emulator-port: 5554
+          emulator-boot-timeout: 300
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none -camera-front none
+          disable-animations: true
+          script: python "$RUNNER_TEMP/only-device-smoke.py"
+      - name: Preserve code identity only, not APKs or emulator state
+        if: always()
+        run: |
+          mkdir -p only-device-evidence
+          git rev-parse HEAD > only-device-evidence/commit.txt
+          sha256sum diagnostics/only_assist_device_probe.py diagnostics/tests/test_only_assist_device_probe.py > only-device-evidence/code_hashes.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: only-device-check-${{ github.run_id }}
+          path: only-device-evidence/
+          retention-days: 7
