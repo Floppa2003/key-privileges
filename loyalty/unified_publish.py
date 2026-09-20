@@ -17,6 +17,7 @@ from unified_inputs import read_tables,inputs_from_tables
 from unified_normalization import normalize_inputs,digest,dump
 from unified_views import SCHEMAS,prepare_views,retire_missing
 from practical_scope import select_inputs,VERSION as SCOPE_VERSION
+from catalogue_publish import prepare_catalogue, publish_catalogue, verify_catalogue
 
 class UnifiedSheets(Sheets):
     schemas=SCHEMAS
@@ -37,7 +38,6 @@ class UnifiedSheets(Sheets):
 
 
 def _values_fingerprint(tables):
-    # Blank styled trailing rows and UI-rendered strings are not source facts.
     inputs,_=inputs_from_tables(tables)
     return digest(inputs)
 
@@ -54,8 +54,9 @@ def publish_all(*,as_of=None,client=None):
         input_records_before_scope=len(inputs),source_snapshot_sha256=digest(inputs))
     result['audit']['input_inventory']=inventory
     views=prepare_views(result)
-    # Inspect all proposed rows before the first write, including formula safety
-    # and the bounded literal-cell constraints inherited from the existing writer.
+    generation=next(row[-1] for row in views['normalization_audit'] if row[0]=='manifest')
+    catalogue=prepare_catalogue(client,result['records'],as_of=as_of,
+        source_fingerprint=digest(inputs),generation=generation)
     from model import plan_rows
     for name,rows in views.items():plan_rows([SCHEMAS[name]],rows,len(SCHEMAS[name]))
     if _values_fingerprint(read_tables(client))!=digest(inputs):raise ValueError('Source changed before publication')
@@ -73,25 +74,25 @@ def publish_all(*,as_of=None,client=None):
         positions={r[0]:i for i,r in enumerate(actual) if r}
         expected[name]=[(positions[r[0]],r) for r in incoming]
         verify_rows(actual,expected[name],len(SCHEMAS[name]))
-        # Show only current components; retired ones are retained, not mixed with
-        # the current output or mistaken for an expired source offer.
         w=len(SCHEMAS[name]);end=max(1,len(actual))
         client.request('POST',':batchUpdate',json={'requests':[{'setBasicFilter':{'filter':{
             'range':{'sheetId':props['sheetId'],'startRowIndex':0,'endRowIndex':end,'startColumnIndex':0,'endColumnIndex':w+1},
             'criteria':{str(w-2):{'condition':{'type':'TEXT_EQ','values':[{'userEnteredValue':'current'}]}}}
         }}}]})
+    publish_catalogue(client,catalogue)
     if _values_fingerprint(read_tables(client))!=digest(inputs):raise ValueError('Source changed during publication; manifest remains unverified')
     for row in views['normalization_audit']:
         if row[0]=='manifest':row[4]='verified'
     client.upsert('normalization_audit',views['normalization_audit'])
-    # Final readback after the last write. Includes all current output rows, not
-    # just a random example, and audit completion is not a scrape-freshness claim.
+    # Independently read every expected value after the final material write.
     meta=client.metadata()
     for name,checks in expected.items():verify_rows(client.values(name,meta[name]),checks,len(SCHEMAS[name]))
     actual=client.values('normalization_audit',meta['normalization_audit']);pos={r[0]:i for i,r in enumerate(actual) if r}
     verify_rows(actual,[(pos[r[0]],r) for r in views['normalization_audit']],len(SCHEMAS['normalization_audit']))
+    verify_catalogue(client,catalogue)
     print(dump({'mode':'unified_views_published_and_readback_verified','records':len(inputs),
-                'rows':{k:len(v) for k,v in views.items()},'source_snapshot_sha256':digest(inputs)}))
+                'rows':{k:len(v) for k,v in views.items()},'source_snapshot_sha256':digest(inputs),
+                'reader_catalogue':catalogue['counts'] if catalogue else None}))
     return result
 
 
@@ -128,7 +129,5 @@ def main():
 if __name__=='__main__':
     try:main()
     except Exception as exc:
-        # Error details can contain a private cell or credential. Fail closed,
-        # print only class name. Local tests remain the detailed diagnosis path.
         print(f'Unified normalization failed ({type(exc).__name__}); publication is not certified.')
         raise SystemExit(1)
