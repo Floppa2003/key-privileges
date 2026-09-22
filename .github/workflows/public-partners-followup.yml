@@ -6,61 +6,148 @@ on:
 permissions:
   contents: read
 jobs:
-  probe:
+  apply-and-test:
     runs-on: ubuntu-24.04
-    timeout-minutes: 6
+    timeout-minutes: 8
+    permissions:
+      contents: write
+      actions: read
+    outputs:
+      code: ${{ steps.commit.outputs.code }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -r loyalty/requirements.txt
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: public-partners-35762327090
+          run-id: 35762327090
+          github-token: ${{ github.token }}
+          path: public-evidence
+      - name: Apply exact reviewed changes and preserve bounded actual DOM fixtures
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib,subprocess
+          from bs4 import BeautifulSoup
+          guards={
+            'loyalty/mantera_source.py':'fcaaab8e12649edddb71503cd904bbdf4307686a3d53841183d14c1b701d7b91',
+            'loyalty/normalized.py':'f55010b288cfca32c26f7b105313eca0aef436190389a00a881d508054e4555e',
+            'loyalty/source_lifecycle.py':'9b307b5d1e96b7e32b949f9bf8465daebe93ec0d8efb8ee8963e62080b99191d',
+            'loyalty/tests/test_mantera_hotel.py':'7b912520b1c7567f850439e06b73a93e126af7f6d9e04e622e4b39f4fcb1d58f',
+            '.github/workflows/loyalty.yml':'13d1005e2d1d41bd28a227c01b0813e8741414dd8489779a864a6fec02a8376e'}
+          for path,digest in guards.items():
+            assert hashlib.sha256(Path(path).read_bytes()).hexdigest()==digest,path
+          subprocess.run(['git','apply','--check','diagnostics/mantera-followup.patch'],check=True)
+          subprocess.run(['git','apply','diagnostics/mantera-followup.patch'],check=True)
+          f=Path('loyalty/tests/fixtures_live/affordable')
+          s=BeautifulSoup(Path('public-evidence/sochi-park.html').read_text(),'html.parser');keep=[];counter=[]
+          for section in s.select('section'):
+            text=section.get_text(' ',strip=True)
+            if section.find_parent('section'):continue
+            if any(k in text for k in ['Мантера Моменты','Начисление и списание бонусов','Как стать участником','Как работает программа']):
+              for bad in section.select('script,style,svg,img'):bad.decompose()
+              keep.append(str(section))
+            elif section.select('.feature-content h3'):
+              for bad in section.select('script,style,svg,img'):bad.decompose()
+              counter.append(str(section))
+          (f/'mantera-partners.html').write_text('<html><head><title>Программа лояльности</title></head><body>'+''.join(keep+counter)+'</body></html>')
+          s=BeautifulSoup(Path('public-evidence/polyana.html').read_text(),'html.parser')
+          nodes=[s.select_one('h1'),s.select_one('.content-tables-accordions-desktop-list')]
+          nodes+=[n for n in s.select('.markdown') if n.find('p') and 'Уже сейчас в отелях' in n.get_text()]
+          (f/'mantera-redemption.html').write_text('<html><body>'+''.join(map(str,nodes))+'</body></html>')
+          PY
+      - name: Full regression on exact production and workflow bytes
+        run: |
+          mkdir -p evidence
+          python -m unittest discover -s loyalty/tests -v > evidence/python-tests.log 2>&1
+          node --test key/refresh.test.mjs > evidence/key-tests.log 2>&1
+          tail -n 5 evidence/python-tests.log
+          tail -n 10 evidence/key-tests.log
+      - name: Commit only validated Python paths and actual public fixtures
+        id: commit
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add loyalty/mantera_source.py loyalty/normalized.py loyalty/source_lifecycle.py loyalty/tests/test_mantera_hotel.py loyalty/tests/fixtures_live/affordable/mantera-partners.html loyalty/tests/fixtures_live/affordable/mantera-redemption.html
+          git commit -m 'Integrate tested named Mantera partners and selected-source health validation'
+          git push origin HEAD:loyalty/public-partners-followup-20260922
+          echo "code=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          git rev-parse HEAD > evidence/commit.txt
+          tar -cf evidence/code.tar loyalty key .github/workflows/loyalty.yml
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: public-partners-tests-${{ github.run_id }}
+          path: evidence/
+          retention-days: 1
+  collect:
+    needs: apply-and-test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
+          ref: ${{ needs.apply-and-test.outputs.code }}
           persist-credentials: false
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with:
           python-version: "3.12"
       - run: python -m pip install -r loyalty/requirements.txt
-      - name: Read public pages with bounded anonymous requests
+      - run: python -m playwright install --with-deps chromium
+      - name: Fresh Mantera-only source traversal
+        run: xvfb-run -a python loyalty/collect_normalized.py --sources mantera_moments --limit 500
+      - name: Validate exact selected source and publication payload
+        run: |
+          python loyalty/source_lifecycle.py --input loyalty-output/normalized.json --sources mantera_moments
+          python loyalty/sheets_normalized.py --input loyalty-output/normalized.json
+          python - <<'PY'
+          import json,sys
+          sys.path[:0]=['loyalty','loyalty/tests']
+          from public_reward_projection import validate_record
+          from test_public_reward_sources import common
+          from catalogue_view import record_row
+          b=json.load(open('loyalty-output/normalized.json'))
+          assert len(b['records'])==16 and len(b['sources'])==1
+          assert b['sources'][0]['status']=='ok' and not b['sources'][0]['errors']
+          for r in b['records']:
+            validate_record(r)
+            row,reason=record_row(common(r),r['observed_at'][:10]);assert reason is None,(r['id'],reason)
+          json.dump({'records':16,'health':'ok','reader_accepted':16},open('loyalty-output/acceptance.json','w'))
+          PY
+      - name: One new source-linked Backit product-page diagnostic
+        if: always()
         run: |
           python - <<'PY'
-          import json, pathlib, hashlib, time
-          from datetime import datetime, timezone
-          from urllib.parse import urljoin, urlsplit
-          import requests
+          import requests,json,pathlib,hashlib
+          from datetime import datetime,timezone
+          from urllib.parse import urlsplit,urljoin
           from bs4 import BeautifulSoup
-          out=pathlib.Path('partner-probe');out.mkdir()
-          urls={
-            'sochi-park':'https://sochiparkhotel.ru/about/programma-loyalnosti/',
-            'polyana':'https://krasnayapolyanaresort.ru/loyalty',
-            'backit-marketplace':'https://backit.me/ru/cashback/products',
-          }
-          reports=[]
-          for key,url in urls.items():
-            r={'url':url,'observed_at':datetime.now(timezone.utc).isoformat()}
-            try:
-              with requests.get(url,headers={'User-Agent':'LoyaltyCatalogResearchBot/1.0'},timeout=(8,35),allow_redirects=False,stream=True) as res:
-                r['status']=res.status_code
-                if 300<=res.status_code<400:
-                  dest=urlsplit(urljoin(url,res.headers.get('Location','')))
-                  r['redirect_host']=dest.hostname;r['redirect_path']=dest.path
-                if res.status_code==200:
-                  raw=bytearray()
-                  for chunk in res.iter_content(65536):
-                    raw.extend(chunk)
-                    if len(raw)>4000000:raise ValueError('oversize')
-                  text=bytes(raw).decode('utf-8')
-                  r['sha256']=hashlib.sha256(bytes(raw)).hexdigest()
-                  soup=BeautifulSoup(text,'html.parser')
-                  for bad in soup.select('script,style'):bad.decompose()
-                  r['title']=soup.title.get_text(' ',strip=True) if soup.title else ''
-                  r['links']=[{'text':a.get_text(' ',strip=True),'url':urljoin(url,a['href'])} for a in soup.select('a[href]') if any(t in (a.get_text(' ',strip=True)+' '+a['href']).lower() for t in ('лояль','момент','loyal','ozon','wildber','партнер','партнёр','marriott','rixos','novotel'))]
-                  (out/(key+'.html')).write_text(text)
-                  (out/(key+'.txt')).write_text(soup.get_text('\n',strip=True))
-            except Exception as exc:r['error']=type(exc).__name__
-            reports.append(r);time.sleep(1)
-          (out/'report.json').write_text(json.dumps(reports,ensure_ascii=False,indent=2))
-          print(json.dumps(reports,ensure_ascii=False))
+          u='https://backit.me/ru/cashback/shops/ozon/products'
+          out=pathlib.Path('loyalty-output');out.mkdir(exist_ok=True)
+          r={'url':u,'observed_at':datetime.now(timezone.utc).isoformat(),'account_used':False}
+          try:
+            with requests.get(u,headers={'User-Agent':'LoyaltyCatalogResearchBot/1.0'},timeout=(8,25),allow_redirects=False,stream=True) as x:
+              r['status']=x.status_code
+              if 300<=x.status_code<400:
+                dest=urlsplit(urljoin(u,x.headers.get('Location','')));r['redirect_host']=dest.hostname;r['redirect_path']=dest.path
+              if x.status_code==200:
+                raw=bytearray()
+                for c in x.iter_content(65536):
+                  raw.extend(c)
+                  if len(raw)>4000000:raise ValueError('oversize')
+                text=bytes(raw).decode('utf-8');r['sha256']=hashlib.sha256(raw).hexdigest()
+                soup=BeautifulSoup(text,'html.parser')
+                for n in soup.select('script,style'):n.decompose()
+                (out/'backit-product.txt').write_text(soup.get_text('\n',strip=True))
+          except Exception as e:r['error']=type(e).__name__
+          (out/'backit-product-probe.json').write_text(json.dumps(r,ensure_ascii=False,indent=2));print(json.dumps(r))
           PY
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
-          name: public-partners-${{ github.run_id }}
-          path: partner-probe/
+          name: public-partners-live-${{ github.run_id }}
+          path: loyalty-output/
           retention-days: 1
