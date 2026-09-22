@@ -41,26 +41,36 @@ def fields(source, evidence):
 def make_record(source, evidence, observed_at):
     from normalized import make_offer
     f = fields(source, evidence)
+    if evidence.get('promotion_context') and evidence['promotion_context']['observed_on'] != observed_at[:10]:
+        raise ValueError('promotion_observation_mismatch')
     return make_offer(source, f['native'], f['program'], f['partner'], f['benefit'], f['url'], observed_at,
         title=f['title'], conditions=f['conditions'], redemption=f['activation'], category=f['category'],
         record_kind=f.get('kind', 'partner_offer'), link_kind=f.get('link_kind', 'detail_page'),
-        locator=f['locator'], details={'public_reward_evidence': evidence, 'public_reward_source': source,
+        locator=f['locator'], valid_from=f.get('valid_from'), valid_until=f.get('valid_until'), details={'public_reward_evidence': evidence, 'public_reward_source': source,
             'retrieval_method': 'source_owned_public_rewards_v1', 'account_used': False},
-        warnings=WARNINGS + f.get('warnings', []))
+        warnings=record_warnings(f) + f.get('warnings', []))
+
+
+def record_warnings(f):
+    return [w if w != 'source_dates_not_inferred' or not f.get('period_year_inferred')
+            else 'promotion_year_inferred_from_current_page_month' for w in WARNINGS]
 
 
 def validate_record(row):
     source = row['source_id']; d = row.get('details', {})
     if d.get('public_reward_source') != source or d.get('account_used') is not False:
         raise ValueError('public_rewards_identity_changed')
-    f = fields(source, d.get('public_reward_evidence', {}))
+    evidence = d.get('public_reward_evidence', {})
+    if evidence.get('promotion_context') and evidence['promotion_context']['observed_on'] != row['observed_at'][:10]:
+        raise ValueError('promotion_observation_mismatch')
+    f = fields(source, evidence)
     checks = {'native_id': f['native'], 'program': f['program'], 'partner_name': f['partner'],
               'title': f['title'], 'source_url': f['url'], 'benefit_text': f['benefit'],
               'conditions_text': f['conditions'], 'redemption_text': f['activation'],
               'category': f['category'], 'record_kind': f.get('kind', 'partner_offer'),
               'link_kind': f.get('link_kind', 'detail_page'), 'locator': f['locator'],
-              'source_status': 'published', 'valid_from': None, 'valid_until': None}
-    if any(row.get(k) != v for k, v in checks.items()) or not set(WARNINGS + f.get('warnings', [])).issubset(row.get('warnings', [])):
+              'source_status': 'published', 'valid_from': f.get('valid_from'), 'valid_until': f.get('valid_until')}
+    if any(row.get(k) != v for k, v in checks.items()) or not set(record_warnings(f) + f.get('warnings', [])).issubset(row.get('warnings', [])):
         raise ValueError('public_rewards_record_evidence_mismatch')
 
 
@@ -70,7 +80,8 @@ def project_common(raw, n, benefit, condition, code):
     f = fields(source, d['public_reward_evidence'])
     checks = {'program': f['program'], 'partner': f['partner'], 'title': f['title'],
               'source_url': f['url'], 'benefit': f['benefit'], 'conditions': f['conditions'],
-              'activation': f['activation'], 'kind': f.get('kind', 'partner_offer')}
+              'activation': f['activation'], 'kind': f.get('kind', 'partner_offer'),
+              'valid_from': f.get('valid_from'), 'valid_until': f.get('valid_until')}
     if any(raw.get(k) != v for k, v in checks.items()): raise ValueError('public_rewards_common_evidence_mismatch')
     scope = f.get('scope', {})
     conditions = []

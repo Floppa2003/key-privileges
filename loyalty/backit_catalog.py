@@ -67,6 +67,8 @@ async def collect(client,cfg,report,observed_at,limit):
             if stops_catalog(exc) or str(exc) in ('http_401','http_403','access_challenge','unexpected_redirect'):break
     report['discovered']=len(rows)+len(report['errors'])
     report['excluded_inventory']=excluded
+    from source_lifecycle import attach_inventory
+    attach_inventory(report,[c['url'] for c in cards],excluded,source_id=SOURCE)
     report['coverage']=json.dumps({'scope':'public_ru_cashback_shop_inventory','listed':total,'inventory_pages':pages,
         'parsed':len(rows),'excluded_total':len(excluded),'exclusion_counts':dict(Counter(x['reason'] for x in excluded)),
         'details_attempted':attempted,'all_inventory_accounted':len(rows)+len(excluded)+len(report['errors'])==total,

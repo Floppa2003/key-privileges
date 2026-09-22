@@ -58,11 +58,15 @@ def prepare_catalogue(client, records, *, as_of, source_fingerprint, generation)
              ['Записей',str(len(result['rows']))], ['Поколение',generation],
              ['SHA256',digest(rows)], ['Исходный снимок',source_fingerprint],
              ['Исключено',str(len(result['removed']))]]
-    return {'properties':props,'rows':rows,'state':state,'counts':result['counts']}
+    from ui_freshness import prepare_ui
+    return {'properties':props,'rows':rows,'state':state,'counts':result['counts'],
+            'ui':prepare_ui(client,meta,read_values)}
 
 
 def verify_catalogue(client, plan):
     if plan is None:return
+    from ui_freshness import verify_ui
+    verify_ui(client,plan.get('ui'),read_values)
     actual = read_values(client, f"'_ui_catalog'!A1:Q{plan['properties']['gridProperties']['rowCount']}")
     if padded(actual,17) != plan['rows']:
         raise ValueError('Reader catalogue full readback mismatch')
@@ -95,4 +99,6 @@ def publish_catalogue(client, plan):
         'updateCells':{'start':{'sheetId':sid,'rowIndex':0,'columnIndex':24},
             'rows':[{'values':[literal(v) for v in row]} for row in plan['state']],
             'fields':'userEnteredValue'}}]})
+    from ui_freshness import apply_ui
+    apply_ui(client,plan.get('ui'),read_values)
     verify_catalogue(client,plan)

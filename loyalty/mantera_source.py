@@ -30,6 +30,9 @@ QUESTIONS = (
 
 
 def source_fields(e):
+    if e.get('kind')=='hotel_participation':
+        from mantera_hotel import source_fields as hotel_fields
+        return hotel_fields(e)
     if e.get('url') != URL or not re.fullmatch(r'[a-f0-9]{64}', e.get('page_sha256', '')):
         raise ValueError('mantera_evidence_url')
     tier = e.get('tier'); line = e.get('tier_clause', '')
@@ -94,7 +97,17 @@ async def collect(client, cfg, report, observed_at, limit):
     if cfg['url'] != URL or cfg['id'] != SOURCE: raise ValueError('mantera_config_identity')
     from read_budget import within_source_budget
     records = parse(await within_source_budget(client, lambda:client.read(URL)), observed_at)
-    if len(records) > limit: raise RuntimeError('mantera_record_limit')
-    report['discovered'] = len(records)
-    report['coverage'] = 'all_five_public_FAQ_tiers;pilot_accommodation_only;participating_hotel_inventory_in_account_not_read'
+    if len(records)+1 > limit: raise RuntimeError('mantera_record_limit')
+    from public_transport import PublicSource
+    import mantera_hotel
+    try:
+        async with PublicSource(client.browser,mantera_hotel.URL) as hotel:
+            hotel.deadline=getattr(client,'deadline',float('inf'))
+            await within_source_budget(hotel,hotel.robots)
+            record=mantera_hotel.parse(await within_source_budget(hotel,lambda:hotel.read(mantera_hotel.URL)),observed_at)
+            records.append(record)
+    except Exception as exc:
+        report['errors'].append({'phase':'hotel_public_page','url':mantera_hotel.URL,'reason':str(exc)[:140] if isinstance(exc,(RuntimeError,ValueError)) else type(exc).__name__})
+    report['discovered'] = len(records)+len(report['errors'])
+    report['coverage'] = 'all_five_public_FAQ_tiers;one_source_confirmed_hotel_page;not_the_six_partner_inventory;hotel_redemption_not_confirmed'
     return records

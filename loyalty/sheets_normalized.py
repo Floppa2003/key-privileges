@@ -9,6 +9,7 @@ from normalized import validate_offer, VERSION
 from model import plan_rows
 from sheets_sync import Sheets
 from practical_scope import publication_rows
+from source_lifecycle import reconcile_rows, validate_inventories
 
 SCHEMAS = {
  'parser_offers':['ID','Программа','Партнёр','Заголовок','Категория','Тип записи','Типы выгод',
@@ -32,6 +33,7 @@ def prepare(bundle: dict) -> dict[str,list[list[str]]]:
     sources={r['source_id']:r for r in bundle['sources']}
     if len(sources)!=len(bundle['sources']):
         raise ValueError('Duplicate source report')
+    validate_inventories(bundle)
     counts=Counter();ids=set();offers=[]
     for r in bundle['records']:
         validate_offer(r)
@@ -78,7 +80,11 @@ def main():
         print(dump({'mode':'normalized_dry_run','rows':{k:len(v) for k,v in rows.items()}}));return
     args=(os.environ.get('DISCOUNTS_SPREADSHEET_ID',''),os.environ.get('GOOGLE_ACCESS_TOKEN',''))
     clients={'parser_offers':NormalizedSheets(*args),'parser_coverage':CoverageSheets(*args)}
-    counts={name:clients[name].upsert(name,values) for name,values in rows.items()}
+    offers=clients['parser_offers']
+    before=offers.values('parser_offers',offers.ensure_tab('parser_offers'))
+    reconciled=reconcile_rows(bundle,before,rows['parser_offers'])
+    counts={'parser_offers':offers.upsert('parser_offers',reconciled,expected_before=before),
+            'parser_coverage':clients['parser_coverage'].upsert('parser_coverage',rows['parser_coverage'])}
     print(dump({'mode':'normalized_published_readback_verified','changed_rows':counts}))
 
 if __name__=='__main__':
