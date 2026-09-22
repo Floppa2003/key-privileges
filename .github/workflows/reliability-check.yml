@@ -8,7 +8,7 @@ permissions:
 jobs:
   probe:
     runs-on: ubuntu-24.04
-    timeout-minutes: 8
+    timeout-minutes: 6
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
@@ -17,11 +17,11 @@ jobs:
         with:
           python-version: "3.12"
       - run: python -m pip install -r loyalty/requirements.txt
-      - run: python -m playwright install --with-deps chromium
-      - run: xvfb-run -a python diagnostics/reliability_probe.py
+      - run: python diagnostics/public_coverage_gaps.py
+      - run: python -m pip download --no-deps protego==0.6.2 -d reliability-probe/
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
-          name: reliability-probe-${{ github.run_id }}
+          name: reliability-gaps-${{ github.run_id }}
           path: reliability-probe/
           retention-days: 1
