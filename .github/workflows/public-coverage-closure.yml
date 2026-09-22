@@ -1,0 +1,29 @@
+name: Public coverage closure inspection
+on:
+  push:
+    branches: ["loyalty/public-coverage-closure-20260923"]
+    paths: ["diagnostics/public_coverage_closure.py", ".github/workflows/public-coverage-closure.yml"]
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -r loyalty/requirements.txt
+      - run: python -m playwright install --with-deps chromium
+      - name: Read only public catalogue roots and anonymous GET payloads
+        run: python diagnostics/public_coverage_closure.py
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: public-coverage-roots-${{ github.run_id }}
+          path: coverage-closure-probe/
+          if-no-files-found: error
+          retention-days: 1
