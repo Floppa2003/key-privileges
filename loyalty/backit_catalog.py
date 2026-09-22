@@ -1,12 +1,11 @@
 """Complete Backit inventory traversal with explicit exclusions and read limits."""
 import json, math, re
+from collections import Counter
 from urllib.parse import urlsplit
 from bs4 import BeautifulSoup
 from playwright.async_api import TimeoutError as BrowserTimeout
 from backit_source import SOURCE, ROOT, MAX_CARDS, EXCLUDED_NAME, ExcludedOffer, inventory, parse_detail
 
-# Backit's server-rendered cards arrive before the client-side paginator. Waiting
-# for a fixed sleep (or just DOMContentLoaded) is not a completeness criterion.
 INVENTORY_READY = """expected => {
   const nodes = document.querySelectorAll('.mu-pagination');
   if (nodes.length !== 1) return false;
@@ -38,9 +37,9 @@ async def collect(client,cfg,report,observed_at,limit):
         if len(raw.encode())>6000000:raise RuntimeError('source_response_too_large')
         try:return inventory(raw,page)
         except ValueError as exc:
-            # Only anonymous catalogue path/DOM counters, never headers, query
-            # strings, scripts, cookies or account data. Useful for layout drift.
             soup=BeautifulSoup(raw,'html.parser');nodes=soup.select('.mu-pagination')
+            # Anonymous catalogue paths and counters only; no scripts, query
+            # strings, credentials or entire response bodies in diagnostics.
             report['inventory_diagnostics']={'page':page,'pagination':[dict((k,n.get(k)) for k in ('total','pagesize','currentpage')) for n in nodes[:3]],
                 'cards':[{'path':urlsplit(n.get('href','')).path,'titles':len(n.select('.mu-store__title'))} for n in soup.select('.offers .offer-cards a.mu-store__wrapper[href]')[:100]]}
             code=str(exc) if re.fullmatch(r'[a-z_:. -]{1,140}',str(exc)) else 'invalid_inventory'
@@ -52,19 +51,24 @@ async def collect(client,cfg,report,observed_at,limit):
         if nt!=total or ns!=size or any(c['url'] in seen for c in current):raise RuntimeError('backit_inventory_drift')
         cards.extend(current);seen.update(c['url'] for c in current)
     if len(seen)!=total:raise RuntimeError('backit_incomplete_inventory')
-    eligible=[c for c in cards if not EXCLUDED_NAME.search(c['name'])]
-    excluded=[{'url':c['url'],'reason':'financial_or_acquisition_ad'} for c in cards if EXCLUDED_NAME.search(c['name'])]
+    eligible=[];excluded=[]
+    for card in cards:
+        reason='source_disclosed_temporarily_disabled' if card.get('inactive') else 'financial_or_acquisition_ad' if EXCLUDED_NAME.search(card['name']) else None
+        if reason:excluded.append({'url':card['url'],'reason':reason})
+        else:eligible.append(card)
     if len(eligible)>bound:raise RuntimeError('backit_detail_limit_exceeded')
-    rows=[]
+    rows=[];attempted=0
     for card in eligible:
+        attempted+=1
         try:rows.append(parse_detail(await read(card['url']),card,observed_at))
         except ExcludedOffer as exc:excluded.append({'url':card['url'],'reason':str(exc)})
         except Exception as exc:
             report['errors'].append({'phase':'detail','url':card['url'],'reason':str(exc)[:140] if isinstance(exc,(RuntimeError,ValueError)) else type(exc).__name__})
             if stops_catalog(exc) or str(exc) in ('http_401','http_403','access_challenge','unexpected_redirect'):break
     report['discovered']=len(rows)+len(report['errors'])
+    report['excluded_inventory']=excluded
     report['coverage']=json.dumps({'scope':'public_ru_cashback_shop_inventory','listed':total,'inventory_pages':pages,
-        'parsed':len(rows),'excluded':excluded,'details_attempted':len(rows)+len(excluded)-(total-len(eligible))+len(report['errors']),
-        'all_inventory_accounted':len(rows)+len(excluded)+len(report['errors'])==total,
+        'parsed':len(rows),'excluded_total':len(excluded),'exclusion_counts':dict(Counter(x['reason'] for x in excluded)),
+        'details_attempted':attempted,'all_inventory_accounted':len(rows)+len(excluded)+len(report['errors'])==total,
         'source_local_detail_limit':bound,'product_level_marketplace_catalogue_included':False},ensure_ascii=False)
     return rows
