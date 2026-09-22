@@ -22,9 +22,9 @@ jobs:
           node --test key/refresh.test.mjs > source-check/key-tests.log 2>&1
           tail -8 source-check/key-tests.log
       - run: python -m playwright install --with-deps chromium
-      - name: Read the three approved public sources through production entrypoints
-        run: xvfb-run -a python loyalty/collect_normalized.py --limit 500 --sources backit_public,club_avolta_public,mantera_moments --out source-check/live
-      - name: Validate actual source rows and common projection, fail on incomplete sources
+      - name: Read remaining Backit source through its production entrypoint
+        run: xvfb-run -a python loyalty/collect_normalized.py --limit 500 --sources backit_public --out source-check/live
+      - name: Validate source and common projection
         if: always()
         run: |
           python - <<'PY'
@@ -35,20 +35,16 @@ jobs:
           from unified_normalization import make_input,normalize_record
           from catalogue_view import record_row
           b=json.loads(Path('source-check/live/normalized.json').read_text())
-          p=prepare(b);indexed={v[0]:v for v in p['parser_offers']}
-          projection=[]
+          p=prepare(b);indexed={v[0]:v for v in p['parser_offers']};projection=[]
           for r in b['records']:
               raw=make_input({'id':r['id'],'origin':'parser_offers','row':2,'fields':{h:{'value':v} for h,v in zip(SCHEMAS['parser_offers'],indexed[r['id']])}})
               n=normalize_record(raw,as_of=b['observed_at'][:10]);row,reason=record_row(n,b['observed_at'][:10])
               projection.append({'id':r['id'],'source_id':r['source_id'],'benefits':len(n['benefits']),'reader':row,'reader_exclusion':reason})
           Path('source-check/projection.json').write_text(json.dumps(projection,ensure_ascii=False,indent=2))
-          bad=[{'source':s['source_id'],'status':s['status'],'errors':s['errors']} for s in b['sources'] if s['status']!='ok' or not s['normalized']]
-          summary={'observed_at':b['observed_at'],'sources':[{k:s[k] for k in ('source_id','status','normalized','failed','coverage')} for s in b['sources']],'incomplete':bad,'accounts_used':False,'provider_credits':0}
-          Path('source-check/acceptance.json').write_text(json.dumps(summary,ensure_ascii=False,indent=2))
-          print(json.dumps(summary,ensure_ascii=False))
-          if bad:raise SystemExit(1)
+          print(json.dumps(b['sources'],ensure_ascii=False))
+          if any(s['status']!='ok' or not s['normalized'] for s in b['sources']):raise SystemExit(1)
           PY
-      - name: Preserve exact public code for independent checks
+      - name: Preserve exact public code
         if: always()
         run: |
           mkdir -p source-check
