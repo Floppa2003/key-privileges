@@ -1,5 +1,7 @@
 """Complete Backit inventory traversal with explicit exclusions and read limits."""
-import json, math
+import json, math, re
+from urllib.parse import urlsplit
+from bs4 import BeautifulSoup
 from playwright.async_api import TimeoutError as BrowserTimeout
 from backit_source import SOURCE, ROOT, MAX_CARDS, EXCLUDED_NAME, ExcludedOffer, inventory, parse_detail
 
@@ -34,11 +36,18 @@ async def collect(client,cfg,report,observed_at,limit):
         client.check_url(client.page.url)
         raw=await client.page.content()
         if len(raw.encode())>6000000:raise RuntimeError('source_response_too_large')
-        return inventory(raw,page)
+        try:return inventory(raw,page)
+        except ValueError as exc:
+            # Only anonymous catalogue path/DOM counters, never headers, query
+            # strings, scripts, cookies or account data. Useful for layout drift.
+            soup=BeautifulSoup(raw,'html.parser');nodes=soup.select('.mu-pagination')
+            report['inventory_diagnostics']={'page':page,'pagination':[dict((k,n.get(k)) for k in ('total','pagesize','currentpage')) for n in nodes[:3]],
+                'cards':[{'path':urlsplit(n.get('href','')).path,'titles':len(n.select('.mu-store__title'))} for n in soup.select('.offers .offer-cards a.mu-store__wrapper[href]')[:100]]}
+            code=str(exc) if re.fullmatch(r'[a-z_:. -]{1,140}',str(exc)) else 'invalid_inventory'
+            raise RuntimeError('backit_inventory_validation:page='+str(page)+':'+code) from exc
     cards,total,size=await read_inventory(ROOT,1);seen={c['url'] for c in cards}
     pages=math.ceil(total/size)
     for page in range(2,pages+1):
-        # Query shape observed from the site's ordinary next-page button.
         current,nt,ns=await read_inventory(ROOT+'?page='+str(page),page)
         if nt!=total or ns!=size or any(c['url'] in seen for c in current):raise RuntimeError('backit_inventory_drift')
         cards.extend(current);seen.update(c['url'] for c in current)
