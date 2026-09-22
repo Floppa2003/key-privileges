@@ -98,7 +98,7 @@ async def collect(client,cfg,report,observed_at,limit):
         except ExcludedOffer as exc:excluded.append({'url':card['url'],'reason':str(exc)})
         except Exception as exc:
             report['errors'].append({'phase':'detail','url':card['url'],'reason':str(exc)[:150] if isinstance(exc,(RuntimeError,ValueError)) else type(exc).__name__})
-            if stops_catalog(exc):break
+            if stops_catalog(exc) or str(exc) in ('http_401','http_403','access_challenge','unexpected_redirect'):break
     report['discovered']=len(rows)+len(report['errors'])
     report['coverage']=json.dumps({'scope':'public_russian_partner_categories','categories':inventories,
         'listed':len(cards),'parsed':len(rows),'excluded':excluded,
