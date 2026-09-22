@@ -10,8 +10,10 @@ SOURCE='backit_public'
 ROOT='https://backit.me/ru/cashback/shops'
 PROGRAM='Backit — денежный кешбэк'
 MAX_CARDS=1200
-EXCLUDED_NAME=re.compile(r'банк|bank|кредит|займ|вклад|ипотек|инвестиц|расч[её]тн|РКО|супер.?сплит|Яндекс Браузер|ваканси|работа курьер|ставки на спорт|букмек|казино|casino|(?:^|\W)bet(?:\W|$)',re.I)
-RATE=re.compile(r'(?P<qual>до|от)?\s*(?P<value>\d+(?:[.,]\d+)?)\s*(?P<unit>%|р\.?|руб\.?|₽|\$|USD|€|EUR)',re.I)
+EXCLUDED_NAME=re.compile(r'банк|bank|кредит|займ|вклад|ипотек|инвестиц|расч[её]тн|РКО|супер.?сплит|(?:^|\W)(?:ВТБ|МКБ|ОТП)(?:\W|$)|Яндекс Браузер|ваканси|работа курьер|ставки на спорт|букмек|казино|casino|(?:^|\W)bet(?:\W|$)',re.I)
+NUM=r'\d+(?:[ \u00a0\u202f]\d{3})*(?:[.,]\d+)?'
+UNIT=r'%|р\.?|руб\.?|₽|\$|USD|€|EUR'
+RATE=re.compile(rf'(?P<qual>до|от)?\s*(?:(?P<lo>{NUM})\s*(?P<lo_unit>{UNIT})?\s*[-–—]\s*)?(?P<value>{NUM})\s*(?P<unit>{UNIT})',re.I)
 
 class ExcludedOffer(ValueError):
     """Source-disclosed non-offer, not successful extraction or a transport failure."""
@@ -40,23 +42,26 @@ def source_fields(e):
     if e.get('promo_period'):raise ExcludedOffer('dated_promotional_rate_requires_current_confirmation')
     tariffs=e.get('tariffs',[])
     if not 1<=len(tariffs)<=80:raise ValueError('backit_tariff_count')
-    claims=[];terms=[]
+    claims=[];terms=[];zero_tariffs=[]
     for row in tariffs:
         m=RATE.fullmatch(row['rate'])
         if not m or not row['scope']:raise ValueError('backit_unparsed_tariff')
         amount=number(m['value']);unit=m['unit']
-        if float(amount)<=0:continue
+        if float(amount)<=0:
+            zero_tariffs.append('Кешбэк '+row['rate']+' — '+row['scope']);continue
         unit='percent' if unit=='%' else 'USD' if unit in ('$','USD') else 'EUR' if unit in ('€','EUR') else 'RUB'
         if unit=='percent' and float(amount)>100:raise ValueError('backit_invalid_percent')
+        if m['lo'] and (float(number(m['lo']))>float(amount) or (m['lo_unit'] and m['lo_unit']!=m['unit'])):raise ValueError('backit_invalid_range')
         claim='Кешбэк '+row['rate']+' — '+row['scope'];claims.append(claim)
-        terms.append(dict(kind='cashback',value=amount,unit=unit,qualifier={'до':'up_to','от':'at_least'}.get(m['qual'],'exact'),reward_unit='cash_after_merchant_confirmation',fragment=claim,scope={'tariff_condition':row['scope']}))
+        terms.append(dict(kind='cashback',value=amount,unit=unit,qualifier='range' if m['lo'] else {'до':'up_to','от':'at_least'}.get(m['qual'],'exact'),reward_unit='cash_after_merchant_confirmation',fragment=claim,scope={'tariff_condition':row['scope']}))
+        if m['lo']:terms[-1]['value_min']=number(m['lo'])
     if not claims:raise ExcludedOffer('no_positive_tariff')
     if not e.get('activation') or not e.get('conditions'):raise ValueError('backit_missing_practical_terms')
-    if not re.search(r'зарегистрирован|уч[её]тн|регистрац|Войдите',e['activation'],re.I):raise ValueError('backit_activation_owner')
+    if not re.search(r'зарегистрирован|уч[её]тн|регистрац|Войдите|Вход',e['activation'],re.I):raise ValueError('backit_activation_owner')
     return dict(native=urlsplit(url).path.rsplit('/',1)[-1],program=PROGRAM,partner=name,title='Backit → '+name,
-        benefit='\n'.join(claims),conditions=e['conditions'],activation=e['activation'],category='Покупки / услуги / денежный кешбэк',url=url,
+        benefit='\n'.join(claims),conditions='\n'.join([e['conditions'],*zero_tariffs]),activation=e['activation'],category='Покупки / услуги / денежный кешбэк',url=url,
         locator='.shop-rates > .row; .shop-conditions; scoped cashback instructions',terms=terms,
-        scope={'shop_slug':urlsplit(url).path.rsplit('/',1)[-1],'eligibility_not_verified':True},warnings=['cashback_not_upfront_discount','payout_method_and_minimum_require_account_review'])
+        scope={'shop_slug':urlsplit(url).path.rsplit('/',1)[-1],'eligibility_not_verified':True},warnings=['cashback_not_upfront_discount','payout_method_and_minimum_require_account_review']+(['merchant_specific_conditions_not_displayed'] if e.get('merchant_conditions_absent') else []))
 
 def parse_detail(raw,card,observed_at):
     if card.get('inactive'):raise ExcludedOffer('source_disclosed_temporarily_disabled')
@@ -68,7 +73,11 @@ def parse_detail(raw,card,observed_at):
         if len(values)!=1:raise ValueError('backit_current_rate_not_unique')
         tariffs.append({'rate':plain(values[0]),'scope':label})
     period='\n'.join(plain(n) for n in table.select(':scope > .info') if plain(n))
-    restriction=plain(one(soup,'.shop-conditions'));actions=[]
+    custom=soup.select('.shop-conditions')
+    if len(custom)>1:raise ValueError('backit_duplicate_merchant_conditions')
+    general=plain(one(soup,'.shop-rules'))
+    if not general:raise ValueError('backit_purchase_rules_missing')
+    restriction='\n'.join(filter(None,[plain(custom[0]) if custom else '',general]));actions=[]
     for block in soup.select('.shop-markdown.markdown'):
         h=block.find('h2')
         if h is None or not re.match(r'Как получить к[еэ]шб[еэ]к',plain(h),re.I):continue
@@ -80,5 +89,12 @@ def parse_detail(raw,card,observed_at):
             if re.search(r'зарегистрирован|уч[её]тн|регистрац|войдите|активиру|после активации|переход',value,re.I):actions.append(value)
             else:break
         if actions:break
-    e=dict(url=card['url'],name=name,tariffs=tariffs,promo_period=period,conditions=restriction,activation='\n'.join(actions),page_sha256=hashlib.sha256(raw.encode()).hexdigest())
+    if not actions:
+        # The page's own account and cashback controls are sufficient instructions
+        # even when the optional SEO article is absent. No button is clicked.
+        login=plain(one(soup,'.mu-auth__login_desktop'))
+        activate=plain(one(soup,'#activate-button'))
+        if not re.search(r'Вход.*Регистрац',login,re.I|re.S) or not re.fullmatch(r'Купить с к[еэ]шб[еэ]ком',activate,re.I):raise ValueError('backit_purchase_controls_changed')
+        actions=[login.replace('\n',' / ')+' → '+activate]
+    e=dict(merchant_conditions_absent=not custom,url=card['url'],name=name,tariffs=tariffs,promo_period=period,conditions=restriction,activation='\n'.join(actions),page_sha256=hashlib.sha256(raw.encode()).hexdigest())
     return make_record(SOURCE,e,observed_at)
