@@ -35,6 +35,9 @@ HOSTS['utair']=['www.utair.ru']
 HOSTS['nordwind']=['nordwindairlines.ru']
 HOSTS['hse_alumni']=['alumni.hse.ru']
 HOSTS['greatlist_alfa_only']=['greatlist.ru']
+HOSTS['backit_public']=['backit.me']
+HOSTS['club_avolta_public']=['www.clubavolta.com']
+HOSTS['mantera_moments']=['lk.manteratravel.ru']
 HOSTS['alfa_only_partner_offers']=['web.alfabank.ru']
 HOSTS['alfa_only_public_rules']=['alfabank.servicecdn.ru']
 HOSTS['alfa_only_cashback_rules']=['alfabank.servicecdn.ru']
@@ -304,6 +307,9 @@ def validate_offer(r: dict) -> None:
         validate_record(r)
     if r['source_id']=='alfa_only_tsum':
         from tsum_alfa import validate_record
+        validate_record(r)
+    if r['source_id'] in ('backit_public','club_avolta_public','mantera_moments'):
+        from public_reward_projection import validate_record
         validate_record(r)
     if r['source_id']=='greatlist_alfa_only':
         from greatlist_alfa import validate_record
