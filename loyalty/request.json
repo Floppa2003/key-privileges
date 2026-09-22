@@ -1,10 +1,6 @@
 {
-  "request_id": "2026-09-22-coverage-reliability-79",
-  "source_ids": [
-    "backit_public",
-    "club_avolta_public",
-    "mantera_moments"
-  ],
-  "reason": "Fresh selected-source collection and serialized publication of merged PR79. Feature run35753691428 freshly accepted178Backit+17Avolta+6Mantera with zero errors; final run35755005927 passed1206Python+7KEY tests and all201 real-record replays after restricting DragonPass to its independently supported restaurant component with unknown activation. Use complete validated inventories for reversible holds, preserve original source dates/manual notes/row positions, and deploy only the guarded A10/C6 freshness upgrade. Inspect the independent source-health job as well as collection/publication; verify destination after all writes. No source login, coupon issuance, purchase, provider credits, new schedule, unrelated recrawl, credential or private-data export.",
+  "request_id": "2026-09-22-mantera-partners-80",
+  "source_ids": ["mantera_moments"],
+  "reason": "Fresh Mantera-only collection and serialized publication of merged PR80. Final verification35765200821 on9f1dfb7bcd8c0e4dfdf2facda2fc813b4211360c passed1221Python+7KEY tests and all16 real-record reader replays. New ten named accommodation records complement the existing five tiers and Congress hotel; only three exact resort-confirmed hotels receive redemption caps. Preserve the 11-name versus six-counter conflict and individual spending unknowns. Check actual selected-source health, all source outcomes, old records/manual columns/formulas and final native reader after publication. No Backit or Avolta recrawl, source login, activation, purchase, paid provider, new schedule or public private-data export.",
   "publish": true
 }
