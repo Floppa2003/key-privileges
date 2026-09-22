@@ -8,12 +8,12 @@ async def collect(client,cfg,report,observed_at,limit):
     bound=cfg.get('detail_limit',limit)
     if not isinstance(bound,int) or not 1<=bound<=MAX_CARDS:raise ValueError('backit_detail_bound')
     client.request_interval=max(.5,client.request_interval)
-    async def read(url):return await within_source_budget(client,lambda:client.read(url))
-    seed=await read(ROOT);cards,total,size=inventory(seed,1);seen={c['url'] for c in cards}
+    async def read(url,render=False):return await within_source_budget(client,lambda:client.read(url,render=render))
+    seed=await read(ROOT,render=True);cards,total,size=inventory(seed,1);seen={c['url'] for c in cards}
     pages=math.ceil(total/size)
     for page in range(2,pages+1):
         # Query shape observed from the site's ordinary next-page button.
-        current,nt,ns=inventory(await read(ROOT+'?page='+str(page)),page)
+        current,nt,ns=inventory(await read(ROOT+'?page='+str(page),render=True),page)
         if nt!=total or ns!=size or any(c['url'] in seen for c in current):raise RuntimeError('backit_inventory_drift')
         cards.extend(current);seen.update(c['url'] for c in current)
     if len(seen)!=total:raise RuntimeError('backit_incomplete_inventory')

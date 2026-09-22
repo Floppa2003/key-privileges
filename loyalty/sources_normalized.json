@@ -750,5 +750,30 @@
     "url": "https://konsierge.com/benefits",
     "robots_policy": "skip_konsierge_public_by_user_2026_09_19",
     "timeout_seconds": 420
+  },
+  {
+    "id": "backit_public",
+    "name": "Backit — денежный кешбэк",
+    "mode": "backit",
+    "url": "https://backit.me/ru/cashback/shops",
+    "timeout_seconds": 1000,
+    "detail_limit": 1200,
+    "coverage_scope": "public_ru_shop_tariffs_not_marketplace_product_level_or_financial_acquisition_ads"
+  },
+  {
+    "id": "club_avolta_public",
+    "name": "Club Avolta — публичные партнёры",
+    "mode": "avolta",
+    "url": "https://www.clubavolta.com/ru",
+    "timeout_seconds": 420,
+    "coverage_scope": "source_linked_russian_partner_cards_not_personal_eligibility"
+  },
+  {
+    "id": "mantera_moments",
+    "name": "Мантера Моменты — публичные уровни",
+    "mode": "mantera",
+    "url": "https://lk.manteratravel.ru/faq",
+    "timeout_seconds": 90,
+    "coverage_scope": "five_public_tiers_pilot_hotels_accommodation_only"
   }
 ]
