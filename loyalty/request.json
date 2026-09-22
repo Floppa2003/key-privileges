@@ -1,8 +1,10 @@
 {
-  "request_id": "2026-09-19-konsierge-recurring-75",
+  "request_id": "2026-09-22-affordable-public-sources-78",
   "source_ids": [
-    "konsierge_public"
+    "backit_public",
+    "club_avolta_public",
+    "mantera_moments"
   ],
-  "reason": "First normal main refresh of PR75. The owner explicitly disabled robots.txt preflight for the public Konsierge source only. Reuse the existing daily source registry, collector, full regression and serialized Sheets publication. Feature run35466313814:1 freshly accepted159 records across all six categories, no robots requests,1102Python+7KEY tests. Preserve native IDs, full public conditions, original dates and unknown customer eligibility; no account access, credential replay, code issuance, provider credits, new schedule or unrelated source crawl. Validate actual publication readback.",
+  "reason": "Fresh collection and serial publication of merged PR78 using the existing main workflow. Final exact production bytes passed1174Python+7KEY tests and actual-record/DOM replay in35741126878. Traverse all source-owned inventory pages, exclude inactive/acquisition/uncertain promotional entries, preserve cashback-versus-discount, country/tier/activation/coupon restrictions and practical clean-reader projection. No source login, purchase, code activation, provider credits, new schedules or unrelated source crawl. Read actual source outcomes, then independently verify new rows, existing source/manual data, original formulas and final normalization/reader manifests.",
   "publish": true
 }
