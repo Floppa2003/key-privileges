@@ -32,6 +32,7 @@ class BackitPageControls(unittest.TestCase):
   s=BeautifulSoup(FIX.read_text(),'html.parser')
   n=s.select_one('.shop-rates .rate > span:not(.rate--old)');n.string='0.53%-10%'
   row=b.parse_detail(str(s),CARD,NOW);n=common(row)['benefits'][0]
+  self.assertEqual(row['rates'][0]['min_value'],'0.53')
   self.assertEqual((n['value_min'],n['value'],n['qualifier']),('0.53','10','range'))
  def test_zero_rate_scope_remains_a_condition_not_a_reward(self):
   s=BeautifulSoup(FIX.read_text(),'html.parser')
