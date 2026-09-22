@@ -21,7 +21,7 @@ jobs:
           tail -5 source-check/tests.log
           node --test key/refresh.test.mjs > source-check/key-tests.log 2>&1
           tail -8 source-check/key-tests.log
-      - name: Replay exact public source evidence and the two repaired detail layouts
+      - name: Replay exact public source evidence and repaired detail layouts
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
@@ -31,7 +31,7 @@ jobs:
           import requests
           sys.path.insert(0,'loyalty')
           from public_reward_projection import make_record
-          from backit_source import parse_detail
+          from backit_source import parse_detail,source_fields
           from sheets_normalized import prepare,SCHEMAS
           from unified_normalization import make_input,normalize_record
           from catalogue_view import record_row
@@ -51,16 +51,19 @@ jobs:
           for slug in ('vkusvill','justfood'):
               item=next(r for r in observed if r['url'].endswith('/'+slug))
               row=parse_detail(patch.read(slug+'.html').decode(),{'url':item['url'],'name':item['name'][0]},item['observed_at'])
-              assert row['rates'] and row['redemption_text'] and row['conditions_text']
+              # The legacy source rates list does not describe fixed RUB rewards;
+              # their canonical values live in the source-owned common projection.
+              f=source_fields(row['details']['public_reward_evidence'])
+              assert f['terms'] and row['redemption_text'] and row['conditions_text']
               if slug=='vkusvill':assert 'VS1857' in str(row['promo_codes']) and len(row['rates'])==2
               extra.append(row)
-          # These are two DOM excerpt replays, not a newly fetched catalogue or
-          # a publishable mixed-time bundle. The main pipeline will read afresh.
           for r in extra:
               now=r['observed_at'];report={'source_id':r['source_id'],'name':r['program'],'root':r['source_url'],'status':'ok','normalized':1,'discovered':1,'failed':0,'coverage':'DOM excerpt replay only','errors':[],'region':None,'observed_at':now}
               vals=prepare({'schema_version':2,'run_id':'fixture:1','observed_at':now,'records':[r],'sources':[report]})['parser_offers'][0]
               raw=make_input({'id':r['id'],'origin':'parser_offers','row':2,'fields':{h:{'value':v} for h,v in zip(SCHEMAS['parser_offers'],vals)}})
               n=normalize_record(raw,as_of=now[:10]);reader,reason=record_row(n,now[:10]);assert reader and reason is None
+              if r['source_url'].endswith('/justfood'):
+                  assert [(x['value'],x['unit']) for x in n['benefits']]==[('377','RUB'),('301','RUB'),('167','RUB'),('1341','RUB')]
           result={'unchanged_actual_records_replayed':len(b['records']),'repaired_actual_DOM_excerpts':len(extra),'source_run':b['run_id'],'source_observed_at':b['observed_at'],'accounts_used':False,'new_catalogue_fetch':False,'provider_credits':0,'published':False}
           Path('source-check/acceptance.json').write_text(json.dumps(result,indent=2));print(json.dumps(result))
           PY
