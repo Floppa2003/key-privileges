@@ -18,14 +18,18 @@ class ExcludedOffer(ValueError):
 
 def card_url(url):
     p=urlsplit(url)
-    if p.scheme!='https' or p.netloc!='backit.me' or p.query or p.fragment or not re.fullmatch(r'/ru/cashback/shops/[a-zA-Z0-9_-]+',p.path):raise ValueError('backit_card_url')
+    if p.scheme!='https' or p.netloc!='backit.me' or p.query or p.fragment or '..' in p.path or not re.fullmatch(r'/ru/cashback/shops/[a-zA-Z0-9][a-zA-Z0-9_.-]*',p.path):raise ValueError('backit_card_url')
     return url
 
 def inventory(raw,page):
     soup=BeautifulSoup(raw,'html.parser');pg=one(soup,'.mu-pagination')
     total,size,actual=(int(pg.get(x,'0')) for x in ('total','pagesize','currentpage'))
     if not 0<total<=MAX_CARDS or not 0<size<=100 or actual!=page:raise ValueError('backit_pagination_identity_or_bound')
-    cards=[dict(url=card_url(urljoin(ROOT,a['href'])),name=plain(one(a,'.mu-store__title'))) for a in soup.select('.offers .offer-cards a.mu-store__wrapper[href]')]
+    cards=[]
+    for a in soup.select('.offers .offer-cards a.mu-store__wrapper[href]'):
+        card=dict(url=card_url(urljoin(ROOT,a['href'])),name=plain(one(a,'.mu-store__title')))
+        if re.search(r'Временно отключ[её]н',plain(a),re.I):card['inactive']=True
+        cards.append(card)
     if len(cards)!=min(size,total-(page-1)*size) or len({c['url'] for c in cards})!=len(cards):raise ValueError('backit_page_count_or_duplicate')
     if any(not c['name'] for c in cards):raise ValueError('backit_empty_name')
     return cards,total,size
@@ -55,6 +59,7 @@ def source_fields(e):
         scope={'shop_slug':urlsplit(url).path.rsplit('/',1)[-1],'eligibility_not_verified':True},warnings=['cashback_not_upfront_discount','payout_method_and_minimum_require_account_review'])
 
 def parse_detail(raw,card,observed_at):
+    if card.get('inactive'):raise ExcludedOffer('source_disclosed_temporarily_disabled')
     soup=BeautifulSoup(raw,'html.parser');card_url(card['url']);name=plain(one(soup,'span.mobile.name'))
     if name!=card['name']:raise ValueError('backit_detail_name_disagrees_with_inventory')
     table=one(soup,'.shop-rates');tariffs=[]
