@@ -3,7 +3,7 @@ on:
   push:
     branches: ['loyalty/backit-avolta-mantera-20260922']
     paths: ['.github/workflows/affordable-sources-check.yml']
-permissions: {contents: read}
+permissions: {contents: read, actions: read}
 jobs:
   check:
     runs-on: ubuntu-24.04
@@ -14,48 +14,65 @@ jobs:
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with: {python-version: '3.12'}
       - run: python -m pip install -r loyalty/requirements.txt
-      - run: python -m playwright install --with-deps chromium
-      - name: Read four previously failed public card sections
+      - name: Full regression on final production code
         run: |
           mkdir -p source-check
-          xvfb-run -a python - <<'PY'
-          import asyncio,hashlib,json,sys
-          from datetime import datetime,timezone
+          python -m unittest discover -s loyalty/tests -v > source-check/tests.log 2>&1
+          tail -5 source-check/tests.log
+          node --test key/refresh.test.mjs > source-check/key-tests.log 2>&1
+          tail -8 source-check/key-tests.log
+      - name: Replay exact public source evidence and the two repaired detail layouts
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import hashlib,io,json,os,sys,zipfile
           from pathlib import Path
-          from bs4 import BeautifulSoup
-          from playwright.async_api import async_playwright
+          import requests
           sys.path.insert(0,'loyalty')
-          from public_transport import PublicSource
-          from public_reward_projection import plain
-          async def main():
-              report=[];out=Path('source-check')
-              async with async_playwright() as p:
-                  browser=await p.chromium.launch()
-                  async with PublicSource(browser,'https://backit.me/ru/cashback/shops') as client:
-                      await client.robots();client.request_interval=max(1,client.request_interval)
-                      for slug in ('vkusvill','justfood','mtsdk','takprodam-ozon'):
-                          url='https://backit.me/ru/cashback/shops/'+slug
-                          try:
-                              raw=await client.read(url);soup=BeautifulSoup(raw,'html.parser')
-                              fragment=BeautifulSoup('<html><body></body></html>','html.parser')
-                              selectors=['span.mobile.name','.shop-rates','.shop-conditions','.shop-rules','.mu-auth__login_desktop','#activate-button']
-                              for selector in selectors:
-                                  for n in soup.select(selector):fragment.body.append(BeautifulSoup(str(n),'html.parser'))
-                              for n in fragment.select('script,style,noscript,iframe,svg,input,textarea,form'):
-                                  if n.parent is not None:n.decompose()
-                              (out/(slug+'.html')).write_text(str(fragment))
-                              report.append({'url':url,'observed_at':datetime.now(timezone.utc).isoformat(),'page_sha256':hashlib.sha256(raw.encode()).hexdigest(),'sections':{s:len(soup.select(s)) for s in selectors},'title':plain(soup.title),'tariff_nodes':[str(n) for n in fragment.select('.shop-rates .rate')],'name':[plain(n) for n in fragment.select('span.mobile.name')],'activation':[plain(n) for n in fragment.select('#activate-button')]})
-                          except Exception as e:
-                              report.append({'url':url,'error':str(e)[:140] if isinstance(e,RuntimeError) else type(e).__name__});break
-                  await browser.close()
-              (out/'details.json').write_text(json.dumps(report,ensure_ascii=False,indent=2))
-              print(json.dumps(report,ensure_ascii=False))
-          asyncio.run(main())
+          from public_reward_projection import make_record
+          from backit_source import parse_detail
+          from sheets_normalized import prepare,SCHEMAS
+          from unified_normalization import make_input,normalize_record
+          from catalogue_view import record_row
+          def artifact(ident,digest):
+              u=f'https://api.github.com/repos/Floppa2003/key-privileges/actions/artifacts/{ident}/zip'
+              r=requests.get(u,headers={'Authorization':'Bearer '+os.environ['GITHUB_TOKEN']},timeout=25,allow_redirects=False)
+              assert r.status_code==302 and r.headers['Location'].startswith('https://')
+              r=requests.get(r.headers['Location'],timeout=35);r.raise_for_status();data=r.content
+              assert len(data)<2500000 and hashlib.sha256(data).hexdigest()==digest
+              z=zipfile.ZipFile(io.BytesIO(data));assert z.testzip() is None;return z
+          old=artifact(10699341182,'8daff8d83a32c6f1e3cd3a39466980fbf7006d9d433382ef77f353fe12af335a')
+          b=json.loads(old.read('live/normalized.json'));assert len(b['records'])==194
+          for r in b['records']:
+              assert make_record(r['source_id'],r['details']['public_reward_evidence'],r['observed_at'])==r
+          patch=artifact(10699591435,'e441594d812b8534ca51aab52f0640d444d423f890519806e3d7b7d0542b1d15')
+          observed=json.loads(patch.read('details.json'));extra=[]
+          for slug in ('vkusvill','justfood'):
+              item=next(r for r in observed if r['url'].endswith('/'+slug))
+              row=parse_detail(patch.read(slug+'.html').decode(),{'url':item['url'],'name':item['name'][0]},item['observed_at'])
+              assert row['rates'] and row['redemption_text'] and row['conditions_text']
+              if slug=='vkusvill':assert 'VS1857' in str(row['promo_codes']) and len(row['rates'])==2
+              extra.append(row)
+          # These are two DOM excerpt replays, not a newly fetched catalogue or
+          # a publishable mixed-time bundle. The main pipeline will read afresh.
+          for r in extra:
+              now=r['observed_at'];report={'source_id':r['source_id'],'name':r['program'],'root':r['source_url'],'status':'ok','normalized':1,'discovered':1,'failed':0,'coverage':'DOM excerpt replay only','errors':[],'region':None,'observed_at':now}
+              vals=prepare({'schema_version':2,'run_id':'fixture:1','observed_at':now,'records':[r],'sources':[report]})['parser_offers'][0]
+              raw=make_input({'id':r['id'],'origin':'parser_offers','row':2,'fields':{h:{'value':v} for h,v in zip(SCHEMAS['parser_offers'],vals)}})
+              n=normalize_record(raw,as_of=now[:10]);reader,reason=record_row(n,now[:10]);assert reader and reason is None
+          result={'unchanged_actual_records_replayed':len(b['records']),'repaired_actual_DOM_excerpts':len(extra),'source_run':b['run_id'],'source_observed_at':b['observed_at'],'accounts_used':False,'new_catalogue_fetch':False,'provider_credits':0,'published':False}
+          Path('source-check/acceptance.json').write_text(json.dumps(result,indent=2));print(json.dumps(result))
           PY
+      - name: Preserve exact reviewed public code
+        if: always()
+        run: |
+          mkdir -p source-check
           git rev-parse HEAD > source-check/commit.txt
+          git archive HEAD loyalty key .github/workflows > source-check/code.tar
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
-          name: affordable-detail-check-${{ github.run_id }}
+          name: affordable-final-review-${{ github.run_id }}
           path: source-check/
           retention-days: 1
