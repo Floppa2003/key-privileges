@@ -52,7 +52,8 @@ def source_fields(e):
         unit='percent' if unit=='%' else 'USD' if unit in ('$','USD') else 'EUR' if unit in ('€','EUR') else 'RUB'
         if unit=='percent' and float(amount)>100:raise ValueError('backit_invalid_percent')
         if m['lo'] and (float(number(m['lo']))>float(amount) or (m['lo_unit'] and m['lo_unit']!=m['unit'])):raise ValueError('backit_invalid_range')
-        claim='Кешбэк '+row['rate']+' — '+row['scope'];claims.append(claim)
+        display=(m['lo']+'–'+m['value']+m['unit']) if m['lo'] else row['rate']
+        claim='Кешбэк '+display+' — '+row['scope'];claims.append(claim)
         terms.append(dict(kind='cashback',value=amount,unit=unit,qualifier='range' if m['lo'] else {'до':'up_to','от':'at_least'}.get(m['qual'],'exact'),reward_unit='cash_after_merchant_confirmation',fragment=claim,scope={'tariff_condition':row['scope']}))
         if m['lo']:terms[-1]['value_min']=number(m['lo'])
     if not claims:raise ExcludedOffer('no_positive_tariff')
