@@ -5,149 +5,71 @@ on:
     paths: [".github/workflows/public-partners-followup.yml"]
 permissions:
   contents: read
+  actions: read
 jobs:
-  apply-and-test:
+  final-review:
     runs-on: ubuntu-24.04
-    timeout-minutes: 8
-    permissions:
-      contents: write
-      actions: read
-    outputs:
-      code: ${{ steps.commit.outputs.code }}
+    timeout-minutes: 6
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with:
           python-version: "3.12"
       - run: python -m pip install -r loyalty/requirements.txt
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
-          name: public-partners-35762327090
-          run-id: 35762327090
+          name: public-partners-live-35764681102
+          run-id: 35764681102
           github-token: ${{ github.token }}
-          path: public-evidence
-      - name: Apply exact reviewed changes and preserve bounded actual DOM fixtures
+          path: observed
+      - name: Full regression on committed final code
+        run: |
+          mkdir -p final-evidence
+          python -m unittest discover -s loyalty/tests -v > final-evidence/python-tests.log 2>&1
+          node --test key/refresh.test.mjs > final-evidence/key-tests.log 2>&1
+          tail -n 5 final-evidence/python-tests.log
+      - name: Replay actual observations without the fixture helper clock
         run: |
           python - <<'PY'
-          from pathlib import Path
-          import hashlib,subprocess
-          from bs4 import BeautifulSoup
-          guards={
-            'loyalty/mantera_source.py':'fcaaab8e12649edddb71503cd904bbdf4307686a3d53841183d14c1b701d7b91',
-            'loyalty/normalized.py':'f55010b288cfca32c26f7b105313eca0aef436190389a00a881d508054e4555e',
-            'loyalty/source_lifecycle.py':'9b307b5d1e96b7e32b949f9bf8465daebe93ec0d8efb8ee8963e62080b99191d',
-            'loyalty/tests/test_mantera_hotel.py':'7b912520b1c7567f850439e06b73a93e126af7f6d9e04e622e4b39f4fcb1d58f',
-            '.github/workflows/loyalty.yml':'13d1005e2d1d41bd28a227c01b0813e8741414dd8489779a864a6fec02a8376e'}
-          for path,digest in guards.items():
-            assert hashlib.sha256(Path(path).read_bytes()).hexdigest()==digest,path
-          subprocess.run(['git','apply','--check','diagnostics/mantera-followup.patch'],check=True)
-          subprocess.run(['git','apply','diagnostics/mantera-followup.patch'],check=True)
-          f=Path('loyalty/tests/fixtures_live/affordable')
-          s=BeautifulSoup(Path('public-evidence/sochi-park.html').read_text(),'html.parser');keep=[];counter=[]
-          for section in s.select('section'):
-            text=section.get_text(' ',strip=True)
-            if section.find_parent('section'):continue
-            if any(k in text for k in ['Мантера Моменты','Начисление и списание бонусов','Как стать участником','Как работает программа']):
-              for bad in section.select('script,style,svg,img'):bad.decompose()
-              keep.append(str(section))
-            elif section.select('.feature-content h3'):
-              for bad in section.select('script,style,svg,img'):bad.decompose()
-              counter.append(str(section))
-          (f/'mantera-partners.html').write_text('<html><head><title>Программа лояльности</title></head><body>'+''.join(keep+counter)+'</body></html>')
-          s=BeautifulSoup(Path('public-evidence/polyana.html').read_text(),'html.parser')
-          nodes=[s.select_one('h1'),s.select_one('.content-tables-accordions-desktop-list')]
-          nodes+=[n for n in s.select('.markdown') if n.find('p') and 'Уже сейчас в отелях' in n.get_text()]
-          (f/'mantera-redemption.html').write_text('<html><body>'+''.join(map(str,nodes))+'</body></html>')
-          PY
-      - name: Full regression on exact production and workflow bytes
-        run: |
-          mkdir -p evidence
-          python -m unittest discover -s loyalty/tests -v > evidence/python-tests.log 2>&1
-          node --test key/refresh.test.mjs > evidence/key-tests.log 2>&1
-          tail -n 5 evidence/python-tests.log
-          tail -n 10 evidence/key-tests.log
-      - name: Commit only validated Python paths and actual public fixtures
-        id: commit
-        run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add loyalty/mantera_source.py loyalty/normalized.py loyalty/source_lifecycle.py loyalty/tests/test_mantera_hotel.py loyalty/tests/fixtures_live/affordable/mantera-partners.html loyalty/tests/fixtures_live/affordable/mantera-redemption.html
-          git commit -m 'Integrate tested named Mantera partners and selected-source health validation'
-          git push origin HEAD:loyalty/public-partners-followup-20260922
-          echo "code=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-          git rev-parse HEAD > evidence/commit.txt
-          tar -cf evidence/code.tar loyalty key .github/workflows/loyalty.yml
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        if: always()
-        with:
-          name: public-partners-tests-${{ github.run_id }}
-          path: evidence/
-          retention-days: 1
-  collect:
-    needs: apply-and-test
-    runs-on: ubuntu-24.04
-    timeout-minutes: 8
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-        with:
-          ref: ${{ needs.apply-and-test.outputs.code }}
-          persist-credentials: false
-      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
-        with:
-          python-version: "3.12"
-      - run: python -m pip install -r loyalty/requirements.txt
-      - run: python -m playwright install --with-deps chromium
-      - name: Fresh Mantera-only source traversal
-        run: xvfb-run -a python loyalty/collect_normalized.py --sources mantera_moments --limit 500
-      - name: Validate exact selected source and publication payload
-        run: |
-          python loyalty/source_lifecycle.py --input loyalty-output/normalized.json --sources mantera_moments
-          python loyalty/sheets_normalized.py --input loyalty-output/normalized.json
-          python - <<'PY'
-          import json,sys
-          sys.path[:0]=['loyalty','loyalty/tests']
-          from public_reward_projection import validate_record
-          from test_public_reward_sources import common
+          import json,sys,subprocess,pathlib
+          sys.path.insert(0,'loyalty')
+          from sheets_normalized import prepare,SCHEMAS
+          from unified_normalization import make_input,normalize_record
           from catalogue_view import record_row
-          b=json.load(open('loyalty-output/normalized.json'))
+          from source_lifecycle import health_summary
+          b=json.load(open('observed/normalized.json'))
           assert len(b['records'])==16 and len(b['sources'])==1
-          assert b['sources'][0]['status']=='ok' and not b['sources'][0]['errors']
-          for r in b['records']:
-            validate_record(r)
-            row,reason=record_row(common(r),r['observed_at'][:10]);assert reason is None,(r['id'],reason)
-          json.dump({'records':16,'health':'ok','reader_accepted':16},open('loyalty-output/acceptance.json','w'))
+          h=health_summary(b,expected_sources=['mantera_moments'])
+          assert len(h)==1 and h[0]['healthy']
+          values=prepare(b)['parser_offers'];reader=[]
+          for i,vals in enumerate(values,2):
+            headers=SCHEMAS['parser_offers']+['Ручной комментарий']
+            fields={key:({'value':value} if value!='' else {}) for key,value in zip(headers,vals+[''])}
+            n=normalize_record(make_input(dict(id=vals[0],origin='parser_offers',row=i,fields=fields)),as_of=b['observed_at'][:10])
+            r,reason=record_row(n,b['observed_at'][:10]);assert reason is None,(vals[0],reason)
+            reader.append(r)
+          out=pathlib.Path('final-evidence')
+          json.dump({'records':16,'reader_accepted':len(reader),'health':h,'observation':b['observed_at'],'replay_not_new_source_read':True},open(out/'acceptance.json','w'),ensure_ascii=False,indent=2)
+          missing=dict(b,sources=[],records=[])
+          (out/'missing-source.json').write_text(json.dumps(missing))
+          cmd=[sys.executable,'loyalty/source_lifecycle.py','--input',str(out/'missing-source.json'),'--sources','mantera_moments']
+          result=subprocess.run(cmd,capture_output=True,text=True)
+          assert result.returncode==1 and 'missing_source_report' in result.stdout
+          (out/'missing-source-check.txt').write_text(result.stdout)
+          subprocess.run([sys.executable,'loyalty/source_lifecycle.py','--input','observed/normalized.json','--sources','mantera_moments'],check=True)
           PY
-      - name: One new source-linked Backit product-page diagnostic
-        if: always()
+      - name: Save exact accepted source code and payload identity
         run: |
-          python - <<'PY'
-          import requests,json,pathlib,hashlib
-          from datetime import datetime,timezone
-          from urllib.parse import urlsplit,urljoin
-          from bs4 import BeautifulSoup
-          u='https://backit.me/ru/cashback/shops/ozon/products'
-          out=pathlib.Path('loyalty-output');out.mkdir(exist_ok=True)
-          r={'url':u,'observed_at':datetime.now(timezone.utc).isoformat(),'account_used':False}
-          try:
-            with requests.get(u,headers={'User-Agent':'LoyaltyCatalogResearchBot/1.0'},timeout=(8,25),allow_redirects=False,stream=True) as x:
-              r['status']=x.status_code
-              if 300<=x.status_code<400:
-                dest=urlsplit(urljoin(u,x.headers.get('Location','')));r['redirect_host']=dest.hostname;r['redirect_path']=dest.path
-              if x.status_code==200:
-                raw=bytearray()
-                for c in x.iter_content(65536):
-                  raw.extend(c)
-                  if len(raw)>4000000:raise ValueError('oversize')
-                text=bytes(raw).decode('utf-8');r['sha256']=hashlib.sha256(raw).hexdigest()
-                soup=BeautifulSoup(text,'html.parser')
-                for n in soup.select('script,style'):n.decompose()
-                (out/'backit-product.txt').write_text(soup.get_text('\n',strip=True))
-          except Exception as e:r['error']=type(e).__name__
-          (out/'backit-product-probe.json').write_text(json.dumps(r,ensure_ascii=False,indent=2));print(json.dumps(r))
-          PY
+          git rev-parse HEAD > final-evidence/commit.txt
+          tar --exclude='__pycache__' --exclude='*.pyc' -cf final-evidence/code.tar loyalty key .github/workflows/loyalty.yml
+          sha256sum observed/normalized.json > final-evidence/payload.sha256
+          cp observed/normalized.json final-evidence/normalized.json
+          cp observed/backit-product-probe.json final-evidence/backit-product-probe.json
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
-          name: public-partners-live-${{ github.run_id }}
-          path: loyalty-output/
+          name: public-partners-final-${{ github.run_id }}
+          path: final-evidence/
           retention-days: 1
