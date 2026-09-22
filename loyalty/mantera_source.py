@@ -30,6 +30,9 @@ QUESTIONS = (
 
 
 def source_fields(e):
+    if e.get('kind') == 'public_partner':
+        from mantera_partners import source_fields as partner_fields
+        return partner_fields(e)
     if e.get('kind')=='hotel_participation':
         from mantera_hotel import source_fields as hotel_fields
         return hotel_fields(e)
@@ -108,6 +111,17 @@ async def collect(client, cfg, report, observed_at, limit):
             records.append(record)
     except Exception as exc:
         report['errors'].append({'phase':'hotel_public_page','url':mantera_hotel.URL,'reason':str(exc)[:140] if isinstance(exc,(RuntimeError,ValueError)) else type(exc).__name__})
+    import mantera_partners
+    try:
+        partners, inventory = await mantera_partners.collect(
+            client.browser, getattr(client, 'deadline', float('inf')), observed_at)
+        if len(records) + len(partners) > limit:
+            raise RuntimeError('mantera_record_limit')
+        records.extend(partners)
+        report['mantera_public_inventory'] = inventory
+    except Exception as exc:
+        report['errors'].append({'phase':'public_partner_inventory', 'url':mantera_partners.ROSTER_URL,
+            'reason':str(exc)[:140] if isinstance(exc,(RuntimeError,ValueError)) else type(exc).__name__})
     report['discovered'] = len(records)+len(report['errors'])
-    report['coverage'] = 'all_five_public_FAQ_tiers;one_source_confirmed_hotel_page;not_the_six_partner_inventory;hotel_redemption_not_confirmed'
+    report['coverage'] = 'five_FAQ_tiers;independent_Congress_page;public_named_participants_and_scoped_resort_redemption;not_all_group_businesses'
     return records
