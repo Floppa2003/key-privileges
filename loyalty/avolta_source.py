@@ -15,22 +15,18 @@ ROOT = 'https://www.clubavolta.com/ru'
 PREFIX = ROOT + '/nashi-partnery/'
 PROGRAM = 'Club Avolta'
 
-
 class ExcludedOffer(ValueError): pass
-
 
 def reviewed_url(value, category=False):
     pattern = re.escape(PREFIX) + r'[a-z0-9-]+' + ('' if category else r'/[a-z0-9-]+')
     if not re.fullmatch(pattern, value): raise ValueError('avolta_url_scope')
     return value
 
-
 def categories(raw):
     soup=BeautifulSoup(raw,'html.parser'); one(soup,'main#Main')
     result={reviewed_url(urljoin(ROOT,a['href']),True):plain(a) for a in soup.select('a.partners-tile[href]')}
     if not 1<=len(result)<=10 or any(not v for v in result.values()):raise ValueError('avolta_category_inventory')
     return result
-
 
 def catalogue(raw,url,label):
     soup=BeautifulSoup(raw,'html.parser');root=one(soup,'main#Main')
@@ -44,6 +40,25 @@ def catalogue(raw,url,label):
     if len({x['url'] for x in result})!=len(result):raise ValueError('avolta_duplicate_card')
     return result
 
+# Whole source sentences; unmodified page text remains in evidence. Merchant
+# statistics, ratings and promotional scene-setting are not practical rewards.
+BENEFIT = re.compile(r'скид|сэконом|балл|мил[ию]|CARAT|бесплат|два по цене', re.I)
+ACTION = re.compile(r'зарегистр|скачайте|загрузите|привяж|привяз|актив|перейдите|установ|нажмите|выберите|сканируйте|отсканируйте|войдите|создайте|укажите|вам понадобится|предпочитаемого партнера|предпочтительного партнера|приложени', re.I)
+PRACTICAL = re.compile(r'скид|сэконом|балл|мил[ию]|CARAT|бесплат|eSIM|SIM-карт|интернет|трафик|роуминг|аккаунт|учетн|учётн|QR|услови|положени|подписк|исключ|кроме|только|предваритель|не суммиру|не нужно|сроком|список магазинов|может быть доставлен|вернуть наряд|доставку печатных|два по цене|в Таиланде', re.I)
+PITCH = re.compile(r'^(?:Превращайте|Превратите приятные|Наслаждайтесь|Кладезь|Получайте самые свежие|Будь то|Взяв напрокат|Выглядеть|Путешествуйте без багажа|Более \d|Сравнивайте|Сравнивать|В качестве участника|Выполните следующие шаги|Сделайте каждую|Найдите идеальное|Куда бы|Благодаря обширной|Пристегните|Откройте для себя|Богатый выбор|Разблокируйте|Autogrill подарит|Изображение предоставлено|Рейтинг|Smart Traveller — это глобальная|Круглосуточная поддержка|Совершайте международные звонки)', re.I)
+
+def practical_text(headline, intro, body):
+    sentences=[]
+    for paragraph in '\n'.join((headline,intro,body)).splitlines():
+        paragraph=re.sub(r'^\d+\.\s+', '', paragraph).strip()
+        sentences.extend(re.split(r'(?<=[.!?])\s+(?=[А-ЯЁA-Z])',paragraph))
+    sentences=list(dict.fromkeys(s.strip() for s in sentences if s.strip() and not PITCH.search(s.strip())))
+    concrete=[s for s in sentences if BENEFIT.search(s) and (re.search(r'\d',s) or re.search(r'бесплат|два по цене',s,re.I))]
+    if not concrete:raise ExcludedOffer('no_concrete_partner_benefit')
+    claim=concrete[0]
+    actions=[s for s in sentences if ACTION.search(s)]
+    conditions=[s for s in sentences if s==claim or PRACTICAL.search(s) or ACTION.search(s)]
+    return claim,'\n'.join(conditions),'\n'.join(actions)
 
 def source_fields(e):
     url=reviewed_url(e['url']);name=e.get('name','')
@@ -53,20 +68,15 @@ def source_fields(e):
     if url.endswith('/dragonpass'):
         amounts=set(re.findall(r'за\s+(\d+(?:[.,]\d+)?)\s+доллар',headline+'\n'+intro+'\n'+body,re.I))
         if len(amounts)>1:raise ExcludedOffer('source_conflict_lounge_admission_price')
-    candidates=[headline]+intro.splitlines()+body.splitlines()
-    meaningful=[s for s in candidates if 0<len(s)<=800 and re.search(r'\d|бесплат|балл|мили|Avios',s,re.I)]
-    if not meaningful:raise ExcludedOffer('no_concrete_partner_benefit')
-    claim=meaningful[0]
+    claim,conditions,activation=practical_text(headline,intro,body)
     rates=normalize_rates(claim)
     terms=[dict(kind=r['kind'],value=r['value'],unit=r['unit'],qualifier=r['qualifier'],fragment=r['evidence']) for r in rates]
     if not terms:terms=[dict(kind='partner_privilege',fragment=claim)]
-    actions=[s for s in (intro+'\n'+body).splitlines() if re.search(r'зарегистр|активир|установ|скач|введ|предъяв|загруз|покаж|перейд|приложени',s,re.I)]
     return dict(native=url[len(PREFIX):],program=PROGRAM,partner=name,title='Club Avolta → '+name,
-        benefit=claim,conditions='\n'.join(dict.fromkeys([headline,intro,body])),activation='\n'.join(actions),
+        benefit=claim,conditions=conditions,activation=activation,
         url=url,category=e['category'],locator='main#Main; hero description and partner usercontent',
         terms=terms,scope={'programme_membership_required':True,'eligibility_not_verified':True},
         warnings=['country_tier_and_partner_redemption_terms_require_review','public_partner_conditions_not_booking_availability'])
-
 
 def parse_detail(raw,card,observed_at):
     soup=BeautifulSoup(raw,'html.parser');root=one(soup,'main#Main')
@@ -80,7 +90,6 @@ def parse_detail(raw,card,observed_at):
     evidence={**card,'headline':headline,'intro':intro,'body':'\n'.join(plain(n) for n in blocks),
               'page_sha256':hashlib.sha256(raw.encode()).hexdigest()}
     return make_record(SOURCE,evidence,observed_at)
-
 
 async def collect(client,cfg,report,observed_at,limit):
     from read_budget import within_source_budget,stops_catalog
