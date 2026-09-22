@@ -55,6 +55,14 @@ def validate_inventories(bundle):
     """Only complete successful reads authorize reconciliation; fail on drift."""
     result = {}
     for report in bundle['sources']:
+        if report['source_id'] == 'mantera_moments':
+            # Named hotels share one source URL, so use their validated IDs.
+            from mantera_lifecycle import snapshot
+            records = [r for r in bundle['records'] if r['source_id'] == 'mantera_moments']
+            current = snapshot(report, records, bundle['observed_at'])
+            if current is not None:
+                result['mantera_moments'] = current
+            continue
         snap = report.get('inventory_v1')
         if snap is None:
             continue
@@ -102,18 +110,22 @@ def reconcile_rows(bundle, existing, incoming):
         if sid not in snapshots:
             continue
         snap = snapshots[sid]
-        u = _url(sid, row[17])
-        native = u.rsplit('/', 1)[-1] if sid == 'backit_public' else u.split('/nashi-partnery/', 1)[1]
-        if row[0] != hashlib.sha256((sid + '\n' + native).encode()).hexdigest():
-            raise ValueError('lifecycle_stored_identity_mismatch')
-        if d.get('public_reward_evidence', {}).get('url') != u:
-            raise ValueError('lifecycle_stored_url_mismatch')
+        if sid == 'mantera_moments':
+            from mantera_lifecycle import hold_reason
+            reason = hold_reason(row, d, snap)
+        else:
+            u = _url(sid, row[17])
+            native = u.rsplit('/', 1)[-1] if sid == 'backit_public' else u.split('/nashi-partnery/', 1)[1]
+            if row[0] != hashlib.sha256((sid + '\n' + native).encode()).hexdigest():
+                raise ValueError('lifecycle_stored_identity_mismatch')
+            if d.get('public_reward_evidence', {}).get('url') != u:
+                raise ValueError('lifecycle_stored_url_mismatch')
+            reason = snap['excluded'].get(u)
+            if u not in snap['urls']:
+                reason = 'not_in_complete_inventory'
         last = max(_stamp(row[22]), _stamp(d.get('_lifecycle', {}).get('checked_at', row[22])))
         if last > now:
             continue
-        reason = snap['excluded'].get(u)
-        if u not in snap['urls']:
-            reason = 'not_in_complete_inventory'
         if reason is None:
             continue
         d = copy.deepcopy(d)
@@ -155,11 +167,7 @@ def health_summary(bundle, *, expected_sources=None):
         sid = r['source_id']
         if sid not in FRESHNESS_DAYS:
             continue
-        if sid in LIMITS:
-            complete = sid in snapshots
-        else:
-            from mantera_partners import health as mantera_health
-            complete = mantera_health(r, [row for row in bundle['records'] if row['source_id'] == sid])
+        complete = sid in snapshots
         health.append({'source_id': sid, 'healthy': complete, 'status': r['status'],
                        'records': r['normalized'], 'errors': len(r['errors'])})
     if expected_sources is not None:
