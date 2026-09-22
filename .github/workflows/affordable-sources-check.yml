@@ -14,66 +14,73 @@ jobs:
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with: {python-version: '3.12'}
       - run: python -m pip install -r loyalty/requirements.txt
-      - name: Capture only public source pages for parser design
+      - run: python -m playwright install --with-deps chromium
+      - name: Observe anonymous public UI without authentication
         run: |
           mkdir -p source-check
-          python - <<'PY'
-          import concurrent.futures,hashlib,json,sys,time
+          xvfb-run -a python - <<'PY'
+          import asyncio,hashlib,json,re,sys
           from datetime import datetime,timezone
           from pathlib import Path
-          from urllib.parse import urlsplit,urljoin
-          import requests
+          from urllib.parse import urlsplit,parse_qs,urlunsplit,urlencode
           from bs4 import BeautifulSoup
-          from protego import Protego
+          from playwright.async_api import async_playwright
           sys.path.insert(0,'loyalty')
-          from public_transport import robots_document,check_response
-          targets={
-            'backit':['https://backit.me/ru/cashback/shops','https://backit.me/ru/cashback/shops/kuper','https://backit.me/ru/cashback/shops/sportmaster'],
-            'avolta':['https://www.clubavolta.com/ru','https://www.clubavolta.com/ru/nashi-partnery/zaly-ozhidaniya','https://www.clubavolta.com/ru/nashi-partnery/zaly-ozhidaniya/plaza'],
-            'mantera':['https://manteracongress.ru/loyalty-program'],
-            'mantera_faq':['https://lk.manteratravel.ru/faq']}
-          def capture(pair):
-            label,urls=pair;origin='https://'+urlsplit(urls[0]).netloc
-            result={'source':label,'observed_at':datetime.now(timezone.utc).isoformat(),'pages':[]}
-            s=requests.Session();s.trust_env=False;s.headers['User-Agent']='LoyaltyCatalogResearchBot/1.0'
-            def get(url):
-              with s.get(url,timeout=(8,25),allow_redirects=False,stream=True) as r:
-                if r.status_code==429 or r.headers.get('Retry-After'):raise RuntimeError('rate_limit_stop')
-                data=bytearray()
-                for part in r.iter_content(65536):
-                  data.extend(part)
-                  if len(data)>7000000:raise RuntimeError('page_size_bound')
-                return r.status_code,bytes(data),r.headers.get('Location','')
-            try:
-              status,raw,location=get(origin+'/robots.txt')
-              rules,state=robots_document(status,raw.decode('utf-8',errors='replace'));policy=Protego.parse(rules)
-              result['robots']={'status':status,'state':state,'text':rules}
-              delay=max(1,policy.crawl_delay('LoyaltyCatalogResearchBot') or 0)
-              for i,url in enumerate(urls):
-                if not policy.can_fetch(url,'LoyaltyCatalogResearchBot'):raise RuntimeError('robots_disallow')
-                time.sleep(delay);status,raw,location=get(url)
-                item={'url':url,'status':status,'bytes':len(raw),'sha256':hashlib.sha256(raw).hexdigest(),'observed_at':datetime.now(timezone.utc).isoformat()}
-                if location:item['location']=urljoin(url,location).split('?')[0]
-                result['pages'].append(item)
-                if status!=200:continue
-                text=raw.decode('utf-8',errors='replace');check_response(status,text)
-                soup=BeautifulSoup(text,'html.parser')
-                item['scripts']=[urljoin(url,a['src']).split('?')[0] for a in soup.select('script[src]')]
-                item['script_ids']=[a.get('id') for a in soup.select('script[id]')]
-                for n in soup.select('script,style,noscript,svg,iframe'):n.decompose()
-                name=f'{label}-{i}.html';(Path('source-check')/name).write_text(str(soup));item['file']=name
-            except Exception as e:result['error']=str(e) if isinstance(e,(ValueError,RuntimeError)) else type(e).__name__
-            finally:s.close()
-            return result
-          with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:results=list(pool.map(capture,targets.items()))
-          Path('source-check/report.json').write_text(json.dumps(results,ensure_ascii=False,indent=2))
-          print(json.dumps(results,ensure_ascii=False))
+          from public_transport import PublicSource
+          out=Path('source-check');report=[]
+          def safe_url(url):
+              p=urlsplit(url);q=parse_qs(p.query)
+              return urlunsplit((p.scheme,p.netloc,p.path,urlencode({k:v for k,v in q.items() if k in ('page','per','limit','offset','sort','order','lang','language','category','category_id','compilation')},doseq=True),''))
+          async def probe(browser,label,url):
+              r={'source':label,'url':url,'observed_at':datetime.now(timezone.utc).isoformat(),'network':[]}
+              pending=[]
+              try:
+                  async with PublicSource(browser,url) as client:
+                      await client.robots();r['robots_state']=client.robots_state
+                      page=client.page
+                      async def response(res):
+                          p=urlsplit(res.url)
+                          if res.request.resource_type not in ('xhr','fetch') or not any(x in p.hostname for x in ('backit','clubavolta')):return
+                          n={'url':safe_url(res.url),'status':res.status};r['network'].append(n)
+                          if label=='backit' and '/shops' in p.path and res.status==200 and 'json' in res.headers.get('content-type',''):
+                              raw=await res.body()
+                              if len(raw)<2500000:
+                                  payload=json.loads(raw)
+                                  # Keep public catalogue objects only. No auth/profile endpoints or response headers.
+                                  def scrub(value):
+                                      if isinstance(value,dict):return {k:scrub(v) for k,v in value.items() if not re.search(r'token|cookie|password|secret|session|email|phone|user_id',k,re.I)}
+                                      if isinstance(value,list):return [scrub(v) for v in value]
+                                      return value
+                                  name=f'backit-xhr-{len(r["network"]):03}.json';(out/name).write_text(json.dumps(scrub(payload),ensure_ascii=False));n['file']=name
+                      page.on('response',lambda res:pending.append(asyncio.create_task(response(res))))
+                      html=await client.read(url,render=True)
+                      r['counts']=[]
+                      if label=='backit':
+                          for i in range(6):
+                              r['counts'].append(await page.locator('a.mu-store__wrapper').count())
+                              await page.evaluate('window.scrollTo(0,document.body.scrollHeight)');await page.wait_for_timeout(1500)
+                              load=page.get_by_text('Показать ещё',exact=True)
+                              if await load.count()==1 and await load.is_visible():await load.click();await page.wait_for_timeout(1200)
+                          html=await page.content()
+                      await asyncio.gather(*pending,return_exceptions=True)
+                      s=BeautifulSoup(html,'html.parser')
+                      for n in s.select('script,style,noscript,svg,iframe'):n.decompose()
+                      (out/(label+'.html')).write_text(str(s));r['html_file']=label+'.html';r['html_sha256']=hashlib.sha256(html.encode()).hexdigest()
+                      r['title']=await page.title();r['final_url']=safe_url(page.url)
+              except Exception as e:r['error']=str(e)[:240] if isinstance(e,(ValueError,RuntimeError)) else type(e).__name__
+              report.append(r)
+          async def main():
+              async with async_playwright() as p:
+                  b=await p.chromium.launch(headless=False)
+                  for label,url in [('backit','https://backit.me/ru/cashback/shops'),('avolta','https://www.clubavolta.com/ru')]:await probe(b,label,url)
+                  await b.close()
+              (out/'report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2));print(json.dumps(report,ensure_ascii=False))
+          asyncio.run(main())
           PY
           git rev-parse HEAD > source-check/commit.txt
-          git archive HEAD loyalty key .github/workflows > source-check/code.tar
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
-          name: affordable-source-check-${{ github.run_id }}
+          name: affordable-source-browser-${{ github.run_id }}
           path: source-check/
           retention-days: 3
