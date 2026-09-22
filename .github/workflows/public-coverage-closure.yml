@@ -2,7 +2,7 @@ name: Public coverage closure inspection
 on:
   push:
     branches: ["loyalty/public-coverage-closure-20260923"]
-    paths: ["diagnostics/coverage_detail_shapes.py", ".github/workflows/public-coverage-closure.yml"]
+    paths: ["diagnostics/coverage_pagination_contracts.py", ".github/workflows/public-coverage-closure.yml"]
 permissions:
   contents: read
 jobs:
@@ -18,12 +18,12 @@ jobs:
           python-version: "3.12"
       - run: python -m pip install -r loyalty/requirements.txt
       - run: python -m playwright install --with-deps chromium
-      - name: Inspect source-discovered public pagination and details
-        run: python diagnostics/coverage_detail_shapes.py
+      - name: Inspect public list termination and cashback details
+        run: python diagnostics/coverage_pagination_contracts.py
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
-          name: public-coverage-details-${{ github.run_id }}
-          path: coverage-detail-shapes/
+          name: public-coverage-contracts-${{ github.run_id }}
+          path: coverage-pagination-contracts/
           if-no-files-found: error
           retention-days: 1
