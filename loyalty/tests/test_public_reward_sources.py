@@ -63,7 +63,9 @@ class PublicRewardTests(unittest.TestCase):
         n=common(plaza());self.assertEqual([(x['kind'],x['value']) for x in n['benefits']],[('discount','25')])
         row,reason=record_row(n,NOW[:10]);self.assertIsNone(reason);self.assertIn('3 раза в год',row[5]);self.assertIn('Smart Traveller',row[4])
     def test_dragonpass_real_price_disagreement_quarantined(self):
-        with self.assertRaisesRegex(a.ExcludedOffer,'price'):a.parse_detail(html('avolta-dragonpass.html'),{'url':a.PREFIX+'zaly-ozhidaniya/dragonpass','name':'Dragonpass','category':'Залы ожидания'},NOW)
+        row=a.parse_detail(html('avolta-dragonpass.html'),{'url':a.PREFIX+'zaly-ozhidaniya/dragonpass','name':'Dragonpass','category':'Залы ожидания'},NOW)
+        self.assertIn('source_conflict_lounge_admission_price_withheld',row['warnings'])
+        self.assertNotRegex(row['benefit_text'],r'28|31')
     def test_avolta_missing_terms_fails(self):
         s=BeautifulSoup(html('avolta-plaza.html'),'html.parser');s.select_one('.two-column-block').decompose()
         with self.assertRaises(ValueError):plaza(str(s))

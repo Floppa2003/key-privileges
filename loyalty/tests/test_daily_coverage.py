@@ -75,9 +75,10 @@ class DailyCoverageTests(unittest.TestCase):
              patch.object(sys, 'argv', ['sheets_normalized.py', '--publish']):
             stat.return_value.st_size = 2000
             offers.return_value.upsert.return_value = 1
+            offers.return_value.values.return_value = [publication.SCHEMAS['parser_offers']]
             coverage.return_value.upsert.return_value = 1
             publication.main()
-            offers.return_value.upsert.assert_called_once_with('parser_offers', rows['parser_offers'])
+            offers.return_value.upsert.assert_called_once_with('parser_offers', rows['parser_offers'], expected_before=[publication.SCHEMAS['parser_offers']])
             coverage.return_value.upsert.assert_called_once_with('parser_coverage', rows['parser_coverage'])
 
 if __name__ == '__main__':

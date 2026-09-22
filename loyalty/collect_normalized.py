@@ -208,19 +208,15 @@ async def main():
     out=Path(args.out);out.mkdir(parents=True,exist_ok=True)
     async with async_playwright() as p:
         browser=await p.chromium.launch();sem=asyncio.Semaphore(4)
-        # Club Avolta's public pages were accepted by ordinary Chromium in the
-        # reviewed source probe. Keep this renderer local to that source.
-        avolta_browser=await p.chromium.launch(headless=False) if any(c['id']=='club_avolta_public' for c in cfgs) else None
         async def guarded(cfg):
             budget=source_budget(cfg)
-            try:return await bounded_source(lambda:one(avolta_browser if cfg['id']=='club_avolta_public' else browser,cfg,now,args.limit),sem,timeout=budget)
+            try:return await bounded_source(lambda:one(browser,cfg,now,args.limit),sem,timeout=budget)
             except asyncio.TimeoutError:
                 return {'source_id':cfg['id'],'name':cfg['name'],'root':cfg['url'],'status':'failed',
                     'discovered':0,'normalized':0,'failed':1,'coverage':'source_timeout',
                     'region':None,'errors':[{'phase':'source','reason':f'{budget}_second_bound'}],'observed_at':now},[]
         try:results=await asyncio.gather(*(guarded(cfg) for cfg in cfgs))
         finally:
-            if avolta_browser:await avolta_browser.close()
             await browser.close()
     reports=[r for r,_ in results];records=[r for _,rs in results for r in rs]
     bundle={'schema_version':2,'run_id':run_id,'observed_at':now,'records':records,'sources':reports}
@@ -233,10 +229,12 @@ async def main():
     lines=['# Public loyalty collection','',f'Run: {run_id}',f'Observed: {now}','',
            '| Source | Records | Discovered | Status | Coverage |','|---|---:|---:|---|---|']
     lines.extend(f"| {r['source_id']} | {r['normalized']} | {r['discovered']} | {r['status']} | {r['coverage']} |" for r in reports)
-    lines.extend(['','Counts include membership plans and campaigns, not only unique partners. Source publication is not proof of user eligibility. Missing observations never expire or delete stored offers.'])
+    lines.extend(['','Counts include membership plans and campaigns, not only unique partners. Source publication is not proof of user eligibility. Failed observations never delete stored offers or refresh their dates. Complete reviewed Backit/Avolta inventories may reversibly withhold unsupported offers; the three public reward sources have a separate 7-day reader freshness limit, not an inferred expiry date.'])
     summary='\n'.join(lines)+'\n';(out/'summary.md').write_text(summary,encoding='utf8')
     if os.getenv('GITHUB_STEP_SUMMARY'):
         with open(os.environ['GITHUB_STEP_SUMMARY'],'a') as f:f.write(summary)
-    if not records:raise SystemExit(2)
+    if not records:
+        from source_lifecycle import validate_inventories
+        if not validate_inventories(bundle):raise SystemExit(2)
 
 if __name__=='__main__':asyncio.run(main())

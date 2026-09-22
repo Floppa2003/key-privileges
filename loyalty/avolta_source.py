@@ -1,4 +1,4 @@
-"""Anonymous Russian Club Avolta partner pages via the ordinary browser.
+"""Anonymous Russian Club Avolta partner pages via ordinary same-origin HTTP.
 
 Collect observed category/detail links only, without joining or activating any
 partner offer. Keep geography and programme/tier restrictions inside each card.
@@ -65,10 +65,23 @@ def source_fields(e):
     if not name or not re.fullmatch(r'[a-f0-9]{64}',e.get('page_sha256','')):raise ValueError('avolta_evidence_identity')
     headline=e.get('headline','');intro=e.get('intro','');body=e.get('body','')
     if not headline or not intro or not body or not e.get('category'):raise ValueError('avolta_missing_owned_text')
+    partial=False
     if url.endswith('/dragonpass'):
-        amounts=set(re.findall(r'за\s+(\d+(?:[.,]\d+)?)\s+доллар',headline+'\n'+intro+'\n'+body,re.I))
-        if len(amounts)>1:raise ExcludedOffer('source_conflict_lounge_admission_price')
-    claim,conditions,activation=practical_text(headline,intro,body)
+        combined=headline+'\n'+intro+'\n'+body
+        amounts=set(re.findall(r'за\s+(\d+(?:[.,]\d+)?)\s+доллар',combined,re.I))
+        if len(amounts)>1:
+            # An independently stated restaurant discount is not the lounge fee.
+            restaurant=list(re.finditer(r'скидк(?:и|ами)\s+до\s+(\d+(?:[.,]\d+)?)\s*%\s+в ресторанах аэропорта',combined,re.I))
+            if not restaurant or len({m[1].replace(',','.') for m in restaurant})!=1:
+                raise ExcludedOffer('source_conflict_lounge_admission_price')
+            claim=next((m[0] for m in restaurant if m[0].lower().startswith('скидки ')),restaurant[0][0])
+            claim=claim[0].upper()+claim[1:]
+            # The published app instruction concerns lounge entry, not this reward.
+            activation=''
+            conditions=claim+'\nЦена прохода в зал на странице противоречива; тариф прохода не включён в это предложение.\nПодробный порядок применения скидки в ресторане на странице не раскрыт.\nСогласно правилам и условиям.'
+            partial=True
+    if not partial:
+        claim,conditions,activation=practical_text(headline,intro,body)
     rates=normalize_rates(claim)
     terms=[dict(kind=r['kind'],value=r['value'],unit=r['unit'],qualifier=r['qualifier'],fragment=r['evidence']) for r in rates]
     if not terms:terms=[dict(kind='partner_privilege',fragment=claim)]
@@ -76,7 +89,7 @@ def source_fields(e):
         benefit=claim,conditions=conditions,activation=activation,
         url=url,category=e['category'],locator='main#Main; hero description and partner usercontent',
         terms=terms,scope={'programme_membership_required':True,'eligibility_not_verified':True},
-        warnings=['country_tier_and_partner_redemption_terms_require_review','public_partner_conditions_not_booking_availability'])
+        warnings=['country_tier_and_partner_redemption_terms_require_review','public_partner_conditions_not_booking_availability']+(['partial_restaurant_reward_only','source_conflict_lounge_admission_price_withheld'] if partial else []))
 
 def parse_detail(raw,card,observed_at):
     soup=BeautifulSoup(raw,'html.parser');root=one(soup,'main#Main')
@@ -95,7 +108,7 @@ async def collect(client,cfg,report,observed_at,limit):
     from read_budget import within_source_budget,stops_catalog
     if cfg['id']!=SOURCE or cfg['url']!=ROOT:raise ValueError('avolta_config_identity')
     client.request_interval=max(1,client.request_interval)
-    async def read(url):return await within_source_budget(client,lambda:client.read(url,render=True))
+    async def read(url):return await within_source_budget(client,lambda:client.read(url))
     cats=categories(await read(ROOT));cards=[];inventories=[]
     for url,label in cats.items():
         current=catalogue(await read(url),url,label)
@@ -108,6 +121,9 @@ async def collect(client,cfg,report,observed_at,limit):
         except Exception as exc:
             report['errors'].append({'phase':'detail','url':card['url'],'reason':str(exc)[:150] if isinstance(exc,(RuntimeError,ValueError)) else type(exc).__name__})
             if stops_catalog(exc) or str(exc) in ('http_401','http_403','access_challenge','unexpected_redirect'):break
+    from source_lifecycle import attach_inventory
+    attach_inventory(report,[c['url'] for c in cards],excluded,source_id=SOURCE)
+    report['transport']='same_origin_http'
     report['discovered']=len(rows)+len(report['errors'])
     report['coverage']=json.dumps({'scope':'public_russian_partner_categories','categories':inventories,
         'listed':len(cards),'parsed':len(rows),'excluded':excluded,

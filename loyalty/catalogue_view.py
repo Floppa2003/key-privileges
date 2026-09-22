@@ -136,6 +136,9 @@ def owned_source_text(raw):
 
 def record_row(n, as_of):
     raw=owned_source_text(n["raw"]); d=raw.get("details",{}); kind=raw["kind"]
+    from source_lifecycle import reader_hold
+    hold=reader_hold(raw,as_of)
+    if hold:return None,hold
     if kind in NOISE_KIND:return None,"неразобранный источник"
     if raw.get("source_status")=="archived":return None,"архив источника"
     if n.get("validity",{}).get("status")=="expired":return None,"истёкший срок"
@@ -207,6 +210,11 @@ def record_row(n, as_of):
         v=raw.get("validity_raw")
         if v and not is_boilerplate(text(v)):period=text(v)
     comments=raw.get("original",{}).get("fields",{}).get("Ручной комментарий",{}).get("value","")
+    if "promotion_year_inferred_from_current_page_month" in warn:
+        status="Год срока определён по контексту страницы"
+        comments="\n".join(filter(None,[text(comments),"В периоде акции год не написан; использован текущий месяц и год заголовка страницы."]))
+    if "partial_restaurant_reward_only" in warn:
+        status="Только ресторанная скидка"
     row=[name,raw.get("program") or "",headline,code,activation,terms,period or "",
          raw.get("category") or "",raw.get("observed_at") or "",source,text(comments),
          ROLE.get(kind,"Предложение"),status,raw["id"],raw["origin"],str(raw["source_row"]),raw.get("title") or ""]

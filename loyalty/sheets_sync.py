@@ -117,10 +117,12 @@ class Sheets:
                 raise ValueError('Header creation readback failed')
         return props
 
-    def upsert(self, title: str, incoming: list[list[str]]) -> int:
+    def upsert(self, title: str, incoming: list[list[str]], *, expected_before=None) -> int:
         props = self.ensure_tab(title)
         width = len(self.schemas[title])
         before = self.values(title, props)
+        if expected_before is not None and before != expected_before:
+            raise ValueError('Concurrent edit detected before reconciliation write')
         changes = plan_rows(before, incoming, width)
         if not changes:
             return 0
