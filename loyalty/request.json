@@ -1,8 +1,10 @@
 {
-  "request_id": "2026-09-22-avolta-targeted-recheck-78",
+  "request_id": "2026-09-22-coverage-reliability-79",
   "source_ids": [
-    "club_avolta_public"
+    "backit_public",
+    "club_avolta_public",
+    "mantera_moments"
   ],
-  "reason": "One bounded independent repeat of the same reviewed public browser read after run35741823411 encountered HTTP403 for Avolta. Earlier real production-source runs35733941590 and35738457482 accepted16 of17 detailed public cards with one price-conflict exclusion. Do not alter authentication, headers, TLS, access stops or provider settings. Stop on any renewed access refusal. Do not repeat Backit or Mantera: their fresh175+5 records are already being published by35741823411. Reuse existing serialized main workflow and full regression; publish only genuinely fresh accepted Avolta records and verify destination. No source account, proxy, payment, activation, new schedule or private artifact.",
+  "reason": "Fresh selected-source collection and serialized publication of merged PR79. Feature run35753691428 freshly accepted178Backit+17Avolta+6Mantera with zero errors; final run35755005927 passed1206Python+7KEY tests and all201 real-record replays after restricting DragonPass to its independently supported restaurant component with unknown activation. Use complete validated inventories for reversible holds, preserve original source dates/manual notes/row positions, and deploy only the guarded A10/C6 freshness upgrade. Inspect the independent source-health job as well as collection/publication; verify destination after all writes. No source login, coupon issuance, purchase, provider credits, new schedule, unrelated recrawl, credential or private-data export.",
   "publish": true
 }
