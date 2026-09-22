@@ -1,10 +1,8 @@
 {
-  "request_id": "2026-09-22-affordable-public-sources-78",
+  "request_id": "2026-09-22-avolta-targeted-recheck-78",
   "source_ids": [
-    "backit_public",
-    "club_avolta_public",
-    "mantera_moments"
+    "club_avolta_public"
   ],
-  "reason": "Fresh collection and serial publication of merged PR78 using the existing main workflow. Final exact production bytes passed1174Python+7KEY tests and actual-record/DOM replay in35741126878. Traverse all source-owned inventory pages, exclude inactive/acquisition/uncertain promotional entries, preserve cashback-versus-discount, country/tier/activation/coupon restrictions and practical clean-reader projection. No source login, purchase, code activation, provider credits, new schedules or unrelated source crawl. Read actual source outcomes, then independently verify new rows, existing source/manual data, original formulas and final normalization/reader manifests.",
+  "reason": "One bounded independent repeat of the same reviewed public browser read after run35741823411 encountered HTTP403 for Avolta. Earlier real production-source runs35733941590 and35738457482 accepted16 of17 detailed public cards with one price-conflict exclusion. Do not alter authentication, headers, TLS, access stops or provider settings. Stop on any renewed access refusal. Do not repeat Backit or Mantera: their fresh175+5 records are already being published by35741823411. Reuse existing serialized main workflow and full regression; publish only genuinely fresh accepted Avolta records and verify destination. No source account, proxy, payment, activation, new schedule or private artifact.",
   "publish": true
 }
