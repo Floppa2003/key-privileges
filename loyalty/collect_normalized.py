@@ -206,27 +206,30 @@ async def main():
     cfgs=select_sources(json.loads(Path(__file__).with_name('sources_normalized.json').read_text()),args.sources)
     now=datetime.now(timezone.utc).isoformat();run_id=os.getenv('GITHUB_RUN_ID',now)+':'+os.getenv('GITHUB_RUN_ATTEMPT','1')
     out=Path(args.out);out.mkdir(parents=True,exist_ok=True)
+    from collection_runtime import collect_batch, atomic_json
+    bundle = None
+    def checkpoint(results, runtime):
+        nonlocal bundle
+        bundle={'schema_version':2,'run_id':run_id,'observed_at':now,
+                'sources':[r for r,_ in results],
+                'records':[r for _,rows in results for r in rows],
+                'collection_runtime':runtime}
+        atomic_json(out/'normalized.json',bundle)
+    # Preserve code identity even if a later read or browser cleanup fails.
+    manifest={str(f):hashlib.sha256(f.read_bytes()).hexdigest() for f in Path('loyalty').glob('*.py')}
+    atomic_json(out/'code_hashes.json',manifest)
     async with async_playwright() as p:
-        browser=await p.chromium.launch();sem=asyncio.Semaphore(4)
-        async def guarded(cfg):
-            budget=source_budget(cfg)
-            try:return await bounded_source(lambda:one(browser,cfg,now,args.limit),sem,timeout=budget)
-            except asyncio.TimeoutError:
-                return {'source_id':cfg['id'],'name':cfg['name'],'root':cfg['url'],'status':'failed',
-                    'discovered':0,'normalized':0,'failed':1,'coverage':'source_timeout',
-                    'region':None,'errors':[{'phase':'source','reason':f'{budget}_second_bound'}],'observed_at':now},[]
-        try:results=await asyncio.gather(*(guarded(cfg) for cfg in cfgs))
+        browser=await p.chromium.launch()
+        try:
+            await collect_batch(cfgs,lambda cfg:one(browser,cfg,now,args.limit),
+                                source_budget,checkpoint,now)
         finally:
-            await browser.close()
-    reports=[r for r,_ in results];records=[r for _,rs in results for r in rs]
-    bundle={'schema_version':2,'run_id':run_id,'observed_at':now,'records':records,'sources':reports}
-    (out/'normalized.json').write_text(json.dumps(bundle,ensure_ascii=False,indent=2),encoding='utf8')
+            await asyncio.wait_for(browser.close(),timeout=10)
+    reports=bundle['sources'];records=bundle['records']
     with (out/'offers.jsonl').open('w',encoding='utf8') as f:
         for r in records:f.write(json.dumps(r,ensure_ascii=False)+'\n')
-    manifest={str(f):hashlib.sha256(f.read_bytes()).hexdigest() for f in Path('loyalty').glob('*.py')}
-    (out/'code_hashes.json').write_text(json.dumps(manifest,indent=2))
     (out/'coverage.json').write_text(json.dumps(reports,ensure_ascii=False,indent=2),encoding='utf8')
-    lines=['# Public loyalty collection','',f'Run: {run_id}',f'Observed: {now}','',
+    lines=['# Public loyalty collection','',f'Run: {run_id}',f'Observed: {now}',f"Collection execution: {bundle['collection_runtime']['state']}; completed {bundle['collection_runtime']['completed_sources']}/{len(cfgs)} source workers. Source health is reported separately.",'',
            '| Source | Records | Discovered | Status | Coverage |','|---|---:|---:|---|---|']
     lines.extend(f"| {r['source_id']} | {r['normalized']} | {r['discovered']} | {r['status']} | {r['coverage']} |" for r in reports)
     lines.extend(['','Counts include membership plans and campaigns, not only unique partners. Source publication is not proof of user eligibility. Failed observations never delete stored offers or refresh their dates. Complete reviewed Backit/Avolta inventories may reversibly withhold unsupported offers; the three public reward sources have a separate 7-day reader freshness limit, not an inferred expiry date.'])
