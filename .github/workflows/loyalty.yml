@@ -84,7 +84,9 @@ jobs:
           name: loyalty-public-${{ github.run_id }}-${{ github.run_attempt }}
           path: loyalty-output
       - name: Report source failures independently of successful-source publication
-        run: python loyalty/source_lifecycle.py --input loyalty-output/normalized.json
+        env:
+          SOURCE_IDS: ${{ inputs.sources || '' }}
+        run: python loyalty/source_lifecycle.py --input loyalty-output/normalized.json --sources "$SOURCE_IDS"
   publish:
     needs: collect
     if: >-

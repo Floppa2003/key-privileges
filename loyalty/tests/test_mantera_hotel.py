@@ -45,9 +45,10 @@ class ManteraPartialTests(unittest.IsolatedAsyncioTestCase):
         client=AsyncMock();client.browser=object();client.deadline=float('inf')
         client.read.return_value=html('mantera-faq.html')
         report={'errors':[]}
-        with patch('public_transport.PublicSource') as context:
+        with patch('public_transport.PublicSource') as context, patch('mantera_partners.collect',side_effect=RuntimeError('http_403')):
             context.return_value.__aenter__.side_effect=RuntimeError('http_403')
             rows=await m.collect(client,{'id':m.SOURCE,'url':m.URL},report,NOW,500)
         self.assertEqual(len(rows),5)
         self.assertEqual(report['errors'][0]['reason'],'http_403')
-        self.assertEqual(report['discovered'],6)
+        self.assertEqual(report['discovered'],7)
+        self.assertEqual(len(report['errors']),2)

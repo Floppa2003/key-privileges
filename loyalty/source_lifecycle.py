@@ -144,17 +144,30 @@ def reader_hold(raw, as_of):
         return 'наблюдение старше 7 дней'
     return None
 
-def health_summary(bundle):
+def health_summary(bundle, *, expected_sources=None):
     """Separate source health from the publication of other successful sources."""
+    report_ids = [r['source_id'] for r in bundle['sources']]
+    if len(report_ids) != len(set(report_ids)):
+        raise ValueError('duplicate_source_health_report')
     snapshots = validate_inventories(bundle)
     health = []
     for r in bundle['sources']:
         sid = r['source_id']
         if sid not in FRESHNESS_DAYS:
             continue
-        complete = (sid in snapshots) if sid in LIMITS else (r['normalized'] == 6 and r['status'] == 'ok' and not r['errors'])
+        if sid in LIMITS:
+            complete = sid in snapshots
+        else:
+            from mantera_partners import health as mantera_health
+            complete = mantera_health(r, [row for row in bundle['records'] if row['source_id'] == sid])
         health.append({'source_id': sid, 'healthy': complete, 'status': r['status'],
                        'records': r['normalized'], 'errors': len(r['errors'])})
+    if expected_sources is not None:
+        if not set(expected_sources) <= set(FRESHNESS_DAYS):
+            raise ValueError('unsupported_expected_health_source')
+        for sid in sorted(set(expected_sources) - set(report_ids)):
+            health.append({'source_id':sid, 'healthy':False, 'status':'missing_source_report',
+                           'records':0, 'errors':1})
     return health
 
 if __name__ == '__main__':
@@ -162,8 +175,12 @@ if __name__ == '__main__':
     from pathlib import Path
     p = argparse.ArgumentParser()
     p.add_argument('--input', default='loyalty-output/normalized.json')
+    p.add_argument('--sources', default='', help='Same registered source selection as the collector')
     args = p.parse_args()
-    health = health_summary(json.loads(Path(args.input).read_text()))
+    from source_selection import select_sources
+    configs = json.loads(Path(__file__).with_name('sources_normalized.json').read_text())
+    expected = [c['id'] for c in select_sources(configs, args.sources) if c['id'] in FRESHNESS_DAYS]
+    health = health_summary(json.loads(Path(args.input).read_text()), expected_sources=expected)
     print(json.dumps({'source_health': health}, ensure_ascii=False))
     import os
     if os.getenv('GITHUB_STEP_SUMMARY'):
