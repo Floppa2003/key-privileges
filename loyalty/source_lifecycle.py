@@ -187,13 +187,18 @@ if __name__ == '__main__':
     args = p.parse_args()
     from source_selection import select_sources
     configs = json.loads(Path(__file__).with_name('sources_normalized.json').read_text())
-    expected = [c['id'] for c in select_sources(configs, args.sources) if c['id'] in FRESHNESS_DAYS]
-    health = health_summary(json.loads(Path(args.input).read_text()), expected_sources=expected)
-    print(json.dumps({'source_health': health}, ensure_ascii=False))
+    selected = select_sources(configs, args.sources)
+    expected = [c['id'] for c in selected if c['id'] in FRESHNESS_DAYS]
+    bundle = json.loads(Path(args.input).read_text())
+    health = health_summary(bundle, expected_sources=expected)
+    from collection_runtime import execution_health
+    execution = execution_health(bundle, [c['id'] for c in selected])
+    print(json.dumps({'collection_execution': execution, 'source_health': health}, ensure_ascii=False))
     import os
     if os.getenv('GITHUB_STEP_SUMMARY'):
-        lines=['## Public reward source health', '', '| Source | Healthy | Records | Errors |', '|---|---|---:|---:|']
+        lines=['## Collection execution and public reward source health', '',
+               f"Execution complete: {execution['healthy']}; state: {execution['state']}; reports: {execution['reported_sources']}/{execution['expected_sources']}.", '', '| Source | Healthy | Records | Errors |', '|---|---|---:|---:|']
         lines.extend(f"| {r['source_id']} | {r['healthy']} | {r['records']} | {r['errors']} |" for r in health)
         with open(os.environ['GITHUB_STEP_SUMMARY'],'a') as f:
             f.write('\n'.join(lines)+'\n')
-    raise SystemExit(0 if all(r['healthy'] for r in health) else 1)
+    raise SystemExit(0 if execution['healthy'] and all(r['healthy'] for r in health) else 1)
