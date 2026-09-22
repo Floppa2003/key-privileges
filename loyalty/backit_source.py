@@ -10,9 +10,9 @@ SOURCE='backit_public'
 ROOT='https://backit.me/ru/cashback/shops'
 PROGRAM='Backit — денежный кешбэк'
 MAX_CARDS=1200
-EXCLUDED_NAME=re.compile(r'банк|bank|кредит|займ|вклад|ипотек|инвестиц|расч[её]тн|РКО|супер.?сплит|(?:^|\W)(?:ВТБ|МКБ|ОТП)(?:\W|$)|Яндекс Браузер|ваканси|работа курьер|ставки на спорт|букмек|казино|casino|(?:^|\W)bet(?:\W|$)',re.I)
+EXCLUDED_NAME=re.compile(r'банк|bank|дебетов|кредит|займ|вклад|ипотек|инвестиц|расч[её]тн|РКО|супер.?сплит|(?:^|\W)(?:ВТБ|МКБ|ОТП)(?:\W|$)|Яндекс Браузер|ваканси|работа курьер|ставки на спорт|букмек|казино|casino|(?:^|\W)bet(?:\W|$)',re.I)
 NUM=r'\d+(?:[ \u00a0\u202f]\d{3})*(?:[.,]\d+)?'
-UNIT=r'%|р\.?|руб\.?|₽|\$|USD|€|EUR'
+UNIT=r'%|р\.?|p\.?|руб\.?|₽|\$|USD|€|EUR'
 RATE=re.compile(rf'(?P<qual>до|от)?\s*(?:(?P<lo>{NUM})\s*(?P<lo_unit>{UNIT})?\s*[-–—]\s*)?(?P<value>{NUM})\s*(?P<unit>{UNIT})',re.I)
 
 class ExcludedOffer(ValueError):
@@ -42,8 +42,13 @@ def source_fields(e):
     if e.get('promo_period'):raise ExcludedOffer('dated_promotional_rate_requires_current_confirmation')
     tariffs=e.get('tariffs',[])
     if not 1<=len(tariffs)<=80:raise ValueError('backit_tariff_count')
-    claims=[];terms=[];zero_tariffs=[]
+    claims=[];terms=[];zero_tariffs=[];coupons=[]
     for row in tariffs:
+        if not row['rate'] and re.search(r'промокод',row['scope'],re.I):
+            zero_tariffs.append(row['scope'])
+            code=re.match(r'([A-Z0-9_-]{3,50})\s+промокод\b',row['scope'],re.I)
+            if code:coupons.append('Промокод: '+code[1])
+            continue
         m=RATE.fullmatch(row['rate'])
         if not m or not row['scope']:raise ValueError('backit_unparsed_tariff')
         amount=number(m['value']);unit=m['unit']
@@ -53,6 +58,7 @@ def source_fields(e):
         if unit=='percent' and float(amount)>100:raise ValueError('backit_invalid_percent')
         if m['lo'] and (float(number(m['lo']))>float(amount) or (m['lo_unit'] and m['lo_unit']!=m['unit'])):raise ValueError('backit_invalid_range')
         display=(m['lo']+'–'+m['value']+m['unit']) if m['lo'] else row['rate']
+        display=re.sub(r'p\.?$', 'р.', display, flags=re.I)
         claim='Кешбэк '+display+' — '+row['scope'];claims.append(claim)
         terms.append(dict(kind='cashback',value=amount,unit=unit,qualifier='range' if m['lo'] else {'до':'up_to','от':'at_least'}.get(m['qual'],'exact'),reward_unit='cash_after_merchant_confirmation',fragment=claim,scope={'tariff_condition':row['scope']}))
         if m['lo']:terms[-1]['value_min']=number(m['lo'])
@@ -60,13 +66,16 @@ def source_fields(e):
     if not e.get('activation') or not e.get('conditions'):raise ValueError('backit_missing_practical_terms')
     if not re.search(r'зарегистрирован|уч[её]тн|регистрац|Войдите|Вход',e['activation'],re.I):raise ValueError('backit_activation_owner')
     return dict(native=urlsplit(url).path.rsplit('/',1)[-1],program=PROGRAM,partner=name,title='Backit → '+name,
-        benefit='\n'.join(claims),conditions='\n'.join([e['conditions'],*zero_tariffs]),activation=e['activation'],category='Покупки / услуги / денежный кешбэк',url=url,
+        benefit='\n'.join(claims),conditions='\n'.join([e['conditions'],*zero_tariffs]),activation='\n'.join([e['activation'],*coupons]),category='Покупки / услуги / денежный кешбэк',url=url,
         locator='.shop-rates > .row; .shop-conditions; scoped cashback instructions',terms=terms,
         scope={'shop_slug':urlsplit(url).path.rsplit('/',1)[-1],'eligibility_not_verified':True},warnings=['cashback_not_upfront_discount','payout_method_and_minimum_require_account_review']+(['merchant_specific_conditions_not_displayed'] if e.get('merchant_conditions_absent') else []))
 
 def parse_detail(raw,card,observed_at):
     if card.get('inactive'):raise ExcludedOffer('source_disclosed_temporarily_disabled')
-    soup=BeautifulSoup(raw,'html.parser');card_url(card['url']);name=plain(one(soup,'span.mobile.name'))
+    soup=BeautifulSoup(raw,'html.parser');card_url(card['url'])
+    if not soup.select('span.mobile.name,.shop-rates,.shop-conditions') and soup.select('a.mu-store__wrapper[href]') and plain(soup.title)=='Backit':
+        raise ExcludedOffer('detail_page_replaced_by_catalogue')
+    name=plain(one(soup,'span.mobile.name'))
     if name!=card['name']:raise ValueError('backit_detail_name_disagrees_with_inventory')
     table=one(soup,'.shop-rates');tariffs=[]
     for node in table.select(':scope > .row'):
