@@ -9,6 +9,7 @@ CARD={'url':a.PREFIX+'zaly-ozhidaniya/dragonpass','name':'Dragonpass','category'
 class ComponentScopeTests(unittest.TestCase):
     def test_price_conflict_withholds_only_lounge_component(self):
         row=a.parse_detail(html('avolta-dragonpass.html'),CARD,NOW)
+        self.assertEqual(row['redemption_text'],'')
         n=common(row)
         self.assertEqual([(x['kind'],x['value']) for x in n['benefits']],[('discount','25')])
         reader,reason=record_row(n,NOW[:10]);self.assertIsNone(reason)

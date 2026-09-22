@@ -76,7 +76,8 @@ def source_fields(e):
                 raise ExcludedOffer('source_conflict_lounge_admission_price')
             claim=next((m[0] for m in restaurant if m[0].lower().startswith('скидки ')),restaurant[0][0])
             claim=claim[0].upper()+claim[1:]
-            activation='\n'.join(s for s in re.split(r'(?<=[.!?])\s+',body) if ACTION.search(s))
+            # The published app instruction concerns lounge entry, not this reward.
+            activation=''
             conditions=claim+'\nЦена прохода в зал на странице противоречива; тариф прохода не включён в это предложение.\nПодробный порядок применения скидки в ресторане на странице не раскрыт.\nСогласно правилам и условиям.'
             partial=True
     if not partial:
