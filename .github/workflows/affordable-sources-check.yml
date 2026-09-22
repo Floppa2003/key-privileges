@@ -36,17 +36,16 @@ jobs:
               pending=[]
               try:
                   async with PublicSource(browser,url) as client:
-                      await client.robots();r['robots_state']=client.robots_state
+                      await client.robots();r['robots_state']=client.robots_info['state']
                       page=client.page
                       async def response(res):
                           p=urlsplit(res.url)
-                          if res.request.resource_type not in ('xhr','fetch') or not any(x in p.hostname for x in ('backit','clubavolta')):return
+                          if res.request.resource_type not in ('xhr','fetch') or not any(x in (p.hostname or '') for x in ('backit','clubavolta')):return
                           n={'url':safe_url(res.url),'status':res.status};r['network'].append(n)
                           if label=='backit' and '/shops' in p.path and res.status==200 and 'json' in res.headers.get('content-type',''):
                               raw=await res.body()
                               if len(raw)<2500000:
                                   payload=json.loads(raw)
-                                  # Keep public catalogue objects only. No auth/profile endpoints or response headers.
                                   def scrub(value):
                                       if isinstance(value,dict):return {k:scrub(v) for k,v in value.items() if not re.search(r'token|cookie|password|secret|session|email|phone|user_id',k,re.I)}
                                       if isinstance(value,list):return [scrub(v) for v in value]
