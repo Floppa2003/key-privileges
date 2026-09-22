@@ -2,13 +2,13 @@ name: Public coverage closure inspection
 on:
   push:
     branches: ["loyalty/public-coverage-closure-20260923"]
-    paths: ["diagnostics/gorod_public_routes.py", ".github/workflows/public-coverage-closure.yml"]
+    paths: ["diagnostics/gorod_inventory_capture.py", ".github/workflows/public-coverage-closure.yml"]
 permissions:
   contents: read
 jobs:
   inspect:
     runs-on: ubuntu-24.04
-    timeout-minutes: 3
+    timeout-minutes: 6
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
@@ -17,11 +17,11 @@ jobs:
         with:
           python-version: "3.12"
       - run: python -m pip install requests==2.32.5 beautifulsoup4==4.14.3
-      - run: python diagnostics/gorod_public_routes.py
+      - run: python diagnostics/gorod_inventory_capture.py
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
-          name: gorod-public-routes-${{ github.run_id }}
-          path: gorod-route-evidence/
+          name: gorod-complete-inventory-${{ github.run_id }}
+          path: gorod-complete-inventory/
           if-no-files-found: error
           retention-days: 1
