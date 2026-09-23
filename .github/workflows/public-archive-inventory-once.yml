@@ -1,0 +1,99 @@
+name: One-time public archive alternatives inventory
+on:
+  push:
+    branches: [research/public-alternatives-20260924]
+    paths: [.github/workflows/public-archive-inventory-once.yml]
+permissions:
+  contents: write
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - run: python -m pip install --quiet requests==2.32.5 beautifulsoup4==4.14.3
+      - name: Read bounded public channel searches and preserve only public research evidence
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import requests,json,time,hashlib,re,os,base64
+          from urllib.parse import urlencode,urlsplit,parse_qs,urljoin
+          from datetime import datetime,timezone
+          from bs4 import BeautifulSoup
+          names='Додо Пицца|Литрес|ЭЛКОМ|Afisha.ru|Одурманки|Мандроги|Direct Hotels|MAlbums|НеПростой театр|Атлон|Divan.ru|Юшина|Шишки на Лампушке|ПиццаН|ТОКИО-CITY|Лесная Рапсодия|АртФлора|FlyStation|Ладожские дюны|Важная рыба|Пасторское озеро|ВСК|Лосево Парк|WhiteResort|Папа Джонс|СберАвто|Зенит|ГОРБИЛЕТ|parallel 60|Airo|ИЛЬ ДЕ БОТЭ|Профхим78|Zetta|Отелло|Джельмино|КОРОЛЬ ГОВОРИТ|Арт-паркИНГ|Алые паруса|Hello World|MAXIMUM Education|Клуб приключений|Академиа Васильевский|Особняк Теплова|Семицветик|Особняк Шувалова|Kaspersky|Лошадиная сила|Индифиш|Русские Музыкальные Сезоны|Коннект Тур|Фоксфорд|Nevatrip|Дом Книги|УНЕ|Levrana|Mafin|BeAcademy|Ростелеком|Формула речи|Таврическая|Абсолют Страхование|НЕВСКИЙ 130|ROXY-KIDS|Синяя птица|Книжная лавка писателей|Музей Магии|Flowwow|Sun Stone|КолесоСити|Meatcake|Теплоход СПб|Роза ветров|Невские сезоны|Нева Тревел|Планетарий|ITC Group|Квестгуру|Level One|Advance|Культпоход|iLocked|London Express|Взаперти|АльфаСтрахование|ЧИТМИЛПОНЧИК|Хроники огненной истории|Prometey Home|Fluffy Friends|Арт-Тир|Анны Павловой|Компас ВЭД|Архыз Сервис|ARTSTUDIO|Пироговый Дворик|Черничный Берег|Единый Центр Водного Туризма|НДФЛКА|Шефмаркет|Гуру Сна|VkusLifeSPB|Chocoroom|ACQUALINA|Умная Автошкола|PeliBox|Папирус|Зрение'.split('|')
+          assert len(names)==106 and len(set(names))==106
+          tasks=[{'scope':'EKP','id':i+1,'channel':'ekpcard','query':q} for i,q in enumerate(names)]
+          tasks += [{'scope':'RZD','id':i+1,'channel':'fpcrussia','query':q} for i,q in enumerate(['Смарт Плюс','Grand Karat','Адмиралтейская','Hilton Garden','Саквояж','Chekhoff','Station','Airo'])]
+          def now():return datetime.now(timezone.utc).isoformat()
+          def norm(x):return re.sub(r'[^a-zа-яё0-9]','',x.lower())
+          start=time.monotonic();stopped=False;requests_count=0;out=[];next_request=0
+          def get(url):
+            global next_request,requests_count,stopped
+            if stopped or time.monotonic()-start>900 or requests_count>=160:raise RuntimeError('inventory_bound_or_stopped')
+            time.sleep(max(0,next_request-time.monotonic()));next_request=time.monotonic()+3
+            requests_count+=1
+            with requests.Session() as s:
+              s.trust_env=False
+              with s.get(url,headers={'User-Agent':'PublicLoyaltyResearch/1.0'},timeout=(8,18),allow_redirects=False,stream=True) as r:
+                info={'url':url,'observed_at':now(),'status':r.status_code,'server_date':r.headers.get('Date'),'cache_age':r.headers.get('Age')}
+                if r.status_code in (401,403,423,429) or r.headers.get('Retry-After'):
+                  stopped=True;return info,None
+                if r.status_code!=200:return info,None
+                raw=bytearray();deadline=time.monotonic()+25
+                for part in r.iter_content(65536):
+                  raw.extend(part)
+                  if len(raw)>2500000 or time.monotonic()>deadline:raise ValueError('response_bound')
+                data=bytes(raw);info.update(bytes=len(data),sha256=hashlib.sha256(data).hexdigest());return info,BeautifulSoup(data,'html.parser')
+          for task in tasks:
+            if stopped or time.monotonic()-start>900:break
+            row={**task,'requests':[],'messages':[],'pagination_exhausted':False};out.append(row)
+            channel=task['channel'];q=task['query'];url='https://t.me/s/'+channel+'?'+urlencode({'q':q});seen=set();next_urls=[]
+            try:
+              for page_index in range(2):
+                info,dom=get(url);row['requests'].append(info)
+                if dom is None:row['outcome']='source_refused_or_non_200';break
+                inputs=[x.get('value') for x in dom.select('input[name=q]')];info['query_echo_matches']=q in inputs
+                if q not in inputs:row['outcome']='search_query_not_confirmed';break
+                matches=0
+                for node in dom.select('.tgme_widget_message[data-post]'):
+                  native=node.get('data-post','');body=node.select_one('.tgme_widget_message_text');dt=node.select_one('time[datetime]')
+                  if not re.fullmatch(re.escape(channel)+r'/[0-9]+',native) or body is None or native in seen:continue
+                  txt=body.get_text(' ',strip=True)
+                  if norm(q) not in norm(txt):continue
+                  seen.add(native);matches+=1
+                  item={'native_id':native,'url':'https://t.me/'+native,'published_at':dt.get('datetime') if dt else None,'characters':len(txt),'sha256':hashlib.sha256(txt.encode()).hexdigest()}
+                  if re.search(r'победител[ьяеи]|выигравшие|розыгрыш заверш[её]н|номера участников',txt,re.I):item['excluded']='winner_or_participant_post'
+                  else:
+                    candidate=bool(re.search(r'\d+[,.]?\d*\s*%|\d+\s*(?:балл|рубл)|в подарок|промокод',txt,re.I))
+                    item['quantified_or_code_candidate']=candidate
+                    item['text']=txt[:5000] if candidate else None;item['text_omitted']=not candidate;item['text_truncated']=candidate and len(txt)>5000
+                    links=[]
+                    for a in body.select('a[href]'):
+                      u=urlsplit(a['href'])
+                      if u.scheme in ('http','https') and u.hostname and not u.username and not u.password:
+                        link=u._replace(query='',fragment='').geturl()
+                        if link not in links:links.append(link)
+                    item['linked_public_paths']=links[:20];item['links_truncated']=len(links)>20
+                  row['messages'].append(item)
+                info['matching_messages']=matches;next_urls=[]
+                for a in dom.select('a.tme_messages_more[href]'):
+                  u=urlsplit(urljoin(url,a['href']));p=parse_qs(u.query)
+                  if u.scheme=='https' and u.hostname=='t.me' and u.path=='/s/'+channel and p.get('q')==[q] and p.get('before') and u.geturl() not in next_urls:next_urls.append(u.geturl())
+                row['outcome']='public_search_read';row['unread_next_pages']=next_urls
+                if not next_urls:row['pagination_exhausted']=True;break
+                url=next_urls[0]
+            except Exception as e:row.update(outcome='incomplete',error=type(e).__name__)
+            print('ARCHIVE_ROW '+json.dumps({k:v for k,v in row.items() if k not in ('messages','requests')}|{'read_pages':len(row['requests']),'messages':len(row['messages']),'candidates':sum(x.get('quantified_or_code_candidate',False) for x in row['messages'])},ensure_ascii=False),flush=True)
+          summary={'run_id':os.environ['GITHUB_RUN_ID'],'execution_commit':os.environ['GITHUB_SHA'],'finished_at':now(),'planned':len(tasks),'processed':len(out),'requests':requests_count,'stopped_on_refusal':stopped,'fully_processed_tasks':sum(x.get('outcome')=='public_search_read' and x['pagination_exhausted'] for x in out),'candidate_occurrences':sum(m.get('quantified_or_code_candidate',False) for x in out for m in x['messages']),'scope':'source_public_search_exact_query_max_two_pages_not_all_websites_or_eligibility','production_publication':False,'source_accounts_used':False}
+          body='\n'.join(json.dumps(x,ensure_ascii=False,sort_keys=True) for x in out)+'\n'
+          # Save only this research ledger, in this task's branch. Never print GitHub authorization.
+          repo='Floppa2003/key-privileges';branch='research/public-alternatives-20260924';path='loyalty/research/public_archive_alternatives_20260924.jsonl'
+          endpoint='https://api.github.com/repos/'+repo+'/contents/'+path
+          headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'}
+          check=requests.get(endpoint,headers=headers,params={'ref':branch},timeout=20)
+          if check.status_code!=404:raise RuntimeError('research_path_already_exists_or_unreadable')
+          result=requests.put(endpoint,headers=headers,json={'branch':branch,'message':'Preserve bounded public EKP and RZD archive search evidence','content':base64.b64encode(body.encode()).decode()},timeout=30)
+          if result.status_code!=201:raise RuntimeError('research_result_write_failed')
+          summary['result_commit']=result.json()['commit']['sha'];summary['result_blob']=result.json()['content']['sha'];summary['result_path']=path;summary['result_bytes']=len(body.encode());summary['result_sha256']=hashlib.sha256(body.encode()).hexdigest()
+          print('ARCHIVE_SUMMARY '+json.dumps(summary,ensure_ascii=False),flush=True)
+          PY
