@@ -1,0 +1,182 @@
+name: One-time access boundary diagnostic
+on:
+  push:
+    branches: [diagnostics/access-boundary-20260923]
+    paths: [.github/workflows/access-boundary-diagnostic.yml]
+permissions:
+  contents: read
+jobs:
+  anonymous:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Install diagnostic dependencies
+        run: python -m pip install --quiet requests==2.32.5 beautifulsoup4==4.14.3
+      - name: Inspect anonymous response shapes, never publish protected values
+        shell: bash
+        run: |
+          python - <<'PY'
+          import requests, json, hashlib, time, re
+          from datetime import datetime, timezone
+          from urllib.parse import urlsplit, urljoin
+          from bs4 import BeautifulSoup
+          report={'started_at':datetime.now(timezone.utc).isoformat(),'source_credentials_used':False,'source_cookies_used':False,'production_write':False,'probes':[]}
+          def clean_url(u):
+              x=urlsplit(u)
+              return x.scheme+'://'+x.netloc+x.path
+          def request(method,url,payload=None):
+              result={'method':method,'url':url,'observed_at':datetime.now(timezone.utc).isoformat()}
+              s=requests.Session();s.trust_env=False
+              try:
+                  with s.request(method,url,json=payload,headers={'User-Agent':'LoyaltyPublicBoundaryAudit/1.0','Accept':'application/json,text/html'},timeout=(8,25),allow_redirects=False,stream=True) as r:
+                      result.update(status=r.status_code,content_type=r.headers.get('Content-Type'),server_date=r.headers.get('Date'),cache_age=r.headers.get('Age'),retry_after_present=bool(r.headers.get('Retry-After')))
+                      if r.headers.get('Location'):result['redirect_to_without_query']=clean_url(urljoin(url,r.headers['Location']))
+                      if r.status_code in (401,403,423,429) or r.headers.get('Retry-After'):
+                          result['outcome']='http_refusal_no_retry';return result,None
+                      if r.status_code!=200:
+                          result['outcome']='non_200_no_follow';return result,None
+                      data=bytearray()
+                      for block in r.iter_content(65536):
+                          data.extend(block)
+                          if len(data)>5000000:raise ValueError('response_size_limit')
+                      result.update(bytes=len(data),response_sha256=hashlib.sha256(data).hexdigest())
+                      return result,bytes(data)
+              except Exception as e:
+                  result.update(outcome='transport_or_size_error',error=type(e).__name__)
+                  return result,None
+              finally:s.close()
+          def field_state(row,key):
+              if key not in row:return 'missing'
+              v=row[key]
+              if v is None:return 'null'
+              if not isinstance(v,str):return 'unexpected_type'
+              t=BeautifulSoup(v,'html.parser').get_text(' ',strip=True)
+              if not t:return 'empty'
+              if re.search(r'авторизуйтесь|войдите в личный|для просмотра.*вход',t,re.I):return 'login_instruction_present'
+              return 'nonempty_text_not_published'
+          url='https://ekp.spb.ru/api/portal/loyalty/partners'
+          query={'pagination':{'limit':120,'offset':0},'filters':{'categories':[],'name':'','qrDiscount':False,'region':'98'}}
+          r,raw=request('POST',url,query)
+          if raw is not None:
+              try:
+                  p=json.loads(raw)
+                  rows=p.get('partners')
+                  if not isinstance(rows,list):raise ValueError('not_catalogue')
+                  r.update(outcome='anonymous_catalogue_shape_read',total=p.get('total'),offset=p.get('offset'),sample_rows=len(rows),pages_read=1,catalogue_complete=False)
+                  counts={};samples=[]
+                  for row in rows:
+                      flag=row.get('description_authorized')
+                      if type(flag) is not bool:raise ValueError('unexpected_access_flag')
+                      states={k:field_state(row,k) for k in ('loyaltyDescription','discountScheme')}
+                      signature=json.dumps({'restricted_flag':flag,**states},sort_keys=True)
+                      counts[signature]=counts.get(signature,0)+1
+                      if flag and len(samples)<5:samples.append({'public_partner_id':row.get('id'),'field_states':states})
+                  r['raw_field_state_counts']=counts;r['restricted_samples_without_values']=samples
+                  r['protected_values_saved']=False
+              except Exception as e:r.update(outcome='not_verified_catalogue_json',parse_error=type(e).__name__)
+          report['probes'].append(r)
+          r,raw=request('GET','https://benefits.konsierge.com/api/client/v1/benefits')
+          if raw is not None:r['outcome']='anonymous_200_content_not_exported'
+          report['probes'].append(r)
+          paths=[
+              '/promo/skidka-15-na-prozhivanie-v-otele-sakvoyazh-vpechatleniy/',
+              '/promo/skidka-18-na-prozhivanie-v-gostinitse-admiralteyskaya-pri-bronirovanii-na-ofitsialnom-sayte/',
+              '/promo/skidka-15-po-promokodu-na-prozhivanie-v-otele-hilton-garden-inn-4-gorod-volgograd/',
+              '/promo/15-skidka-v-chekhoff-hotel-moscow-curio-collection-by-hilton-g-moskva_2026/',
+              '/promo/skidka-16-na-prozhivanie-v-seti-oteley-station-hotels-v-sankt-peterburge/',
+              '/promo/1500-ballov-rzhd-bonus-i-skidka-25-na-pervyy-zakaz-ot-airo-ru_summer_2026/']
+          for i,path in enumerate(paths):
+              if i:time.sleep(21)
+              url='https://www.rzd-bonus.ru'+path
+              r,raw=request('GET',url)
+              if raw is not None:
+                  soup=BeautifulSoup(raw,'html.parser')
+                  title=soup.title.get_text(' ',strip=True) if soup.title else ''
+                  text=soup.get_text(' ',strip=True)
+                  r.update(outcome='anonymous_html_shape_read',page_title=title[:250],password_inputs=len(soup.select('input[type=password]')),rzd_login_heading_present='Вход в РЖД Бонус' in text,structured_data_scripts=len(soup.select('script[type="application/ld+json"]')),scripts=[clean_url(urljoin(url,x['src'])) for x in soup.select('script[src]') if urlsplit(urljoin(url,x['src'])).hostname in ('www.rzd-bonus.ru','rzd-bonus.ru')][:12],page_values_saved=False)
+              report['probes'].append(r)
+              if r.get('status') in (403,423,429) or r.get('retry_after_present'):
+                  report['rzd_remaining_not_requested_reason']='host_refusal_stop';break
+          report['finished_at']=datetime.now(timezone.utc).isoformat()
+          print('ANONYMOUS_RESULT_BEGIN')
+          print(json.dumps(report,ensure_ascii=False,indent=2))
+          print('ANONYMOUS_RESULT_END')
+          PY
+  static-apk:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 13
+    steps:
+      - name: Install public-package download dependency
+        run: python -m pip install --quiet requests==2.32.5
+      - name: Download signed package and inspect benefits client without executing the app
+        shell: bash
+        run: |
+          python - <<'PY'
+          import os,json,requests,hashlib,subprocess,zipfile,io,re,stat
+          from pathlib import Path
+          from datetime import datetime,timezone
+          report={'started_at':datetime.now(timezone.utc).isoformat(),'source_credentials_used':False,'app_executed':False,'catalogue_requests':0,'credential_literals_exported':False}
+          tmp=Path(os.environ['RUNNER_TEMP'])/'access-static';tmp.mkdir()
+          def fetch(url,cap=120000000):
+              s=requests.Session();s.trust_env=False
+              try:
+                  with s.get(url,timeout=(8,50),stream=True) as r:
+                      if r.status_code!=200:raise RuntimeError('download_http_'+str(r.status_code))
+                      data=bytearray()
+                      for chunk in r.iter_content(65536):
+                          data.extend(chunk)
+                          if len(data)>cap:raise RuntimeError('download_size_limit')
+                      return bytes(data)
+              finally:s.close()
+          try:
+              helper=fetch('https://raw.githubusercontent.com/Floppa2003/key-privileges/diagnostics/only-assist-android-20260920/diagnostics/only_assist_package.py',100000)
+              gitsha=hashlib.sha1(b'blob '+str(len(helper)).encode()+b'\0'+helper).hexdigest()
+              if gitsha!='aa5a655eef17061b6b6199ebbc1d8708be148664':raise RuntimeError('reviewed_helper_changed')
+              script=tmp/'package.py';script.write_bytes(helper)
+              p=subprocess.run(['python',str(script)],cwd=tmp,stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=300)
+              pack=json.loads((tmp/'only-assist-evidence/package_report.json').read_text())
+              report['package']={k:pack.get(k) for k in ('store','static_inspection_complete','apk_total_bytes','error')}
+              if not pack.get('static_inspection_complete'):raise RuntimeError('package_preparation_failed')
+              install=json.loads((Path(os.environ['RUNNER_TEMP'])/'only-assist-install.json').read_text())
+              report['base_apk_sha256']=hashlib.sha256(Path(install['base']).read_bytes()).hexdigest()
+              release=json.loads(fetch('https://api.github.com/repos/skylot/jadx/releases/tags/v1.5.6',200000))
+              assets=[a for a in release.get('assets',[]) if a['name']=='jadx-1.5.6.zip']
+              if len(assets)!=1:raise RuntimeError('jadx_asset_not_unique')
+              a=assets[0];raw=fetch(a['browser_download_url'])
+              digest=hashlib.sha256(raw).hexdigest()
+              if a.get('digest') and a['digest']!='sha256:'+digest:raise RuntimeError('jadx_asset_digest_mismatch')
+              report['decompiler']={'tag':'v1.5.6','sha256':digest,'release_digest_verified':bool(a.get('digest'))}
+              tool=tmp/'jadx';tool.mkdir()
+              with zipfile.ZipFile(io.BytesIO(raw)) as z:
+                  for info in z.infolist():
+                      dest=(tool/info.filename).resolve()
+                      if not dest.is_relative_to(tool.resolve()) or stat.S_ISLNK(info.external_attr>>16):raise RuntimeError('unsafe_tool_archive')
+                  z.extractall(tool)
+              (tool/'bin/jadx').chmod(0o700)
+              out=tmp/'decompiled'
+              p=subprocess.run([str(tool/'bin/jadx'),'--no-res','-j','2','-d',str(out),install['base']],stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=450)
+              report['decompiler']['exit_code']=p.returncode
+              root=out/'sources'; client=root/'com/konsierge/konsierge/api/benefits/BenefitsClient.java'
+              if not client.exists():raise RuntimeError('benefits_client_not_decompiled')
+              rawtext=client.read_text()
+              def redact(t):
+                  t=re.sub(r'/\*.*?\*/','',t,flags=re.S)
+                  t=re.sub(r'"(?:\\.|[^"\\])*"','"[literal omitted]"',t)
+                  t=re.sub(r"'(?:\\.|[^'\\])*'","'[literal omitted]'",t)
+                  return t
+              report['benefits_client']={'file':str(client.relative_to(root)),'sha256':hashlib.sha256(client.read_bytes()).hexdigest(),'complete_sanitized_class':redact(rawtext)}
+              candidates=[]
+              for f in (root/'com/konsierge').rglob('*.java'):
+                  if f.name=='BuildConfig.java':continue
+                  t=f.read_text(errors='replace')
+                  if 'BenefitsClient' not in t and not ('Interceptor' in f.name and 'implements' in t):continue
+                  relevant=[{'line':i,'structure':redact(line).strip()} for i,line in enumerate(t.splitlines(),1) if re.search(r'BenefitsClient|addInterceptor|addNetworkInterceptor|new OkHttpClient|Authenticator|Interceptor|Authorization',line)]
+                  if relevant:candidates.append({'file':str(f.relative_to(root)),'sha256':hashlib.sha256(f.read_bytes()).hexdigest(),'lines':relevant[:40]})
+                  if len(candidates)>=20:break
+              report['related_network_structures']=candidates
+              report['outcome']='static_class_inspected_not_server_authorization_proof'
+          except Exception as e:
+              report['outcome']='static_inspection_incomplete';report['error']=str(e)[:150] if isinstance(e,RuntimeError) else type(e).__name__
+          report['finished_at']=datetime.now(timezone.utc).isoformat()
+          print('STATIC_RESULT_BEGIN');print(json.dumps(report,ensure_ascii=False,indent=2));print('STATIC_RESULT_END')
+          PY
