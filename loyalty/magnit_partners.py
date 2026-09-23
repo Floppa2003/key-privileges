@@ -76,7 +76,7 @@ def practical_content(html):
 def period(text):
     months=('января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря')
     text=re.sub(r'(\d{1,2})\s+('+ '|'.join(months) +r')\s+(\d{4})',lambda m:m[1].zfill(2)+'.'+str(months.index(m[2].lower())+1).zfill(2)+'.'+m[3],text,flags=re.I)
-    pairs=re.findall(r'(?:Общий срок проведения акции|Сроки акции|Период проведения акции|Акция действует)\s*:?\s*с\s*(\d{2}\.\d{2}\.\d{4})\s*(?:по|до|–|-)\s*(\d{2}\.\d{2}\.\d{4})',text,re.I)
+    pairs=re.findall(r'(?:Общий срок проведения акции|Срок проведения акции|Сроки акции|Период проведения акции|условия акции в период|Акция действует)\s*:?\s*с\s*(\d{2}\.\d{2}\.\d{4})(?:\s+года?)?\s*(?:по|до|–|-)\s*(\d{2}\.\d{2}\.\d{4})',text,re.I)
     ends=re.findall(r'(?:акци\w*\s+действует\s+до|предложение\s+действует\s+до|Срок\s+действия\s+акции\s*:\s*до)\s*(\d{2}\.\d{2}\.\d{4})',text,re.I)
     if len(set(pairs))>1 or (pairs and ends and set(ends)!={pairs[0][1]}):raise ValueError('magnit_conflicting_period')
     return (iso(pairs[0][0]),iso(pairs[0][1])) if pairs else (None,iso(ends[0]) if len(set(ends))==1 else None)
@@ -93,16 +93,16 @@ def source_fields(e):
     # of another subscription (e.g. 399 RUB/month) as a Magnit card fee or reward.
     conditions=body+'\n'+e['disclaimer']
     if e.get('rule_links'):conditions+='\nПравила предложения: '+'; '.join(e['rule_links'])
-    return dict(native=e['native'],program=PROGRAMS[SOURCE],partner=e['partner'],title=title,benefit=title,
-        conditions=conditions.strip(),activation='Войти в профиль Магнит Плюс.\n'+e['steps'],url=e['url'],
-        category=e.get('category') or 'Партнёры',locator='public partners-detail store, content and steps',
+    return dict(native=e['native'],program=PROGRAMS[SOURCE],partner=compact(e['partner']),title=title,benefit=title,
+        conditions=conditions.strip(),activation='Войти в профиль Магнит Плюс.\n'+e['steps'].strip(),url=e['url'],
+        category=compact(e.get('category')) or 'Партнёры',locator='public partners-detail store, content and steps',
         terms=[dict(kind='partner_privilege',fragment=title)],valid_from=start,valid_until=end,
         scope={'Magnit_loyalty_membership_required':True,'eligibility_not_verified':True},
         warnings=['partner_subscription_cost_not_Magnit_card_service_fee','bonuses_not_cashback_to_bank_card'])
 
 def detail(raw,card,categories,now):
     native=card['native'];d=public_data(raw,'partners-detail:'+native)
-    s=BeautifulSoup(raw,'html.parser');heading=plain(one(s,'h1.partners-detail-page__title'))
+    s=BeautifulSoup(raw,'html.parser');heading=compact(plain(one(s,'h1.partners-detail-page__title')))
     if heading!=compact(d['title']) or compact(d['partner'])!=compact(card['partner']):raise ValueError('magnit_dom_store_identity')
     disc=s.select('.partners-detail-page__disclaimer')
     e=dict(native=native,url=ROOT+'/'+native,title=heading,catalogue_title=card['title'],partner=d['partner'],

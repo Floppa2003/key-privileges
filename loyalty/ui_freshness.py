@@ -8,9 +8,11 @@ UI_TAB = 'Скидки'
 UI_ID = 2026092001
 FORMULA_RANGE = "'Скидки'!A10"
 NOTE_RANGE = "'Скидки'!C6"
-PROGRAMMES = ('Backit — денежный кешбэк', 'Club Avolta', 'Мантера Моменты')
+LEGACY_PROGRAMMES = ('Backit — денежный кешбэк', 'Club Avolta', 'Мантера Моменты')
+from expansion_common import PROGRAMS as EXPANSION_PROGRAMMES
+PROGRAMMES = LEGACY_PROGRAMMES + tuple(EXPANSION_PROGRAMMES.values())
 NOTE = ('Только конкретные предложения. Реклама и отключённые карточки исключены. '
-        'Для Backit, Club Avolta и «Мантера Моменты» нужны наблюдения не старше 7 дней; '
+        'Для Backit, Club Avolta, Мантеры, X5, Магнита, «Города» и «Цветного» нужны наблюдения не старше 7 дней; '
         'это предел свежести проверки, а не срок самой акции.')
 
 def upgrade_formula(formula):
@@ -25,9 +27,13 @@ def upgrade_formula(formula):
               f'IFERROR(({observed}<=TODAY())*({observed}>=TODAY()-{days});0);1);'
               'keep;hits*freshRewards*')
     if 'freshRewards;' in formula:
-        if formula.count(clause) != 1:
+        if formula.count(clause) == 1:
+            return formula
+        legacy_names = '{'+';'.join(chr(34)+p+chr(34) for p in LEGACY_PROGRAMMES)+'}'
+        legacy_clause = clause.replace(names, legacy_names)
+        if formula.count(legacy_clause) != 1:
             raise ValueError('native_freshness_policy_changed')
-        return formula
+        return formula.replace(legacy_clause, clause)
     if formula.count('keep;hits*') != 1 or "'_ui_catalog'!A2:Q" not in formula:
         raise ValueError('native_search_layout_changed')
     return formula.replace('keep;hits*', clause)

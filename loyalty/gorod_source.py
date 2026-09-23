@@ -23,7 +23,11 @@ def source_fields(e):
     if kind=='coupon':
         if native!='coupon:'+str(d['id']) or url!=HOST+'/bonus-plus/coupons/'+str(d['id']):raise ValueError('gorod_coupon_identity')
         if d.get('available') is not True or d.get('partner',{}).get('available') is not True:raise ExcludedOffer('source_unavailable')
+        if e.get('catalogue_partner_id') is not None and e['catalogue_partner_id']!=d['partner']['id']:raise ValueError('gorod_coupon_catalogue_drift')
         name=compact(d['name']);p=d['partner'];price=d['price'];currencies=price.get('currencies')
+        # A full-price souvenir is not a discount merely because the shop calls it a coupon.
+        if (re.match(r'Карта «Тройка» с дизайном',name) and not d.get('cashback')
+            and price.get('old') is None):raise ExcludedOffer('no_concrete_partner_benefit')
         if not isinstance(currencies,list) or not set(currencies)<=set(CURRENCIES) or type(price.get('new')) not in (int,float):raise ValueError('gorod_coupon_cost')
         amount=price['new']
         if amount<0 or (amount>0 and not currencies):raise ValueError('gorod_coupon_cost_currency_missing')
@@ -35,9 +39,15 @@ def source_fields(e):
         end=min(dates) if dates else None
         dates_text='\n'.join(k+': '+str(d[k])for k in ('endAt','couponEndAt','countdown') if d.get(k))
         conditions=plain(d.get('terms',''));activation='\n'.join(plain(x)for x in (d.get('howToAsList')or[]))
+        presentation_unknown=False
         if not activation:
             automatic=re.search(r'Бустер начинает действовать автоматически после покупки\. Дополнительно вводить его данные никуда не требуется\.',conditions)
             if automatic:activation=automatic[0]
+            elif ((d.get('address')or{}).get('details') and 'Нажимая «Купить»' in conditions):
+                onsite=re.search(r'Купон дает скидку[^.\n]{0,400}с доплатой на месте:[^.\n]{1,400}',compact(conditions))
+                if onsite:
+                    activation=onsite[0]+'\nПорядок предъявления купона на публичной карточке не раскрыт.'
+                    presentation_unknown=True
         if not conditions or not activation:raise ValueError('gorod_coupon_terms_missing')
         cb=d.get('cashback') or {}
         extra='\nВознаграждение за покупку купона: '+plain(cb.get('text',''))+' '+CURRENCIES.get(cb.get('currency'),'единица не указана') if cb else ''
@@ -49,7 +59,7 @@ def source_fields(e):
             conditions=cost.strip()+extra+'\n'+dates_text+'\n'+conditions,activation=activation,url=url,
             category=compact(p.get('subtitle')) or 'Купоны',valid_until=end,locator='couponViewStore.couponData',
             terms=[dict(kind='partner_privilege',fragment=name)],scope={'coupon_id':d['id'],'coupon_purchase_or_activation_not_performed':True},
-            warnings=['coupon_price_separate_from_discount','coins_are_tokens_not_roubles']+(['different_sale_and_coupon_end_dates_preserved']if len(set(dates))>1 else []))
+            warnings=['coupon_price_separate_from_discount','coins_are_tokens_not_roubles']+(['coupon_presentation_method_not_disclosed']if presentation_unknown else [])+(['different_sale_and_coupon_end_dates_preserved']if len(set(dates))>1 else []))
     if kind!='partner':raise ValueError('gorod_unreviewed_record_kind')
     p=d['partner'];earn=d['earn']
     if native!='partner:'+str(p['id']) or url!=HOST+'/partners/'+str(p['id']):raise ValueError('gorod_partner_identity')
