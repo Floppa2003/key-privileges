@@ -1,108 +1,72 @@
-# Current coverage — practical discounts, PR82 checkpoint
+# Current practical coverage — PR83 verified, 23 September 2026
 
-## Latest deployed release: PR82; source collection and publication independently verified
+## Latest accepted release and live destination
 
-Read **DURABLE_COLLECTION_PUBLICATION.md** for actual run/code/payload identities, all-source outcomes, independent destination comparison and the unresolved GitHub health-job metadata. **DURABLE_COLLECTION_ACCEPTANCE.md** preserves the reproduced cancellation failure, runtime contract and accepted regression; its pre-publication boundary is superseded. Do not repeat the full crawl or publication merely to restore context.
+Read **PUBLIC_CATALOGUES_PUBLICATION.md** first, then **PUBLIC_CATALOGUES_ACCEPTANCE.md** for the source contracts, actual artifacts and evidence boundaries. PR83 is merged as **f6b66a120b978cbb1c3d49210c93611ac47040f9**. Main **35850898792:1**, execution **bf04663b6202c921a574031f420ec420c143eeb2**, actually acquired all four new sources at **2026-09-23T10:50:02.026913+00:00**. Jobs collect107148068918, health107149420018 and publish107149419911 were all independently read completed/success. This is a controlled main publication, not a future timer run.
 
-PR82 merged at **2026-09-22T20:39:21Z**, merge **cb70bbebbdfc301b64cfb65b72cf1678e9f4510f**, reviewed head **24af5efc6231f0ef332fe9c96e1192a0091ea368**. Final feature **35781070515** at **60331bcde874566f804d50bef6086705be3f292d** passed **1252 Python +7 KEY tests**, no skips, with real pinned dependencies. All112reports/1286records from older daily35714017362 were replayed through the new orchestration with exactly unchanged managed publication rows and original timestamps; that replay made zero live website requests. Only acceptance documentation and temporary-workflow removal followed accepted code before merge.
-
-Actual main **35781773598:1**, execution **96275a709b896ed3296ad518bb163cdb4773be53**, observed **2026-09-22T20:41:30.767057+00:00**. The complete registered scope was selected: **115/115 workers completed in702.036seconds**,1497records,106ok/1partial/8failed reports. No missing/unfinished reports or worker exceptions. All85production Python hashes match the accepted full archive. Main regression repeated successfully. This collection timestamp is not a source-written date or cache-age claim.
-
-**collect106928779546 and publish106933441441 both completed/success.** Publication/readback ended20:57:22UTC; publisher job ended20:57:25. **source-health106933441399 still reports in_progress/conclusion=null although all its steps, including Complete job, report completed/success at20:53:28.** This persisted through named-tool and separate raw repository-jobs reads. The actual health application step succeeded; actual payload execution-health and all3strict reward health checks were independently replayed successfully. Do not claim the parent health job or whole workflow is completed/green until a later read establishes it. Cause unknown; no rerun/cancellation was used to force the metadata. A later continuation should re-read this metadata, not recollect all sites.
-
-| Source | Latest accepted batch observation | Coverage boundary |
+| Newly deployed programme | Accepted /accounted inventory | Exclusions |
 |---|---:|---|
-| Backit /backit_public | **178**,2026-09-22T20:41:30.767057+00:00 |916unique listings/23pages/189eligible detail attempts accounted for;738excluded. No product-level marketplace offers. |
-| Club Avolta /club_avolta_public | **17**,same PR82 batch |17Russian cards/sixcategories:16full cards plus DragonPass restaurant-only component. No asserted lounge fee or restaurant redemption method. |
-| Mantera /mantera_moments | **16**,same PR82 batch |5programme tiers +11named accommodation properties, not16hotels/all group businesses. Property-specific redemption confirmed only for3. |
-| Konsierge /konsierge_public | **159**,same PR82 batch |Public catalogue, not the complete user's Only Assist entitlement. |
+| X5 Клуб — партнёры |33/40|7lotteries|
+| Магнит Плюс — партнёры |30/42|11financial/acquisition ads,1expired|
+| Город / Тройка |185/216|31without concrete partner benefit|
+| Цветной — программа лояльности |86/123|22card-inapplicable,15status-accumulation-only|
 
-All four reported zero source errors. The three public reward integrations also passed their stricter inventory/health contracts. Other named source failures remain below; execution completeness does not mean every site was successfully read.
+All four reports are ok/zero errors; all334 real main records regenerated exactly from their own public evidence/date and passed prepare/normalization/clean reader. All91production Python hashes matched the accepted code; feature35849938733 tested81d12bf2923f9c77f6f2a92c6bd855b7a587a429 with1322Python+7KEY tests, and main repeated regression. Temporary integrate/diagnostic workflows and patch carriers were removed before merge.
 
-**Current verified destination:3022 parser /3670 normalized /3056 clean reader records, unchanged counts.** PR82 refreshed1497existing source IDs, added0offer IDs, applied0holds and appended115history reports (1994 ->2109report IDs). Every source managed field matched the independently simulated update plan. Independently recomputed102760normalized-record fields,97306benefit fields,171904condition/cost fields,8904code/delivery fields and70audit fields all matched the final Sheet, including old-row positions and manual columns. Full reader3056rows/51952fields and visible3056rows/42784fields matched. Original8formulas,9175untouched-tab cells, native A10search/A7count, B3:B5/B4validation, C6freshness note, programme-list formula and two-tab visibility remain;0formulaerrors. Private exports stayed local; no full rendered-layout or ACL audit claimed.
+**Current verified destination:3363parser /4011current normalized /3394clean and visible records.** The genuine immediate baseline was3029/3677/3060 following an intervening daily update, not the obsolete3056chat count. Added334new IDs and4reports; all3029old parser rows and2224old reports are unchanged at original positions. Entire common views, all3394clean/visible rows,9175unrelated cells, original8formulas and manual values were independently checked;0formulaerrors. Native A10 now scopes7day freshness to seven programmes; B3:B5/B4validation and A7/G2formula behavior remain. Only Скидки and О таблице are visible. Full audit counts are in publication; private exports stay local, not in this public repo.
 
-Current generation: **db0a56885e1866d167f231a334d7e907766e8ba5434187872b5cd2164c629e1f**.
-Source fingerprint: **2d37ac379ea3139f6e5cdb7d9f157b55491f14c8e8330c6bb53e84072a193c38**.
-Reader digest: **60f874a5eb3a60c33f4e3f3188dbeeaa0360328cf7b48b80cea207318b2f62f9**.
-Future verified publication can change these: inspect live manifests, never restore stale chat counts.
+Generation **dccb4db1597e4e6db835ebf3f6121b3eb08621f7f409ba2c57b54982bb27d568**.
+Source fingerprint **6b2f96998df47fdc6df451ab2b2eceb67a4f473832df7301edf10b83f4d9af93**.
+Reader digest **87d9c2fb94449795a56ff9a2bae105da4d31a3d3142f0bc62bd8e003865aca34**.
+Future publications may change these. Read live manifests; never restore counts from an old chat.
 
-## Full-collection durability, new in PR82
+## New catalogue scope and quality
 
-The old collector saved its bundle only after every gather worker and browser.close finished. Controlled main-entry cancellation after one valid source result reproduced loss of that result. The historical daily baseline itself succeeded; do not invent a historical incident.
+X5 traverses the anonymous public offer loader with pageTotal/terminal reconciliation and separately promoted paid entries, then checks each detail identity/period. Point cost, quests, direct code exchanges, minima and audience restrictions stay separate; lotteries are excluded. Existing af_x5_rules is a separate Aeroflot-mile exchange, not a replacement for this full observed public catalogue.
 
-collection_runtime.py atomically checkpoints completed-source batches with flush/fsync/replace. A failed serialization/write preserves the earlier complete JSON. Every selected source is represented; unfinished reads remain failed/interrupted or not_started, zero invented offers. No historical snapshot is relabelled fresh. Code hashes are saved before browser work. Cancellation propagates; cleanup/disk errors are not hidden.
+Magnit reconciles public DOM links and public Nuxt offer data, including each detailed heading/identity and own offer terms. Corporate introductions are removed, actual steps/disclaimers/periods stay. Magnit bonuses are not cash; a partner subscription price is not a monthly fee on an ordinary Magnit card. The reviewed literal-question-mark Protego correction applies only to queryless exact Magnit /partners paths, not a global robots exception.
 
-Existing4worker concurrency and individual source budgets remain. Longer permitted budgets enter earlier, while report order/IDs remain configured. Queue waiting does not consume source timeout. Per-source queue_seconds/execution_seconds are additive diagnostics. This heuristic is not a guaranteed optimum or measured causal speed improvement.
+Gorod185 =120public partner records +65coupons. All12published regions, cursors and nested coupon lists are traversed; exact IDs deduplicate while region/customer/level scopes remain. Coupon costs distinguish roubles/bonuses/tokens, sale/use dates are separate, and cashback tariffs are not level uplifts. Personal issuance/activation/receipt is not verified. Source-owned gift wording for PizzaSushiWok19386 is retained with1419RUB minimum and5-token cost; its original short title is unchanged. Full-price souvenirs are not discounts. Source-local channel instructions can still need user confirmation; acquisition does not prove cashback will be paid.
 
-A1000second soft collection deadline reserves intended headroom in the existing20minute job. Completed results remain publishable on graceful deadline; unfinished sources stay unhealthy. No actual timeout/cancellation was needed in the PR82 main run. Not guaranteed: SIGKILL/runner loss/disk loss/blocked event loop, artifact upload after hard timeout, unusually slow setup, or individual records inside a still-unfinished source. No remote per-source checkpoint architecture was added.
+Tsvetnoy86 =83brand/department benefits +3tiers from the uniquely active public document plus current programme page. PDF key22b576a39b.pdf/fileNameBrandactions-2026-9.pdf, SHA256a31ba07563595cecc84bdba38ba8a454a08b5d5a01904cb56db027a43a97014b. Six-page120-row matrix retains floor, Start/Standard/Plus columns and footnotes using native text/geometry, not OCR. Status accumulation checkmarks are not discounts/cashback. RIVGOSH's explicitly offered gold card is retained. Different threshold wording stays visible; document creation is not valid-from. Unknown geometry or active-document conflicts fail rather than reuse old rates.
 
-The health CLI now checks execution/report completeness for ALL selected configurations, separately from the3reward semantic/inventory checks. Missing/duplicate/foreign/unfinished reports and unexpected worker exceptions cannot silently pass execution health. Ordinary historical-route failures retain their explicit source reports and are not globally reclassified. Successful-source publication remains independent of stricter source-health failures. No source adapter, URL, rate, TLS/access policy or schedule changed in PR82.
+All four reuse complete same-time native-ID inventories, reversible holds and7calendar-day observation age. Failed/partial/empty inventory cannot retire old rows. Coherent complete absence can withhold its own exact prior card, not the merchant across other programmes. Original source time/text, row and manual notes survive; fresh returns restore; older snapshots cannot overwrite newer evidence. Seven-day freshness is a reader policy, not offer expiry. Native exact old3programme predicate was upgraded to7 and independently verified; unknown user-modified formulas are rejected.
 
-## Current unresolved source outcomes and next priorities
+## Remaining work: distinguish actual public gaps from unavailable terms
 
-These same8routes failed in both inspected full batches; none was fixed by the runtime change:
+The four previously unimplemented named public catalogues are now closed in their declared public scopes. No claim of every possible internet promotion, every authenticated card, or permanent source uptime follows.
 
-| Route | PR82 actual failure |
-|---|---|
-| nordwind | robots TimeoutError |
-| coral, coral_promo | http_403 |
-| rzd | http_403 |
-| aeroflot | robots_not_readable |
-| ekp | robots TimeoutError |
-| af_primbank_rules | ERR_CERT_AUTHORITY_INVALID |
-| alfa_only_partner_offers | alfa_bank_authentication_redirect |
+**FlyStation public promotion page:** prior unimplemented public source is now actually readable at https://flystation.net/promotions via normal verified-TLS transport (run35852288675,23Sep11:03:38UTC, robots200). The www hostname failed with ERR_CERT_DATE_INVALID in35851836566; apex is published by the site's own navigation and was independently read, not a certificate bypass. Sixpanels are present, four contain quantified discounts/gifts and two only prices. A source adapter and regression are being finished on **loyalty/last-public-gap-20260923**; it is NOT yet in main or the Sheet. Preserve own public promotions versus protected EKP entitlement. Do not rerun completed source probes merely to restore context.
 
-HSE55records remains partial: skyeng, skillcup, academiya have missing/empty detailed sections. Do not confuse a failed spare route with programme-wide absence: RZD/Aeroflot/EKP/Coral have separate collector/history paths, and NORDWIND previously had successful7/7accordions. Inspect those actual alternate executions before choosing the next coverage target. Preserve their last successful observations; don't pretend PR82 revalidated each alternate path.
+**HSE:** latest already-published daily35846721686 observed23Sep10:06:36UTC still has55cards /52details /3previews (skyeng,skillcup,academiya). Source reports explicitly say missing/empty detailed sections. Older public /loyalty/univer and English partner page describe Skyeng2000RUB first-payment terms ending01.01.2021; these cannot fill the current preview as active2026terms. Russian current page provides no detailed activation for those three. This is not evidence they are technically impossible forever; source clarification/current detailed terms are required.
 
-Next useful work: resolve health-job metadata with a read; inspect alternate-source freshness for the currently failed routes, then address a demonstrably missing useful offer or access/readiness regression. Do not inflate totals with advertisements, technical placeholders, general contracts or bank-acquisition ads. Repeated unchanged Backit marketplace redirects are not progress. Only Assist still waits for the authorized device session.
+**Only Assist /bank-only:** zero authenticated Only Assist offers collected. Public Konsierge159 is not the user's complete app catalogue. Completed APK/API/emulator/ADB diagnostics are preserved; authorized Android session is still required. web.alfabank.ru/partner-offers redirects to bank authentication. Public bank PDFs/GreatList/TSUM are separate successful sources, not access to that private catalogue. Do not repeat app setup or anonymous login probes while waiting for actual authorized access.
 
-## Retained scoped lifecycle, freshness and operation
+**Backit marketplace:** product-level Ozon/Wildberries coverage remains outside the178shop cards. Previously tried source-linked product paths redirect to the general catalogue; Roborock-Ozon explicitly disabled cashback. No old cached offers imported, and no new successful product route claimed. Repeating the same redirects does not increase coverage.
 
-**Mantera lifecycle /PR81:** only a complete same-time named roster with valid record identities/hashes and one coherent roster/resort evidence pair can reversibly withhold its own absent public_partner cards. Match exact native ID/name, not the shared URL. Roster absence is not programme-wide departure. Five FAQ tiers and independently sourced Congress are outside that retirement scope. Empty/wholly removed/failed/partial/duplicate/mixed-version rosters cannot mass-retire cards. Source text/time, positions and manual notes remain; checked_at/run metadata is separate. Fresh return restores the same row; older evidence cannot overwrite a newer observation/hold. Health and reconciliation share the validated snapshot. PR81 tests and PR82 refresh applied0real holds. See MANTERA_LIFECYCLE_PUBLICATION.md/ACCEPTANCE.md.
+**DragonPass:**31USDheadline vs28USDbody remains a source conflict for lounge admission. Only consistent restaurant discount up to25% was retained. Restaurant application method is not established; lounge-entry instructions cannot substitute. Mantera remains5tiers+11publicly named hotels with individual spending confirmed only for3, not allgroupbusinesses or a private partner list. Detailed retained contracts are in the pre-PR83checkpoint below and PR79–81acceptances.
 
-**Backit/Avolta holds /PR79:** only complete successful same-time inventories accounting for every URL can withhold old excluded/absent cards. Failure/partial reads cannot prove disappearance. Original rows, source text/time and notes remain; return/old-write/concurrent-value guards remain. These are source-local rules, not a global retirement policy for older programmes.
+**EKP/RZD protected terms:** public listings and their gated detailed fields are different. Public merchant alternatives are added only when independently read and programme scope is explicit. An old public post linking a protected ID is not recovered current terms; unknown region/code/identity remains unknown. Do not imply all106merchants' independent websites were exhaustively searched. See EKP_TARGETED_PUBLIC_AUDIT.md, EKP_GATED_AUDIT.md and RZD_PREVIEW_ACCEPTANCE.md.
 
-**Freshness:**7calendar-day observation-age limit applies only to Backit, Club Avolta and Mantera parser records. It is not an offer expiration date. Clean materialization and native TODAY predicate both enforce it; original evidence remains. API readers must apply freshness at their own lookup date. Native filtering depends on Sheets recalculation, not a promise of exact unattended midnight execution. No global timezone/recalculation setting changed.
+## Earlier-route freshness and operational safeguards
 
-**Avolta transport:** ordinary same-origin HTTP replaced the source-local headed renderer in PR79; full traversals also succeeded in PR82. Successes do not guarantee future uptime. Verified TLS, source scope, bounded retries and access stops remain. No proxy/header rotation/authentication or Browserbase dependency was introduced.
+The main daily has119registered configurations afterPR83, not119independent programmes. A latest red spare route is not programme-level zero. Independent native pre-publication source-history review found:
 
-**Operation:** existing daily05:23UTC/08:23Moscow, same shared serialized publisher. PR82 was a controlled workflow_dispatch with full daily scope, not a timer-triggered execution. The first later timer run has not been observed. No additional ChatGPT task, recurring workflow or notification setting. Do not mistake preserved normalized current status for source freshness/eligibility.
+- NORDWIND alternate7/7 in35718739086:1,22Sep10:58:01UTC; main probe stilltimesout.
+- EKP alternate35610069513:1 on21Sep accounts1047identities:937public and110gated.
+- Aeroflot alternate35399939325:1 on18Sep22:07:57UTC accounts235entries; current main spare route failure does not erase it.
+- RZD alternate35135328617:1 on16Sep18:36:17UTC retains74cards:66details and8previews.
+- Coral19Sep35444992218 and complementary22Sep35718739086 remain separately dated inventories; do not merge dates or claim every route freshly complete.
+- Latest main23Sep35846721686 still reports the same8failed spare routes: nordwind,coral,coral_promo,rzd,aeroflot,ekp,af_primbank_rules,alfa_only_partner_offers; HSEpartial. Rostelecom's two public records now have a successful23Sepobservation.
 
-## Public programme boundaries retained from PR79–81
+These are historical last-success observations from live Sheet provenance, not new crawls byPR83. Alternate workflows have their own existing cadences; not every programme is read daily. Main and new catalogues remain daily05:23UTC/08:23Moscow; no new schedule/provider is introduced.
 
-**Mantera roster:** https://sochiparkhotel.ru/about/programma-loyalnosti/ names11properties while its separate counter says6. Use named identities and retain the discrepancy. Hosting the roster does not prove Sochi Park Hotel itself participates. Congress retains its independently sourced ID/page.
+PR82 durable runtime persists completed-source batches atomically, preserves source timestamps, has4workers and a1000ssoftdeadline, records queue/run time, and checks execution/report completeness for allselectedconfigs. Failed older routes remain explicit; semantic inventory/health is stricter for reviewed reward sources, not an all-sites-success claim. Original source budgets, source-local policy exceptions, TLS checks and access stops remain. Lostrunner/disk/SIGKILL and unfinished source-internal records are not guaranteed recoverable. The former PR82job-metadata inconsistency subsequently resolved: run35781773598 and alljobs were read completed/success; do not keep it as an active incident.
 
-Names: Мантера Resort & Congress5*; Сочи Марриотт Красная Поляна5*; Риксос Красная Поляна Сочи5*; Новотель Резорт и спа Красная Поляна5*; Новотель Фит Красная Поляна4*; Кортъярд Марриотт Сочи Красная Поляна4*; Долина9604*; Ибис Стайлс Красная Поляна; Панорама by Mercure Красная Поляна; Апартаменты Курорта Красная Поляна; Апарт-отель «Бонус»3*. Use actual source spelling/spacing for identity, not this compressed inventory.
+## Reader, privacy and recovery
 
-https://krasnayapolyanaresort.ru/loyalty separately confirms earning/spending at Долина960, Кортьярд, Марриотт. Exact reviewed mappings attach spending only to those full roster names, never substring-match Marriott into Courtyard. Other named properties get earning with individual redemption unknown. Preserve tier/annual-spend scope, pre-booking registration,18+, free participation,12month status,24month bonus validity, non-cash rules/exclusions. Both public tier tables must agree; unknown aliases or missing critical terms fail closed. The private /app/partners route was not entered; FAQ calendar-versus-business accrual discrepancy remains. Failed participant pages do not relabel old evidence fresh. See MANTERA_PARTNERS_PUBLICATION.md/ACCEPTANCE.md.
+Daily lookup uses Скидки B3keyword/code, B4programme, B5category. _ui_catalog!Y1:Z8 and normalization_auditE7/I7/J7 must be verified/current and match. Source and normalized layers are provenance, not a guarantee of active/personal discounts; API readers apply observation freshness at lookupdate. Never restore raw ads/polls/placeholder pages, fullgeneralcontracts, acquisition ads or expired offers to inflate coverage. Preserve exactsource/nativeID/programme, branch, geography, tier, price units, dates and literal codes. No deletion/shifting of old rows; legacy IDs depend on them. XLSXspill formulas are not nativeUI.
 
-**Backit:**178accepted/916inventory in PR82,738excluded:677source-disabled,50acquisition ads,10expired promotions,1detail replaced by catalogue. Three previously uncertain promotion periods were accepted with year inferred from matching current page-title month/year (Все Инструменты, Xcom-Shop, Плати по всему миру). Keep the explicit promotion_year_inferred_from_current_page_month warning: not a source-written year or guarantee against stale copy. Preserve fixedRUB/ranges/customer scopes/zero-rate exceptions/public coupons; cash back is not an upfront discount.
+Repository is public: no private workbook exports, bankdata, individualcodes, tokens/cookies/OTP or authenticated-only terms. Hidden tabs/private_complete are not access control. Only public evidence and aggregate audits may be shared. Reading does not authorize registration, issuance, activation, purchases or bonusspending. ExistingGoogleWIF/FreeScrapingAnt/sharedqueue remain; no paidprovider, secondaccount, rentedserver or always-on user computer.
 
-**Backit marketplace:** old Ozon/Wildberries compilations and mixit-ozon redirected to the catalogue; Roborock-Ozon explicitly disabled cashback. PR80 additionally tested the source-linked /ru/cashback/shops/ozon/products once:302to/ru/cashback/shops. No product-level marketplace offers were imported from cached search. These separate failed routes were not reprobed by PR82. Do not repeat unchanged probes on restart.
-
-**DragonPass:**31USDheadline/28USDbody still conflicts for lounge entry. Only independently consistent restaurant discount up to25% is retained as partial. Lounge fee and restaurant redemption method remain withheld/unknown; lounge app instructions are not restaurant activation. Country/tier/frequency and personal eligibility stay distinct.
-
-## Everyday lookup and reader quality
-
-Destination **скидки**, spreadsheet **1uFR7croj7p6RRNPcoTRYlVl06hKsurkIgyu1IdMMB-4**.
-
-- Visible Скидки, sheetId2026092001: B3keyword/code, B4programme, B5category. No junk/expired return switches. Empty filters show accepted records subject to scoped freshness.
-- Hidden _ui_catalog!A:Q: partner, programme, benefit, code/retrieval, activation, conditions, source period, category, observation, source link, comment, record type, validity status, ID, input tab, input row, original title. It is an as-of materialization; API readers honor freshness too.
-- _ui_catalog!Y1:Z8: Z2verified,Z5=normalization_audit!J7; normalizationE7verified,I7current. Z4is materialized count, potentially above later freshness-filtered results.
-- Visible О таблице retains instructions/programme list. Only2tabs visible; hiding is not access control.
-
-parser_offers/normalized_* are provenance layers, not everyday offers. Current normalization is not proof of current validity, practical acceptance or user access. Preserve programme/source/nativeID, branch, region, tier, customer type, payment channel, literal code and dates. Unknowns stay unknown. Never restore raw posts/polls/placeholders/corporate advertising/whole contracts to increase apparent coverage.
-
-PR77source-owned cleaning remains in the same publisher;5original datasets and14original technical/history tabs remain. Do not delete/shift old source rows because legacy IDs depend on them. ObsoleteR:Xhelper stays cleared. XLSXDUMMYFUNCTION/cached spill formulas are not nativeUIformulas; read CellData to verify search.
-
-## Earlier sources, privacy and recovery
-
-Konsierge/PR75 now freshly reconfirmed159public records in PR82; see KONSIERGE_RECURRING_ACCEPTANCE.md, KONSIERGE_CATALOG_ACCEPTANCE.md, KONSIERGE_PUBLICATION_ACCEPTANCE.md. Its owner-approved robots exception is source-local. It is not the full user's Only Assist catalogue. Completed APK/emulator/device work is separate; no authenticated app content has been collected. Do not repeat it while awaiting the authorized Android session.
-
-Alfa/GreatList/TSUM,HSE,Mir,RZD,Aeroflot,EKP,Coral and other earlier adapters were not modified by PR82. The full main refresh exercised registered routes and preserved failures; separate alternate collectors were not all rerun. Prioritize practically missing programmes/conditions, not route counts or bulk document archiving.
-
-The complete pre-PR82checkpoint remains byte-for-byte at **96275a709b896ed3296ad518bb163cdb4773be53:loyalty/COVERAGE_CURRENT.md**, blob **ce8b260d77e740b8beb2a57ea81ba6f7f4bbb8e6**. It preserves PR81, the pre-PR81checkpoint3f5fb995c21b886b1971d1219927c0ee3a40a865/blob e638e2ef13d3d5b616bb6710afa826f769692ec0, and the recovery chain through PR80–78 to earlier full source checkpoint22241f9a964f9af84e48ee730f583289c4c9d034. Older no-Mantera-retirement or raw-reader instructions are superseded. PR56/57migration and earlier Aeroflot cleanup are complete; do not repeat them.
-
-The repository is public. Never commit/upload private workbook exports, bank data, personal coupons, tokens/cookies/OTP or authenticated-only terms. Hidden tabs and private_complete are not ACLs. Private exports remain local; only public evidence and aggregate audits may be shared. Existing Free ScrapingAnt/GoogleWIF/shared queue remain; no paid provider, extra account, rented server or always-on user computer.
-
-Public reading does not authorize registration, issuance, activation, booking, purchases or bonus spending. Artifacts expire; exact run/code/payload identities persist in acceptance/publication documents. Interrupted chat output is not rollback: inspect main, actual jobs and live destination before rebuilding.
+The complete pre-PR83checkpoint is preserved byte-for-byte at **bf04663b6202c921a574031f420ec420c143eeb2:loyalty/COVERAGE_CURRENT.md**, blob **b556eb7ae721f8b531b19133b8f02d7006a780b0**. It preserves PR82 and the fullrecoverychain throughPR79–81 andearlier105route work, termsandacceptedarchives. Currentacceptance/publicationdocs supersede only their named limitations; unrelated history remains. Interruptedchat output is not rollback: inspectlivebranches, actualjobs anddestination before rebuilding.
