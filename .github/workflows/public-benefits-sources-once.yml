@@ -1,0 +1,41 @@
+name: One-time public benefits source analysis
+on:
+  push:
+    branches: [diagnostics/public-frontier-20260924]
+    paths: [.github/workflows/public-benefits-sources-once.yml]
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - run: npm install --no-audit --no-fund --ignore-scripts typescript@5.8.3
+      - name: Read source-map files as data, with no application execution or API requests
+        run: |
+          node --input-type=module <<'JS'
+          import ts from 'typescript';
+          import {createHash} from 'node:crypto';
+          const url='https://marketplace.konsierge.com/static/js/main.959cee1e.js.map';
+          const out={started_at:new Date().toISOString(),url,source_account_used:false,credentials_used:false,api_requests:0,client_executed:false};
+          try{
+            const r=await fetch(url,{redirect:'manual',signal:AbortSignal.timeout(30000),headers:{'User-Agent':'PublicLoyaltyResearch/1.0'}});out.status=r.status;out.server_date=r.headers.get('Date');out.age=r.headers.get('Age');
+            if(r.status!==200||r.headers.has('Retry-After'))throw Error('source_unavailable');
+            const parts=[];let size=0;for await(const p of r.body){size+=p.length;if(size>22000000)throw Error('size_bound');parts.push(p);}const raw=Buffer.concat(parts);out.bytes=size;out.sha256=createHash('sha256').update(raw).digest('hex');
+            if(out.sha256!=='1a7a0f61ce38c238094b8a2525c282e1b115d27d8af165ff3568dbaa1d353bf9')throw Error('map_changed');
+            const map=JSON.parse(raw.toString('utf8'));
+            out.related_paths=map.sources.filter(p=>!p.includes('node_modules')&&/benefit|rubric|lib\/|routes|router/i.test(p));
+            out.files=[];
+            const wanted=new Set(['lib/request.ts','actions/Benefits/benefits.ts','actions/Benefits/rubrics.ts','reducers/Benefits/benefits.ts','reducers/Benefits/rubrics.ts']);
+            const safe=new Set(['Authorization','Basic ','Bearer ','GET','POST','get','post','Content-Type','application/json','tariff_id','rubric_id','page','per','benefits','rubrics','tariffId','GET_BENEFITS_REQUEST','GET_BENEFITS_RESPONSE','GET_BENEFITS_ERROR','GET_RUBRICS_REQUEST','GET_RUBRICS_RESPONSE','GET_RUBRICS_ERROR']);
+            for(let i=0;i<map.sources.length;i++){
+              const name=map.sources[i];if(!wanted.has(name))continue;const code=map.sourcesContent[i];if(typeof code!=='string')throw Error('source_missing');
+              const ast=ts.createSourceFile(name,code,ts.ScriptTarget.Latest,true,ts.ScriptKind.TS);if(ast.parseDiagnostics.length)throw Error('typescript_parse_error');const spans=[],imports=[];
+              function visit(n){if(ts.isImportDeclaration(n)){imports.push(n.moduleSpecifier.text);}if(ts.isStringLiteral(n)||ts.isNoSubstitutionTemplateLiteral(n)){const v=n.text;const publicPath=/^\.?\.?\/[a-zA-Z0-9_./-]{1,160}$/.test(v)&&!/(secret|token|password)/i.test(v);const publicService=/^https:\/\/benefits\.konsierge\.com\/[a-zA-Z0-9_./-]*$/.test(v);if(!safe.has(v)&&!publicPath&&!publicService)spans.push([n.getStart(ast),n.end]);}if(ts.isTemplateHead(n)||ts.isTemplateMiddle(n)||ts.isTemplateTail(n))spans.push([n.getStart(ast),n.end]);ts.forEachChild(n,visit);}visit(ast);
+              const scanner=ts.createScanner(ts.ScriptTarget.Latest,false,ts.LanguageVariant.Standard,code);for(let k=scanner.scan();k!==ts.SyntaxKind.EndOfFileToken;k=scanner.scan()){if(k===ts.SyntaxKind.SingleLineCommentTrivia||k===ts.SyntaxKind.MultiLineCommentTrivia)spans.push([scanner.getTokenPos(),scanner.getTextPos()]);}
+              spans.sort((a,b)=>a[0]-b[0]);let at=0,red='';for(const[a,b]of spans){if(a<at)continue;red+=code.slice(at,a)+'"[omitted]"';at=b;}red+=code.slice(at);out.files.push({path:name,index:i,original_bytes:Buffer.byteLength(code),imports,redacted_source:red});
+            }
+            out.outcome=out.files.length===wanted.size?'source_files_inspected':'missing_source_file';
+          }catch(e){out.outcome='incomplete';out.error=/^[a-z_]+$/.test(e.message)?e.message:e.name;}
+          out.finished_at=new Date().toISOString();console.log('BENEFITS_SOURCES_BEGIN');console.log(JSON.stringify(out));console.log('BENEFITS_SOURCES_END');
+          JS
