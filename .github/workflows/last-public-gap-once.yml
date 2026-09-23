@@ -1,0 +1,59 @@
+name: Inspect remaining public FlyStation offers
+on:
+  push:
+    branches: [loyalty/last-public-gap-20260923]
+    paths: [.github/workflows/last-public-gap-once.yml]
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r loyalty/requirements.txt
+      - run: python -m playwright install --with-deps chromium
+      - name: Read only the public promotions through the normal transport
+        run: |
+          python - <<'PY'
+          import sys,json,hashlib,asyncio
+          from pathlib import Path
+          from datetime import datetime,timezone
+          from bs4 import BeautifulSoup
+          from playwright.async_api import async_playwright
+          sys.path.insert(0,'loyalty')
+          from public_transport import PublicSource
+          out=Path('gap-inspection');out.mkdir()
+          async def main():
+              meta={'observed_at':datetime.now(timezone.utc).isoformat(),'url':'https://www.flystation.net/promotions','account_used':False}
+              async with async_playwright() as p:
+                  browser=await p.chromium.launch()
+                  try:
+                      async with PublicSource(browser,meta['url']) as c:
+                          await c.robots()
+                          raw=await c.read(meta['url'])
+                          s=BeautifulSoup(raw,'html.parser')
+                          for tag in s.select('script,style,input,textarea'):tag.decompose()
+                          for tag in s.find_all(True):
+                              for key in list(tag.attrs):
+                                  if key.lower().startswith('on') or any(x in key.lower() for x in ('token','session','cookie','csrf')):del tag.attrs[key]
+                          public=str(s)
+                          (out/'flystation.public.html').write_text(public,encoding='utf8')
+                          meta.update(status='read',raw_sha256=hashlib.sha256(raw.encode()).hexdigest(),public_sha256=hashlib.sha256(public.encode()).hexdigest(),bytes=len(raw),robots=c.robots_info)
+                  except Exception as e:
+                      meta.update(status='failed',error=type(e).__name__+': '+str(e)[:220])
+                  finally:await browser.close()
+              (out/'outcome.json').write_text(json.dumps(meta,ensure_ascii=False,indent=2));print(json.dumps(meta,ensure_ascii=False))
+          asyncio.run(main())
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: last-public-gap-${{ github.run_id }}
+          path: gap-inspection/
+          retention-days: 1
