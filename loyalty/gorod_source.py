@@ -55,10 +55,14 @@ def source_fields(e):
         if address.get('details'):conditions+='\nАдрес: '+plain(address['details'])
         refs=links(d.get('terms',''))
         if refs:conditions+='\nПолные правила: '+'; '.join(refs)
-        return dict(native=native,program=PROGRAMS[SOURCE],partner=compact(p['name']),title=name,benefit=name,
+        # The short label omits the gift; the source explicitly states it in redemption.
+        benefit=name
+        if name.startswith('Пицца на выбор при заказе') and 'Подарочная пицца добавится в корзину.' in activation:
+            benefit=name.replace('Пицца на выбор','Пицца на выбор в подарок',1)
+        return dict(native=native,program=PROGRAMS[SOURCE],partner=compact(p['name']),title=name,benefit=benefit,
             conditions=cost.strip()+extra+'\n'+dates_text+'\n'+conditions,activation=activation,url=url,
             category=compact(p.get('subtitle')) or 'Купоны',valid_until=end,locator='couponViewStore.couponData',
-            terms=[dict(kind='partner_privilege',fragment=name)],scope={'coupon_id':d['id'],'coupon_purchase_or_activation_not_performed':True},
+            terms=[dict(kind='partner_privilege',fragment=benefit)],scope={'coupon_id':d['id'],'coupon_purchase_or_activation_not_performed':True},
             warnings=['coupon_price_separate_from_discount','coins_are_tokens_not_roubles']+(['coupon_presentation_method_not_disclosed']if presentation_unknown else [])+(['different_sale_and_coupon_end_dates_preserved']if len(set(dates))>1 else []))
     if kind!='partner':raise ValueError('gorod_unreviewed_record_kind')
     p=d['partner'];earn=d['earn']
