@@ -1,0 +1,36 @@
+name: One-time emitted source map check
+on:
+  push:
+    branches: [diagnostics/public-frontier-20260924]
+    paths: [.github/workflows/public-mapping-check-once.yml]
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Count emitted mappings for original benefits files
+        run: |
+          node --input-type=module <<'JS'
+          import {createHash} from 'node:crypto';
+          const url='https://marketplace.konsierge.com/static/js/main.959cee1e.js.map';
+          const out={url,started_at:new Date().toISOString(),source_account_used:false,credentials_used:false,client_executed:false,api_requests:0};
+          try{
+            const r=await fetch(url,{redirect:'manual',signal:AbortSignal.timeout(30000),headers:{'User-Agent':'PublicLoyaltyResearch/1.0'}});out.status=r.status;out.server_date=r.headers.get('Date');out.cache_age=r.headers.get('Age');
+            if(r.status!==200||r.headers.has('Retry-After'))throw Error('source_unavailable');
+            const parts=[];let len=0;for await(const p of r.body){len+=p.length;if(len>22000000)throw Error('size_bound');parts.push(p);}const bytes=Buffer.concat(parts);out.sha256=createHash('sha256').update(bytes).digest('hex');
+            if(out.sha256!=='1a7a0f61ce38c238094b8a2525c282e1b115d27d8af165ff3568dbaa1d353bf9')throw Error('source_changed');
+            const map=JSON.parse(bytes.toString('utf8'));if(map.version!==3)throw Error('map_version');
+            const digits='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+            function decode(segment){const values=[];let value=0,shift=0;for(const c of segment){const n=digits.indexOf(c);if(n<0)throw Error('bad_vlq');value+=(n&31)*2**shift;if(n&32){shift+=5;if(shift>35)throw Error('vlq_bound');}else{values.push((value&1)?-Math.floor(value/2):Math.floor(value/2));value=0;shift=0;}}if(shift)throw Error('truncated_vlq');return values;}
+            if(JSON.stringify(decode('AAAA'))!=='[0,0,0,0]'||JSON.stringify(decode('CAAC'))!=='[1,0,0,1]'||JSON.stringify(decode('D'))!=='[-1]')throw Error('decoder_self_test');
+            const counts=Array(map.sources.length).fill(0),originalLines=map.sources.map(()=>new Set());let source=0,oline=0,ocol=0,name=0,total=0;
+            for(const line of map.mappings.split(';')){let generatedColumn=0;for(const segment of line.split(',')){if(!segment)continue;const v=decode(segment);if(![1,4,5].includes(v.length))throw Error('segment_shape');generatedColumn+=v[0];if(v.length===1)continue;source+=v[1];oline+=v[2];ocol+=v[3];if(v.length===5)name+=v[4];if(source<0||source>=counts.length||oline<0||ocol<0)throw Error('mapping_bounds');counts[source]++;originalLines[source].add(oline+1);total++;}}
+            out.total_mapped_segments=total;out.source_count=map.sources.length;
+            out.target_modules=map.sources.map((path,index)=>({path,index,mapped_segments:counts[index],mapped_original_lines:originalLines[index].size,source_content_present:typeof map.sourcesContent?.[index]==='string'})).filter(x=>/^actions\/Benefits\/|^reducers\/Benefits\/|^lib\/request\.ts$/.test(x.path));
+            out.ui_source_mentions=map.sources.map((path,index)=>({path,index})).filter(x=>!x.path.includes('node_modules')&&/\.(tsx|jsx)$/.test(x.path)&&/benefits|Benefits|rubrics/.test(map.sourcesContent?.[x.index]||'')).map(x=>({path:x.path,mapped_segments:counts[x.index]}));
+            out.outcome='emitted_mapping_counts_verified';out.limitation='Missing emitted mappings support omitted code in this exact build, not absence of another client or impossibility of authorized server access.';
+          }catch(e){out.outcome='incomplete';out.error=/^[a-z_]+$/.test(e.message)?e.message:e.name;}
+          out.finished_at=new Date().toISOString();console.log('EMITTED_MAPPING_BEGIN');console.log(JSON.stringify(out));console.log('EMITTED_MAPPING_END');
+          JS
