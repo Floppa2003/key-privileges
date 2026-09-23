@@ -1,0 +1,70 @@
+name: One-time public EKP archive search
+on:
+  push:
+    branches: [research/public-alternatives-20260924]
+    paths: [.github/workflows/public-archive-search-once.yml]
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - run: python -m pip install --quiet requests==2.32.5 beautifulsoup4==4.14.3
+      - name: Read public source-owned search results without signing in
+        run: |
+          python - <<'PY'
+          import requests,json,time,hashlib,re
+          from urllib.parse import urlencode,urlsplit,parse_qs,urljoin
+          from datetime import datetime,timezone
+          from bs4 import BeautifulSoup
+          queries=['Литрес','Levrana','Важная рыба','Дом Книги']
+          def now():return datetime.now(timezone.utc).isoformat()
+          def norm(x):return re.sub(r'[^a-zа-яё0-9]','',x.lower())
+          report={'started_at':now(),'method':'anonymous_public_channel_search_first_page','channel':'ekpcard','account_used':False,'credentials_used':False,'new_schedule':False,'queries':[]}
+          stop=False
+          for q in queries:
+            row={'query':q,'requested_at':now()};report['queries'].append(row)
+            url='https://t.me/s/ekpcard?'+urlencode({'q':q});row['url']=url
+            try:
+              with requests.Session() as s:
+                s.trust_env=False
+                with s.get(url,headers={'User-Agent':'PublicLoyaltyResearch/1.0'},timeout=(8,20),allow_redirects=False,stream=True) as res:
+                  row.update(status=res.status_code,server_date=res.headers.get('Date'),cache_age=res.headers.get('Age'))
+                  if res.status_code in (401,403,423,429) or res.headers.get('Retry-After'):
+                    row['outcome']='source_refusal_stop';stop=True;continue
+                  if res.status_code!=200:row['outcome']='non_200';continue
+                  raw=bytearray();deadline=time.monotonic()+30
+                  for part in res.iter_content(65536):
+                    raw.extend(part)
+                    if len(raw)>2500000 or time.monotonic()>deadline:raise ValueError('size_time_bound')
+                  raw=bytes(raw);row.update(bytes=len(raw),sha256=hashlib.sha256(raw).hexdigest())
+              dom=BeautifulSoup(raw,'html.parser');messages=[]
+              for node in dom.select('.tgme_widget_message[data-post]'):
+                native=node.get('data-post','')
+                if not re.fullmatch(r'ekpcard/[0-9]+',native):continue
+                body=node.select_one('.tgme_widget_message_text');dt=node.select_one('time[datetime]')
+                if body is None:continue
+                txt=body.get_text(' ',strip=True)
+                if norm(q) not in norm(txt):continue
+                if re.search(r'победител[ьяеи]|выигравшие|розыгрыш заверш[её]н',txt,re.I):
+                  messages.append({'native_id':native,'excluded':'prize_winners_not_discount'});continue
+                links=[]
+                for a in body.select('a[href]'):
+                  u=urlsplit(a['href'])
+                  if u.scheme in ('http','https') and u.hostname and not u.username and not u.password:
+                    href=u._replace(query='',fragment='').geturl()
+                    if href not in links:links.append(href)
+                messages.append({'native_id':native,'url':'https://t.me/'+native,'published_at':dt.get('datetime') if dt else None,'text':txt[:3500],'text_characters':len(txt),'text_truncated':len(txt)>3500,'text_sha256':hashlib.sha256(txt.encode()).hexdigest(),'linked_public_paths':links[:15]})
+              more=[]
+              for a in dom.select('a.tme_messages_more[href]'):
+                u=urlsplit(urljoin(url,a['href']));params=parse_qs(u.query)
+                if u.hostname=='t.me' and u.path=='/s/ekpcard' and params.get('q')==[q]:more.append(u.geturl())
+              row.update(outcome='public_search_read',matching_messages=messages,next_search_pages=more,search_input_values=[x.get('value') for x in dom.select('input[name=q]')])
+            except Exception as e:row.update(outcome='transport_or_parse_error',error=type(e).__name__)
+            finally:
+              row['finished_at']=now();print('EKP_SEARCH_ROW '+json.dumps(row,ensure_ascii=False),flush=True)
+              if not stop:time.sleep(3)
+            if stop:break
+          report['finished_at']=now();report['completed_queries']=len(report['queries']);report['planned_queries']=len(queries);print('EKP_SEARCH_SUMMARY '+json.dumps({k:v for k,v in report.items() if k!='queries'},ensure_ascii=False))
+          PY
