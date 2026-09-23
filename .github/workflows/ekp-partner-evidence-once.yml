@@ -1,0 +1,71 @@
+name: One-time EKP public merchant evidence
+on:
+  push:
+    branches: [loyalty/ekp-public-partner-release-20260924]
+    paths: [.github/workflows/ekp-partner-evidence-once.yml]
+permissions:
+  contents: read
+jobs:
+  evidence:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {persist-credentials: false}
+      - run: python -m pip install --quiet requests==2.32.5 beautifulsoup4==4.14.3
+      - name: Read only the six previously verified public partner URLs
+        run: |
+          python - <<'PY'
+          import hashlib,json,time,subprocess
+          from pathlib import Path
+          from datetime import datetime,timezone
+          from urllib.parse import urlsplit
+          import requests
+          from bs4 import BeautifulSoup
+          out=Path('public-evidence');out.mkdir()
+          subprocess.run(['git','archive','--format=zip','--output='+str(out/'repository.zip'),'HEAD'],check=True)
+          targets={
+            'academia':'https://academia-suites.ru/about-news/programma-loyalnosti-ekp',
+            'dom-knigi':'https://dk-spb.ru/news/news-company/dom-knigi-i-edinaya-karta-peterburzhtsa-zaklyuchili-partnerstvo/',
+            'itc':'https://itctraining.ru/about/partnery/',
+            'ladoga':'https://ladogabaza.ru/',
+            'ilocked-brawl':'https://ilocked.ru/quest/brawl-stars',
+            'rostelecom':'https://www.company.rt.ru/projects/innovations/news/d476187/'
+          }
+          def now():return datetime.now(timezone.utc).isoformat()
+          report={'started_at':now(),'source_accounts_used':False,'source_credentials_used':False,'publication':False,'requests':[]}
+          for name,url in targets.items():
+            row={'name':name,'url':url,'started_at':now()};report['requests'].append(row)
+            try:
+              with requests.Session() as session:
+                session.trust_env=False
+                with session.get(url,headers={'User-Agent':'PublicLoyaltyResearch/1.0','Accept':'text/html'},timeout=(8,30),allow_redirects=False,stream=True) as r:
+                  row.update(status=r.status_code,server_date=r.headers.get('Date'),cache_age=r.headers.get('Age'))
+                  if r.status_code!=200 or r.headers.get('Retry-After'):raise ValueError('source_not_200_no_retry')
+                  raw=bytearray();deadline=time.monotonic()+40
+                  for block in r.iter_content(65536):
+                    raw.extend(block)
+                    if len(raw)>6000000 or time.monotonic()>deadline:raise ValueError('source_size_or_time_bound')
+                  raw=bytes(raw);row.update(origin_bytes=len(raw),origin_sha256=hashlib.sha256(raw).hexdigest())
+                  dom=BeautifulSoup(raw.decode('utf-8','replace'),'html.parser')
+                  if dom.select('input[type=password]'):raise ValueError('login_form_not_terms')
+                  for node in dom.select('script,style,form,input,textarea,iframe,noscript,meta'):node.decompose()
+                  for node in dom.find_all(True):
+                    node.attrs={k:v for k,v in node.attrs.items() if k in ('class','id','href')}
+                    href=node.get('href','')
+                    if href and (urlsplit(href).query or urlsplit(href).username):node.attrs.pop('href',None)
+                  safe=str(dom).encode();(out/(name+'.html')).write_bytes(safe)
+                  row.update(file=name+'.html',sanitized_sha256=hashlib.sha256(safe).hexdigest(),outcome='public_html_read')
+            except Exception as exc:
+              row.update(outcome='not_collected',error=str(exc) if isinstance(exc,ValueError) else type(exc).__name__)
+            finally:row['finished_at']=now()
+          report['finished_at']=now();(out/'manifest.json').write_text(json.dumps(report,ensure_ascii=False,indent=2))
+          print(json.dumps(report,ensure_ascii=False,indent=2))
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: ekp-public-evidence-${{ github.run_id }}
+          path: public-evidence/
+          retention-days: 3
+          if-no-files-found: error
