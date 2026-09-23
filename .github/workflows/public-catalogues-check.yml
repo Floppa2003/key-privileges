@@ -2,7 +2,7 @@ name: Verify new public partner catalogues
 on:
   push:
     branches: ["loyalty/public-catalogues-release-20260923"]
-    paths: ["loyalty/**", "diagnostics/catalogue-hooks.patch", ".github/workflows/public-catalogues-check.yml"]
+    paths: ["loyalty/**", "diagnostics/catalogue-hooks.patch", "diagnostics/catalogue-shape-fixes.patch", ".github/workflows/public-catalogues-check.yml"]
 permissions:
   contents: read
 concurrency:
@@ -22,16 +22,18 @@ jobs:
         with:
           ref: loyalty/public-catalogues-release-20260923
       - id: apply
-        name: Apply only the reviewed integration patch on this feature branch
+        name: Apply only the reviewed patches on this feature branch
         run: |
-          if git apply --check diagnostics/catalogue-hooks.patch; then
-            git apply diagnostics/catalogue-hooks.patch
-            git add loyalty/public_reward_projection.py loyalty/normalized.py loyalty/collect_normalized.py loyalty/source_lifecycle.py loyalty/sources_normalized.json
-            git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'Integrate reviewed public catalogue adapters [skip ci]'
-            git push origin HEAD:refs/heads/loyalty/public-catalogues-release-20260923
-          else
-            git apply --reverse --check diagnostics/catalogue-hooks.patch
-          fi
+          for patch in diagnostics/catalogue-hooks.patch diagnostics/catalogue-shape-fixes.patch; do
+            if git apply --check "$patch"; then
+              git apply "$patch"
+              git add loyalty
+              git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'Apply reviewed catalogue correction [skip ci]'
+            else
+              git apply --reverse --check "$patch"
+            fi
+          done
+          git push origin HEAD:refs/heads/loyalty/public-catalogues-release-20260923
           echo "revision=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
   verify:
     needs: integrate
@@ -65,12 +67,13 @@ jobs:
             python loyalty/sheets_normalized.py --input public-catalogues-check/source/normalized.json
             python loyalty/source_lifecycle.py --input public-catalogues-check/source/normalized.json --sources x5_partners_public,magnit_partners_public,gorod_public,tsvetnoy_public
           fi
-      - name: Save exact reviewed public code
+      - name: Save exact reviewed public code and pinned local test dependency
         if: always()
         run: |
           mkdir -p public-catalogues-check
           git rev-parse HEAD > public-catalogues-check/revision.txt
           tar --exclude='__pycache__' -cf public-catalogues-check/code.tar loyalty key .github diagnostics
+          python -m pip download --no-deps protego==0.6.2 -d public-catalogues-check/deps
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
