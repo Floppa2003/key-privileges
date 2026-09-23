@@ -1,0 +1,280 @@
+--- a/loyalty/x5_partners.py
++++ b/loyalty/x5_partners.py
+@@ -52,15 +52,26 @@
+     if not partner or (expected and partner!=expected):raise ValueError('x5_partner_identity')
+     if not e['activation'] or not e['conditions']:raise ValueError('x5_missing_detail_terms')
+     start,end=iso(card.get('startDate')),iso(card.get('endDate'))
+-    period=re.search(r'Действует\s+(\d{2}\.\d{2}\.\d{4})\s*-\s*(\d{2}\.\d{2}\.\d{4})',e['period'])
+-    if not period or (iso(period[1]),iso(period[2]))!=(start,end):raise ValueError('x5_catalogue_detail_period_drift')
++    period=re.fullmatch(r'Действует\s+(\d{2}\.\d{2}\.\d{4})\s*[-–]\s*(\d{2}\.\d{2}\.\d{4})',compact(e['period']))
++    months={'янв':1,'февр':2,'мар':3,'апр':4,'мая':5,'июн':6,'июл':7,'авг':8,'сент':9,'окт':10,'нояб':11,'дек':12}
++    expiry=re.fullmatch(r'Доступно до (\d{1,2}) ([а-я]+)\.? (\d{4}) г\.',compact(e['period']))
++    if period:
++        coherent=(iso(period[1]),iso(period[2]))==(start,end)
++    elif expiry and expiry[2] in months and card.get('type')=='exchange':
++        coherent=iso(f'{int(expiry[1]):02}.{months[expiry[2]]:02}.{expiry[3]}')==end
++    else:coherent=False
++    if not coherent:raise ValueError('x5_catalogue_detail_period_drift')
+     cost=card.get('cost'); typ=card.get('type')
+-    if type(cost) not in (int,float) or cost<0 or typ not in ('purchased','exchange'):raise ValueError('x5_cost_type')
+-    access=(f'Получение: {cost:g} баллов X5 Клуба.' if typ=='purchased' else 'Обмен баллов X5; курс и единицы обмена определяются условиями ниже.')
+-    return dict(native=e['native'],program=PROGRAMS[SOURCE],partner=partner,title=title,benefit=title,
++    if typ=='quest' and cost is None:
++        access='Задание или предложение партнёра; денежная оплата, требования и возможное автопродление указаны ниже. Цена получения в баллах X5 не указана.'
++    elif type(cost) in (int,float) and cost>=0 and typ in ('purchased','exchange'):
++        access=(f'Получение: {cost:g} баллов X5 Клуба.' if typ=='purchased' else 'Обмен баллов X5; курс и единицы обмена определяются условиями ниже.')
++    else:raise ValueError('x5_cost_type')
++    benefit=title+('\n'+e['exchange_terms'] if typ=='exchange' and e.get('exchange_terms') else '')
++    return dict(native=e['native'],program=PROGRAMS[SOURCE],partner=partner,title=title,benefit=benefit,
+         url=e['url'],conditions='\n'.join([access,e['period'],e['conditions']]),activation=e['activation'],
+         valid_from=start,valid_until=end,category=e.get('category') or 'Партнёры',locator='main; own heading, dates, redemption and conditions',
+-        terms=[dict(kind='partner_privilege',fragment=title)],scope={'X5_membership_required':True,'individual_code_not_issued':True},
++        terms=[dict(kind='partner_privilege',fragment=benefit)],scope={'X5_membership_required':True,'individual_code_not_issued':True},
+         warnings=['X5_points_cost_not_cash_discount'])
+ 
+ def detail(raw,card,category,now):
+@@ -76,6 +87,11 @@
+         ('idOffer','nameOffer','cost','startDate','endDate','type','namePartnerOffer','namePartner')},
+         heading=plain(h[0]),partner=plain(one(container,'h3')),period=plain(one(container,'p')),
+         activation=section('Как воспользоваться?'),conditions=section('Условия предложения'),category=category,page_sha256=sha(raw))
++    if card.get('type')=='exchange':
++        # Keep a stated conversion ratio, not the surrounding social-network or airline advertising.
++        about=section('О партнёре')
++        e['exchange_terms']='\n'.join(line for line in (about+'\n'+e['activation']).splitlines()
++            if re.search(r'по курсу\s+\d|\b\d+\s+миль за каждые\s+\d+',line,re.I))
+     check_period(iso(card.get('startDate')),iso(card.get('endDate')),now)
+     return make_record(SOURCE,e,now)
+ 
+--- a/loyalty/gorod_source.py
++++ b/loyalty/gorod_source.py
+@@ -34,7 +34,10 @@
+         # Earliest explicit end prevents sale/end-of-use disagreements extending an offer.
+         end=min(dates) if dates else None
+         dates_text='\n'.join(k+': '+str(d[k])for k in ('endAt','couponEndAt','countdown') if d.get(k))
+-        conditions=plain(d.get('terms',''));activation='\n'.join(plain(x)for x in d.get('howToAsList',[]))
++        conditions=plain(d.get('terms',''));activation='\n'.join(plain(x)for x in (d.get('howToAsList')or[]))
++        if not activation:
++            automatic=re.search(r'Бустер начинает действовать автоматически после покупки\. Дополнительно вводить его данные никуда не требуется\.',conditions)
++            if automatic:activation=automatic[0]
+         if not conditions or not activation:raise ValueError('gorod_coupon_terms_missing')
+         cb=d.get('cashback') or {}
+         extra='\nВознаграждение за покупку купона: '+plain(cb.get('text',''))+' '+CURRENCIES.get(cb.get('currency'),'единица не указана') if cb else ''
+@@ -42,9 +45,9 @@
+         if address.get('details'):conditions+='\nАдрес: '+plain(address['details'])
+         refs=links(d.get('terms',''))
+         if refs:conditions+='\nПолные правила: '+'; '.join(refs)
+-        return dict(native=native,program=PROGRAMS[SOURCE],partner=p['name'],title=name,benefit=name,
++        return dict(native=native,program=PROGRAMS[SOURCE],partner=compact(p['name']),title=name,benefit=name,
+             conditions=cost.strip()+extra+'\n'+dates_text+'\n'+conditions,activation=activation,url=url,
+-            category=p.get('subtitle') or 'Купоны',valid_until=end,locator='couponViewStore.couponData',
++            category=compact(p.get('subtitle')) or 'Купоны',valid_until=end,locator='couponViewStore.couponData',
+             terms=[dict(kind='partner_privilege',fragment=name)],scope={'coupon_id':d['id'],'coupon_purchase_or_activation_not_performed':True},
+             warnings=['coupon_price_separate_from_discount','coins_are_tokens_not_roubles']+(['different_sale_and_coupon_end_dates_preserved']if len(set(dates))>1 else []))
+     if kind!='partner':raise ValueError('gorod_unreviewed_record_kind')
+@@ -84,23 +87,28 @@
+         conditions+='\nУсловия списания: '+spend_text
+     refs=[v['url']for v in (p.get('rulesFile'),earn.get('rulesFile'))if isinstance(v,dict) and v.get('url')]
+     if refs:conditions+='\nПравила партнёра: '+'; '.join(dict.fromkeys(refs))
+-    if not activation or not conditions.strip():raise ValueError('gorod_partner_activation_missing')
++    if not activation:raise ValueError('gorod_partner_activation_missing')
++    missing_conditions=not conditions.strip()
++    if missing_conditions:conditions='Дополнительные условия начисления на публичной карточке не раскрыты.'
+     regions=e.get('catalogue_regions',[])
+     conditions+='\nПартнёр найден в публичных каталогах регионов: '+', '.join(regions)+'. Это не проверка доступности по личному адресу.'
+-    warnings=['Gorod_bonus_not_money_to_bank_card','loyalty_level_uplift_not_partner_rate']
++    warnings=['Gorod_bonus_not_money_to_bank_card','loyalty_level_uplift_not_partner_rate']+(['additional_conditions_not_disclosed']if missing_conditions else [])
+     days=set(re.findall(r'(\d+)\s+(?:рабочих\s+)?дн',activation+'\n'+hold,re.I))
+     if len(days)>1:warnings.append('source_conflicting_accrual_times_preserved')
+-    return dict(native=native,program=PROGRAMS[SOURCE],partner=p['name'],title='Город → '+p['name'],benefit='\n'.join(lines),
+-        conditions=conditions.strip(),activation=activation,url=url,category=p.get('categoriesAsText')or'Партнёры',
++    return dict(native=native,program=PROGRAMS[SOURCE],partner=compact(p['name']),title='Город → '+compact(p['name']),benefit='\n'.join(lines),
++        conditions=conditions.strip(),activation=activation,url=url,category=compact(p.get('categoriesAsText'))or'Партнёры',
+         locator='partnerViewStore; bonusByLevel and owned conditions',terms=terms,
+         scope={'membership_required':True,'catalogue_regions_not_personal_availability':regions},warnings=warnings)
+ 
+ def coupon(raw,card,now):
+     d=next_store(raw,'couponViewStore')['couponData']
+-    if int(card['id'])!=d['id'] or compact(d['name'])!=compact(card['name']):raise ValueError('gorod_coupon_catalogue_drift')
++    if int(card['id'])!=d['id'] or (card.get('partner_id')is not None and card['partner_id']!=d.get('partner',{}).get('id')):
++        raise ValueError('gorod_coupon_catalogue_drift')
++    # The listing deliberately uses shorter labels. Identity is the stable coupon
++    # ID and its source-linked partner; keep both names instead of requiring equality.
+     safe={k:d.get(k)for k in ('id','name','available','price','terms','endAt','couponEndAt','countdown','howToAsList','cashback','message','address')}
+     safe['partner']={k:d['partner'].get(k) for k in ('id','name','subtitle','available')}
+-    e=dict(native='coupon:'+str(d['id']),kind='coupon',url=HOST+'/bonus-plus/coupons/'+str(d['id']),data=safe,page_sha256=sha(raw))
++    e=dict(native='coupon:'+str(d['id']),kind='coupon',url=HOST+'/bonus-plus/coupons/'+str(d['id']),data=safe,catalogue_title=compact(card['name']),catalogue_partner_id=card.get('partner_id'),page_sha256=sha(raw))
+     f=source_fields(e);check_period(None,f.get('valid_until'),now)
+     return make_record(SOURCE,e,now)
+ 
+@@ -143,7 +151,11 @@
+                 data=g['coupons']
+                 for c in data['elements']:
+                     if c['id']in coupons and compact(coupons[c['id']]['name'])!=compact(c['name']):raise ValueError('gorod_coupon_name_conflict')
+-                    coupons[c['id']]={'id':c['id'],'name':c['name']}
++                    previous=coupons.get(c['id'],{})
++                    partner_id=g.get('id')
++                    if previous.get('partner_id')is not None and partner_id is not None and previous['partner_id']!=partner_id:
++                        raise ValueError('gorod_coupon_partner_conflict')
++                    coupons[c['id']]={'id':c['id'],'name':c['name'],'partner_id':partner_id if partner_id is not None else previous.get('partner_id')}
+                 if data.get('hasMore') and g.get('id') not in pending_groups:pending_groups.append(g.get('id'))
+             pages.append({'coupon_region':region['id'],'ids':ids,'hasMore':more,'sha256':sha(json.dumps(d,sort_keys=True))})
+             if not more:break
+@@ -164,7 +176,9 @@
+             inner=store.get('partnerCouponsData')or{}
+             if inner.get('hasMore') or inner.get('total',len(inner.get('elements',[])))!=len(inner.get('elements',[])):
+                 raise ValueError('gorod_inner_coupon_pagination_unresolved')
+-            for c in inner.get('elements',[]):coupons[c['id']]={'id':c['id'],'name':c['name']}
++            for c in inner.get('elements',[]):
++                if coupons.get(c['id'],{}).get('partner_id') not in (None,i):raise ValueError('gorod_coupon_partner_conflict')
++                coupons[c['id']]={'id':c['id'],'name':c['name'],'partner_id':i}
+             e=dict(native=native,kind='partner',url=HOST+'/partners/'+str(i),data=d,catalogue_regions=p['regions'],page_sha256=sha(raw))
+             why=exclusion(d['partner']['name'])
+             if why:raise ExcludedOffer(why)
+--- a/loyalty/public_transport.py
++++ b/loyalty/public_transport.py
+@@ -168,6 +168,7 @@
+         except RuntimeError:
+             self.robots_info['state']='unreadable_or_unreachable'
+             raise
++        self.robots_rules=rules
+         self.policy=Protego.parse(rules)
+         self.robots_info['state']=state
+         delay=self.policy.crawl_delay('LoyaltyCatalogResearchBot') or 0
+--- a/loyalty/magnit_partners.py
++++ b/loyalty/magnit_partners.py
+@@ -114,6 +114,9 @@
+ async def collect(client,cfg,report,now,limit):
+     from read_budget import within_source_budget,stops_catalog
+     if cfg['id']!=SOURCE or cfg['url']!=ROOT:raise ValueError('magnit_config')
++    from magnit_policy import QuerylessMagnitPolicy
++    client.policy=QuerylessMagnitPolicy(client.robots_rules)
++    report['policy_matcher']='protego_062_queryless_magnit_cards_only'
+     async def read(url,selector):
+         await within_source_budget(client,lambda:client.read(url,render=True))
+         await within_source_budget(client,lambda:client.page.locator(selector).first.wait_for(state='attached',timeout=12000))
+--- /dev/null
++++ b/loyalty/magnit_policy.py
+@@ -0,0 +1,29 @@
++"""Correct Protego 0.6.2's empty-query rule only for queryless Magnit card paths.
++
++Its _quote_pattern('/*?$') becomes '/*$'. A literal question mark cannot
++match these strictly enumerated queryless paths. Other URLs, directives,
++agent groups, delays and refusals keep the original parser's policy.
++"""
++import re
++from urllib.parse import urlsplit
++from protego import Protego
++
++class QuerylessMagnitPolicy:
++    def __init__(self,rules):
++        self.original=Protego.parse(rules)
++        # Keep the directive and its position, including groups containing only
++        # query rules. Removing lines could accidentally join user-agent groups.
++        escaped=re.sub(r'^([ \t]*(?:allow|disallow)[ \t]*:[ \t]*)([^#\n]*)',
++            lambda m:m[1]+m[2].replace('?', '%3F'),rules,flags=re.I|re.M)
++        self.queryless=Protego.parse(escaped)
++
++    def can_fetch(self,url,agent):
++        u=urlsplit(url)
++        if (u.scheme=='https' and u.netloc=='magnit.ru'
++            and re.fullmatch(r'/partners(?:/\d+)?/?',u.path)
++            and '?' not in url.partition('#')[0]):
++            return self.queryless.can_fetch(url,agent)
++        return self.original.can_fetch(url,agent)
++
++    def crawl_delay(self,agent):return self.original.crawl_delay(agent)
++    def request_rate(self,agent):return self.original.request_rate(agent)
+--- /dev/null
++++ b/loyalty/tests/test_magnit_policy.py
+@@ -0,0 +1,34 @@
++"""No network: distinguish a literal empty-query rule from a site-wide ban."""
++import sys,unittest
++from pathlib import Path
++sys.path.insert(0,str(Path(__file__).parents[1]))
++from protego import Protego
++from magnit_policy import QuerylessMagnitPolicy
++A='LoyaltyCatalogResearchBot'
++
++class QuerylessRules(unittest.TestCase):
++    def test_pinned_bug_reproduction_and_narrow_fix(self):
++        rules='User-agent: *\nDisallow: /*?$'
++        self.assertFalse(Protego.parse(rules).can_fetch('https://magnit.ru/partners',A))
++        p=QuerylessMagnitPolicy(rules)
++        for path in ('/partners','/partners/','/partners/1768'):
++            self.assertTrue(p.can_fetch('https://magnit.ru'+path,A))
++        self.assertFalse(p.can_fetch('https://magnit.ru/partners?',A))
++    def test_explicit_catalogue_ban_preserved(self):
++        p=QuerylessMagnitPolicy('User-agent: *\nDisallow: /*?$\nDisallow: /partners')
++        self.assertFalse(p.can_fetch('https://magnit.ru/partners/1768',A))
++    def test_site_wide_ban_preserved(self):
++        p=QuerylessMagnitPolicy('User-agent: *\nDisallow: /')
++        self.assertFalse(p.can_fetch('https://magnit.ru/partners',A))
++    def test_specific_allow_and_agent_groups(self):
++        rules='User-agent: other\nDisallow: /*?$\nUser-agent: *\nDisallow: /partners\nAllow: /partners/1768\nCrawl-delay: 2'
++        p=QuerylessMagnitPolicy(rules)
++        self.assertFalse(p.can_fetch('https://magnit.ru/partners',A));self.assertTrue(p.can_fetch('https://magnit.ru/partners/1768',A))
++        self.assertEqual(p.crawl_delay(A),2)
++    def test_non_card_urls_unchanged(self):
++        rules='User-agent: *\nDisallow: /*?$\nDisallow: /account'
++        p=QuerylessMagnitPolicy(rules);base=Protego.parse(rules)
++        for u in ('https://magnit.ru/account','https://elsewhere.test/partners','http://magnit.ru/partners','https://magnit.ru/partners?a=1','https://magnit.ru/partners%3F'):
++            self.assertEqual(p.can_fetch(u,A),base.can_fetch(u,A))
++
++if __name__=='__main__':unittest.main()
+--- /dev/null
++++ b/loyalty/tests/test_catalogue_shape_repairs.py
+@@ -0,0 +1,54 @@
++"""Regressions for public shapes observed in the first four-catalogue run."""
++import copy,json,sys,unittest
++from pathlib import Path
++sys.path.insert(0,str(Path(__file__).parents[1]))
++from test_catalogue_expansion import x5,gorod,coupon,OLD
++from x5_partners import source_fields as xfields
++from gorod_source import source_fields as gfields,coupon as parse_coupon
++from public_reward_projection import make_record,validate_record
++
++class ObservedShapes(unittest.TestCase):
++    def test_exchange_end_only_date(self):
++        e=x5();e['card']['type']='exchange';e['period']='Доступно до 31 дек. 2026 г.'
++        self.assertEqual(xfields(e)['valid_until'],'2026-12-31')
++    def test_exchange_expiry_mismatch_still_rejected(self):
++        e=x5();e['card']['type']='exchange';e['period']='Доступно до 30 дек. 2026 г.'
++        with self.assertRaises(ValueError):xfields(e)
++    def test_quest_null_cost_not_called_free(self):
++        e=x5();e['card']['type']='quest';e['card']['cost']=None
++        e['conditions']='99 ₽ за пробный абонемент. Через 7 дней автопродление по полной стоимости.'
++        f=xfields(e);self.assertNotIn('бесплат',f['conditions']);self.assertIn('автопродление',f['conditions'])
++    def test_purchased_null_cost_still_rejected(self):
++        e=x5();e['card']['cost']=None
++        with self.assertRaises(ValueError):xfields(e)
++    def test_source_exchange_ratio_preserved(self):
++        e=x5();e['card']['type']='exchange';e['exchange_terms']='Обменивайте по курсу 122 баллы = 1 голос ВКонтакте.'
++        self.assertIn('122',xfields(e)['benefit'])
++    def test_trimmed_gorod_partner_replays(self):
++        e=gorod();e['data']['partner']['name']+=' '
++        r=make_record('gorod_public',e,OLD);validate_record(r)
++    def test_no_extra_conditions_is_not_no_activation(self):
++        e=gorod();e['data']['partner']['specialConditions']=None;e['data']['earn']['hold']=None
++        f=gfields(e);self.assertIn('additional_conditions_not_disclosed',f['warnings'])
++        validate_record(make_record('gorod_public',e,OLD))
++    def test_no_partner_activation_still_rejected(self):
++        e=gorod();e['data']['partner']['howTo']=None
++        with self.assertRaises(ValueError):gfields(e)
++    def test_coupon_short_title_not_identity(self):
++        e=coupon();d=e['data'];data={'props':{'pageProps':{'initialStoreState':{'couponViewStore':{'couponData':d}}}}}
++        raw='<script id="__NEXT_DATA__" type="application/json">'+json.dumps(data)+'</script>'
++        r=parse_coupon(raw,{'id':d['id'],'name':'Купон на кофе','partner_id':d['partner']['id']},OLD)
++        self.assertEqual(r['title'],d['name']);validate_record(r)
++    def test_coupon_wrong_partner_still_rejected(self):
++        e=coupon();d=e['data'];data={'props':{'pageProps':{'initialStoreState':{'couponViewStore':{'couponData':d}}}}}
++        raw='<script id="__NEXT_DATA__" type="application/json">'+json.dumps(data)+'</script>'
++        with self.assertRaises(ValueError):parse_coupon(raw,{'id':d['id'],'name':d['name'],'partner_id':999},OLD)
++    def test_booster_owned_automatic_activation(self):
++        e=coupon();e['data']['howToAsList']=None;e['data']['name']='Максимальный кешбэк от партнеров на 7 дней'
++        e['data']['terms']='Бустер начинает действовать автоматически после покупки. Дополнительно вводить его данные никуда не требуется.'
++        self.assertIn('автоматически',gfields(e)['activation']);validate_record(make_record('gorod_public',e,OLD))
++    def test_unknown_null_coupon_activation_not_invented(self):
++        e=coupon();e['data']['howToAsList']=None
++        with self.assertRaises(ValueError):gfields(e)
++
++if __name__=='__main__':unittest.main()
