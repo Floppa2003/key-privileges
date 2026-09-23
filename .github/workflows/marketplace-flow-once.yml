@@ -29,14 +29,15 @@ jobs:
             while(stack.length){const n=stack.pop();if(!n||typeof n!=='object')continue;
               if(n.type==='Literal'&&!retain.has(n.value))literals.push([n.start,n.end]);
               if(n.type==='TemplateElement')literals.push([n.start,n.end]);
-              if(n.type==='MemberExpression'&&['REACT_APP_BENEFITS_SERVER','REACT_APP_BENEFITS_KEY','KON_TARIFF_ID'].includes(n.property?.name))points.push({offset:n.start,member:n.property.name});
+              if(n.type==='Identifier'&&['REACT_APP_BENEFITS_SERVER','REACT_APP_BENEFITS_KEY'].includes(n.name))points.push({offset:n.start,member:n.name});
               for(const [k,v]of Object.entries(n)){if(k==='start'||k==='end')continue;if(Array.isArray(v))stack.push(...v);else if(v&&typeof v==='object')stack.push(v);}
             }
+            if(!points.length)throw Error('configuration_references_not_located');
             literals.sort((a,b)=>a[0]-b[0]);let at=0,masked='';
             for(const [s,e]of literals){if(s<at)continue;masked+=code.slice(at,s)+' '.repeat(e-s);at=e;}masked+=code.slice(at);
             const snippets=[];let last=-100000;
-            for(const p of points.sort((a,b)=>a.offset-b.offset)){if(p.offset-last<400)continue;last=p.offset;snippets.push({member:p.member,source_offset:p.offset,redacted_context:masked.slice(Math.max(0,p.offset-220),Math.min(masked.length,p.offset+1050)).replace(/ {4,}/g,' [literal omitted] ')});}
-            report.request_construction_contexts=snippets;report.relevant_reference_count=points.length;report.outcome='literal_redacted_static_flow_inspected';report.scope='reviewed_member_references_not_proof_of_all_runtime_paths_or_server_entitlement';
+            for(const p of points.sort((a,b)=>a.offset-b.offset)){if(p.offset-last<900)continue;last=p.offset;snippets.push({member:p.member,source_offset:p.offset,redacted_context:masked.slice(Math.max(0,p.offset-700),Math.min(masked.length,p.offset+2100)).replace(/ {4,}/g,' [literal omitted] ')});}
+            report.request_construction_contexts=snippets;report.relevant_reference_count=points.length;report.outcome='literal_redacted_static_flow_inspected';report.scope='inlined_configuration_references_not_proof_of_all_runtime_paths_or_server_entitlement';
           }catch(e){report.outcome='incomplete';report.error=/^[a-z_]+$/.test(e.message)?e.message:e.name;}
           report.finished_at=new Date().toISOString();console.log('MARKETPLACE_FLOW_BEGIN');console.log(JSON.stringify(report,null,2));console.log('MARKETPLACE_FLOW_END');
           JS
