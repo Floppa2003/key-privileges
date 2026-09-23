@@ -1,0 +1,56 @@
+name: One-time public benefits module dependency trace
+on:
+  push:
+    branches: [research/public-alternatives-20260924]
+    paths: [.github/workflows/public-module-trace-once.yml]
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - run: npm install --no-audit --no-fund --ignore-scripts acorn@8.15.0
+      - name: Parse module graph and redact all nonstructural literal values
+        run: |
+          node --input-type=module <<'JS'
+          import * as acorn from 'acorn';
+          import {createHash} from 'node:crypto';
+          const url='https://marketplace.konsierge.com/static/js/main.959cee1e.js';
+          const report={started_at:new Date().toISOString(),url,account_used:false,credentials_used:false,api_calls:0,client_executed:false};
+          function visit(root,fn){const stack=[root];while(stack.length){const n=stack.pop();if(!n||typeof n!=='object')continue;fn(n);for(const[k,v]of Object.entries(n)){if(k==='start'||k==='end')continue;if(Array.isArray(v))stack.push(...v);else if(v&&typeof v==='object')stack.push(v);}}}
+          try{
+            const r=await fetch(url,{redirect:'manual',signal:AbortSignal.timeout(30000),headers:{'User-Agent':'PublicLoyaltyResearch/1.0'}});report.status=r.status;
+            if(r.status!==200||r.headers.has('Retry-After'))throw Error('non_200_no_retry');
+            const chunks=[];let total=0;for await(const b of r.body){total+=b.length;if(total>5000000)throw Error('size_bound');chunks.push(b);}
+            const raw=Buffer.concat(chunks),code=raw.toString('utf8');report.sha256=createHash('sha256').update(raw).digest('hex');
+            if(report.sha256!=='7dc923347de9b832bfbaa97bdcfa5391ea37fb6217aca295e174ee20bbedab2c')throw Error('bundle_changed');
+            const ast=acorn.parse(code,{ecmaVersion:'latest'}),arrays=[];
+            visit(ast,n=>{if(n.type==='ArrayExpression'&&n.elements.filter(x=>x?.type==='FunctionExpression').length>100)arrays.push(n);});
+            arrays.sort((a,b)=>b.elements.length-a.elements.length);if(!arrays.length)throw Error('webpack_module_array_not_found');
+            const mods=arrays[0].elements;report.module_count=mods.length;const graph=[];
+            for(let id=0;id<mods.length;id++){
+              const n=mods[id];if(n?.type!=='FunctionExpression')continue;const requireName=n.params[2]?.name,imports=new Set(),matches=new Set();
+              visit(n,x=>{
+                if(x.type==='CallExpression'&&x.callee?.type==='Identifier'&&x.callee.name===requireName&&x.arguments.length===1&&Number.isInteger(x.arguments[0]?.value))imports.add(x.arguments[0].value);
+                if(x.type==='Literal'&&typeof x.value==='string'&&/^GET_(BENEFITS|RUBRICS)_/.test(x.value))matches.add(x.value);
+                if(x.type==='Identifier'&&['rubricsState','benefitsState'].includes(x.name))matches.add(x.name);
+              });graph.push({id,bytes:n.end-n.start,imports:[...imports].sort((a,b)=>a-b),matches:[...matches]});
+            }
+            const seeds=graph.filter(x=>x.matches.length),seedIds=new Set(seeds.map(x=>x.id));
+            const consumers=graph.filter(x=>x.imports.some(i=>seedIds.has(i)));
+            const selected=[...new Map([...seeds,...consumers].map(x=>[x.id,x])).values()];
+            report.seeds=seeds;report.consumer_graph=consumers;report.selected_count=selected.length;
+            const whitelist=new Set(['Authorization','Basic','Bearer','tariff_id','rubric_id','page','per','get','GET','post','POST','GET_BENEFITS_REQUEST','GET_BENEFITS_RESPONSE','GET_BENEFITS_ERROR','GET_RUBRICS_REQUEST','GET_RUBRICS_RESPONSE','GET_RUBRICS_ERROR','benefits','rubrics']);
+            function redact(n){
+              const spans=[];visit(n,x=>{if(x.type==='Literal'||x.type==='TemplateElement'){
+                const v=x.type==='Literal'?x.value:x.value.cooked;
+                const safe=typeof v==='string'&&(whitelist.has(v)||(/^https:\/\/benefits\.konsierge\.com\/[A-Za-z0-9/_.?=&-]{0,160}$/.test(v)&&!/(token|secret|key|password|session)/i.test(v)));
+                if(!safe)spans.push([x.start,x.end]);
+              }});spans.sort((a,b)=>a[0]-b[0]);let p=n.start,out='';for(const[s,e]of spans){if(s<p)continue;out+=code.slice(p,s)+'[literal omitted]';p=e;}return out+code.slice(p,n.end);
+            }
+            report.modules=selected.slice(0,16).map(x=>({...x,source:x.bytes<=35000?redact(mods[x.id]):null,omitted_for_length:x.bytes>35000}));
+            report.all_selected_exported=selected.length<=16&&selected.every(x=>x.bytes<=35000);report.outcome=seeds.length?'module_dependencies_inspected':'no_action_module';
+          }catch(e){report.outcome='incomplete';report.error=/^[a-z0-9_]+$/.test(e.message)?e.message:e.name;}
+          report.finished_at=new Date().toISOString();console.log('MODULE_TRACE_BEGIN');console.log(JSON.stringify(report,null,2));console.log('MODULE_TRACE_END');
+          JS
