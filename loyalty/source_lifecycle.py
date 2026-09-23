@@ -10,7 +10,9 @@ import json
 from datetime import date, datetime
 
 LIMITS = {'backit_public': 2000, 'club_avolta_public': 80}
-FRESHNESS_DAYS = {'backit_public': 7, 'club_avolta_public': 7, 'mantera_moments': 7}
+from expansion_common import SOURCES as EXPANSION_SOURCES, EXCLUSIONS as EXPANSION_EXCLUSIONS
+FRESHNESS_DAYS = {'backit_public': 7, 'club_avolta_public': 7, 'mantera_moments': 7,
+                  **{sid:7 for sid in EXPANSION_SOURCES}}
 HOLD_REASONS = {
     'source_disclosed_temporarily_disabled', 'financial_or_acquisition_ad',
     'dated_promotional_rate_requires_current_confirmation', 'promotional_period_expired',
@@ -18,6 +20,8 @@ HOLD_REASONS = {
     'detail_page_replaced_by_catalogue', 'source_conflict_lounge_admission_price',
     'no_concrete_partner_benefit', 'not_in_complete_inventory',
 }
+
+HOLD_REASONS.update(EXPANSION_EXCLUSIONS)
 
 def _stamp(value):
     dt = datetime.fromisoformat(value.replace('Z', '+00:00'))
@@ -55,6 +59,12 @@ def validate_inventories(bundle):
     """Only complete successful reads authorize reconciliation; fail on drift."""
     result = {}
     for report in bundle['sources']:
+        if report['source_id'] in EXPANSION_SOURCES:
+            from expansion_common import snapshot
+            sid=report['source_id']
+            current=snapshot(report,[r for r in bundle['records'] if r['source_id']==sid],bundle['observed_at'])
+            if current is not None:result[sid]=current
+            continue
         if report['source_id'] == 'mantera_moments':
             # Named hotels share one source URL, so use their validated IDs.
             from mantera_lifecycle import snapshot
@@ -110,7 +120,10 @@ def reconcile_rows(bundle, existing, incoming):
         if sid not in snapshots:
             continue
         snap = snapshots[sid]
-        if sid == 'mantera_moments':
+        if sid in EXPANSION_SOURCES:
+            from expansion_common import hold_reason
+            reason = hold_reason(row, d, snap)
+        elif sid == 'mantera_moments':
             from mantera_lifecycle import hold_reason
             reason = hold_reason(row, d, snap)
         else:
