@@ -6,7 +6,8 @@ from __future__ import annotations
 import re
 from bs4 import BeautifulSoup, Comment
 
-SOURCES = {'backit_public', 'club_avolta_public', 'mantera_moments'}
+SOURCES = {'backit_public', 'club_avolta_public', 'mantera_moments',
+           'x5_partners_public', 'magnit_partners_public', 'gorod_public', 'tsvetnoy_public'}
 WARNINGS = ['public_terms_not_personal_eligibility', 'account_activation_not_performed',
             'source_dates_not_inferred', 'linked_external_terms_not_exhaustively_read']
 
@@ -34,6 +35,14 @@ def fields(source, evidence):
         from avolta_source import source_fields
     elif source == 'mantera_moments':
         from mantera_source import source_fields
+    elif source == 'x5_partners_public':
+        from x5_partners import source_fields
+    elif source == 'magnit_partners_public':
+        from magnit_partners import source_fields
+    elif source == 'gorod_public':
+        from gorod_source import source_fields
+    elif source == 'tsvetnoy_public':
+        from tsvetnoy_source import source_fields
     else: raise ValueError('unknown_public_reward_source')
     return source_fields(evidence)
 

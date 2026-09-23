@@ -775,5 +775,33 @@
     "url": "https://lk.manteratravel.ru/faq",
     "timeout_seconds": 90,
     "coverage_scope": "five_public_tiers_pilot_hotels_accommodation_only"
+  },
+  {
+    "id": "x5_partners_public",
+    "name": "X5 Клуб — партнёры",
+    "mode": "x5_public",
+    "url": "https://x5club.ru/partners",
+    "timeout_seconds": 240
+  },
+  {
+    "id": "magnit_partners_public",
+    "name": "Магнит Плюс — партнёры",
+    "mode": "magnit_public",
+    "url": "https://magnit.ru/partners",
+    "timeout_seconds": 360
+  },
+  {
+    "id": "gorod_public",
+    "name": "Город / Тройка — публичные партнёры и купоны",
+    "mode": "gorod_public",
+    "url": "https://gorodtroika.ru/bonus-plus/coupons",
+    "timeout_seconds": 1000
+  },
+  {
+    "id": "tsvetnoy_public",
+    "name": "Цветной — программа лояльности",
+    "mode": "tsvetnoy_public",
+    "url": "https://tsvetnoy.com/loyality",
+    "timeout_seconds": 120
   }
 ]
