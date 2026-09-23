@@ -1,0 +1,91 @@
+name: Verify public FlyStation adapter
+on:
+  push:
+    branches: [loyalty/last-public-gap-20260923]
+    paths: [.github/workflows/flystation-check-once.yml]
+permissions:
+  contents: read
+jobs:
+  integrate:
+    if: github.repository == 'Floppa2003/key-privileges' && github.ref == 'refs/heads/loyalty/last-public-gap-20260923'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    permissions:
+      contents: write
+      actions: read
+    outputs:
+      revision: ${{ steps.commit.outputs.revision }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: loyalty/last-public-gap-20260923
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - run: python -m pip install beautifulsoup4==4.14.3
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: last-public-gap-35852288675
+          run-id: 35852288675
+          github-token: ${{ github.token }}
+          path: /tmp/flystation-public-probe
+      - name: Apply the reviewed source hooks and retain only public test panels
+        run: |
+          git apply --check diagnostics/flystation-hooks.patch
+          git apply diagnostics/flystation-hooks.patch
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib,json
+          from bs4 import BeautifulSoup
+          p=Path('/tmp/flystation-public-probe');meta=json.loads((p/'outcome.json').read_text());raw=(p/'flystation.public.html').read_text()
+          assert meta['status']=='read' and meta['url']=='https://flystation.net/promotions' and meta['account_used'] is False
+          assert hashlib.sha256(raw.encode()).hexdigest()==meta['public_sha256']=='02e96d296d15c4fd1a319cffaf3a1948ddb9410a0d49eb7673a574bf5ab6d9a0'
+          s=BeautifulSoup(raw,'html.parser');out=BeautifulSoup('<section class="promotions"></section>','html.parser')
+          for panel in s.select('section.promotions .promotions__slider-item-text'):
+              for n in panel.find_all(True):n.attrs={}
+              panel.attrs={'class':['promotions__slider-item-text']};out.section.append(panel)
+          target=Path('loyalty/tests/fixtures_live/flystation-promotions.html')
+          target.write_text('<!-- Exact source panel excerpts from verified anonymous read35852288675,23Sep2026; not a new observation. -->\n'+str(out),encoding='utf8')
+          PY
+      - id: commit
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add loyalty/collect_normalized.py loyalty/normalized.py loyalty/public_reward_projection.py loyalty/expansion_common.py loyalty/sources_normalized.json loyalty/ui_freshness.py loyalty/tests/fixtures_live/flystation-promotions.html
+          git commit -m 'Integrate reviewed FlyStation source and scoped freshness [skip ci]'
+          git push origin HEAD:loyalty/last-public-gap-20260923
+          echo "revision=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+  verify:
+    needs: integrate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ needs.integrate.outputs.revision }}
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r loyalty/requirements.txt
+      - name: Full regression
+        run: |
+          mkdir -p flystation-verify
+          git rev-parse HEAD > flystation-verify/revision.txt
+          python -m unittest discover -s loyalty/tests -v 2>&1 | tee flystation-verify/python-tests.log
+          node --test key/refresh.test.mjs 2>&1 | tee flystation-verify/key-tests.log
+      - run: python -m playwright install --with-deps chromium
+      - name: Fresh source read through the existing production entry and health
+        run: |
+          python loyalty/collect_normalized.py --sources flystation_public --out flystation-verify/source --limit 500
+          python loyalty/sheets_normalized.py --input flystation-verify/source/normalized.json
+          python loyalty/source_lifecycle.py --input flystation-verify/source/normalized.json --sources flystation_public
+      - name: Archive exactly tested public code
+        if: always()
+        run: tar -cf flystation-verify/code.tar loyalty key .github
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: flystation-verify-${{ github.run_id }}
+          path: flystation-verify/
+          retention-days: 1
