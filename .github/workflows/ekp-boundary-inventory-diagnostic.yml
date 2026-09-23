@@ -1,0 +1,98 @@
+name: One-time EKP full field-state inventory
+on:
+  push:
+    branches: [diagnostics/access-boundary-20260923]
+    paths: [.github/workflows/ekp-boundary-inventory-diagnostic.yml]
+permissions:
+  contents: read
+concurrency:
+  group: loyalty-catalog-refs/heads/main
+  cancel-in-progress: false
+  queue: max
+jobs:
+  metadata:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - run: python -m pip install --quiet -r loyalty/requirements.txt
+      - name: Inspect only field states across the actual catalogue pages
+        env:
+          SCRAPINGANT_API_KEY: ${{ secrets.SCRAPINGANT_API_KEY }}
+        run: |
+          python - <<'PY'
+          import os,sys,json,tempfile,re
+          from pathlib import Path
+          from datetime import datetime,timezone
+          sys.path.insert(0,'loyalty')
+          import ekp_session_collect as m
+          from public_transport import robots_document
+          from protego import Protego
+          from bs4 import BeautifulSoup
+          report={'started_at':datetime.now(timezone.utc).isoformat(),'mode':'anonymous_catalogue_field_states_only','source_account_used':False,'protected_values_saved':False,'publication':False,'max_provider_credits':150}
+          js=r'''
+          const API='https://ekp.spb.ru/api/portal/loyalty/partners', deadline=Date.now()+43000;
+          const result={startedAt:new Date().toISOString(),pages:[],catalogueComplete:false,sourceCredentialsUsed:false,protectedValuesExported:false,observed:0,fieldStateCounts:{}};
+          function state(row,k){
+            if(!Object.prototype.hasOwnProperty.call(row,k))return 'missing';
+            const v=row[k];if(v===null)return 'null';if(typeof v!=='string')return 'unexpected_type';
+            const t=new DOMParser().parseFromString(v,'text/html').body.textContent.trim();
+            if(!t)return 'empty';
+            if(/авторизуйтесь|войдите в личный|для просмотра.*вход/i.test(t))return 'login_instruction_present';
+            return 'nonempty_text_not_exported';
+          }
+          try{
+            if(location.origin!=='https://ekp.spb.ru'||!['/capabilities/loyalty/','/capabilities/loyalty/tiles','/capabilities/loyalty/tiles/'].includes(location.pathname))throw Error('unexpected_root');
+            if(/captcha|access denied|проверка безопасности|доступ к сайту временно ограничен/i.test(document.title+' '+document.body.textContent.slice(0,1000)))throw Error('restriction_document');
+            let total=null,offset=0;const seen=new Set();
+            for(let i=0;i<11;i++){
+              const remaining=deadline-Date.now()-1500;if(remaining<1000)throw Error('time_bound');
+              const query={pagination:{limit:120,offset},filters:{categories:[],name:'',qrDiscount:false,region:'98'}};
+              const c=new AbortController(),timer=setTimeout(()=>c.abort(),Math.min(15000,remaining));
+              const page={offset,startedAt:new Date().toISOString()};
+              try{
+                const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(query),credentials:'omit',redirect:'error',cache:'no-store',signal:c.signal});
+                page.status=r.status;if(r.status!==200||r.url!==API||r.headers.has('Retry-After'))throw Error('source_http_refusal');
+                const raw=await r.text();if(raw.length>6000000)throw Error('size_bound');const p=JSON.parse(raw);
+                if(!Number.isInteger(p.total)||p.total<0||p.total>5000||p.offset!==offset||!Array.isArray(p.partners)||p.partners.length!==Math.min(120,p.total-offset))throw Error('schema_changed');
+                if(total===null)total=p.total;if(total!==p.total)throw Error('catalogue_changed');
+                const ids=p.partners.map(x=>x.id);
+                if(ids.some(x=>typeof x!=='string'||!/^\d{1,12}$/.test(x)||seen.has(x))||new Set(ids).size!==ids.length)throw Error('duplicate_or_invalid_id');
+                const counts={};
+                for(const row of p.partners){
+                  if(typeof row.description_authorized!=='boolean')throw Error('invalid_access_flag');
+                  const key=JSON.stringify({restricted_flag:row.description_authorized,loyaltyDescription:state(row,'loyaltyDescription'),discountScheme:state(row,'discountScheme')});counts[key]=(counts[key]||0)+1;
+                }
+                page.responseSha256=[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(raw)))].map(x=>x.toString(16).padStart(2,'0')).join('');
+                page.rows=ids.length;page.fieldStateCounts=counts;page.finishedAt=new Date().toISOString();result.pages.push(page);
+                for(const [key,n] of Object.entries(counts))result.fieldStateCounts[key]=(result.fieldStateCounts[key]||0)+n;
+                ids.forEach(id=>seen.add(id));offset+=ids.length;result.total=total;result.observed=seen.size;
+                if(offset===total){result.catalogueComplete=seen.size===total;break;}
+              }finally{clearTimeout(timer);}
+              await new Promise(r=>setTimeout(r,1100));
+            }
+            if(!result.catalogueComplete)throw Error('page_bound');
+            result.outcome='complete_pre_projection_field_state_inventory';
+          }catch(e){result.error=/^[a-z_]+$/.test(e.message)?e.message:e.name;}
+          result.finishedAt=new Date().toISOString();const pre=document.createElement('pre');pre.id='ekp-field-metadata';pre.textContent=JSON.stringify(result);document.body.replaceChildren(pre);
+          '''
+          reader=None
+          try:
+              with tempfile.TemporaryDirectory() as td:
+                  script=Path(td)/'metadata.js';script.write_text(js);m.SCRIPT=script;m.MAX_CREDITS=150;m.MAX_REQUESTS=2
+                  reader=m.Reader(os.environ.get('SCRAPINGANT_API_KEY',''));reader.preflight();report['opening_free_balance']=reader.balance
+                  raw=reader.read(m.POLICY);rules,status=robots_document(200,raw);policy=Protego.parse(rules)
+                  if not all(policy.can_fetch(u,'LoyaltyCatalogResearchBot') for u in (m.ROOT,m.API)):raise RuntimeError('robots_disallow')
+                  if policy.crawl_delay('LoyaltyCatalogResearchBot') or policy.request_rate('LoyaltyCatalogResearchBot'):raise RuntimeError('source_pacing_requires_review')
+                  raw=reader.read(m.ROOT);nodes=BeautifulSoup(raw,'html.parser').select('#ekp-field-metadata')
+                  if len(nodes)!=1:raise RuntimeError('metadata_marker_missing')
+                  obj=json.loads(nodes[0].get_text())
+                  if obj.get('sourceCredentialsUsed') is not False or obj.get('protectedValuesExported') is not False:raise RuntimeError('metadata_contract_changed')
+                  report['source_metadata']=obj
+          except Exception as e:report['error']=str(e) if isinstance(e,RuntimeError) and re.fullmatch('[a-z_0-9]{1,100}',str(e)) else type(e).__name__
+          finally:
+              if reader:report.update(provider_requests=reader.calls,reserved_credits=reader.reserved,known_charged_credits=reader.charged,closing_free_balance=reader.closing_balance())
+              report['finished_at']=datetime.now(timezone.utc).isoformat();print('EKP_INVENTORY_BEGIN');print(json.dumps(report,ensure_ascii=False,indent=2));print('EKP_INVENTORY_END')
+          PY
