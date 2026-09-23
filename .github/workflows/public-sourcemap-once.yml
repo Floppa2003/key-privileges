@@ -1,4 +1,4 @@
-name: One-time public client source map inspection
+name: One-time conventional public source map test
 on:
   push:
     branches: [research/public-alternatives-20260924]
@@ -11,56 +11,36 @@ jobs:
     timeout-minutes: 4
     steps:
       - run: npm install --no-audit --no-fund --ignore-scripts typescript@5.9.3
-      - name: Read only public root and source-advertised static resources
+      - name: Read one inferred static map path, redact literals, never call catalogue APIs
         run: |
           node --input-type=module <<'JS'
           import ts from 'typescript';
           import {createHash} from 'node:crypto';
-          const origin='https://marketplace.konsierge.com';
-          const report={started_at:new Date().toISOString(),account_used:false,credentials_used:false,client_code_executed:false,api_calls:0,requests:[]};
+          const url='https://marketplace.konsierge.com/static/js/main.959cee1e.js.map';
+          const report={started_at:new Date().toISOString(),url,url_provenance:'one_conventional_inferred_map_path_for_the_source_linked_js_not_an_advertised_map',account_used:false,credentials_used:false,client_executed:false,api_calls:0};
           const hash=x=>createHash('sha256').update(x).digest('hex');
-          async function read(url,bound){
-            const u=new URL(url);if(u.origin!==origin||u.search||u.hash||u.username||u.password)throw Error('outside_static_scope');
-            const row={url,requested_at:new Date().toISOString()};report.requests.push(row);
-            const r=await fetch(url,{redirect:'manual',signal:AbortSignal.timeout(30000),headers:{'User-Agent':'PublicLoyaltyResearch/1.0'}});row.status=r.status;
-            row.server_date=r.headers.get('Date');row.cache_age=r.headers.get('Age');
-            if(r.status!==200||r.headers.has('Retry-After'))throw Error('source_response_not_200');
-            const parts=[];let total=0;
-            for await(const b of r.body){total+=b.length;if(total>bound)throw Error('response_size_bound');parts.push(b);}
-            const raw=Buffer.concat(parts);Object.assign(row,{bytes:raw.length,sha256:hash(raw),finished_at:new Date().toISOString()});return raw.toString('utf8');
-          }
-          function redacted(code,file){
-            const tree=ts.createSourceFile(file,code,ts.ScriptTarget.Latest,true,file.endsWith('x')?ts.ScriptKind.TSX:ts.ScriptKind.TS);
-            const retain=new Set(['GET_BENEFITS_REQUEST','GET_BENEFITS_RESPONSE','GET_BENEFITS_ERROR','GET_RUBRICS_REQUEST','GET_RUBRICS_RESPONSE','GET_RUBRICS_ERROR','Authorization','Basic','Bearer','tariff_id','rubric_id','page','per','get','GET']);
-            const spans=[];
+          function redact(code,path){
+            const root=ts.createSourceFile(path,code,ts.ScriptTarget.Latest,true,ts.ScriptKind.TSX),spans=[];
             function walk(n){
-              if(ts.isStringLiteralLike(n)||ts.isNumericLiteral(n)||ts.isRegularExpressionLiteral(n)||[ts.SyntaxKind.TemplateHead,ts.SyntaxKind.TemplateMiddle,ts.SyntaxKind.TemplateTail].includes(n.kind)){
-                const v=n.text;const safe=typeof v==='string'&&(retain.has(v)||(/^https:\/\/benefits\.konsierge\.com\/[A-Za-z0-9/_-]*$/.test(v))||(/^\/?[A-Za-z0-9/_-]*(benefits|rubrics)[A-Za-z0-9/_-]*$/.test(v)));
-                if(!safe)spans.push([n.getStart(tree),n.end]);
-              }
+              if(ts.isStringLiteralLike(n)||ts.isNumericLiteral(n)||ts.isRegularExpressionLiteral(n)||[ts.SyntaxKind.TemplateHead,ts.SyntaxKind.TemplateMiddle,ts.SyntaxKind.TemplateTail].includes(n.kind))spans.push([n.getStart(root),n.end]);
               ts.forEachChild(n,walk);
             }
-            walk(tree);spans.sort((a,b)=>a[0]-b[0]);let p=0,out='';
-            for(const [s,e]of spans){if(s<p)continue;out+=code.slice(p,s)+'[literal omitted]';p=e;}return out+code.slice(p);
+            walk(root);spans.sort((a,b)=>a[0]-b[0]);let at=0,out='';for(const[s,e]of spans){if(s<at)continue;out+=code.slice(at,s)+'[literal omitted]';at=e;}return out+code.slice(at);
           }
           try{
-            const root=await read(origin+'/',100000);
-            const scripts=[...root.matchAll(/<script[^>]*\bsrc=["']([^"']+)["']/g)].map(m=>new URL(m[1],origin).href).filter(u=>u.startsWith(origin+'/'));
-            if(scripts.length!==1)throw Error('main_script_not_unique');
-            const bundle=await read(scripts[0],5000000);
-            const links=[...bundle.matchAll(/[#@]\s*sourceMappingURL=([^\s*]+)/g)];report.source_map_advertised=links.length===1;
-            if(links.length!==1)throw Error('source_map_not_uniquely_advertised');
-            const mapUrl=new URL(links[0][1],scripts[0]).href;const map=JSON.parse(await read(mapUrl,35000000));
-            if(!Array.isArray(map.sources)||!Array.isArray(map.sourcesContent)||map.sources.length!==map.sourcesContent.length)throw Error('invalid_source_map');
-            report.source_count=map.sources.length;
-            const matching=[];
-            for(let i=0;i<map.sources.length;i++){
-              const path=map.sources[i],body=map.sourcesContent[i];if(typeof body!=='string'||/node_modules/.test(path))continue;
-              if(/benefits|rubrics/i.test(path)||(/GET_BENEFITS_REQUEST/.test(body)&&!/(^|\/)constants\//.test(path))){
-                matching.push({path,sha256:hash(body),characters:body.length,redacted_source:body.length<=24000?redacted(body,path):null,omitted_for_length:body.length>24000});
+            const r=await fetch(url,{redirect:'manual',signal:AbortSignal.timeout(30000),headers:{'User-Agent':'PublicLoyaltyResearch/1.0'}});report.status=r.status;report.content_type=r.headers.get('Content-Type');report.cache_age=r.headers.get('Age');report.server_date=r.headers.get('Date');
+            if(r.status!==200||r.headers.has('Retry-After')){report.outcome='non_200_no_retry';}
+            else{
+              const parts=[];let n=0;for await(const b of r.body){n+=b.length;if(n>35000000)throw Error('response_bound');parts.push(b);}
+              const raw=Buffer.concat(parts);report.bytes=raw.length;report.sha256=hash(raw);const map=JSON.parse(raw.toString('utf8'));
+              if(!Array.isArray(map.sources)||!Array.isArray(map.sourcesContent)||map.sources.length!==map.sourcesContent.length)throw Error('invalid_map');
+              report.source_count=map.sources.length;report.relevant_sources=[];
+              for(let i=0;i<map.sources.length;i++){
+                const path=map.sources[i],body=map.sourcesContent[i];if(typeof body!=='string'||/node_modules/.test(path))continue;
+                if(/benefits|rubrics/i.test(path)||/getBenefits|getRubrics/.test(body))report.relevant_sources.push({path,characters:body.length,sha256:hash(body),redacted_source:body.length<=25000?redact(body,path):null,omitted_for_length:body.length>25000});
               }
+              report.outcome='public_map_read_static_source_inspected';
             }
-            report.relevant_sources=matching;report.outcome=matching.length?'public_source_map_inspected':'no_matching_source_module';
-          }catch(e){report.outcome='incomplete';report.error=/^[a-z0-9_]+$/.test(e.message)?e.message:e.name;}
-          report.finished_at=new Date().toISOString();console.log('SOURCE_MAP_AUDIT_BEGIN');console.log(JSON.stringify(report,null,2));console.log('SOURCE_MAP_AUDIT_END');
+          }catch(e){report.outcome='incomplete';report.error=/^[a-z_]+$/.test(e.message)?e.message:e.name;}
+          report.finished_at=new Date().toISOString();console.log('CONVENTIONAL_MAP_BEGIN');console.log(JSON.stringify(report,null,2));console.log('CONVENTIONAL_MAP_END');
           JS
