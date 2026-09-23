@@ -2,7 +2,7 @@ name: Verify new public partner catalogues
 on:
   push:
     branches: ["loyalty/public-catalogues-release-20260923"]
-    paths: ["loyalty/**", "diagnostics/catalogue-hooks.patch", "diagnostics/catalogue-shape-fixes.patch", ".github/workflows/public-catalogues-check.yml"]
+    paths: ["loyalty/**", "diagnostics/catalogue-last-fixes.patch", ".github/workflows/public-catalogues-check.yml"]
 permissions:
   contents: read
 concurrency:
@@ -22,18 +22,17 @@ jobs:
         with:
           ref: loyalty/public-catalogues-release-20260923
       - id: apply
-        name: Apply only the reviewed patches on this feature branch
+        name: Apply only the reviewed final patch on this feature branch
         run: |
-          for patch in diagnostics/catalogue-hooks.patch diagnostics/catalogue-shape-fixes.patch; do
-            if git apply --check "$patch"; then
-              git apply "$patch"
-              git add loyalty
-              git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'Apply reviewed catalogue correction [skip ci]'
-            else
-              git apply --reverse --check "$patch"
-            fi
-          done
-          git push origin HEAD:refs/heads/loyalty/public-catalogues-release-20260923
+          patch=diagnostics/catalogue-last-fixes.patch
+          if git apply --check "$patch"; then
+            git apply "$patch"
+            git add loyalty
+            git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'Apply final reviewed catalogue correction [skip ci]'
+            git push origin HEAD:refs/heads/loyalty/public-catalogues-release-20260923
+          else
+            git apply --reverse --check "$patch"
+          fi
           echo "revision=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
   verify:
     needs: integrate
