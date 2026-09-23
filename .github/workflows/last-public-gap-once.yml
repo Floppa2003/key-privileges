@@ -18,7 +18,7 @@ jobs:
           python-version: '3.12'
       - run: python -m pip install -r loyalty/requirements.txt
       - run: python -m playwright install --with-deps chromium
-      - name: Read only the public promotions through the normal transport
+      - name: Read the apex public promotions through normal verified transport
         run: |
           python - <<'PY'
           import sys,json,hashlib,asyncio
@@ -30,7 +30,7 @@ jobs:
           from public_transport import PublicSource
           out=Path('gap-inspection');out.mkdir()
           async def main():
-              meta={'observed_at':datetime.now(timezone.utc).isoformat(),'url':'https://www.flystation.net/promotions','account_used':False}
+              meta={'observed_at':datetime.now(timezone.utc).isoformat(),'url':'https://flystation.net/promotions','account_used':False}
               async with async_playwright() as p:
                   browser=await p.chromium.launch()
                   try:
