@@ -18,7 +18,8 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m pip install -r loyalty/requirements.txt
-      - run: python diagnostics/catalogue_remaining_shapes.py
+      - run: python -m playwright install --with-deps chromium
+      - run: xvfb-run -a python diagnostics/catalogue_remaining_shapes.py
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
