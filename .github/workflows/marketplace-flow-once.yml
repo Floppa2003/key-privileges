@@ -1,0 +1,42 @@
+name: One-time public benefits client flow inspection
+on:
+  push:
+    branches: [diagnostics/public-representations-20260923]
+    paths: [.github/workflows/marketplace-flow-once.yml]
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - run: npm install --no-audit --no-fund --ignore-scripts acorn@8.15.0
+      - name: Inspect static request construction with all non-structural literals removed
+        run: |
+          node --input-type=module <<'JS'
+          import * as acorn from 'acorn';
+          import {createHash} from 'node:crypto';
+          const url='https://marketplace.konsierge.com/static/js/main.959cee1e.js';
+          const report={started_at:new Date().toISOString(),url,source_credentials_used:false,source_account_used:false,bundle_executed:false,api_requests:0,non_structural_literals_exported:false};
+          try{
+            const r=await fetch(url,{redirect:'manual',signal:AbortSignal.timeout(25000),headers:{'User-Agent':'PublicLoyaltyResearch/1.0'}});report.status=r.status;
+            if(r.status!==200||r.headers.has('Retry-After'))throw Error('http_refusal_no_retry');
+            const raw=Buffer.from(await r.arrayBuffer());if(raw.length>4000000)throw Error('size_bound');
+            report.sha256=createHash('sha256').update(raw).digest('hex');
+            if(report.sha256!=='7dc923347de9b832bfbaa97bdcfa5391ea37fb6217aca295e174ee20bbedab2c')throw Error('bundle_changed');
+            const code=raw.toString('utf8'),ast=acorn.parse(code,{ecmaVersion:'latest',sourceType:'script'}),stack=[ast],literals=[],points=[];
+            const retain=new Set(['Authorization','Basic','Bearer','tariff_id','rubric_id','page','per','get','GET','post','POST','/api/client/v1/benefits','api/client/v1/benefits','/api/client/v1/rubrics','api/client/v1/rubrics']);
+            while(stack.length){const n=stack.pop();if(!n||typeof n!=='object')continue;
+              if(n.type==='Literal'&&!retain.has(n.value))literals.push([n.start,n.end]);
+              if(n.type==='TemplateElement')literals.push([n.start,n.end]);
+              if(n.type==='MemberExpression'&&['REACT_APP_BENEFITS_SERVER','REACT_APP_BENEFITS_KEY','KON_TARIFF_ID'].includes(n.property?.name))points.push({offset:n.start,member:n.property.name});
+              for(const [k,v]of Object.entries(n)){if(k==='start'||k==='end')continue;if(Array.isArray(v))stack.push(...v);else if(v&&typeof v==='object')stack.push(v);}
+            }
+            literals.sort((a,b)=>a[0]-b[0]);let at=0,masked='';
+            for(const [s,e]of literals){if(s<at)continue;masked+=code.slice(at,s)+' '.repeat(e-s);at=e;}masked+=code.slice(at);
+            const snippets=[];let last=-100000;
+            for(const p of points.sort((a,b)=>a.offset-b.offset)){if(p.offset-last<400)continue;last=p.offset;snippets.push({member:p.member,source_offset:p.offset,redacted_context:masked.slice(Math.max(0,p.offset-220),Math.min(masked.length,p.offset+1050)).replace(/ {4,}/g,' [literal omitted] ')});}
+            report.request_construction_contexts=snippets;report.relevant_reference_count=points.length;report.outcome='literal_redacted_static_flow_inspected';report.scope='reviewed_member_references_not_proof_of_all_runtime_paths_or_server_entitlement';
+          }catch(e){report.outcome='incomplete';report.error=/^[a-z_]+$/.test(e.message)?e.message:e.name;}
+          report.finished_at=new Date().toISOString();console.log('MARKETPLACE_FLOW_BEGIN');console.log(JSON.stringify(report,null,2));console.log('MARKETPLACE_FLOW_END');
+          JS
