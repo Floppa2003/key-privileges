@@ -168,6 +168,7 @@ class PublicSource:
         except RuntimeError:
             self.robots_info['state']='unreadable_or_unreachable'
             raise
+        self.robots_rules=rules
         self.policy=Protego.parse(rules)
         self.robots_info['state']=state
         delay=self.policy.crawl_delay('LoyaltyCatalogResearchBot') or 0

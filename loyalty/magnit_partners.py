@@ -114,6 +114,9 @@ def detail(raw,card,categories,now):
 async def collect(client,cfg,report,now,limit):
     from read_budget import within_source_budget,stops_catalog
     if cfg['id']!=SOURCE or cfg['url']!=ROOT:raise ValueError('magnit_config')
+    from magnit_policy import QuerylessMagnitPolicy
+    client.policy=QuerylessMagnitPolicy(client.robots_rules)
+    report['policy_matcher']='protego_062_queryless_magnit_cards_only'
     async def read(url,selector):
         await within_source_budget(client,lambda:client.read(url,render=True))
         await within_source_budget(client,lambda:client.page.locator(selector).first.wait_for(state='attached',timeout=12000))

@@ -34,7 +34,10 @@ def source_fields(e):
         # Earliest explicit end prevents sale/end-of-use disagreements extending an offer.
         end=min(dates) if dates else None
         dates_text='\n'.join(k+': '+str(d[k])for k in ('endAt','couponEndAt','countdown') if d.get(k))
-        conditions=plain(d.get('terms',''));activation='\n'.join(plain(x)for x in d.get('howToAsList',[]))
+        conditions=plain(d.get('terms',''));activation='\n'.join(plain(x)for x in (d.get('howToAsList')or[]))
+        if not activation:
+            automatic=re.search(r'Бустер начинает действовать автоматически после покупки\. Дополнительно вводить его данные никуда не требуется\.',conditions)
+            if automatic:activation=automatic[0]
         if not conditions or not activation:raise ValueError('gorod_coupon_terms_missing')
         cb=d.get('cashback') or {}
         extra='\nВознаграждение за покупку купона: '+plain(cb.get('text',''))+' '+CURRENCIES.get(cb.get('currency'),'единица не указана') if cb else ''
@@ -42,9 +45,9 @@ def source_fields(e):
         if address.get('details'):conditions+='\nАдрес: '+plain(address['details'])
         refs=links(d.get('terms',''))
         if refs:conditions+='\nПолные правила: '+'; '.join(refs)
-        return dict(native=native,program=PROGRAMS[SOURCE],partner=p['name'],title=name,benefit=name,
+        return dict(native=native,program=PROGRAMS[SOURCE],partner=compact(p['name']),title=name,benefit=name,
             conditions=cost.strip()+extra+'\n'+dates_text+'\n'+conditions,activation=activation,url=url,
-            category=p.get('subtitle') or 'Купоны',valid_until=end,locator='couponViewStore.couponData',
+            category=compact(p.get('subtitle')) or 'Купоны',valid_until=end,locator='couponViewStore.couponData',
             terms=[dict(kind='partner_privilege',fragment=name)],scope={'coupon_id':d['id'],'coupon_purchase_or_activation_not_performed':True},
             warnings=['coupon_price_separate_from_discount','coins_are_tokens_not_roubles']+(['different_sale_and_coupon_end_dates_preserved']if len(set(dates))>1 else []))
     if kind!='partner':raise ValueError('gorod_unreviewed_record_kind')
@@ -84,23 +87,28 @@ def source_fields(e):
         conditions+='\nУсловия списания: '+spend_text
     refs=[v['url']for v in (p.get('rulesFile'),earn.get('rulesFile'))if isinstance(v,dict) and v.get('url')]
     if refs:conditions+='\nПравила партнёра: '+'; '.join(dict.fromkeys(refs))
-    if not activation or not conditions.strip():raise ValueError('gorod_partner_activation_missing')
+    if not activation:raise ValueError('gorod_partner_activation_missing')
+    missing_conditions=not conditions.strip()
+    if missing_conditions:conditions='Дополнительные условия начисления на публичной карточке не раскрыты.'
     regions=e.get('catalogue_regions',[])
     conditions+='\nПартнёр найден в публичных каталогах регионов: '+', '.join(regions)+'. Это не проверка доступности по личному адресу.'
-    warnings=['Gorod_bonus_not_money_to_bank_card','loyalty_level_uplift_not_partner_rate']
+    warnings=['Gorod_bonus_not_money_to_bank_card','loyalty_level_uplift_not_partner_rate']+(['additional_conditions_not_disclosed']if missing_conditions else [])
     days=set(re.findall(r'(\d+)\s+(?:рабочих\s+)?дн',activation+'\n'+hold,re.I))
     if len(days)>1:warnings.append('source_conflicting_accrual_times_preserved')
-    return dict(native=native,program=PROGRAMS[SOURCE],partner=p['name'],title='Город → '+p['name'],benefit='\n'.join(lines),
-        conditions=conditions.strip(),activation=activation,url=url,category=p.get('categoriesAsText')or'Партнёры',
+    return dict(native=native,program=PROGRAMS[SOURCE],partner=compact(p['name']),title='Город → '+compact(p['name']),benefit='\n'.join(lines),
+        conditions=conditions.strip(),activation=activation,url=url,category=compact(p.get('categoriesAsText'))or'Партнёры',
         locator='partnerViewStore; bonusByLevel and owned conditions',terms=terms,
         scope={'membership_required':True,'catalogue_regions_not_personal_availability':regions},warnings=warnings)
 
 def coupon(raw,card,now):
     d=next_store(raw,'couponViewStore')['couponData']
-    if int(card['id'])!=d['id'] or compact(d['name'])!=compact(card['name']):raise ValueError('gorod_coupon_catalogue_drift')
+    if int(card['id'])!=d['id'] or (card.get('partner_id')is not None and card['partner_id']!=d.get('partner',{}).get('id')):
+        raise ValueError('gorod_coupon_catalogue_drift')
+    # The listing deliberately uses shorter labels. Identity is the stable coupon
+    # ID and its source-linked partner; keep both names instead of requiring equality.
     safe={k:d.get(k)for k in ('id','name','available','price','terms','endAt','couponEndAt','countdown','howToAsList','cashback','message','address')}
     safe['partner']={k:d['partner'].get(k) for k in ('id','name','subtitle','available')}
-    e=dict(native='coupon:'+str(d['id']),kind='coupon',url=HOST+'/bonus-plus/coupons/'+str(d['id']),data=safe,page_sha256=sha(raw))
+    e=dict(native='coupon:'+str(d['id']),kind='coupon',url=HOST+'/bonus-plus/coupons/'+str(d['id']),data=safe,catalogue_title=compact(card['name']),catalogue_partner_id=card.get('partner_id'),page_sha256=sha(raw))
     f=source_fields(e);check_period(None,f.get('valid_until'),now)
     return make_record(SOURCE,e,now)
 
@@ -143,7 +151,11 @@ async def collect(client,cfg,report,now,limit):
                 data=g['coupons']
                 for c in data['elements']:
                     if c['id']in coupons and compact(coupons[c['id']]['name'])!=compact(c['name']):raise ValueError('gorod_coupon_name_conflict')
-                    coupons[c['id']]={'id':c['id'],'name':c['name']}
+                    previous=coupons.get(c['id'],{})
+                    partner_id=g.get('id')
+                    if previous.get('partner_id')is not None and partner_id is not None and previous['partner_id']!=partner_id:
+                        raise ValueError('gorod_coupon_partner_conflict')
+                    coupons[c['id']]={'id':c['id'],'name':c['name'],'partner_id':partner_id if partner_id is not None else previous.get('partner_id')}
                 if data.get('hasMore') and g.get('id') not in pending_groups:pending_groups.append(g.get('id'))
             pages.append({'coupon_region':region['id'],'ids':ids,'hasMore':more,'sha256':sha(json.dumps(d,sort_keys=True))})
             if not more:break
@@ -164,7 +176,9 @@ async def collect(client,cfg,report,now,limit):
             inner=store.get('partnerCouponsData')or{}
             if inner.get('hasMore') or inner.get('total',len(inner.get('elements',[])))!=len(inner.get('elements',[])):
                 raise ValueError('gorod_inner_coupon_pagination_unresolved')
-            for c in inner.get('elements',[]):coupons[c['id']]={'id':c['id'],'name':c['name']}
+            for c in inner.get('elements',[]):
+                if coupons.get(c['id'],{}).get('partner_id') not in (None,i):raise ValueError('gorod_coupon_partner_conflict')
+                coupons[c['id']]={'id':c['id'],'name':c['name'],'partner_id':i}
             e=dict(native=native,kind='partner',url=HOST+'/partners/'+str(i),data=d,catalogue_regions=p['regions'],page_sha256=sha(raw))
             why=exclusion(d['partner']['name'])
             if why:raise ExcludedOffer(why)

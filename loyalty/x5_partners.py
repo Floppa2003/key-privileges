@@ -52,15 +52,26 @@ def source_fields(e):
     if not partner or (expected and partner!=expected):raise ValueError('x5_partner_identity')
     if not e['activation'] or not e['conditions']:raise ValueError('x5_missing_detail_terms')
     start,end=iso(card.get('startDate')),iso(card.get('endDate'))
-    period=re.search(r'Действует\s+(\d{2}\.\d{2}\.\d{4})\s*-\s*(\d{2}\.\d{2}\.\d{4})',e['period'])
-    if not period or (iso(period[1]),iso(period[2]))!=(start,end):raise ValueError('x5_catalogue_detail_period_drift')
+    period=re.fullmatch(r'Действует\s+(\d{2}\.\d{2}\.\d{4})\s*[-–]\s*(\d{2}\.\d{2}\.\d{4})',compact(e['period']))
+    months={'янв':1,'февр':2,'мар':3,'апр':4,'мая':5,'июн':6,'июл':7,'авг':8,'сент':9,'окт':10,'нояб':11,'дек':12}
+    expiry=re.fullmatch(r'Доступно до (\d{1,2}) ([а-я]+)\.? (\d{4}) г\.',compact(e['period']))
+    if period:
+        coherent=(iso(period[1]),iso(period[2]))==(start,end)
+    elif expiry and expiry[2] in months and card.get('type')=='exchange':
+        coherent=iso(f'{int(expiry[1]):02}.{months[expiry[2]]:02}.{expiry[3]}')==end
+    else:coherent=False
+    if not coherent:raise ValueError('x5_catalogue_detail_period_drift')
     cost=card.get('cost'); typ=card.get('type')
-    if type(cost) not in (int,float) or cost<0 or typ not in ('purchased','exchange'):raise ValueError('x5_cost_type')
-    access=(f'Получение: {cost:g} баллов X5 Клуба.' if typ=='purchased' else 'Обмен баллов X5; курс и единицы обмена определяются условиями ниже.')
-    return dict(native=e['native'],program=PROGRAMS[SOURCE],partner=partner,title=title,benefit=title,
+    if typ=='quest' and cost is None:
+        access='Задание или предложение партнёра; денежная оплата, требования и возможное автопродление указаны ниже. Цена получения в баллах X5 не указана.'
+    elif type(cost) in (int,float) and cost>=0 and typ in ('purchased','exchange'):
+        access=(f'Получение: {cost:g} баллов X5 Клуба.' if typ=='purchased' else 'Обмен баллов X5; курс и единицы обмена определяются условиями ниже.')
+    else:raise ValueError('x5_cost_type')
+    benefit=title+('\n'+e['exchange_terms'] if typ=='exchange' and e.get('exchange_terms') else '')
+    return dict(native=e['native'],program=PROGRAMS[SOURCE],partner=partner,title=title,benefit=benefit,
         url=e['url'],conditions='\n'.join([access,e['period'],e['conditions']]),activation=e['activation'],
         valid_from=start,valid_until=end,category=e.get('category') or 'Партнёры',locator='main; own heading, dates, redemption and conditions',
-        terms=[dict(kind='partner_privilege',fragment=title)],scope={'X5_membership_required':True,'individual_code_not_issued':True},
+        terms=[dict(kind='partner_privilege',fragment=benefit)],scope={'X5_membership_required':True,'individual_code_not_issued':True},
         warnings=['X5_points_cost_not_cash_discount'])
 
 def detail(raw,card,category,now):
@@ -76,6 +87,11 @@ def detail(raw,card,category,now):
         ('idOffer','nameOffer','cost','startDate','endDate','type','namePartnerOffer','namePartner')},
         heading=plain(h[0]),partner=plain(one(container,'h3')),period=plain(one(container,'p')),
         activation=section('Как воспользоваться?'),conditions=section('Условия предложения'),category=category,page_sha256=sha(raw))
+    if card.get('type')=='exchange':
+        # Keep a stated conversion ratio, not the surrounding social-network or airline advertising.
+        about=section('О партнёре')
+        e['exchange_terms']='\n'.join(line for line in (about+'\n'+e['activation']).splitlines()
+            if re.search(r'по курсу\s+\d|\b\d+\s+миль за каждые\s+\d+',line,re.I))
     check_period(iso(card.get('startDate')),iso(card.get('endDate')),now)
     return make_record(SOURCE,e,now)
 
