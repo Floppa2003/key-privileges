@@ -39,6 +39,7 @@ HOSTS['x5_partners_public']=['x5club.ru']
 HOSTS['magnit_partners_public']=['magnit.ru']
 HOSTS['gorod_public']=['gorodtroika.ru']
 HOSTS['tsvetnoy_public']=['tsvetnoy.com']
+HOSTS['flystation_public']=['flystation.net']
 HOSTS['backit_public']=['backit.me']
 HOSTS['club_avolta_public']=['www.clubavolta.com']
 HOSTS['mantera_moments']=['lk.manteratravel.ru','manteracongress.ru','sochiparkhotel.ru']
@@ -313,7 +314,7 @@ def validate_offer(r: dict) -> None:
         from tsum_alfa import validate_record
         validate_record(r)
     if r['source_id'] in ('backit_public','club_avolta_public','mantera_moments',
-                         'x5_partners_public','magnit_partners_public','gorod_public','tsvetnoy_public'):
+                         'x5_partners_public','magnit_partners_public','gorod_public','tsvetnoy_public','flystation_public'):
         from public_reward_projection import validate_record
         validate_record(r)
     if r['source_id']=='greatlist_alfa_only':
