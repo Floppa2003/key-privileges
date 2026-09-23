@@ -1,0 +1,92 @@
+name: One-time public EKP merchant verification
+on:
+  push:
+    branches: [research/public-alternatives-20260924]
+    paths: [.github/workflows/public-merchants-once.yml]
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    steps:
+      - run: python -m pip install --quiet requests==2.32.5 beautifulsoup4==4.14.3
+      - name: Inspect bounded public merchant clauses; no forms, credentials or private data
+        run: |
+          python - <<'PY'
+          import requests,re,json,time,hashlib
+          from datetime import datetime,timezone
+          from urllib.parse import urlsplit,urljoin
+          from bs4 import BeautifulSoup
+          targets=[
+            ('elcom','https://elcom-kids.ru/'),
+            ('domknigi','https://dk-spb.ru/news/news-company/dom-knigi-i-edinaya-karta-peterburzhtsa-zaklyuchili-partnerstvo/'),
+            ('itc','https://itctraining.ru/about/partnery/'),
+            ('artparking','https://www.artparking.org/ekp/'),
+            ('gorodmus','https://www.gorodmus.ru/ekp/'),
+            ('ladoga','https://ladogabaza.ru/'),
+            ('papirus','https://mb10.ru/news/vygodnye-pokupki-v-papiruse-po-yekp-karelskaya-/'),
+            ('gorbilet_bank','https://t.me/s/mybspb/1529'),
+          ]
+          def now():return datetime.now(timezone.utc).isoformat()
+          report={'started_at':now(),'source_accounts_used':False,'credentials_used':False,'forms_submitted':False,'production_publication':False,'requests':[]}
+          rx=re.compile(r'ЕКП|Един\w*\s+карт\w*\s+петербурж',re.I)
+          def hint(n):
+            if n.get('id'):return '#'+n['id']
+            return n.name+''.join('.'+c for c in n.get('class',[]) if re.fullmatch(r'[\w-]+',c))
+          for sid,url in targets:
+            row={'id':sid,'url':url,'requested_at':now()};report['requests'].append(row)
+            try:
+              with requests.Session() as s:
+                s.trust_env=False
+                with s.get(url,headers={'User-Agent':'PublicLoyaltyResearch/1.0','Accept':'text/html'},allow_redirects=False,timeout=(8,22),stream=True) as r:
+                  row.update(status=r.status_code,server_date=r.headers.get('Date'),cache_age=r.headers.get('Age'),content_type=r.headers.get('Content-Type'))
+                  if 300<=r.status_code<400:
+                    u=urlsplit(urljoin(url,r.headers.get('Location','')))
+                    if u.scheme=='https' and not u.username and not u.password:row['redirect_public_path']=u.scheme+'://'+u.netloc+u.path
+                  if r.status_code!=200 or r.headers.get('Retry-After'):
+                    row['outcome']='not_200_no_retry';continue
+                  data=bytearray();deadline=time.monotonic()+30
+                  for part in r.iter_content(65536):
+                    data.extend(part)
+                    if len(data)>6000000 or time.monotonic()>deadline:raise ValueError('response_bound')
+                  data=bytes(data);row.update(bytes=len(data),sha256=hashlib.sha256(data).hexdigest())
+              dom=BeautifulSoup(data,'html.parser')
+              row['title']=dom.title.get_text(' ',strip=True) if dom.title else None
+              for n in dom.select('script,style,noscript,form,input,textarea,iframe,header,footer,nav,svg'):n.decompose()
+              matches=[];seen=set()
+              for node in dom.find_all(['p','li','h1','h2','h3','h4','div','span']):
+                value=node.get_text(' ',strip=True)
+                if not rx.search(value) or len(value)>1500:continue
+                if any(rx.search(c.get_text(' ',strip=True)) for c in node.find_all(['p','li','h1','h2','h3','h4','div','span'],recursive=False)):continue
+                if value in seen:continue
+                seen.add(value);parents=[]
+                for p in list(node.parents)[:6]:
+                  v=p.get_text(' ',strip=True)
+                  if p.name in ('body','html') or len(v)>6500:break
+                  parents.append({'selector':hint(p),'text_length':len(v)})
+                matches.append({'selector':hint(node),'text':value,'parents':parents})
+              row['matches']=matches[:15];row['matching_blocks_total']=len(matches)
+              row['outcome']='public_terms_candidates_read' if matches else 'public_page_read_no_selected_clause'
+              # Retain only a small, actual program-owned content block for selector review.
+              chunks=[]
+              for m in matches[:8]:
+                for pinfo in reversed(m['parents']):
+                  try: nodes=dom.select(pinfo['selector'])
+                  except Exception:continue
+                  for n in nodes:
+                    text=n.get_text(' ',strip=True)
+                    if m['text'] not in text or len(text)>6500:continue
+                    html=BeautifulSoup(str(n),'html.parser')
+                    for el in html.find_all(True):el.attrs={k:v for k,v in el.attrs.items() if k in ('id','class')}
+                    chunk={'selector':pinfo['selector'],'sanitized_public_html':str(html)}
+                    if len(chunk['sanitized_public_html'])<=14000 and chunk not in chunks:chunks.append(chunk)
+                    break
+                  if chunks:break
+                if chunks:break
+              row['review_blocks']=chunks[:1]
+            except Exception as exc:row.update(outcome='transport_or_parse_error',error=type(exc).__name__)
+            finally:row['finished_at']=now()
+            time.sleep(1)
+          report['finished_at']=now();print('PUBLIC_MERCHANTS_BEGIN');print(json.dumps(report,ensure_ascii=False,indent=2));print('PUBLIC_MERCHANTS_END')
+          PY
