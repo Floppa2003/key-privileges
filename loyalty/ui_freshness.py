@@ -12,7 +12,7 @@ LEGACY_PROGRAMMES = ('Backit — денежный кешбэк', 'Club Avolta', 
 from expansion_common import PROGRAMS as EXPANSION_PROGRAMMES
 PROGRAMMES = LEGACY_PROGRAMMES + tuple(EXPANSION_PROGRAMMES.values())
 NOTE = ('Только конкретные предложения. Реклама и отключённые карточки исключены. '
-        'Для Backit, Club Avolta, Мантеры, X5, Магнита, «Города» и «Цветного» нужны наблюдения не старше 7 дней; '
+        'Для Backit, Club Avolta, Мантеры, X5, Магнита, «Города», «Цветного» и FlyStation нужны наблюдения не старше 7 дней; '
         'это предел свежести проверки, а не срок самой акции.')
 
 def upgrade_formula(formula):
@@ -29,11 +29,16 @@ def upgrade_formula(formula):
     if 'freshRewards;' in formula:
         if formula.count(clause) == 1:
             return formula
-        legacy_names = '{'+';'.join(chr(34)+p+chr(34) for p in LEGACY_PROGRAMMES)+'}'
-        legacy_clause = clause.replace(names, legacy_names)
-        if formula.count(legacy_clause) != 1:
-            raise ValueError('native_freshness_policy_changed')
-        return formula.replace(legacy_clause, clause)
+        # Recognize only the two previously deployed exact programme lists.
+        prior = (LEGACY_PROGRAMMES, LEGACY_PROGRAMMES + (
+            'X5 Клуб — партнёры', 'Магнит Плюс — партнёры', 'Город / Тройка',
+            'Цветной — программа лояльности'))
+        for programmes in prior:
+            legacy_names = '{'+';'.join(chr(34)+p+chr(34) for p in programmes)+'}'
+            legacy_clause = clause.replace(names, legacy_names)
+            if formula.count(legacy_clause) == 1:
+                return formula.replace(legacy_clause, clause)
+        raise ValueError('native_freshness_policy_changed')
     if formula.count('keep;hits*') != 1 or "'_ui_catalog'!A2:Q" not in formula:
         raise ValueError('native_search_layout_changed')
     return formula.replace('keep;hits*', clause)

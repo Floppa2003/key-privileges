@@ -5,10 +5,11 @@ from datetime import date
 from bs4 import BeautifulSoup
 from public_reward_projection import plain
 
-SOURCES = {'x5_partners_public', 'magnit_partners_public', 'gorod_public', 'tsvetnoy_public'}
+SOURCES = {'x5_partners_public', 'magnit_partners_public', 'gorod_public', 'tsvetnoy_public', 'flystation_public'}
 PROGRAMS = {'x5_partners_public':'X5 Клуб — партнёры',
             'magnit_partners_public':'Магнит Плюс — партнёры',
-            'gorod_public':'Город / Тройка', 'tsvetnoy_public':'Цветной — программа лояльности'}
+            'gorod_public':'Город / Тройка', 'tsvetnoy_public':'Цветной — программа лояльности',
+            'flystation_public':'FlyStation — публичные акции'}
 EXCLUSIONS = {'financial_or_acquisition_ad', 'gambling_or_lottery', 'expired_offer',
               'not_started_offer', 'no_concrete_partner_benefit', 'source_unavailable',
               'accumulation_only_no_discount', 'card_not_applicable'}

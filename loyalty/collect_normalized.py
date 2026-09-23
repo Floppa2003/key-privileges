@@ -39,6 +39,7 @@ from x5_partners import collect as collect_x5
 from magnit_partners import collect as collect_magnit
 from gorod_source import collect as collect_gorod
 from tsvetnoy_source import collect as collect_tsvetnoy
+from flystation_source import collect as collect_flystation
 from alfa_access import collect_access as collect_alfa_access
 from alfa_public_rules import collect_core as collect_alfa_public_core, collect_cashback as collect_alfa_public_cashback
 from alfa_partner_rules import collect as collect_alfa_partner_pdfs
@@ -149,6 +150,7 @@ async def one(browser,cfg,now,limit):
                 elif mode=='magnit_public':records=await collect_magnit(client,cfg,report,now,limit)
                 elif mode=='gorod_public':records=await collect_gorod(client,cfg,report,now,limit)
                 elif mode=='tsvetnoy_public':records=await collect_tsvetnoy(client,cfg,report,now,limit)
+                elif mode=='flystation_public':records=await collect_flystation(client,cfg,report,now,limit)
                 elif mode=='backit':records=await collect_backit(client,cfg,report,now,limit)
                 elif mode=='avolta':records=await collect_avolta(client,cfg,report,now,limit)
                 elif mode=='mantera':records=await collect_mantera(client,cfg,report,now,limit)

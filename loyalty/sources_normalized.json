@@ -803,5 +803,13 @@
     "mode": "tsvetnoy_public",
     "url": "https://tsvetnoy.com/loyality",
     "timeout_seconds": 120
+  },
+  {
+    "id": "flystation_public",
+    "name": "FlyStation — публичные акции",
+    "mode": "flystation_public",
+    "url": "https://flystation.net/promotions",
+    "timeout_seconds": 90,
+    "coverage_scope": "public_own_promotions_not_protected_EKP_offer"
   }
 ]
