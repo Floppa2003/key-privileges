@@ -21,10 +21,16 @@ def read(u):
 def save(n,v):
  (OUT/(n+'.json')).write_text(json.dumps(v,ensure_ascii=False,indent=2),encoding='utf8')
 
-for host,root in [('magnit.ru','https://magnit.ru/partners')]:
- raw=read('https://'+host+'/robots.txt');p=Protego.parse(raw)
+try:
+ root='https://magnit.ru/partners';raw=read('https://magnit.ru/robots.txt');p=Protego.parse(raw)
  save('magnit-policy',dict(text=raw,root=root,allowed=p.can_fetch(root,'LoyaltyCatalogResearchBot'),slash_allowed=p.can_fetch(root+'/','LoyaltyCatalogResearchBot'),observed_at=datetime.now(timezone.utc).isoformat()))
-
+except Exception as exc:save('magnit-policy',{'error':type(exc).__name__+':'+str(exc)[:100]})
+# Narrow pattern tests diagnose the parser separately from the live response.
+probes={}
+for rule in ('/*?$','*?SECTION','*?=','*in=','/*?page=1$'):
+ p=Protego.parse('User-agent: *\nDisallow: '+rule)
+ probes[rule]={u:p.can_fetch(u,'LoyaltyCatalogResearchBot') for u in ('https://magnit.ru/partners','https://magnit.ru/partners/','https://magnit.ru/partners/1768','https://magnit.ru/partners?')}
+save('policy-patterns',probes)
 cards={}
 for page in range(4):
  d=page_data(read(XROOT+'.data?page='+str(page)+'&_routes=routes%2F_unauth.partners._index'),page)
