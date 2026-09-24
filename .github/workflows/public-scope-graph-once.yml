@@ -1,0 +1,53 @@
+name: One-time lexical module graph
+on:
+  push:
+    branches: [coverage/public-alternatives-20260924]
+    paths: [.github/workflows/public-scope-graph-once.yml]
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - run: npm install --no-audit --no-fund --ignore-scripts acorn@8.15.0 eslint-scope@9.1.2
+      - name: Resolve bindings without executing the application
+        run: |
+          node --input-type=module <<'JS'
+          import * as acorn from 'acorn';
+          import * as scopes from 'eslint-scope';
+          import {createHash} from 'node:crypto';
+          import {mkdirSync,writeFileSync} from 'node:fs';
+          const url='https://marketplace.konsierge.com/static/js/main.959cee1e.js';
+          const report={started_at:new Date().toISOString(),account_used:false,credentials_used:false,bundle_executed:false,api_requests:0};
+          function walk(root,fn){const stack=[root];while(stack.length){const n=stack.pop();if(!n||typeof n!=='object')continue;fn(n);for(const [k,v]of Object.entries(n)){if(['start','end','range'].includes(k))continue;if(Array.isArray(v))stack.push(...v.filter(x=>x&&typeof x==='object'));else if(v&&typeof v==='object')stack.push(v);}}}
+          function parse(code){return acorn.parse(code,{ecmaVersion:2022,sourceType:'script',ranges:true});}
+          function deps(node,manager){const req=node.params?.[2]?.name;if(!req)return[];const scope=manager.acquire(node,true),binding=scope?.set.get(req);return (binding?.references||[]).filter(r=>r.parent?.type==='CallExpression').map(r=>r.parent.arguments[0]?.value).filter(Number.isInteger);}
+          try{
+            const r=await fetch(url,{redirect:'manual',signal:AbortSignal.timeout(25000),headers:{'User-Agent':'PublicLoyaltyResearch/1.0'}});report.status=r.status;if(r.status!==200||r.headers.has('Retry-After'))throw Error('http_refusal');
+            const reader=r.body.getReader(),parts=[];let bytes=0;while(true){const p=await reader.read();if(p.done)break;bytes+=p.value.length;if(bytes>4000000){await reader.cancel();throw Error('size_bound');}parts.push(Buffer.from(p.value));}
+            const raw=Buffer.concat(parts);report.sha256=createHash('sha256').update(raw).digest('hex');if(report.sha256!=='7dc923347de9b832bfbaa97bdcfa5391ea37fb6217aca295e174ee20bbedab2c')throw Error('bundle_changed');
+            const code=raw.toString('utf8'),ast=parse(code),manager=scopes.analyze(ast,{ecmaVersion:2022,sourceType:'script',optimistic:false});
+            const parents=new WeakMap();walk(ast,n=>{for(const [k,v]of Object.entries(n)){if(['start','end','range'].includes(k))continue;for(const x of Array.isArray(v)?v:[v])if(x&&typeof x==='object'&&x.type)parents.set(x,n);}});
+            function bindingDeps(node){const req=node.params?.[2]?.name;if(!req)return[];const binding=manager.acquire(node,true)?.set.get(req);return [...new Set((binding?.references||[]).map(ref=>parents.get(ref.identifier)).filter(n=>n?.type==='CallExpression'&&n.arguments.length===1&&n.arguments[0].type==='Literal').map(n=>n.arguments[0].value).filter(Number.isInteger))].sort((a,b)=>a-b);}
+            const arrays=[];walk(ast,n=>{if(n.type==='ArrayExpression'&&n.elements.length>100&&n.elements.filter(e=>e&&/FunctionExpression|ArrowFunctionExpression/.test(e.type)).length>n.elements.length*.8)arrays.push(n);});arrays.sort((a,b)=>b.elements.length-a.elements.length);const mods=arrays[0]?.elements;if(!mods)throw Error('module_array_missing');
+            report.module_count=mods.length;report.graph=mods.map((n,id)=>({id,bytes:n?n.end-n.start:0,dependencies:n?bindingDeps(n):[]}));
+            const reverse=new Map();for(const m of report.graph)for(const d of m.dependencies){if(!reverse.has(d))reverse.set(d,[]);reverse.get(d).push(m.id);}
+            report.http_builder_consumers=reverse.get(2)||[];
+            const seed=[542,544],selected=new Set([2,...seed,...report.http_builder_consumers]);let front=seed;
+            for(let depth=0;depth<6;depth++){const next=[];for(const id of front)for(const x of reverse.get(id)||[])if(!selected.has(x)){selected.add(x);next.push(x);}front=next;}
+            const retain=new Set(['GET_BENEFITS_REQUEST','GET_BENEFITS_RESPONSE','GET_BENEFITS_ERROR','GET_RUBRICS_REQUEST','GET_RUBRICS_RESPONSE','GET_RUBRICS_ERROR','SET_ACTIVE_RUBRIC','SET_BENEFITS_PAGE','Authorization','Basic','Bearer','GET','POST','get','post','tariff_id','rubric_id','page','per','benefits','rubrics']);
+            report.modules=[];
+            for(const id of [...selected].sort((a,b)=>a-b)){const n=mods[id];if(!n)continue;const fact=report.graph[id];if(fact.bytes>140000){report.modules.push({...fact,omitted:'large_library'});continue;}
+              const spans=[];walk(n,x=>{if(x.type==='Literal'){let value;if(typeof x.value==='number'||typeof x.value==='boolean'||x.value===null)value=JSON.stringify(x.value);else value=typeof x.value==='string'&&retain.has(x.value)?JSON.stringify(x.value):'"[string redacted]"';spans.push([x.start,x.end,value]);}if(x.type==='TemplateElement')spans.push([x.start,x.end,'[template redacted]']);});spans.sort((a,b)=>a[0]-b[0]);let at=n.start,out='';for(const[s,e,v]of spans){if(s<at)continue;out+=code.slice(at,s)+v;at=e;}out+=code.slice(at,n.end);report.modules.push({...fact,redacted_code:out});
+            }
+            report.outcome='binding_resolved_graph';report.scope='static_one_public_bundle_no_dynamic_execution_or_authorization_test';
+          }catch(e){report.outcome='incomplete';report.error=/^[a-zA-Z_0-9]+$/.test(e.message)?e.message:e.name;}
+          report.finished_at=new Date().toISOString();mkdirSync('scope-graph',{recursive:true});writeFileSync('scope-graph/report.json',JSON.stringify(report,null,2));console.log(JSON.stringify({outcome:report.outcome,error:report.error,module_count:report.module_count,http_builder_consumers:report.http_builder_consumers,selected:report.modules?.map(m=>m.id)}));if(report.outcome!=='binding_resolved_graph')process.exitCode=1;
+          JS
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: public-scope-graph
+          path: scope-graph/report.json
+          retention-days: 3
