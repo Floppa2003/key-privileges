@@ -1,0 +1,33 @@
+name: One-time public lazy module map
+on:
+  push:
+    branches: [diagnostics/public-alternatives-20260924]
+    paths: [.github/workflows/public-lazy-map-once.yml]
+permissions: {contents: read}
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - run: npm install --no-audit --no-fund --ignore-scripts acorn@8.15.0
+      - name: Locate public module imports and chunk-loader literals without executing bundle
+        run: |
+          node --input-type=module <<'JS'
+          import * as acorn from 'acorn';import {createHash} from 'node:crypto';import {mkdirSync,writeFileSync} from 'node:fs';
+          const out='public-lazy-map';mkdirSync(out);const url='https://marketplace.konsierge.com/static/js/main.959cee1e.js';
+          const report={started_at:new Date().toISOString(),url,bundle_executed:false,source_credentials_used:false,api_requests:0};
+          function visit(root,fn){const st=[root];while(st.length){const n=st.pop();if(!n||typeof n!=='object')continue;fn(n);for(const[k,v]of Object.entries(n)){if(k==='start'||k==='end')continue;if(Array.isArray(v))st.push(...v);else if(v&&typeof v==='object')st.push(v);}}}
+          const keep=new Set(['use strict','a','b','c','d','e','f','get','post','GET','POST','Authorization','Basic','Bearer','headers','params','url','baseURL','method','tariff_id','tariffId','rubric_id','page','per','per_page','limit','offset','benefits','rubrics','Benefits','Скидки','GET_BENEFITS_REQUEST','GET_BENEFITS_RESPONSE','GET_BENEFITS_ERROR','GET_RUBRICS_REQUEST','GET_RUBRICS_RESPONSE','GET_RUBRICS_ERROR','SET_BENEFITS_PAGE','SET_ACTIVE_RUBRIC']);
+          function mask(code,node,comments,bootstrap=false){const spans=[];visit(node,n=>{if(n.type==='Literal'&&typeof n.value!=='number'&&typeof n.value!=='boolean'&&n.value!==null&&!keep.has(n.value)&&!(bootstrap&&typeof n.value==='string'&&(/^[a-f0-9]{8}$/.test(n.value)||/^(static\/js\/|\.chunk\.js|\.js|\/)$/.test(n.value))))spans.push([n.start,n.end,'"[redacted]"']);if(n.type==='TemplateLiteral')spans.push([n.start,n.end,'"[template redacted]"']);});for(const c of comments)if(c.start>=node.start&&c.end<=node.end)spans.push([c.start,c.end,' ']);spans.sort((a,b)=>a[0]-b[0]||b[1]-a[1]);let p=node.start,s='';for(const[a,b,v]of spans){if(a<p)continue;s+=code.slice(p,a)+v;p=b;}return s+code.slice(p,node.end);}
+          try{const r=await fetch(url,{redirect:'manual',signal:AbortSignal.timeout(25000),headers:{'User-Agent':'PublicLoyaltyResearch/1.0'}});report.status=r.status;if(r.status!==200||r.headers.has('Retry-After'))throw Error('http_refusal_no_retry');const chunks=[];let total=0;for await(const c of r.body){total+=c.length;if(total>4000000)throw Error('size_bound');chunks.push(c);}const raw=Buffer.concat(chunks),code=raw.toString('utf8');report.sha256=createHash('sha256').update(raw).digest('hex');if(report.sha256!=='7dc923347de9b832bfbaa97bdcfa5391ea37fb6217aca295e174ee20bbedab2c')throw Error('source_changed');const comments=[],ast=acorn.parse(code,{ecmaVersion:'latest',onComment:comments}),arrays=[];visit(ast,n=>{if(n.type==='ArrayExpression'&&n.elements.filter(x=>x&&/FunctionExpression|ArrowFunctionExpression/.test(x.type)).length>100)arrays.push(n);});arrays.sort((a,b)=>b.elements.length-a.elements.length);const arr=arrays[0];if(!arr)throw Error('modules_not_located');const selected=[];arr.elements.forEach((m,id)=>{if(!m||!/FunctionExpression|ArrowFunctionExpression/.test(m.type))return;const hits=new Set(),lazy=[];visit(m,n=>{if(n.type==='Identifier'&&/^(benefitsState|rubricsState|loadingRubrics|errorRubrics|getBenefits|getRubrics)$/.test(n.name))hits.add(n.name);if(n.type==='Literal'&&['Benefits','Скидки','GET_BENEFITS_REQUEST','GET_RUBRICS_REQUEST'].includes(n.value))hits.add(n.value);if(n.type==='CallExpression'&&n.callee?.type==='MemberExpression'&&n.callee.object?.name===m.params[2]?.name&&n.callee.property?.name==='e'&&n.arguments?.[0]?.type==='Literal')lazy.push(n.arguments[0].value);});if(hits.size)selected.push({id,node:m,hits:[...hits],lazy});});report.selected=[];let written=0;for(const m of selected){const s=mask(code,m.node,comments);if(s.length>150000||written+s.length>400000){report.selected.push({id:m.id,hits:m.hits,omitted:true});continue;}written+=s.length;writeFileSync(`${out}/module-${m.id}.js`,s);report.selected.push({id:m.id,hits:m.hits,lazy:m.lazy,bytes:s.length,file:`module-${m.id}.js`});}
+          const boots=[];visit(ast,n=>{if(n.type==='FunctionExpression'&&n.end<=arr.start){let found=false;visit(n,x=>{if(x.type==='Literal'&&typeof x.value==='string'&&x.value.includes('static/js/'))found=true;});if(found)boots.push(n);}});boots.sort((a,b)=>(a.end-a.start)-(b.end-b.start));report.bootstrap_found=boots.length;if(boots[0]){writeFileSync(`${out}/bootstrap.js`,mask(code,boots[0],comments,true));report.bootstrap_bytes=boots[0].end-boots[0].start;}
+          report.outcome='static_ui_and_chunk_map_inspected';report.scope='source_linked_public_bundle_only_no_lazy_requests_or_runtime_authentication';
+          }catch(e){report.outcome='incomplete';report.error=/^[a-z_]+$/.test(e.message)?e.message:e.name;process.exitCode=1;}report.finished_at=new Date().toISOString();writeFileSync(`${out}/report.json`,JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));
+          JS
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: public-lazy-map-${{ github.run_id }}
+          path: public-lazy-map/
+          retention-days: 3
+          if-no-files-found: error
