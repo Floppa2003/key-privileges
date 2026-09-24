@@ -1,0 +1,54 @@
+name: One-time public module dependency map
+on:
+  push:
+    branches: [diagnostics/public-alternatives-20260924]
+    paths: [.github/workflows/public-module-map-once.yml]
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - run: npm install --no-audit --no-fund --ignore-scripts acorn@8.15.0
+      - name: Read public bundle as data and map action-module dependencies
+        run: |
+          node --input-type=module <<'JS'
+          import * as acorn from 'acorn';
+          import {createHash} from 'node:crypto';
+          import {mkdirSync,writeFileSync} from 'node:fs';
+          const out='public-module-map';mkdirSync(out);
+          const url='https://marketplace.konsierge.com/static/js/main.959cee1e.js';
+          const report={started_at:new Date().toISOString(),url,bundle_executed:false,source_credentials_used:false,api_requests:0};
+          const visit=(root,fn)=>{const stack=[root];while(stack.length){const n=stack.pop();if(!n||typeof n!=='object')continue;fn(n);for(const [k,v]of Object.entries(n)){if(k==='start'||k==='end')continue;if(Array.isArray(v))stack.push(...v);else if(v&&typeof v==='object')stack.push(v);}}};
+          const keep=new Set(['get','post','GET','POST','Authorization','Basic','Bearer','headers','params','url','baseURL','method','tariff_id','tariffId','rubric_id','page','per','per_page','limit','offset','benefits','rubrics','GET_BENEFITS_REQUEST','GET_BENEFITS_RESPONSE','GET_BENEFITS_ERROR','GET_RUBRICS_REQUEST','GET_RUBRICS_RESPONSE','GET_RUBRICS_ERROR','SET_BENEFITS_PAGE','SET_ACTIVE_RUBRIC']);
+          const redact=(code,node,comments)=>{const spans=[];visit(node,n=>{if(n.type==='Literal'&&typeof n.value!=='number'&&typeof n.value!=='boolean'&&n.value!==null&&!keep.has(n.value))spans.push([n.start,n.end,'"[redacted]"']);if(n.type==='TemplateLiteral')spans.push([n.start,n.end,'"[template redacted]"']);});for(const c of comments)if(c.start>=node.start&&c.end<=node.end)spans.push([c.start,c.end,' ']);spans.sort((a,b)=>a[0]-b[0]||b[1]-a[1]);let p=node.start,s='';for(const[a,b,v]of spans){if(a<p)continue;s+=code.slice(p,a)+v;p=b;}return s+code.slice(p,node.end);};
+          try{
+            const probe='(function(e,t,n){const key="TEST_SECRET_MARKER";return n(42).get(`secret${e}`)})';
+            const pn=acorn.parse(probe,{ecmaVersion:'latest'});if(redact(probe,pn,[]).includes('TEST_SECRET_MARKER'))throw Error('redaction_self_test_failed');
+            const r=await fetch(url,{redirect:'manual',signal:AbortSignal.timeout(25000),headers:{'User-Agent':'PublicLoyaltyResearch/1.0'}});report.status=r.status;report.server_date=r.headers.get('Date');report.cache_age=r.headers.get('Age');
+            if(r.status!==200||r.headers.has('Retry-After'))throw Error('http_refusal_no_retry');
+            const chunks=[];let total=0;for await(const c of r.body){total+=c.length;if(total>4000000)throw Error('response_size_bound');chunks.push(c);}
+            const raw=Buffer.concat(chunks),code=raw.toString('utf8');report.bytes=raw.length;report.sha256=createHash('sha256').update(raw).digest('hex');
+            if(report.sha256!=='7dc923347de9b832bfbaa97bdcfa5391ea37fb6217aca295e174ee20bbedab2c')throw Error('source_bundle_changed');
+            const comments=[],ast=acorn.parse(code,{ecmaVersion:'latest',sourceType:'script',onComment:comments});
+            const candidates=[];visit(ast,n=>{if(n.type==='ArrayExpression'){const count=n.elements.filter(x=>x&&/FunctionExpression|ArrowFunctionExpression/.test(x.type)).length;if(count>100)candidates.push({node:n,count});}});
+            candidates.sort((a,b)=>b.count-a.count);if(!candidates.length)throw Error('webpack_module_array_not_found');
+            const arr=candidates[0].node,mods=new Map();
+            arr.elements.forEach((m,id)=>{if(!m||!/FunctionExpression|ArrowFunctionExpression/.test(m.type))return;const deps=new Set(),labels=new Set();const req=m.params[2]?.name;visit(m,n=>{if(n.type==='Literal'&&typeof n.value==='string'&&/^GET_(BENEFITS|RUBRICS)_(REQUEST|RESPONSE|ERROR)$/.test(n.value))labels.add(n.value);if(n.type==='CallExpression'&&n.callee?.type==='Identifier'&&n.callee.name===req&&n.arguments?.[0]?.type==='Literal'&&Number.isInteger(n.arguments[0].value))deps.add(n.arguments[0].value);});mods.set(id,{node:m,deps:[...deps],labels:[...labels]});});
+            const roots=[...mods].filter(([_,m])=>m.labels.length).map(([id])=>id);if(!roots.length)throw Error('action_constant_modules_missing');
+            const selected=new Set(roots);for(const[id,m]of mods)if(m.deps.some(x=>roots.includes(x)))selected.add(id);
+            const graph=[...mods].map(([id,m])=>({id,bytes:m.node.end-m.node.start,deps:m.deps,labels:m.labels}));
+            let written=0;const files=[],omitted=[];for(const id of [...selected].sort((a,b)=>a-b)){const m=mods.get(id),safe=redact(code,m.node,comments);if(written+safe.length>300000){omitted.push(id);continue;}writeFileSync(`${out}/module-${id}.js`,safe);written+=safe.length;files.push({id,file:`module-${id}.js`,bytes:safe.length,deps:m.deps,labels:m.labels});}
+            report.module_count=mods.size;report.roots=roots;report.selected_modules=[...selected];report.files=files;report.omitted_due_to_bound=omitted;report.scope='action_constants_and_direct_importers_only_static_graph_not_runtime_authentication';report.outcome=omitted.length?'partial_module_export':'static_module_graph_read';
+            writeFileSync(`${out}/graph.json`,JSON.stringify(graph,null,2));
+          }catch(e){report.outcome='incomplete';report.error=/^[a-z_]+$/.test(e.message)?e.message:e.name;process.exitCode=1;}
+          report.finished_at=new Date().toISOString();writeFileSync(`${out}/report.json`,JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));
+          JS
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: public-module-map-${{ github.run_id }}
+          path: public-module-map/
+          retention-days: 3
+          if-no-files-found: error
