@@ -302,5 +302,26 @@
     "partner": "ЦУМ / ДЛТ",
     "category": "Покупки",
     "parser": "tsum_alfa"
+  },
+  "ekp_artparking_public": {
+    "url": "https://www.artparking.org/ekp/",
+    "program": "Единая карта петербуржца (ЕКП)",
+    "partner": "Арт-паркИНГ",
+    "category": "Развлечения",
+    "parser": "ekp_merchant_public"
+  },
+  "ekp_domknigi_public": {
+    "url": "https://dk-spb.ru/news/news-company/dom-knigi-i-edinaya-karta-peterburzhtsa-zaklyuchili-partnerstvo/",
+    "program": "Единая карта петербуржца (ЕКП)",
+    "partner": "Дом книги",
+    "category": "Книги",
+    "parser": "ekp_merchant_public"
+  },
+  "ekp_itc_public": {
+    "url": "https://itctraining.ru/about/partnery/",
+    "program": "Единая карта петербуржца (ЕКП)",
+    "partner": "ITC Group",
+    "category": "Образование",
+    "parser": "ekp_merchant_public"
   }
 }

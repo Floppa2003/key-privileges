@@ -811,5 +811,29 @@
     "url": "https://flystation.net/promotions",
     "timeout_seconds": 90,
     "coverage_scope": "public_own_promotions_not_protected_EKP_offer"
+  },
+  {
+    "id": "ekp_artparking_public",
+    "name": "ЕКП — Арт-паркИНГ (публичные условия партнёра)",
+    "url": "https://www.artparking.org/ekp/",
+    "mode": "html",
+    "timeout_seconds": 120,
+    "coverage_scope": "reviewed_merchant_terms_not_authenticated_EKP_card"
+  },
+  {
+    "id": "ekp_domknigi_public",
+    "name": "ЕКП — Дом книги (публичные условия партнёра)",
+    "url": "https://dk-spb.ru/news/news-company/dom-knigi-i-edinaya-karta-peterburzhtsa-zaklyuchili-partnerstvo/",
+    "mode": "html",
+    "timeout_seconds": 120,
+    "coverage_scope": "reviewed_merchant_terms_not_authenticated_EKP_card"
+  },
+  {
+    "id": "ekp_itc_public",
+    "name": "ЕКП — ITC Group (публичные условия партнёра)",
+    "url": "https://itctraining.ru/about/partnery/",
+    "mode": "html",
+    "timeout_seconds": 120,
+    "coverage_scope": "reviewed_merchant_terms_not_authenticated_EKP_card"
   }
 ]
