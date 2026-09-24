@@ -77,11 +77,49 @@ class RuntimeTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual([r['source_id'] for r,_ in results],['s7','slow','last'])
 
     async def test_waiting_in_queue_does_not_consume_source_timeout(self):
+        # Assert timer placement, not that a shared CI runner responds within 30ms.
+        # The real deadline/cancellation behavior is exercised by separate tests.
+        gate = asyncio.Semaphore(1)
+        queued = asyncio.Event()
+        admitted = set()
+        timers = []
+        original_wait_for = asyncio.wait_for
+        case = self
+
+        class AdmissionGate:
+            async def __aenter__(self):
+                if gate.locked():
+                    queued.set()
+                await gate.acquire()
+                admitted.add(asyncio.current_task())
+                return self
+
+            async def __aexit__(self, *exc):
+                admitted.remove(asyncio.current_task())
+                gate.release()
+
+        async def observe_timer(awaitable, *, timeout):
+            if asyncio.current_task() not in admitted:
+                awaitable.close()
+                case.fail('Source timer started before queue admission')
+            timers.append(timeout)
+            return await awaitable
+
         async def run(cfg):
-            await asyncio.sleep(.04 if cfg['id']=='s7' else .01)
-            return good(cfg) if cfg['id']=='s7' else failed_result(cfg,NOW,'fixture_completed')
-        await collect_batch(CONFIGS[:2],run,lambda c:.2 if c['id']=='s7' else .03,self.save,NOW,concurrency=1)
-        self.assertEqual(self.latest()['sources'][1]['coverage'],'fixture_completed')
+            if cfg['id'] == 's7':
+                await queued.wait()
+                self.assertEqual(timers, [.2])
+                return good(cfg)
+            return failed_result(cfg, NOW, 'fixture_completed')
+
+        with patch('collection_runtime.asyncio.Semaphore', return_value=AdmissionGate()), \
+                patch('collection_runtime.asyncio.wait_for', side_effect=observe_timer):
+            await original_wait_for(collect_batch(CONFIGS[:2], run,
+                lambda c: .2 if c['id'] == 's7' else .03, self.save, NOW,
+                concurrency=1), timeout=5)
+        self.assertTrue(queued.is_set())
+        self.assertEqual(timers, [.2, .03])
+        self.assertEqual(self.latest()['sources'][1]['coverage'], 'fixture_completed')
 
     async def test_source_timeout_does_not_discard_another_source(self):
         async def run(cfg):
