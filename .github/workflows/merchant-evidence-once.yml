@@ -1,0 +1,72 @@
+name: One-time merchant evidence
+on:
+  push:
+    branches: [coverage/public-alternatives-20260924]
+    paths: [.github/workflows/merchant-evidence-once.yml]
+permissions:
+  contents: read
+jobs:
+  read:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - run: python -m pip install --quiet requests==2.32.5 beautifulsoup4==4.14.3
+      - name: Read public terms only, no source accounts or form submissions
+        run: |
+          python - <<'PY'
+          import requests,json,hashlib,time,re
+          from pathlib import Path
+          from datetime import datetime,timezone
+          from urllib.parse import urlsplit,urljoin
+          from bs4 import BeautifulSoup
+          targets={
+          'elcom':'https://elcom-kids.ru/',
+          'academia':'https://academia-suites.ru/about-news/programma-loyalnosti-ekp',
+          'artparking':'https://www.artparking.org/ekp/',
+          'domknigi':'https://dk-spb.ru/news/news-company/dom-knigi-i-edinaya-karta-peterburzhtsa-zaklyuchili-partnerstvo/',
+          'bspb_gorbilet':'https://t.me/s/mybspb?q=ekp26'}
+          out=Path('merchant-evidence');out.mkdir();report={'account_used':False,'credentials_used':False,'forms_submitted':False,'requests':[],'sources':[]}
+          def now():return datetime.now(timezone.utc).isoformat()
+          def read(url):
+            item={'url':url,'started_at':now()};report['requests'].append(item)
+            try:
+              with requests.Session() as s:
+                s.trust_env=False
+                with s.get(url,headers={'User-Agent':'PublicLoyaltyResearch/1.0'},timeout=(8,25),allow_redirects=False,stream=True) as r:
+                  item.update(status=r.status_code,server_date=r.headers.get('Date'),cache_age=r.headers.get('Age'),content_type=r.headers.get('Content-Type'))
+                  if r.status_code!=200 or r.headers.get('Retry-After'):
+                    item['outcome']='non_200_no_retry';return None
+                  data=bytearray();deadline=time.monotonic()+40
+                  for part in r.iter_content(65536):
+                    data.extend(part)
+                    if len(data)>4000000 or time.monotonic()>deadline:raise ValueError('response_bound')
+                  raw=bytes(data);item.update(bytes=len(raw),sha256=hashlib.sha256(raw).hexdigest(),outcome='read')
+                  return raw.decode('utf8',errors='replace')
+            except Exception as e:item.update(outcome='transport_error',error=type(e).__name__);return None
+            finally:item['finished_at']=now()
+          for name,url in targets.items():
+            html=read(url);source={'id':name,'url':url,'observed_at':now(),'read':html is not None};report['sources'].append(source)
+            if html is None:continue
+            dom=BeautifulSoup(html,'html.parser')
+            if name=='bspb_gorbilet':
+              source['posts']=[]
+              for p in dom.select('[data-post]'):
+                msg=p.select_one('.tgme_widget_message_text');body=msg.get_text('\n',strip=True) if msg else ''
+                if 'ekp26' in body:source['posts'].append({'id':p.get('data-post'),'text':body,'date':p.select_one('time').get('datetime') if p.select_one('time') else None})
+            for x in dom.select('script,style,form,input,textarea,iframe,object,embed,noscript'):x.decompose()
+            for x in dom.find_all(True):
+              attrs={k:v for k,v in x.attrs.items() if k in ('id','class','alt','datetime','data-post')}
+              if x.name=='a' and x.get('href'):
+                u=urlsplit(urljoin(url,x['href']))
+                if u.scheme in ('http','https') and not u.username and not u.password and not re.search(r'token|session|secret|password|authorization',u.query,re.I):attrs['href']=urljoin(url,x['href'])
+              x.attrs=attrs
+            safe=str(dom).encode();file=name+'.html';(out/file).write_bytes(safe);source.update(file=file,safe_sha256=hashlib.sha256(safe).hexdigest(),text_chars=len(dom.get_text(' ',strip=True)))
+            time.sleep(2)
+          report['finished_at']=now();(out/'report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2));print(json.dumps(report,ensure_ascii=False))
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: merchant-evidence
+          path: merchant-evidence/
+          retention-days: 3
