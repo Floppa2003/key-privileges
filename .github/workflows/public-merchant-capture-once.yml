@@ -1,0 +1,85 @@
+name: One-time public merchant evidence
+on:
+  push:
+    branches: [diagnostics/public-alternatives-20260924]
+    paths: [.github/workflows/public-merchant-capture-once.yml]
+permissions: {contents: read}
+jobs:
+  capture:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {persist-credentials: false}
+      - run: python -m pip install --quiet requests==2.32.5 beautifulsoup4==4.14.3
+      - name: Capture independent public merchant evidence without account access
+        run: |
+          python - <<'PY'
+          import json,hashlib,time,re
+          from pathlib import Path
+          from datetime import datetime,timezone
+          from urllib.parse import urlsplit,urljoin,parse_qsl
+          import requests
+          from bs4 import BeautifulSoup
+          out=Path('public-merchant-evidence');out.mkdir()
+          targets={
+           'artparking':'https://www.artparking.org/ekp/',
+           'domknigi':'https://dk-spb.ru/news/news-company/dom-knigi-i-edinaya-karta-peterburzhtsa-zaklyuchili-partnerstvo/',
+           'itc':'https://itctraining.ru/about/partnery/',
+           'grandkarat':'https://grandkarat.com/special-offer/',
+           'benefits_shell':'https://benefits.konsierge.com/'
+          }
+          def now():return datetime.now(timezone.utc).isoformat()
+          report={'started_at':now(),'source_credentials_used':False,'forms_submitted':False,'private_data_read':False,'production_publication':False,'requests':[]}
+          def safe_url(url):
+           u=urlsplit(url)
+           if u.scheme not in ('https','http') or not u.hostname or u.username or u.password:return None
+           if any(re.search(r'token|secret|session|password|auth|user.?id',k,re.I) for k,v in parse_qsl(u.query)):return None
+           return url
+          for name,url in targets.items():
+           row={'name':name,'requested_url':url,'started_at':now()};report['requests'].append(row)
+           try:
+            with requests.Session() as s:
+             s.trust_env=False
+             with s.get(url,headers={'User-Agent':'LoyaltyCatalogResearchBot/1.0','Accept':'text/html'},timeout=(8,30),allow_redirects=False,stream=True) as r:
+              row.update(status=r.status_code,server_date=r.headers.get('Date'),cache_age=r.headers.get('Age'),mime=r.headers.get('Content-Type'))
+              if 300<=r.status_code<400:
+               dest=safe_url(urljoin(url,r.headers.get('Location','')));row.update(outcome='redirect_not_followed',redirect_to=dest);continue
+              if r.status_code in (401,403,423,429) or r.headers.get('Retry-After'):
+               row['outcome']='source_refusal_no_retry';continue
+              if r.status_code!=200:row['outcome']='non_200';continue
+              data=bytearray();deadline=time.monotonic()+40
+              for b in r.iter_content(65536):
+               data.extend(b)
+               if len(data)>4000000 or time.monotonic()>deadline:raise ValueError('response_bound')
+             raw=bytes(data);row.update(origin_bytes=len(raw),origin_sha256=hashlib.sha256(raw).hexdigest())
+             d=BeautifulSoup(raw,'html.parser')
+             if name=='benefits_shell':
+              scripts=[]
+              for tag in d.select('script[src]'):
+               u=safe_url(urljoin(url,tag['src']))
+               if u and urlsplit(u).hostname==urlsplit(url).hostname:scripts.append(u)
+              row.update(source_linked_scripts=scripts,page_title=d.title.get_text(' ',strip=True) if d.title else '',shell_text=d.get_text(' ',strip=True)[:1000])
+             for n in d.select('script,style,noscript,form,input,textarea,button,iframe,link,meta'):n.decompose()
+             for n in d.find_all(True):
+              attrs={k:v for k,v in n.attrs.items() if k in ('class','id','colspan','rowspan','datetime')}
+              if n.name=='a' and n.get('href'):
+               u=safe_url(urljoin(url,n['href']))
+               if u:attrs['href']=u
+              n.attrs=attrs
+             safe=str(d).encode();file=name+'.html';(out/file).write_bytes(safe)
+             row.update(file=file,sanitized_sha256=hashlib.sha256(safe).hexdigest(),outcome='public_html_captured',observed_at=now())
+           except Exception as e:row.update(outcome='failed',error=str(e) if isinstance(e,ValueError) else type(e).__name__)
+           finally:row['finished_at']=now()
+           time.sleep(2)
+          report['finished_at']=now();(out/'report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2));print(json.dumps(report,ensure_ascii=False,indent=2))
+          PY
+      - name: Archive exact public repository code for independent local verification
+        run: git archive --format=tar.gz HEAD loyalty key > public-merchant-evidence/repository-code.tar.gz
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: public-merchant-evidence-${{ github.run_id }}
+          path: public-merchant-evidence/
+          retention-days: 3
+          if-no-files-found: error
