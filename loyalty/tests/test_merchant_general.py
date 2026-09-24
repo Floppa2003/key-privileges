@@ -24,7 +24,7 @@ class Evidence(unittest.TestCase):
   for s in ('academia-suites','grandkarat.com','online-london','.t778','#rec124'):self.assertNotIn(s,raw)
  def test_prompt_and_schema_shared_across_new_domains(self):
   a=m.scrape_action(T,T['root']);other={**T,'root':'https://other.test/'}
-  b=m.scrape_action(other,other['root']);self.assertEqual(a['arguments']['jsonOptions'],b['arguments']['jsonOptions'])
+  b=m.scrape_action(other,other['root']);self.assertEqual(a['arguments']['queryOptions'],b['arguments']['queryOptions'])
  def test_literal_words_not_changed_by_formatting(self):
   r=response();r['markdown']='# Heading\n\n'+S.replace('Example Club','**Example Club**').replace(' ','\n')
   self.assertEqual(checked(r)['status'],'evidence_checked_needs_review')
@@ -114,10 +114,37 @@ class Navigation(unittest.TestCase):
    a=m.replay(T,{})['next'];m.ingest(Path(f),a,{'web':[]})
    with self.assertRaisesRegex(ValueError,'receipt_exists'):m.ingest(Path(f),a,{'web':[]})
  def test_rest_contract_mapping(self):
-  endpoint,args=m.rest_action(m.scrape_action(T,T['root']));self.assertEqual(endpoint,'https://api.firecrawl.dev/v2/scrape');self.assertNotIn('jsonOptions',args);self.assertTrue(any(isinstance(x,dict) and x['type']=='json' for x in args['formats']))
+  endpoint,args=m.rest_action(m.scrape_action(T,T['root']));self.assertEqual(endpoint,'https://api.firecrawl.dev/v2/scrape');self.assertNotIn('queryOptions',args);self.assertTrue(any(isinstance(x,dict) and x['type']=='question' for x in args['formats']))
  def test_no_execute_without_explicit_budget(self):
   with tempfile.TemporaryDirectory() as f, self.assertRaisesRegex(ValueError,'request_budget'):m.execute([T],Path(f),0)
  def test_unsupported_tool(self):
   with self.assertRaisesRegex(ValueError,'unknown_tool'):m.rest_action({'tool':'send_email','arguments':{}})
+
+class QueryContracts(unittest.TestCase):
+ def test_answer_parsed_without_mutating_provider_payload(self):
+  r=response();extracted=r.pop('json');r['answer']=json.dumps(extracted,ensure_ascii=False);before=copy.deepcopy(r)
+  self.assertEqual(checked(r)['status'],'evidence_checked_needs_review');self.assertEqual(r,before)
+ def test_invalid_json_not_repaired(self):
+  r=response();r['json']=None;r['answer']='{"broken": "bad\\*escape"}'
+  self.assertIn('answer_invalid_json',checked(r)['problems'])
+ def test_duplicate_model_keys_rejected(self):
+  with self.assertRaisesRegex(ValueError,'duplicate_model_key'):m.model_output({'answer':'{"state":"no_offer","state":"candidates"}'})
+ def test_fence_is_only_presentation(self):
+  r=response();value=r.pop('json');r['answer']='```json\n'+json.dumps(value)+'\n```'
+  self.assertEqual(checked(r)['status'],'evidence_checked_needs_review')
+ def test_missing_answer_retains_source_evidence_without_offer(self):
+  r=response();r['json']=None;r['markdown']='# Example Club\n'+S
+  result=checked(r);self.assertEqual(result['status'],'review_required');self.assertEqual(len(result['source_sections']),1)
+  self.assertFalse(result['source_sections'][0]['publication_allowed'])
+ def test_unsupported_neighbor_section_not_selected(self):
+  md='# Other Club\n90% gift.\n# Example Club\n'+S+'\n# Other again\nFree gifts'
+  parts=m.evidence_windows(md,T);self.assertEqual(len(parts),1);self.assertNotIn('90%',parts[0]['source_text']);self.assertNotIn('Free gifts',parts[0]['source_text'])
+ def test_source_offsets_are_real(self):
+  md='# Example Club\n'+S;part=m.evidence_windows(md,T)[0];self.assertEqual(md[part['start']:part['end']],part['source_text'])
+ def test_markdown_escaping_not_source_word_change(self):self.assertEqual(m.text('тарифу\\*'),m.text('тарифу*'))
+ def test_query_rest_preserves_exact_prompt(self):
+  a=m.scrape_action(T,T['root']);_,b=m.rest_action(a);q=next(f for f in b['formats'] if isinstance(f,dict));self.assertEqual(q['question'],a['arguments']['queryOptions']['prompt'])
+ def test_model_plain_prose_rejected(self):
+  r=response();r['json']=None;r['answer']='The benefit is nice.';self.assertIn('answer_invalid_json',checked(r)['problems'])
 
 if __name__=='__main__':unittest.main()

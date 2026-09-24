@@ -2,16 +2,16 @@ name: General merchant experimental check
 on:
   push:
     branches: [loyalty/general-merchant-research-20260925]
-    paths: [loyalty/merchant_general.py, loyalty/tests/test_merchant_general.py, loyalty/experiments/merchant_general/targets.json, .github/workflows/merchant-general-check.yml]
+    paths: [loyalty/merchant_general.py, loyalty/merchant_review.py, loyalty/tests/test_merchant_general.py, loyalty/tests/test_merchant_review.py, loyalty/experiments/merchant_general/semantic-counterexample.json, .github/workflows/merchant-general-check.yml]
 permissions:
   contents: read
 concurrency:
   group: merchant-general-experimental
   cancel-in-progress: false
 jobs:
-  regression-and-keyless-probe:
+  regression:
     runs-on: ubuntu-24.04
-    timeout-minutes: 12
+    timeout-minutes: 6
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
@@ -20,35 +20,33 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m pip install -r loyalty/requirements.txt
-      - name: Run full regressions and record executed code
+      - name: Functional tests only; not semantic acceptance
         run: |
           mkdir -p merchant-general-output
           git rev-parse HEAD > merchant-general-output/commit.txt
-          cp loyalty/merchant_general.py loyalty/tests/test_merchant_general.py merchant-general-output/
+          cp loyalty/merchant_general.py loyalty/merchant_review.py loyalty/tests/test_merchant_general.py loyalty/tests/test_merchant_review.py merchant-general-output/
           python -m unittest discover -s loyalty/tests -v > merchant-general-output/python-tests.log 2>&1
           node --test key/refresh.test.mjs > merchant-general-output/key-tests.log 2>&1
-      - name: One bounded documented keyless REST probe; no account secrets or Google access
-        run: |
-          python - <<'PY'
-          import json,sys
-          from pathlib import Path
-          sys.path.insert(0,'loyalty')
-          import merchant_general as m
-          targets=m.read_targets(Path('loyalty/experiments/merchant_general/targets.json'))[:1]
-          folder=Path('merchant-general-output/receipts')
-          report={'transport':'keyless_REST','target_ids':[t['id'] for t in targets],'request_budget':4,'source_accounts_used':False,'publication_allowed':False}
-          try:
-              m.execute(targets,folder,4)
-              report['execution']='completed'
-          except Exception as exc:
-              report.update(execution='failed',error=str(exc) if isinstance(exc,ValueError) else type(exc).__name__)
-          report['targets']=[m.replay(t,m.load_receipts(folder)) for t in targets]
-          Path('merchant-general-output/rest-probe.json').write_text(json.dumps(report,ensure_ascii=False,indent=2))
-          print(json.dumps({k:v for k,v in report.items() if k!='targets'},ensure_ascii=False))
-          PY
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
           name: merchant-general-${{ github.run_id }}-${{ github.run_attempt }}
           path: merchant-general-output/
           retention-days: 1
+  semantic-quality:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Evaluate recorded live verdict; expected to fail until a new verified model result resolves it
+        run: |
+          python3 - <<'PY'
+          import json,sys
+          from pathlib import Path
+          case=json.loads(Path('loyalty/experiments/merchant_general/semantic-counterexample.json').read_text())
+          passed=case['observed_verdict']==case['expected_verdict']
+          print(json.dumps({'case':case['case_id'],'observed':case['observed_verdict'],'expected':case['expected_verdict'],'passed':passed,'fresh_model_call':False,'publication_allowed':False}))
+          sys.exit(0 if passed else 1)
+          PY
