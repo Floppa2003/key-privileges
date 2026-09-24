@@ -1,0 +1,51 @@
+name: One-time reviewed EKP merchant registry wiring
+on:
+  push:
+    branches: [loyalty/ekp-merchant-clauses-20260924]
+    paths: [.github/workflows/ekp-merchant-wire-once.yml]
+permissions:
+  contents: write
+jobs:
+  wire:
+    if: github.repository == 'Floppa2003/key-privileges' && github.ref == 'refs/heads/loyalty/ekp-merchant-clauses-20260924'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: loyalty/ekp-merchant-clauses-20260924
+      - name: Apply only the three reviewed registry and dispatch edits
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json, hashlib
+          root=Path('loyalty')
+          expected={'partner_pages.json':'4e4e45320aab35d4bd119782f7e5965123af2879','sources_normalized.json':'2c0b4c33d4cb732e207cec32029e45d099ea9f6b','partner_pages.py':'c3b1bec81537f12ceb4c95c6e64f725ffd6352b5'}
+          for name,digest in expected.items():
+              b=(root/name).read_bytes()
+              assert hashlib.sha1(b'blob '+str(len(b)).encode()+b'\0'+b).hexdigest()==digest, 'preimage changed: '+name
+          specs=[('ekp_artparking_public','Арт-паркИНГ','https://www.artparking.org/ekp/','Развлечения'),('ekp_domknigi_public','Дом книги','https://dk-spb.ru/news/news-company/dom-knigi-i-edinaya-karta-peterburzhtsa-zaklyuchili-partnerstvo/','Книги'),('ekp_itc_public','ITC Group','https://itctraining.ru/about/partnery/','Образование')]
+          p=root/'partner_pages.json'; obj=json.loads(p.read_text())
+          for sid,name,url,cat in specs:
+              assert sid not in obj
+              obj[sid]={'url':url,'program':'Единая карта петербуржца (ЕКП)','partner':name,'category':cat,'parser':'ekp_merchant_public'}
+          p.write_text(json.dumps(obj,ensure_ascii=False,indent=2)+'\n')
+          p=root/'sources_normalized.json';obj=json.loads(p.read_text())
+          for sid,name,url,cat in specs:
+              assert not any(x['id']==sid for x in obj)
+              obj.append({'id':sid,'name':'ЕКП — '+name+' (публичные условия партнёра)','url':url,'mode':'html','timeout_seconds':120,'coverage_scope':'reviewed_merchant_terms_not_authenticated_EKP_card'})
+          p.write_text(json.dumps(obj,ensure_ascii=False,indent=2)+'\n')
+          p=root/'partner_pages.py';s=p.read_text();needle="    if cfg.get('parser') == 'sacvoyage_loyalty':"
+          assert s.count(needle)==1
+          s=s.replace(needle,"    if cfg.get('parser') == 'ekp_merchant_public':\n        from ekp_merchant_public import extract_merchant\n        return extract_merchant(source,soup,url,observed_at,cfg)\n"+needle)
+          p.write_text(s)
+          PY
+      - name: Commit only the reviewed files to the same unprotected feature branch
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add loyalty/partner_pages.json loyalty/sources_normalized.json loyalty/partner_pages.py
+          git diff --cached --stat
+          git commit -m 'Register three reviewed public EKP merchant sources in existing adapters'
+          git push origin HEAD:refs/heads/loyalty/ekp-merchant-clauses-20260924
+          git rev-parse HEAD
