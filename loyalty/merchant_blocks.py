@@ -225,7 +225,7 @@ def main():
     p.add_argument('--out', type=Path, required=True)
     a = p.parse_args()
     if a.command == 'prepare':
-        value = build(a.source.read_text(encoding='utf-8'), url=a.url,
+        value = build(a.source.read_bytes().decode('utf-8'), url=a.url,
                       observed_at=a.observed_at, completeness=a.completeness)
     else:
         if not a.target or (a.command == 'check' and not a.prediction):

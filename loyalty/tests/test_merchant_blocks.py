@@ -21,6 +21,18 @@ def output(d):
                         'dates': [], 'uncertainties': []}]}
 
 class Blocks(unittest.TestCase):
+    def test_cli_preserves_original_utf8_newlines(self):
+        import subprocess
+        import tempfile
+        with tempfile.TemporaryDirectory() as folder:
+            source=Path(folder)/'source.md'; target=Path(folder)/'blocks.json'
+            raw='## EC\r\n\r\nКарта\u00a0🚢\r\n'.encode('utf-8')
+            source.write_bytes(raw)
+            subprocess.run([sys.executable,b.__file__,'prepare','--source',str(source),
+                            '--url','https://example.test/','--observed-at','2026-09-25T00:00:00Z',
+                            '--out',str(target)],check=True,capture_output=True)
+            got=json.loads(target.read_text(encoding='utf-8'))
+            self.assertEqual(got['markdown'].encode('utf-8'),raw)
     def test_roundtrip_exact_slices(self):
         d=doc()
         for block in d['blocks']:
