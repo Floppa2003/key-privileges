@@ -1,0 +1,90 @@
+name: One-time public module graph
+on:
+  push:
+    branches: [coverage/public-alternatives-20260924]
+    paths: [.github/workflows/public-module-graph-once.yml]
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - run: npm install --no-audit --no-fund --ignore-scripts acorn@8.15.0
+      - name: Static dependency graph, no application execution or API requests
+        run: |
+          node --input-type=module <<'JS'
+          import * as acorn from 'acorn';
+          import {createHash} from 'node:crypto';
+          import {mkdirSync,writeFileSync} from 'node:fs';
+          const root='https://marketplace.konsierge.com/';
+          const report={started_at:new Date().toISOString(),account_used:false,credentials_used:false,bundle_executed:false,api_requests:0,requests:[]};
+          const allowed=new Set(['marketplace.konsierge.com']);
+          async function read(url){
+            const u=new URL(url);
+            if(u.protocol!=='https:'||!allowed.has(u.hostname)||u.username||u.password||u.search||u.hash)throw Error('scope');
+            const item={url,started_at:new Date().toISOString()};report.requests.push(item);
+            const r=await fetch(url,{redirect:'manual',signal:AbortSignal.timeout(25000),headers:{'User-Agent':'PublicLoyaltyResearch/1.0'}});
+            item.status=r.status;item.server_date=r.headers.get('date');item.cache_age=r.headers.get('age');
+            if(r.status!==200||r.headers.has('Retry-After'))throw Error('http_'+r.status);
+            const reader=r.body.getReader();const parts=[];let bytes=0;
+            while(true){const p=await reader.read();if(p.done)break;bytes+=p.value.length;if(bytes>4000000){await reader.cancel();throw Error('size_bound');}parts.push(Buffer.from(p.value));}
+            const raw=Buffer.concat(parts);item.bytes=bytes;item.sha256=createHash('sha256').update(raw).digest('hex');item.finished_at=new Date().toISOString();return raw.toString('utf8');
+          }
+          function children(n){const out=[];for(const [k,v]of Object.entries(n||{})){if(['start','end'].includes(k))continue;if(Array.isArray(v))out.push(...v.filter(x=>x&&typeof x==='object'));else if(v&&typeof v==='object')out.push(v);}return out;}
+          function walk(n,fn){const stack=[n];while(stack.length){const v=stack.pop();if(!v||typeof v!=='object')continue;fn(v);stack.push(...children(v));}}
+          function publicLiteral(v){
+            if(typeof v==='number'||typeof v==='boolean'||v===null)return JSON.stringify(v);
+            if(typeof v!=='string')return 'null';
+            if(/^(GET_(BENEFITS|RUBRICS)_(REQUEST|RESPONSE|ERROR)|SET_ACTIVE_RUBRIC|SET_BENEFITS_PAGE|Benefits|benefits|rubrics|tariff_id|rubric_id|page|per|limit|offset|get|post|GET|POST|Authorization|Basic|Bearer|headers|params|data|method|url|baseURL|responseType)$/.test(v))return JSON.stringify(v);
+            if(/^\/?(?:api|client)\/[A-Za-z0-9_/-]{1,120}$/.test(v))return JSON.stringify(v);
+            if(/^\/?(?:benefits|rubrics)(?:\/[A-Za-z0-9_-]*)?(?:\?(?:tariff_id|rubric_id|page|per)=?)?$/.test(v))return JSON.stringify(v);
+            if(/^https:\/\/benefits\.konsierge\.com\/(?:[A-Za-z0-9_/-]*)$/.test(v))return JSON.stringify(v);
+            return '"[string redacted]"';
+          }
+          try{
+            const html=await read(root);
+            const links=[...html.matchAll(/<script\b[^>]*\bsrc=["']([^"']+)["']/gi)].map(m=>new URL(m[1],root)).filter(u=>u.origin===new URL(root).origin&&!u.search&&!u.hash);
+            if(links.length!==1)throw Error('root_script_count_changed');
+            const code=await read(links[0].href),ast=acorn.parse(code,{ecmaVersion:'latest',sourceType:'script'});
+            const candidates=[];
+            walk(ast,n=>{if(n.type==='ArrayExpression'&&n.elements.length>100&&n.elements.filter(e=>e&&/FunctionExpression|ArrowFunctionExpression/.test(e.type)).length>n.elements.length*.8)candidates.push(n);});
+            candidates.sort((a,b)=>b.elements.length-a.elements.length);
+            if(!candidates.length)throw Error('webpack_modules_not_found');
+            const arr=candidates[0],mods=arr.elements;
+            report.module_count=mods.length;report.module_array_candidates=candidates.length;
+            const facts=mods.map((node,id)=>{
+              if(!node)return {id,bytes:0,dependencies:[],markers:[]};
+              const req=node.params?.[2]?.name;const deps=new Set(),markers=new Set();
+              walk(node,n=>{
+                if(req&&n.type==='CallExpression'&&n.callee?.type==='Identifier'&&n.callee.name===req&&n.arguments.length===1&&n.arguments[0].type==='Literal'&&Number.isInteger(n.arguments[0].value))deps.add(n.arguments[0].value);
+                if(n.type==='Literal'&&typeof n.value==='string'&&/^(GET_(BENEFITS|RUBRICS)_(REQUEST|RESPONSE|ERROR)|SET_ACTIVE_RUBRIC|SET_BENEFITS_PAGE)$/.test(n.value))markers.add(n.value);
+              });
+              return {id,bytes:node.end-node.start,dependencies:[...deps].sort((a,b)=>a-b),markers:[...markers].sort()};
+            });
+            const seed=new Set(facts.filter(m=>m.markers.length).map(m=>m.id));if(!seed.size)throw Error('benefits_action_modules_not_found');
+            const directUsers=facts.filter(m=>m.dependencies.some(d=>seed.has(d))).map(m=>m.id);
+            const selected=new Set([...seed,...directUsers]);
+            for(const id of [...selected])for(const d of facts[id]?.dependencies||[])if(facts[d]?.bytes<24000)selected.add(d);
+            report.action_modules=[...seed];report.direct_users=directUsers;report.graph=facts.map(({id,bytes,dependencies,markers})=>({id,bytes,dependencies,markers}));
+            report.modules=[];let total=0;
+            for(const id of [...selected].sort((a,b)=>a-b)){
+              const node=mods[id];if(!node)continue;const fact=facts[id];
+              if(fact.bytes>45000||total+fact.bytes>500000){report.modules.push({...fact,omitted:'bounded_library_or_total'});continue;}
+              const spans=[];walk(node,n=>{if(n.type==='Literal')spans.push([n.start,n.end,publicLiteral(n.value)]);if(n.type==='TemplateElement')spans.push([n.start,n.end,'[template redacted]']);});
+              spans.sort((a,b)=>a[0]-b[0]);let at=node.start,out='';
+              for(const [s,e,replacement]of spans){if(s<at)continue;out+=code.slice(at,s)+replacement;at=e;}out+=code.slice(at,node.end);total+=fact.bytes;
+              report.modules.push({...fact,redacted_code:out});
+            }
+            report.outcome='module_graph_inspected';report.scope='public_source_linked_bundle_static_only_not_server_access_or_Only_Assist_equivalence';
+          }catch(e){report.outcome='incomplete';report.error=/^[a-zA-Z_0-9]+$/.test(e.message)?e.message:e.name;}
+          report.finished_at=new Date().toISOString();mkdirSync('public-module-graph',{recursive:true});writeFileSync('public-module-graph/report.json',JSON.stringify(report,null,2));
+          console.log(JSON.stringify({outcome:report.outcome,error:report.error,module_count:report.module_count,action_modules:report.action_modules,direct_users:report.direct_users,selected_count:report.modules?.length,requests:report.requests}));
+          if(report.outcome!=='module_graph_inspected')process.exitCode=1;
+          JS
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: public-module-graph
+          path: public-module-graph/report.json
+          retention-days: 3
