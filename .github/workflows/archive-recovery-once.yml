@@ -1,0 +1,40 @@
+name: One-time public research recovery
+on:
+  push:
+    branches: [diagnostics/public-alternatives-20260924]
+    paths: [.github/workflows/archive-recovery-once.yml]
+permissions:
+  contents: read
+jobs:
+  recover:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: research/public-alternatives-20260924
+          persist-credentials: false
+      - name: Validate and package previously collected public observations
+        run: |
+          python - <<'PY'
+          import json,hashlib,shutil
+          from pathlib import Path
+          src=Path('loyalty/research/public_archive_alternatives_20260924.jsonl')
+          rows=[json.loads(line) for line in src.read_text().splitlines() if line.strip()]
+          out=Path('recovered-public-research');out.mkdir()
+          shutil.copyfile(src,out/src.name)
+          summary=[]
+          for r in rows:
+              meta={k:v for k,v in r.items() if k!='messages'}
+              meta['message_count']=len(r.get('messages',[]))
+              meta['dated_candidates']=[{'url':m.get('url'),'published_at':m.get('published_at'),'candidate':m.get('quantified_or_code_candidate'),'excluded':m.get('excluded')} for m in r.get('messages',[])]
+              summary.append(meta)
+          (out/'inventory-summary.json').write_text(json.dumps(summary,ensure_ascii=False,indent=2))
+          (out/'manifest.json').write_text(json.dumps({'source_path':str(src),'sha256':hashlib.sha256(src.read_bytes()).hexdigest(),'rows':len(rows),'new_source_requests':0,'production_publication':False},indent=2))
+          print('Recovered public inventory rows:',len(rows))
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: recovered-public-research-${{ github.run_id }}
+          path: recovered-public-research/
+          retention-days: 3
