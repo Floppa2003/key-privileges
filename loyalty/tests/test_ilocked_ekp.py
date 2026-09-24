@@ -88,11 +88,11 @@ class IlockedEkpTests(unittest.TestCase):
         extract_partner_page(SID, dom, URL, NOW)
         self.assertEqual(str(dom), before)
 
-    def test_eight_configured_quests_have_distinct_matching_routes(self):
+    def test_nine_configured_quests_have_distinct_matching_routes(self):
         routes = json.loads(Path(__file__).resolve().parents[1].joinpath('sources_normalized.json').read_text())
         selected = [r for r in routes if r['id'].startswith('ekp_ilocked_')]
-        self.assertEqual(len(selected), 8)
-        self.assertEqual(len({r['url'] for r in selected}), 8)
+        self.assertEqual(len(selected), 9)
+        self.assertEqual(len({r['url'] for r in selected}), 9)
         for route in selected:
             self.assertEqual(route['url'], CONFIG[route['id']]['url'])
             record, = extract(route['id'], page(title=route['id']), route['url'], NOW)

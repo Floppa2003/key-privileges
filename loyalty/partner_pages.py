@@ -59,6 +59,9 @@ def extract_partner_page(source,soup,url,observed_at):
     cfg=CONFIG[source]
     if canonical_url(url)!=canonical_url(cfg['url']):
         raise ValueError('Requested URL is not the reviewed partner offer URL')
+    if cfg.get('parser') == 'ekp_stays_public':
+        from ekp_stays_public import extract_stay
+        return extract_stay(source,soup,url,observed_at,cfg)
     if cfg.get('parser') == 'ekp_merchant_public':
         from ekp_merchant_public import extract_merchant
         return extract_merchant(source,soup,url,observed_at,cfg)
