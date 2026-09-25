@@ -7,7 +7,8 @@ authorizes publication.
 from __future__ import annotations
 import json
 from pathlib import Path
-import merchant_blocks as blocks
+import merchant_blocks as blocks_v1
+import merchant_blocks_v2 as blocks_v2
 import merchant_general as core
 
 VERSION='merchant-heldout-eval-v1'
@@ -90,8 +91,16 @@ def evaluate(corpus_path: Path, observed_path: Path) -> dict:
     observed=json.loads(observed_path.read_text(encoding='utf-8'))
     if corpus.get('version')!='merchant-heldout-v1':
         raise ValueError('corpus_version')
-    if observed.get('version')!='merchant-heldout-observed-v1':
+    version=observed.get('version')
+    if version not in ('merchant-heldout-observed-v1','merchant-heldout-observed-v2-on-v1'):
         raise ValueError('observed_version')
+    block_version=observed.get('block_version','merchant-blocks-v1')
+    if block_version=='merchant-blocks-v1':
+        blocks=blocks_v1
+    elif block_version=='merchant-blocks-v2':
+        blocks=blocks_v2
+    else:
+        raise ValueError('block_version')
     if not observed.get('labels_frozen_before_predictions'):
         raise ValueError('labels_not_frozen')
     if observed.get('expected_labels_sent_to_model') is not False:
@@ -112,7 +121,8 @@ def evaluate(corpus_path: Path, observed_path: Path) -> dict:
         'explicit_audience_reusable':0,'exact_variant_count':0,
         'required_evidence_phrases_found':0,'required_evidence_phrases_total':0,
         'forbidden_borrowing_hits':0,'required_date_roles_found':0,
-        'required_date_roles_total':0,'labels_frozen_before_predictions':True,
+        'required_date_roles_total':0,'unexpected_material_date_roles':0,
+        'code_state_correct':0,'labels_frozen_before_predictions':True,
         'expected_labels_sent_to_model':False,'publication_allowed':False,'results':[]
     }
 
@@ -172,6 +182,7 @@ def evaluate(corpus_path: Path, observed_path: Path) -> dict:
             failures.append('forbidden_borrowing')
 
         code_ok=_code_ok(expected['code_state'],pred)
+        aggregate['code_state_correct']+=int(code_ok)
         if not code_ok:
             failures.append('code_state')
 
@@ -182,12 +193,17 @@ def evaluate(corpus_path: Path, observed_path: Path) -> dict:
         aggregate['required_date_roles_total']+=len(needed)
         if len(found_roles)!=len(needed):
             failures.append('date_role')
+        extras=sorted({role for role in roles if role not in needed and role!='publication'})
+        aggregate['unexpected_material_date_roles']+=len(extras)
+        if extras:
+            failures.append('unexpected_date_role')
 
         failures=list(dict.fromkeys(failures))
         passed=not failures
         aggregate['passed_cases']+=int(passed)
         aggregate['results'].append({
             'id':case['id'],'passed':passed,'failures':failures,
+            'block_version':block_version,
             'actual_disposition':actual_disposition,'expected_disposition':expected['disposition'],
             'actual_variants':variants,'expected_variants':expected['offer_variants'],
             'block_problems':checked.get('problems',[]),'block_status':checked.get('status'),
