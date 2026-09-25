@@ -161,7 +161,7 @@ def ancestors(doc:dict,section:str)->list[str]:
 def resolve(doc:dict,refs:list)->list[dict]:
     if not isinstance(refs,list) or len(refs)>40 or any(not isinstance(r,str) for r in refs):
         raise ValueError('reference_schema')
-    if len(refs)!=len(set(refs)):raise ValueError('duplicate_reference')
+    refs=list(dict.fromkeys(refs))
     by={b['id']:b for b in doc['blocks']}
     if any(r not in by for r in refs):raise ValueError('unknown_reference')
     return sorted((by[r] for r in refs),key=lambda b:b['start'])
