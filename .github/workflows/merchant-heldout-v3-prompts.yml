@@ -2,7 +2,7 @@ name: Merchant heldout v3 prompt materialization
 on:
   push:
     branches: [loyalty/general-merchant-research-20260925]
-    paths: [.github/workflows/merchant-heldout-v3-prompts.yml]
+    paths: [.github/workflows/merchant-heldout-v3-prompts.yml, loyalty/experiments/merchant_general/heldout-v3.json]
 permissions:
   contents: read
 jobs:
