@@ -141,4 +141,31 @@ class AtomicClaims(unittest.TestCase):
         self.assertEqual([x['kind'] for x in bundle['claims']],['audience','benefit','condition'])
         self.assertEqual(bundle['claims'][-1]['evidence_refs'],['b0002'])
 
+    def test_unassigned_material_restriction_blocks_claim_readiness(self):
+        md=('## Example Club\n\n'
+            'Держателям EC предоставляется скидка 20%.\n\n'
+            'Не суммируется с другими скидками.\n')
+        offer={'program':['b0000'],'audience':['b0001'],'benefit':['b0001'],
+               'conditions':[],'redemption':[],
+               'code':{'state':'not_stated','value':'','refs':[]},
+               'dates':[],'uncertainties':[]}
+        d,r=checked(md,offer)
+        bundle=c.generate(T,d,r)
+        self.assertEqual(bundle['status'],'review_required')
+        self.assertIn('material_evidence_unassigned',bundle['reasons'])
+        self.assertEqual(bundle['unassigned_material_refs'],['b0002'])
+
+    def test_unassigned_nonmaterial_prose_does_not_block_claim_readiness(self):
+        md=('## Example Club\n\n'
+            'Держателям EC предоставляется скидка 20%.\n\n'
+            'Мы рады видеть вас в нашем магазине.\n')
+        offer={'program':['b0000'],'audience':['b0001'],'benefit':['b0001'],
+               'conditions':[],'redemption':[],
+               'code':{'state':'not_stated','value':'','refs':[]},
+               'dates':[],'uncertainties':[]}
+        d,r=checked(md,offer)
+        bundle=c.generate(T,d,r)
+        self.assertEqual(bundle['status'],'claims_ready_for_independent_review')
+        self.assertEqual(bundle['unassigned_material_refs'],[])
+
 if __name__=='__main__':unittest.main()
