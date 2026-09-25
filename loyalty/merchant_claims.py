@@ -4,12 +4,20 @@ Claims are review tasks, not verified facts. They never permit publication.
 """
 from __future__ import annotations
 
+import re
 import merchant_blocks as blocks_v1
 import merchant_blocks_v2 as blocks_v2
 import merchant_general as core
 
 VERSION = 'merchant-claims-v1'
 BLOCKS_BY_VERSION = {blocks_v1.VERSION: blocks_v1, blocks_v2.VERSION: blocks_v2}
+MATERIAL_HINT = re.compile(
+    r"(?:скидк\w*|бесплат\w*|подар\w*|балл\w*|мил\w*|к[еэ]шб[еэ]к\w*|"
+    r"промокод\w*|не\s+суммир\w*|не\s+(?:действ\w*|предостав\w*|распростран\w*)|"
+    r"\bтолько\b|\bкроме\b|исключ\w*|миним\w*|максим\w*|"
+    r"при\s+(?:услов\w*|покупк\w*|предъяв\w*|бронир\w*|оплат\w*)|"
+    r"предъяв\w*|брониров\w*|заброниров\w*|покупк\w*|оплат\w*|"
+    r"действует\b|\bдо\s+\d|\bот\s+\d)", re.I)
 
 BLOCK_MODULES = {
     blocks_v1.VERSION: blocks_v1,
@@ -158,6 +166,24 @@ def generate(target: dict, doc: dict, checked: dict) -> dict:
                 role=role,
             ))
 
+    assigned_refs=set()
+    scope_refs=set()
+    for offer in checked.get('offers', []):
+        for values in offer.get('fields', {}).values():
+            assigned_refs.update(value['id'] for value in values)
+        assigned_refs.update(value['id'] for value in offer.get('code', {}).get('blocks', []))
+        for date in offer.get('dates', []):
+            assigned_refs.update(value['id'] for value in date.get('blocks', []))
+        scope_refs.update(offer.get('source_context', {}).get('block_ids', []))
+
+    by_id={value['id']:value for value in doc['blocks']}
+    unassigned_material_refs=[
+        ref for ref in sorted(scope_refs, key=lambda ref: by_id[ref]['start'])
+        if ref not in assigned_refs and MATERIAL_HINT.search(_plain(by_id[ref]['text']))
+    ]
+    if unassigned_material_refs:
+        reasons.append('material_evidence_unassigned')
+
     reasons = list(dict.fromkeys(reasons))
     ready = bool(claims) and not reasons and checked.get('status') == 'references_checked_needs_semantic_review'
     return {
@@ -166,5 +192,6 @@ def generate(target: dict, doc: dict, checked: dict) -> dict:
         'status': 'claims_ready_for_independent_review' if ready else 'review_required',
         'reasons': reasons,
         'claims': claims,
+        'unassigned_material_refs': unassigned_material_refs,
         'publication_allowed': False,
     }
