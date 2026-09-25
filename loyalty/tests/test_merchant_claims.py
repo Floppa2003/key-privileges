@@ -3,6 +3,7 @@ import unittest
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 import merchant_blocks as b
+import merchant_blocks_v2 as b2
 import merchant_claims as c
 
 T={'merchant':'Synthetic','program':'Example Club','aliases':['EC']}
@@ -122,5 +123,22 @@ class AtomicClaims(unittest.TestCase):
         self.assertEqual(audience['premise_refs'],['b0000','b0001'])
         self.assertIn('Example Club',audience['premise'])
         self.assertIn('Новые клиенты получают скидку 20%',audience['premise'])
+
+    def test_claims_accept_v2_hydrated_document_without_rebuilding_as_v1(self):
+        md=('## Example Club\n\n'
+            'Держателям EC предоставляется скидка 20%. '
+            'Не суммируется с другими скидками.\n')
+        d=b2.build(md,url='https://example.test/',observed_at='2026-09-25T00:00:00Z')
+        offer={'program':['b0000'],'audience':['b0001'],'benefit':['b0001'],
+               'conditions':['b0002'],'redemption':[],
+               'code':{'state':'not_stated','value':'','refs':[]},
+               'dates':[],'uncertainties':[]}
+        out={'source_sha256':d['source_sha256'],'state':'candidates','notes':'','offers':[offer]}
+        checked=b2.check(T,d,out)
+        bundle=c.generate(T,d,checked)
+        self.assertEqual(bundle['source_sha256'],d['source_sha256'])
+        self.assertEqual(bundle['status'],'claims_ready_for_independent_review')
+        self.assertEqual([x['kind'] for x in bundle['claims']],['audience','benefit','condition'])
+        self.assertEqual(bundle['claims'][-1]['evidence_refs'],['b0002'])
 
 if __name__=='__main__':unittest.main()
