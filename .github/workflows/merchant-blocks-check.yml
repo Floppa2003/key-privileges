@@ -2,7 +2,7 @@ name: Merchant block-reference regressions
 on:
   push:
     branches: [loyalty/general-merchant-research-20260925]
-    paths: [loyalty/merchant_blocks.py, loyalty/merchant_blocks_v2.py, loyalty/merchant_semantic_guard.py, loyalty/merchant_claims.py, loyalty/merchant_guard_eval.py, loyalty/merchant_heldout_eval.py, loyalty/tests/test_merchant_blocks.py, loyalty/tests/test_merchant_blocks_v2.py, loyalty/tests/test_merchant_semantic_guard.py, loyalty/tests/test_merchant_guard_eval.py, loyalty/tests/test_merchant_claims.py, loyalty/tests/test_merchant_heldout_eval.py, loyalty/experiments/merchant_general/block-observed.json, loyalty/experiments/merchant_general/heldout-v1.json, loyalty/experiments/merchant_general/heldout-v1-observed.json, loyalty/experiments/merchant_general/heldout-v1-observed-v2.json, loyalty/experiments/merchant_general/heldout-v2.json, loyalty/experiments/merchant_general/heldout-v2-observed.json, .github/workflows/merchant-blocks-check.yml]
+    paths: [loyalty/merchant_blocks.py, loyalty/merchant_blocks_v2.py, loyalty/merchant_semantic_guard.py, loyalty/merchant_claims.py, loyalty/merchant_guard_eval.py, loyalty/merchant_heldout_eval.py, loyalty/tests/test_merchant_blocks.py, loyalty/tests/test_merchant_blocks_v2.py, loyalty/tests/test_merchant_semantic_guard.py, loyalty/tests/test_merchant_guard_eval.py, loyalty/tests/test_merchant_claims.py, loyalty/tests/test_merchant_heldout_eval.py, loyalty/experiments/merchant_general/block-observed.json, loyalty/experiments/merchant_general/heldout-v1.json, loyalty/experiments/merchant_general/heldout-v1-observed.json, loyalty/experiments/merchant_general/heldout-v1-observed-v2.json, loyalty/experiments/merchant_general/heldout-v2.json, loyalty/experiments/merchant_general/heldout-v2-observed.json, loyalty/experiments/merchant_general/heldout-v4.json, loyalty/experiments/merchant_general/heldout-v4-observed.json, .github/workflows/merchant-blocks-check.yml]
 permissions:
   contents: read
 jobs:
@@ -21,7 +21,7 @@ jobs:
         run: |
           mkdir -p merchant-blocks-output
           git rev-parse HEAD > merchant-blocks-output/commit.txt
-          cp loyalty/merchant_general.py loyalty/merchant_review.py loyalty/merchant_blocks.py loyalty/merchant_blocks_v2.py loyalty/merchant_semantic_guard.py loyalty/merchant_claims.py loyalty/merchant_guard_eval.py loyalty/merchant_heldout_eval.py loyalty/merchant_nli.py loyalty/tests/test_merchant_general.py loyalty/tests/test_merchant_review.py loyalty/tests/test_merchant_blocks.py loyalty/tests/test_merchant_blocks_v2.py loyalty/tests/test_merchant_semantic_guard.py loyalty/tests/test_merchant_guard_eval.py loyalty/tests/test_merchant_claims.py loyalty/tests/test_merchant_heldout_eval.py loyalty/experiments/merchant_general/block-observed.json loyalty/experiments/merchant_general/heldout-v1.json loyalty/experiments/merchant_general/heldout-v1-observed.json loyalty/experiments/merchant_general/heldout-v1-observed-v2.json loyalty/experiments/merchant_general/heldout-v2.json loyalty/experiments/merchant_general/heldout-v2-observed.json loyalty/experiments/merchant_general/nli-cases.json merchant-blocks-output/
+          cp loyalty/merchant_general.py loyalty/merchant_review.py loyalty/merchant_blocks.py loyalty/merchant_blocks_v2.py loyalty/merchant_semantic_guard.py loyalty/merchant_claims.py loyalty/merchant_guard_eval.py loyalty/merchant_heldout_eval.py loyalty/merchant_nli.py loyalty/tests/test_merchant_general.py loyalty/tests/test_merchant_review.py loyalty/tests/test_merchant_blocks.py loyalty/tests/test_merchant_blocks_v2.py loyalty/tests/test_merchant_semantic_guard.py loyalty/tests/test_merchant_guard_eval.py loyalty/tests/test_merchant_claims.py loyalty/tests/test_merchant_heldout_eval.py loyalty/experiments/merchant_general/block-observed.json loyalty/experiments/merchant_general/heldout-v1.json loyalty/experiments/merchant_general/heldout-v1-observed.json loyalty/experiments/merchant_general/heldout-v1-observed-v2.json loyalty/experiments/merchant_general/heldout-v2.json loyalty/experiments/merchant_general/heldout-v2-observed.json loyalty/experiments/merchant_general/heldout-v4.json loyalty/experiments/merchant_general/heldout-v4-observed.json loyalty/experiments/merchant_general/nli-cases.json merchant-blocks-output/
           sha256sum merchant-blocks-output/*.py merchant-blocks-output/*.json > merchant-blocks-output/SHA256SUMS
           python -m unittest discover -s loyalty/tests -v > merchant-blocks-output/python-tests.log 2>&1
           python loyalty/merchant_guard_eval.py --input loyalty/experiments/merchant_general/block-observed.json --out merchant-blocks-output/guard-eval.json
@@ -37,6 +37,14 @@ jobs:
           print('block_contract_valid',report['block_contract_valid'])
           print('required_evidence',report['required_evidence_phrases_found'],'/',report['required_evidence_phrases_total'])
           print('forbidden_borrowing_hits',report['forbidden_borrowing_hits'])
+          report4=e.evaluate(root/'heldout-v4.json',root/'heldout-v4-observed.json')
+          Path('merchant-blocks-output/heldout-v4-eval.json').write_text(
+              json.dumps(report4,ensure_ascii=False,indent=2),encoding='utf-8')
+          print('heldout-v4', report4['passed_cases'], '/', report4['cases'])
+          print('v4_transport',report4['transport_successes'],'/',report4['transport_attempts'])
+          print('v4_block_contract_valid',report4['block_contract_valid'])
+          print('v4_required_evidence',report4['required_evidence_phrases_found'],'/',report4['required_evidence_phrases_total'])
+          print('v4_forbidden_borrowing_hits',report4['forbidden_borrowing_hits'])
           PY
           node --test key/refresh.test.mjs > merchant-blocks-output/key-tests.log 2>&1
           tail -4 merchant-blocks-output/python-tests.log
