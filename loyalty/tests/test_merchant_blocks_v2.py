@@ -126,4 +126,18 @@ class BlocksV2(unittest.TestCase):
         self.assertNotIn('wrong_program',result['problems'])
         self.assertEqual(result['status'],'references_checked_needs_semantic_review')
 
+    def test_duplicate_refs_inside_one_field_are_idempotent(self):
+        md=('## Example Club\n\n'
+            'Держателям EC предоставляется скидка 20%.\n\n'
+            'Скидка не суммируется с другими предложениями.\n')
+        d=v2.build(md,url='https://example.test/',observed_at='x')
+        out={'source_sha256':d['source_sha256'],'state':'candidates','notes':'',
+             'offers':[{'program':['b0000'],'audience':['b0001'],'benefit':['b0001'],
+                        'conditions':['b0002','b0002','b0002'],'redemption':[],
+                        'code':{'state':'not_stated','value':'','refs':[]},
+                        'dates':[],'uncertainties':[]}]}
+        result=v2.check(T,d,out)
+        self.assertNotIn('duplicate_reference',result['problems'])
+        self.assertEqual([x['id'] for x in result['offers'][0]['fields']['conditions']],['b0002'])
+
 if __name__=='__main__':unittest.main()
