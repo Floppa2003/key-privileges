@@ -288,7 +288,8 @@ def check(target:dict,doc:dict,output:dict)->dict:
             if variant in seen_variants:
                 raise ValueError('duplicate_offer_variant')
             seen_variants.add(variant)
-            if not core.mentions(' '.join(b['text'] for b in fields['program']),target):
+            identity_blocks=fields['program']+fields['audience']+fields['benefit']
+            if not core.mentions(' '.join(b['text'] for b in identity_blocks),target):
                 raise ValueError('wrong_program')
             code=item['code'];core.shape(code,{'state','value','refs'})
             if code['state'] not in ('literal','app_or_account','required_not_published','not_stated'):
