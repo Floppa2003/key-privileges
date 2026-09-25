@@ -136,4 +136,39 @@ class HeldoutEval(unittest.TestCase):
         self.assertIsNone(row['actual_disposition'])
         self.assertFalse(report['publication_allowed'])
 
+    def test_v4_version_uses_same_frozen_eval_contract(self):
+        corpus={
+            'version':'merchant-heldout-v4',
+            'cases':[{
+                'id':'negative-v4',
+                'target':{'merchant':'X','program':'Example Club','aliases':['EC']},
+                'source':{'url':'https://example.test/','completeness':'source_excerpt',
+                          'observed_at':'2026-09-25','markdown':'# Example Club\\n\\nПартнёрство без выгоды.\\n'},
+                'expected':{'disposition':'no_reusable_offer','offer_variants':0,
+                            'required_phrases':[],'forbidden_borrowing':[],
+                            'code_state':'not_stated','date_roles':[]},
+            }],
+        }
+        observed={'version':'merchant-heldout-observed-v4',
+                  'block_version':'merchant-blocks-v2',
+                  'labels_frozen_before_predictions':True,
+                  'expected_labels_sent_to_model':False,
+                  'publication_allowed':False,
+                  'trials':[{'id':'negative-v4','raw_answer':
+                      '{"source_sha256":"PLACEHOLDER","state":"no_offer","offers":[],"notes":""}'}]}
+        import merchant_blocks_v2 as b
+        s=corpus['cases'][0]['source']
+        d=b.build(s['markdown'],url=s['url'],observed_at=s['observed_at'],completeness=s['completeness'])
+        observed['trials'][0]['raw_answer']=observed['trials'][0]['raw_answer'].replace('PLACEHOLDER',d['source_sha256'])
+        with tempfile.TemporaryDirectory() as td:
+            cp=Path(td)/'c.json';op=Path(td)/'o.json'
+            cp.write_text(json.dumps(corpus,ensure_ascii=False),encoding='utf-8')
+            op.write_text(json.dumps(observed,ensure_ascii=False),encoding='utf-8')
+            report=e.evaluate(cp,op)
+        self.assertEqual(report['cases'],1)
+        self.assertEqual(report['passed_cases'],1)
+        self.assertEqual(report['semantic_cases'],1)
+        self.assertEqual(report['semantic_passed_cases'],1)
+        self.assertFalse(report['publication_allowed'])
+
 if __name__=='__main__':unittest.main()
