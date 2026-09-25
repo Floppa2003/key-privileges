@@ -226,23 +226,30 @@ SCOPED_PROMPT = PROMPT.replace(
     'Do not emit duplicate offers for the same audience/benefit pair. A source date block has at most one functional role unless the source explicitly assigns multiple roles. Copy source_sha256 exactly.'
 )
 
+RU_INFLECTION_ENDINGS=(
+    'иями','ями','ами','ого','его','ому','ему','ыми','ими',
+    'ую','юю','ая','яя','ое','ее','ые','ие','ой','ей','ый','ий',
+    'ым','им','ом','ем','ам','ям','ах','ях','ы','и','а','я','у','ю','е','о',
+)
+
+def _ru_stem(token: str) -> str:
+    for ending in RU_INFLECTION_ENDINGS:
+        if token.endswith(ending) and len(token)-len(ending)>=4:
+            return token[:-len(ending)]
+    return token
+
 def _heading_mentions_program(value: str, target: dict) -> bool:
     """Allow conservative Russian inflection matching only for multi-word headings."""
     if core.mentions(value, target):
         return True
     heading_tokens=re.findall(r'[0-9a-zа-яё]+',core.text(value).casefold())
+    heading_stems={_ru_stem(token) for token in heading_tokens
+                   if re.fullmatch(r'[а-яё]+',token)}
     for phrase in [target['program'], *target['aliases']]:
         tokens=re.findall(r'[0-9a-zа-яё]+',core.text(phrase).casefold())
-        if len(tokens)<2 or not all(re.fullmatch(r'[а-яё]+', token) for token in tokens):
+        if len(tokens)<2 or not all(re.fullmatch(r'[а-яё]+',token) for token in tokens):
             continue
-        def matches(token: str) -> bool:
-            for candidate in heading_tokens:
-                if token==candidate:
-                    return True
-                if len(token)>=5 and len(candidate)>=5 and token[:4]==candidate[:4]:
-                    return True
-            return False
-        if all(matches(token) for token in tokens):
+        if all(_ru_stem(token) in heading_stems for token in tokens):
             return True
     return False
 
