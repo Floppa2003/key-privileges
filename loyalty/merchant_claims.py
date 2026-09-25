@@ -9,6 +9,7 @@ import merchant_blocks_v2 as blocks_v2
 import merchant_general as core
 
 VERSION = 'merchant-claims-v1'
+BLOCKS_BY_VERSION = {blocks_v1.VERSION: blocks_v1, blocks_v2.VERSION: blocks_v2}
 
 BLOCK_MODULES = {
     blocks_v1.VERSION: blocks_v1,
