@@ -26,8 +26,19 @@ def _plain(value: str) -> str:
     return core.text(value)
 
 
+def _premise(*groups: list[dict]) -> tuple[str, list[str]]:
+    """Build a claim-local premise from cited offer anchors and claim evidence."""
+    by_id: dict[str, dict] = {}
+    for group in groups:
+        for value in group:
+            by_id[value['id']] = value
+    ordered = sorted(by_id.values(), key=lambda value: value['start'])
+    return ' '.join(_plain(value['text']) for value in ordered), _refs(ordered)
+
+
 def _claim(source_sha256: str, offer_index: int, kind: str, number: int,
-           premise: str, hypothesis: str, evidence_refs: list[str], **extra) -> dict:
+           premise: str, hypothesis: str, evidence_refs: list[str],
+           premise_refs: list[str], **extra) -> dict:
     return {
         'id': f'o{offer_index}:{kind}:{number}',
         'kind': kind,
@@ -35,6 +46,7 @@ def _claim(source_sha256: str, offer_index: int, kind: str, number: int,
         'premise': premise,
         'hypothesis': hypothesis,
         'evidence_refs': evidence_refs,
+        'premise_refs': premise_refs,
         'publication_allowed': False,
         **extra,
     }
@@ -50,7 +62,6 @@ def generate(target: dict, doc: dict, checked: dict) -> dict:
         reasons.append(f'block_check_problem:{problem}')
 
     for offer_index, offer in enumerate(checked.get('offers', [])):
-        premise = offer['source_context']['text']
         fields = offer['fields']
 
         if not fields.get('audience'):
@@ -62,34 +73,44 @@ def generate(target: dict, doc: dict, checked: dict) -> dict:
 
         for number, value in enumerate(fields.get('audience', [])):
             evidence = _plain(value['text'])
+            premise, premise_refs = _premise(
+                fields.get('program', []), [value], fields.get('benefit', []))
             claims.append(_claim(
                 doc['source_sha256'], offer_index, 'audience', number, premise,
                 f'Предложение программы «{target["program"]}» предназначено для аудитории: {evidence}',
-                [value['id']],
+                [value['id']], premise_refs,
             ))
 
         for number, value in enumerate(fields.get('benefit', [])):
             evidence = _plain(value['text'])
+            premise, premise_refs = _premise(
+                fields.get('program', []), fields.get('audience', []), [value])
             claims.append(_claim(
                 doc['source_sha256'], offer_index, 'benefit', number, premise,
                 f'Целевая аудитория предложения программы «{target["program"]}» получает следующую выгоду: {evidence}',
-                [value['id']],
+                [value['id']], premise_refs,
             ))
 
         for number, value in enumerate(fields.get('conditions', [])):
             evidence = _plain(value['text'])
+            premise, premise_refs = _premise(
+                fields.get('program', []), fields.get('audience', []),
+                fields.get('benefit', []), [value])
             claims.append(_claim(
                 doc['source_sha256'], offer_index, 'condition', number, premise,
                 f'Для предложения действует условие: {evidence}',
-                [value['id']],
+                [value['id']], premise_refs,
             ))
 
         for number, value in enumerate(fields.get('redemption', [])):
             evidence = _plain(value['text'])
+            premise, premise_refs = _premise(
+                fields.get('program', []), fields.get('audience', []),
+                fields.get('benefit', []), [value])
             claims.append(_claim(
                 doc['source_sha256'], offer_index, 'redemption', number, premise,
                 f'Для получения предложения указано действие: {evidence}',
-                [value['id']],
+                [value['id']], premise_refs,
             ))
 
         code = offer.get('code', {})
@@ -102,17 +123,24 @@ def generate(target: dict, doc: dict, checked: dict) -> dict:
                 hypothesis = 'Для предложения требуется промокод, который получают в приложении или аккаунте программы.'
             else:
                 hypothesis = 'Для предложения требуется промокод, но его значение не опубликовано в источнике.'
+            premise, premise_refs = _premise(
+                fields.get('program', []), fields.get('audience', []),
+                fields.get('benefit', []), code_blocks)
             claims.append(_claim(
                 doc['source_sha256'], offer_index, 'code_delivery', 0, premise,
-                hypothesis, code_refs, code_state=code['state'],
+                hypothesis, code_refs, premise_refs, code_state=code['state'],
             ))
 
         for number, date in enumerate(offer.get('dates', [])):
             evidence = ' '.join(_plain(value['text']) for value in date['blocks'])
             role = date['role']
+            premise, premise_refs = _premise(
+                fields.get('program', []), fields.get('audience', []),
+                fields.get('benefit', []), date['blocks'])
             claims.append(_claim(
                 doc['source_sha256'], offer_index, 'date_role', number, premise,
-                DATE_TEXT[role] + evidence, _refs(date['blocks']), role=role,
+                DATE_TEXT[role] + evidence, _refs(date['blocks']), premise_refs,
+                role=role,
             ))
 
     reasons = list(dict.fromkeys(reasons))
