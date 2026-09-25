@@ -1,4 +1,6 @@
 import sys
+import json
+import tempfile
 import unittest
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
@@ -58,5 +60,40 @@ class HeldoutEval(unittest.TestCase):
         report=e.evaluate(ROOT/'heldout-v1.json',ROOT/'heldout-v1-observed.json')
         self.assertTrue(report['labels_frozen_before_predictions'])
         self.assertFalse(report['expected_labels_sent_to_model'])
+
+    def test_independent_v2_corpus_uses_same_metrics_without_label_leakage(self):
+        corpus={
+            'version':'merchant-heldout-v2',
+            'cases':[{
+                'id':'negative',
+                'target':{'merchant':'X','program':'Example Club','aliases':['EC']},
+                'source':{'url':'https://example.test/','completeness':'provider_markdown',
+                          'observed_at':'2026-09-25','markdown':'# Награда EC\\n\\nПартнер получил благодарность.\\n'},
+                'expected':{'disposition':'no_reusable_offer','offer_variants':0,
+                            'required_phrases':[],'forbidden_borrowing':[],
+                            'code_state':'not_stated','date_roles':[]},
+            }],
+        }
+        observed={'version':'merchant-heldout-observed-v1-on-v2',
+                  'block_version':'merchant-blocks-v2',
+                  'labels_frozen_before_predictions':True,
+                  'expected_labels_sent_to_model':False,
+                  'publication_allowed':False,
+                  'trials':[{'id':'negative','raw_answer':
+                      '{"source_sha256":"PLACEHOLDER","state":"no_offer","offers":[],"notes":""}'}]}
+        import merchant_blocks_v2 as b
+        s=corpus['cases'][0]['source']
+        d=b.build(s['markdown'],url=s['url'],observed_at=s['observed_at'],completeness=s['completeness'])
+        observed['trials'][0]['raw_answer']=observed['trials'][0]['raw_answer'].replace('PLACEHOLDER',d['source_sha256'])
+        with tempfile.TemporaryDirectory() as td:
+            cp=Path(td)/'c.json';op=Path(td)/'o.json'
+            cp.write_text(json.dumps(corpus,ensure_ascii=False),encoding='utf-8')
+            op.write_text(json.dumps(observed,ensure_ascii=False),encoding='utf-8')
+            report=e.evaluate(cp,op)
+        self.assertEqual(report['cases'],1)
+        self.assertEqual(report['passed_cases'],1)
+        self.assertTrue(report['labels_frozen_before_predictions'])
+        self.assertFalse(report['expected_labels_sent_to_model'])
+        self.assertFalse(report['publication_allowed'])
 
 if __name__=='__main__':unittest.main()
