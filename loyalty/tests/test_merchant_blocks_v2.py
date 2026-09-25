@@ -166,4 +166,17 @@ class BlocksV2(unittest.TestCase):
         self.assertIn('индивидуальное посещение',source)
         self.assertIn('заказную экскурсию для группы до 25 человек',source)
 
+    def test_inflected_heading_match_does_not_use_four_char_prefix_collisions(self):
+        target={'merchant':'Museum','program':'Единая карта петербуржца',
+                'aliases':['ЕКП','Единой карты петербуржца']}
+        md=('## Единая картина Петербурга\n\n'
+            'Скидка 50% для всех посетителей.\n\n'
+            '## Новости\n\n'
+            'Держателям Единой карты петербуржца скидка 5%.\n')
+        d=v2.build(md,url='https://example.test/',observed_at='2026-09-25')
+        payload=json.loads(v2.scoped_prompt(target,d).split('TARGET and SOURCE:',1)[1])
+        source=''.join(x['text'] for x in payload['blocks'])
+        self.assertNotIn('Скидка 50% для всех посетителей',source)
+        self.assertIn('скидка 5%',source)
+
 if __name__=='__main__':unittest.main()
