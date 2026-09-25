@@ -2,7 +2,7 @@ name: Merchant block-reference regressions
 on:
   push:
     branches: [loyalty/general-merchant-research-20260925]
-    paths: [loyalty/merchant_blocks.py, loyalty/merchant_semantic_guard.py, loyalty/tests/test_merchant_blocks.py, loyalty/tests/test_merchant_semantic_guard.py, .github/workflows/merchant-blocks-check.yml]
+    paths: [loyalty/merchant_blocks.py, loyalty/merchant_semantic_guard.py, loyalty/merchant_guard_eval.py, loyalty/tests/test_merchant_blocks.py, loyalty/tests/test_merchant_semantic_guard.py, loyalty/tests/test_merchant_guard_eval.py, loyalty/experiments/merchant_general/block-observed.json, .github/workflows/merchant-blocks-check.yml]
 permissions:
   contents: read
 jobs:
@@ -21,10 +21,10 @@ jobs:
         run: |
           mkdir -p merchant-blocks-output
           git rev-parse HEAD > merchant-blocks-output/commit.txt
-          cp loyalty/merchant_general.py loyalty/merchant_review.py loyalty/merchant_blocks.py loyalty/merchant_semantic_guard.py loyalty/merchant_nli.py loyalty/tests/test_merchant_general.py loyalty/tests/test_merchant_review.py loyalty/tests/test_merchant_blocks.py loyalty/tests/test_merchant_semantic_guard.py loyalty/experiments/merchant_general/nli-cases.json merchant-blocks-output/
+          cp loyalty/merchant_general.py loyalty/merchant_review.py loyalty/merchant_blocks.py loyalty/merchant_semantic_guard.py loyalty/merchant_guard_eval.py loyalty/merchant_nli.py loyalty/tests/test_merchant_general.py loyalty/tests/test_merchant_review.py loyalty/tests/test_merchant_blocks.py loyalty/tests/test_merchant_semantic_guard.py loyalty/tests/test_merchant_guard_eval.py loyalty/experiments/merchant_general/block-observed.json loyalty/experiments/merchant_general/nli-cases.json merchant-blocks-output/
           sha256sum merchant-blocks-output/*.py merchant-blocks-output/*.json > merchant-blocks-output/SHA256SUMS
           python -m unittest discover -s loyalty/tests -v > merchant-blocks-output/python-tests.log 2>&1
-          node --test key/refresh.test.mjs > merchant-blocks-output/key-tests.log 2>&1
+          python loyalty/merchant_guard_eval.py --input loyalty/experiments/merchant_general/block-observed.json --out merchant-blocks-output/guard-eval.json\n          node --test key/refresh.test.mjs > merchant-blocks-output/key-tests.log 2>&1
           tail -4 merchant-blocks-output/python-tests.log
           tail -8 merchant-blocks-output/key-tests.log
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
