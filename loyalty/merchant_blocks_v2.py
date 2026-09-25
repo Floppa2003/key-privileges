@@ -199,6 +199,26 @@ SCOPED_PROMPT = PROMPT.replace(
     'Do not emit duplicate offers for the same audience/benefit pair. A source date block has at most one functional role unless the source explicitly assigns multiple roles. Copy source_sha256 exactly.'
 )
 
+def _heading_mentions_program(value: str, target: dict) -> bool:
+    """Allow conservative Russian inflection matching only for multi-word headings."""
+    if core.mentions(value, target):
+        return True
+    heading_tokens=re.findall(r'[0-9a-zа-яё]+',core.text(value).casefold())
+    for phrase in [target['program'], *target['aliases']]:
+        tokens=re.findall(r'[0-9a-zа-яё]+',core.text(phrase).casefold())
+        if len(tokens)<2 or not all(re.fullmatch(r'[а-яё]+', token) for token in tokens):
+            continue
+        def matches(token: str) -> bool:
+            for candidate in heading_tokens:
+                if token==candidate:
+                    return True
+                if len(token)>=5 and len(candidate)>=5 and token[:4]==candidate[:4]:
+                    return True
+            return False
+        if all(matches(token) for token in tokens):
+            return True
+    return False
+
 def _section_has_ancestor(doc:dict, section:str, owners:set[str])->bool:
     while section is not None:
         if section in owners:return True
@@ -214,7 +234,7 @@ def scoped_blocks(target:dict,doc:dict)->list[dict]:
     """
     validate_document(doc)
     target_headings={b['id'] for b in doc['blocks']
-                     if b['kind']=='heading' and core.mentions(b['text'],target)}
+                     if b['kind']=='heading' and _heading_mentions_program(b['text'],target)}
     if target_headings:
         chosen=[b for b in doc['blocks']
                 if _section_has_ancestor(doc,b['section'],target_headings)]
