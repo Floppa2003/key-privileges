@@ -93,4 +93,33 @@ class AtomicClaims(unittest.TestCase):
         self.assertEqual(bundle['status'],'review_required')
         self.assertIn('source_is_excerpt',bundle['reasons'])
 
+    def test_claim_premise_excludes_unselected_neighboring_material(self):
+        md=('## Example Club\n\nДержателям EC предоставляется скидка 20%.\n\n'
+            'Минимальная сумма заказа 1000 рублей.\n\n'
+            'Соседняя акция: всем гостям подарок.\n')
+        offer={'program':['b0000'],'audience':['b0001'],'benefit':['b0001'],
+               'conditions':['b0002'],'redemption':[],
+               'code':{'state':'not_stated','value':'','refs':[]},
+               'dates':[],'uncertainties':[]}
+        d,r=checked(md,offer)
+        bundle=c.generate(T,d,r)
+        condition=next(x for x in bundle['claims'] if x['kind']=='condition')
+        self.assertEqual(condition['premise_refs'],['b0000','b0001','b0002'])
+        self.assertIn('Example Club',condition['premise'])
+        self.assertIn('Минимальная сумма заказа 1000 рублей',condition['premise'])
+        self.assertNotIn('Соседняя акция',condition['premise'])
+
+    def test_audience_claim_keeps_program_anchor_when_segment_block_omits_program_name(self):
+        md='## Example Club\n\nНовые клиенты получают скидку 20%.\n'
+        offer={'program':['b0000'],'audience':['b0001'],'benefit':['b0001'],
+               'conditions':[],'redemption':[],
+               'code':{'state':'not_stated','value':'','refs':[]},
+               'dates':[],'uncertainties':[]}
+        d,r=checked(md,offer)
+        bundle=c.generate(T,d,r)
+        audience=next(x for x in bundle['claims'] if x['kind']=='audience')
+        self.assertEqual(audience['premise_refs'],['b0000','b0001'])
+        self.assertIn('Example Club',audience['premise'])
+        self.assertIn('Новые клиенты получают скидку 20%',audience['premise'])
+
 if __name__=='__main__':unittest.main()
