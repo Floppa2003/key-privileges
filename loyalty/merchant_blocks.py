@@ -137,7 +137,7 @@ def prompt(target: dict, doc: dict, max_chars: int = 10000) -> str:
 
 def check(target: dict, doc: dict, output: dict) -> dict:
     """Hydrate fields from source. No language-model decision is called verified."""
-    result = {'version': VERSION, 'publication_allowed': False,
+    result = {'version': VERSION, 'observed_at': doc.get('observed_at'), 'publication_allowed': False,
               'semantic_verification': 'not_performed', 'status': 'review_required',
               'offers': [], 'problems': []}
     try:
