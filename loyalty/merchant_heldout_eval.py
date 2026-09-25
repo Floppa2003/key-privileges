@@ -89,10 +89,10 @@ def _audience_explicit(pred: dict) -> bool:
 def evaluate(corpus_path: Path, observed_path: Path) -> dict:
     corpus=json.loads(corpus_path.read_text(encoding='utf-8'))
     observed=json.loads(observed_path.read_text(encoding='utf-8'))
-    if corpus.get('version') not in ('merchant-heldout-v1','merchant-heldout-v2'):
+    if corpus.get('version') not in ('merchant-heldout-v1','merchant-heldout-v2','merchant-heldout-v3'):
         raise ValueError('corpus_version')
     version=observed.get('version')
-    if version not in ('merchant-heldout-observed-v1','merchant-heldout-observed-v2-on-v1','merchant-heldout-observed-v1-on-v2'):
+    if version not in ('merchant-heldout-observed-v1','merchant-heldout-observed-v2-on-v1','merchant-heldout-observed-v1-on-v2','merchant-heldout-observed-v3'):
         raise ValueError('observed_version')
     block_version=observed.get('block_version','merchant-blocks-v1')
     if block_version=='merchant-blocks-v1':
@@ -122,7 +122,9 @@ def evaluate(corpus_path: Path, observed_path: Path) -> dict:
         'required_evidence_phrases_found':0,'required_evidence_phrases_total':0,
         'forbidden_borrowing_hits':0,'required_date_roles_found':0,
         'required_date_roles_total':0,'unexpected_material_date_roles':0,
-        'code_state_correct':0,'labels_frozen_before_predictions':True,
+        'code_state_correct':0,'transport_attempts':0,'transport_successes':0,
+        'transport_failures':0,'semantic_cases':0,'semantic_passed_cases':0,
+        'labels_frozen_before_predictions':True,
         'expected_labels_sent_to_model':False,'publication_allowed':False,'results':[]
     }
 
@@ -131,6 +133,26 @@ def evaluate(corpus_path: Path, observed_path: Path) -> dict:
         doc=blocks.build(source['markdown'],url=source['url'],
                          observed_at=source['observed_at'],completeness=source['completeness'])
         failures=[]
+        transport=trial.get('transport') if isinstance(trial,dict) else None
+        if transport is not None:
+            aggregate['transport_attempts']+=1
+            status=transport.get('status') if isinstance(transport,dict) else None
+            if status!='success':
+                aggregate['transport_failures']+=1
+                aggregate['results'].append({
+                    'id':case['id'],'passed':False,'failures':['transport'],
+                    'evaluation_status':'transport_failure','block_version':block_version,
+                    'actual_disposition':None,'expected_disposition':expected['disposition'],
+                    'actual_variants':None,'expected_variants':expected['offer_variants'],
+                    'block_problems':[],'block_status':None,
+                    'required_found':[],'required_missing':expected['required_phrases'],
+                    'forbidden_hits':[],'actual_code_states':[],
+                    'actual_date_roles':[],'parse_error':None,
+                    'transport':transport,'publication_allowed':False,
+                })
+                continue
+            aggregate['transport_successes']+=1
+        aggregate['semantic_cases']+=1
         try:
             pred=core.model_output({'answer':trial['raw_answer']})
             if not isinstance(pred,dict):
@@ -201,8 +223,10 @@ def evaluate(corpus_path: Path, observed_path: Path) -> dict:
         failures=list(dict.fromkeys(failures))
         passed=not failures
         aggregate['passed_cases']+=int(passed)
+        aggregate['semantic_passed_cases']+=int(passed)
         aggregate['results'].append({
             'id':case['id'],'passed':passed,'failures':failures,
+            'evaluation_status':'semantic_pass' if passed else 'semantic_failure',
             'block_version':block_version,
             'actual_disposition':actual_disposition,'expected_disposition':expected['disposition'],
             'actual_variants':variants,'expected_variants':expected['offer_variants'],
