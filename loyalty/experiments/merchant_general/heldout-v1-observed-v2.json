@@ -1,0 +1,57 @@
+{
+  "version": "merchant-heldout-observed-v2-on-v1",
+  "corpus": "heldout-v1.json",
+  "block_version": "merchant-blocks-v2",
+  "extractor_commit": "498bfe1fa2952bd48ab5ec7880a12a33b3bbac7b",
+  "labels_frozen_before_predictions": true,
+  "expected_labels_sent_to_model": false,
+  "publication_allowed": false,
+  "note": "V1 corpus is now a development/regression suite after its baseline was observed. These V2 predictions are not an independent held-out estimate.",
+  "trials": [
+    {
+      "id": "rostelecom-ekp-segments",
+      "raw_answer": "```json\n{\"source_sha256\":\"df96719956580acbdefa1ae80f29f9f4bea387f228ad1f8a11702a4249f47af4\",\"state\":\"candidates\",\"offers\":[{\"program\":[\"b0001\"],\"audience\":[\"b0002\"],\"benefit\":[\"b0003\"],\"conditions\":[\"b0003\"],\"redemption\":[\"b0003\"],\"code\":{\"state\":\"not_stated\",\"value\":\"\",\"refs\":[]},\"dates\":[],\"uncertainties\":[]},{\"program\":[\"b0001\"],\"audience\":[\"b0004\"],\"benefit\":[\"b0004\"],\"conditions\":[\"b0004\"],\"redemption\":[\"b0004\"],\"code\":{\"state\":\"not_stated\",\"value\":\"\",\"refs\":[]},\"dates\":[],\"uncertainties\":[]}],\"notes\":\"The source excerpt indicates that 'Ростелеком' has joined the 'Единая карта петербуржца' (EKP) loyalty program. New clients can get 'Home Internet' for 1 ruble and a 20% discount on the subscription fee for the entire duration of use. Existing 'Ростелеком' subscribers who are EKP holders receive a 10% discount on 'Home Internet' or the 'Internet + TV' package. Detailed information is available on the EKP portal and mobile app.\"}\n```",
+      "metadata": {
+        "scrapeId": "01a0d75e-cb62-7276-be20-1445a6dc3a38",
+        "statusCode": 200,
+        "creditsUsed": 5
+      }
+    },
+    {
+      "id": "domknigi-ekp",
+      "raw_answer": "```json\n{\"source_sha256\":\"06797195a8e1ec9d31267edeb6065c2b5170b2fa9b5a296670c6b65d1301a3df\",\"state\":\"candidates\",\"offers\":[{\"program\":[\"b0000\"],\"audience\":[\"b0002\"],\"benefit\":[\"b0006\"],\"conditions\":[\"b0007\",\"b0008\"],\"redemption\":[\"b0003\",\"b0004\",\"b0009\"],\"code\":{\"state\":\"literal\",\"value\":\"\",\"refs\":[\"b0002\"]},\"dates\":[{\"role\":\"publication\",\"refs\":[\"b0001\"]},{\"role\":\"offer\",\"refs\":[\"b0010\"]}],\"uncertainties\":[]}],\"notes\":\"\"}\n```",
+      "metadata": {
+        "scrapeId": "01a0d75e-e166-72bc-bfb8-51273b7c98d6",
+        "statusCode": 200,
+        "creditsUsed": 5
+      }
+    },
+    {
+      "id": "itc-ekp-list-scope",
+      "raw_answer": "```json\n{\"source_sha256\":\"e87f373636cde6d3a66cd96a566440eb63caec86abbcd720bda10fdcde881ec4\",\"state\":\"candidates\",\"offers\":[{\"program\":[\"b0004\"],\"audience\":[],\"benefit\":[\"b0004\"],\"conditions\":[],\"redemption\":[],\"code\":{\"state\":\"not_stated\",\"value\":\"\",\"refs\":[]},\"dates\":[],\"uncertainties\":[]},{\"program\":[\"b0001\"],\"audience\":[],\"benefit\":[\"b0001\"],\"conditions\":[],\"redemption\":[],\"code\":{\"state\":\"not_stated\",\"value\":\"\",\"refs\":[]},\"dates\":[],\"uncertainties\":[]},{\"program\":[\"b0003\"],\"audience\":[],\"benefit\":[\"b0003\"],\"conditions\":[],\"redemption\":[],\"code\":{\"state\":\"not_stated\",\"value\":\"\",\"refs\":[]},\"dates\":[],\"uncertainties\":[]},{\"program\":[\"b0002\"],\"audience\":[],\"benefit\":[\"b0002\"],\"conditions\":[],\"redemption\":[],\"code\":{\"state\":\"not_stated\",\"value\":\"\",\"refs\":[]},\"dates\":[],\"uncertainties\":[]}],\"notes\":\"\"}\n```",
+      "metadata": {
+        "scrapeId": "01a0d75e-f3bd-70ee-b5cf-751f83db58d6",
+        "statusCode": 200,
+        "creditsUsed": 5
+      }
+    },
+    {
+      "id": "grandkarat-rzd-booking-window",
+      "raw_answer": "```json\n{\"source_sha256\":\"2eed1d01f4f7fa82046560c35a0538885645a91290761b6eb12af4fe405eeef2\",\"state\":\"candidates\",\"offers\":[{\"program\":[\"b0000\",\"b0001\",\"b0002\",\"b0003\",\"b0004\"],\"audience\":[\"b0000\",\"b0001\",\"b0002\",\"b0003\",\"b0004\"],\"benefit\":[\"b0000\",\"b0001\",\"b0002\",\"b0003\",\"b0004\"],\"conditions\":[\"b0002\",\"b0003\"],\"redemption\":[\"b0002\"],\"code\":{\"state\":\"not_stated\",\"value\":\"\",\"refs\":[]},\"dates\":[{\"role\":\"booking\",\"refs\":[\"b0002\"]},{\"role\":\"offer\",\"refs\":[\"b0002\"]}],\"uncertainties\":[]},{\"program\":[\"b0000\",\"b0001\",\"b0002\",\"b0003\",\"b0004\"],\"audience\":[\"b0000\",\"b0001\",\"b0002\",\"b0003\",\"b0004\"],\"benefit\":[\"b0000\",\"b0001\",\"b0002\",\"b0003\",\"b0004\"],\"conditions\":[\"b0003\"],\"redemption\":[\"b0002\"],\"code\":{\"state\":\"not_stated\",\"value\":\"\",\"refs\":[]},\"dates\":[{\"role\":\"booking\",\"refs\":[\"b0002\"]},{\"role\":\"offer\",\"refs\":[\"b0002\"]}],\"uncertainties\":[]}],\"notes\":\"\"}\n```",
+      "metadata": {
+        "scrapeId": "01a0d75f-1002-7673-b1ae-a41f5044ea50",
+        "statusCode": 200,
+        "creditsUsed": 5
+      }
+    },
+    {
+      "id": "losevo-ekp-partnership-only",
+      "raw_answer": "```json\n{\"source_sha256\":\"0e0b3940c1225762d4dbc4fc5d399c83cec9c52d5b6b08b9950297238cbfb87e\",\"state\":\"no_offer\",\"offers\":[],\"notes\":\"The provided text does not contain any reusable offers for the target program.\"}\n```",
+      "metadata": {
+        "scrapeId": "01a0d75f-474b-709d-b021-8c32abcfe2d2",
+        "statusCode": 200,
+        "creditsUsed": 5
+      }
+    }
+  ]
+}
