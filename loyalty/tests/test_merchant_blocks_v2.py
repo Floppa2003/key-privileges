@@ -164,7 +164,7 @@ class BlocksV2(unittest.TestCase):
         payload=json.loads(v2.scoped_prompt(target,d).split('TARGET and SOURCE:',1)[1])
         source=''.join(x['text'] for x in payload['blocks'])
         self.assertIn('индивидуальное посещение',source)
-        self.assertIn('заказную экскурсию для группы до 25 человек',source)
+        self.assertIn('Организованная экскурсия для группы до 25 человек',source)
 
     def test_inflected_heading_match_does_not_use_four_char_prefix_collisions(self):
         target={'merchant':'Museum','program':'Единая карта петербуржца',
