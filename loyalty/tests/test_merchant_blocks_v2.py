@@ -140,4 +140,18 @@ class BlocksV2(unittest.TestCase):
         self.assertNotIn('duplicate_reference',result['problems'])
         self.assertEqual([x['id'] for x in result['offers'][0]['fields']['conditions']],['b0002'])
 
+    def test_scoped_prompt_keeps_anaphoric_same_discount_continuation(self):
+        md=('## Новости\n\n'
+            'Держатели EC получают скидку 5% на индивидуальное посещение.\n\n'
+            'Такая же скидка 5% предоставляется на организованную экскурсию для группы до 25 человек.\n\n'
+            'Единственное условие - наличие EC у организатора группы.\n\n'
+            'Другая акция: скидка 50% для всех посетителей.\n')
+        d=v2.build(md,url='https://example.test/',observed_at='x',completeness='source_excerpt')
+        payload=json.loads(v2.scoped_prompt(T,d).split('TARGET and SOURCE:',1)[1])
+        source=''.join(x['text'] for x in payload['blocks'])
+        self.assertIn('Держатели EC получают скидку 5%',source)
+        self.assertIn('Такая же скидка 5%',source)
+        self.assertIn('Единственное условие',source)
+        self.assertNotIn('Другая акция',source)
+
 if __name__=='__main__':unittest.main()
