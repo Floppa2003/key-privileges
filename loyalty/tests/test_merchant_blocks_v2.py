@@ -87,4 +87,19 @@ class BlocksV2(unittest.TestCase):
     def test_v2_does_not_change_v1_version_contract(self):
         self.assertEqual(v2.VERSION,'merchant-blocks-v2')
 
+    def test_duplicate_audience_benefit_pair_is_not_multiple_offer_variants(self):
+        md=('## Example Club\n\n'
+            'Держателям EC предоставляется скидка 20%.\n\n'
+            'Промокод EC20.\n')
+        d=v2.build(md,url='https://example.test/',observed_at='x')
+        base={'program':['b0000'],'audience':['b0001'],'benefit':['b0001'],
+              'conditions':[],'redemption':[],
+              'code':{'state':'not_stated','value':'','refs':[]},
+              'dates':[],'uncertainties':[]}
+        out={'source_sha256':d['source_sha256'],'state':'candidates','notes':'',
+             'offers':[base,{**base,'redemption':['b0002'],
+                 'code':{'state':'literal','value':'EC20','refs':['b0002']}}]}
+        result=v2.check(T,d,out)
+        self.assertIn('duplicate_offer_variant',result['problems'])
+
 if __name__=='__main__':unittest.main()
