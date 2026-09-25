@@ -16,7 +16,7 @@ class BlocksV2(unittest.TestCase):
         items=[b for b in d['blocks'] if b['kind']=='list_item']
         self.assertEqual(len(items),3)
         ekp=[b for b in items if '-15%' in b['text']][0]
-        self.assertNotIn('5%',ekp['text'])
+        self.assertNotIn('скидка 5%',ekp['text'])
         self.assertNotIn('материнским',ekp['text'])
 
     def test_sentences_in_one_paragraph_are_separate_blocks(self):
