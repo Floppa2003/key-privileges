@@ -154,4 +154,16 @@ class BlocksV2(unittest.TestCase):
         self.assertIn('Единственное условие',source)
         self.assertNotIn('Другая акция',source)
 
+    def test_inflected_program_heading_keeps_complete_section_scope(self):
+        target={'merchant':'Museum','program':'Единая карта петербуржца',
+                'aliases':['ЕКП','Единой карты петербуржца']}
+        md=('## Посещение с Единой картой петербуржца\n\n'
+            'Держатели Единой карты петербуржца получают скидку 5% на индивидуальное посещение.\n\n'
+            'Такая же скидка предоставляется на заказную экскурсию для группы до 25 человек.\n')
+        d=v2.build(md,url='https://example.test/',observed_at='2026-09-25')
+        payload=json.loads(v2.scoped_prompt(target,d).split('TARGET and SOURCE:',1)[1])
+        source=''.join(x['text'] for x in payload['blocks'])
+        self.assertIn('индивидуальное посещение',source)
+        self.assertIn('заказную экскурсию для группы до 25 человек',source)
+
 if __name__=='__main__':unittest.main()
