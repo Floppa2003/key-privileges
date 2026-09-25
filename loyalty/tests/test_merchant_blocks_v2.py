@@ -111,4 +111,19 @@ class BlocksV2(unittest.TestCase):
         self.assertIn('Партнёр EC предоставляет специальное предложение',source)
         self.assertIn('Для просмотра условий необходимо авторизоваться',source)
 
+    def test_program_identity_can_be_anchored_by_explicit_audience_benefit(self):
+        target={'merchant':'Museum','program':'Единая карта петербуржца',
+                'aliases':['ЕКП','Единой карты петербуржца']}
+        md=('## В музей — с Единой картой петербуржца\n\n'
+            'Держатели Единой карты петербуржца могут получить скидку 10% на входной билет.\n')
+        d=v2.build(md,url='https://example.test/',observed_at='2026-09-25')
+        out={'source_sha256':d['source_sha256'],'state':'candidates','notes':'',
+             'offers':[{'program':['b0000'],'audience':['b0001'],'benefit':['b0001'],
+                        'conditions':[],'redemption':[],
+                        'code':{'state':'not_stated','value':'','refs':[]},
+                        'dates':[],'uncertainties':[]}]}
+        result=v2.check(target,d,out)
+        self.assertNotIn('wrong_program',result['problems'])
+        self.assertEqual(result['status'],'references_checked_needs_semantic_review')
+
 if __name__=='__main__':unittest.main()
