@@ -60,4 +60,19 @@ class SemanticGuard(unittest.TestCase):
             self.assertNotIn(s,code)
 
 
+    def test_explicit_offer_end_before_observation_is_rejected(self):
+        md=('## Example Club\n\n'
+            'Держателям EC предоставляется скидка 20%.\n\n'
+            'Срок проведения программы с 01.08.2022 г. по 31.12.2025 г.\n')
+        d=b.build(md,url='https://example.test/',observed_at='2026-09-25')
+        out={'source_sha256':d['source_sha256'],'state':'candidates','notes':'',
+             'offers':[{'program':['b0000'],'audience':['b0001'],'benefit':['b0001'],
+                        'conditions':['b0002'],'redemption':[],
+                        'code':{'state':'not_stated','value':'','refs':[]},
+                        'dates':[{'role':'offer','refs':['b0002']}],'uncertainties':[]}]}
+        checked=b.check(T,d,out)
+        result=g.assess_result(T,checked,document=d)
+        self.assertEqual(result['status'],'review_required')
+        self.assertIn('expired_at_observation',result['offers'][0]['reasons'])
+
 if __name__=='__main__': unittest.main()
