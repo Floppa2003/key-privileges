@@ -102,4 +102,13 @@ class BlocksV2(unittest.TestCase):
         result=v2.check(T,d,out)
         self.assertIn('duplicate_offer_variant',result['problems'])
 
+    def test_scoped_prompt_keeps_following_access_condition_without_program_name(self):
+        md=('Партнёр EC предоставляет специальное предложение, подробнее в личном кабинете.\n\n'
+            'Для просмотра условий необходимо авторизоваться в личном кабинете.\n')
+        d=v2.build(md,url='https://example.test/',observed_at='x',completeness='source_excerpt')
+        payload=json.loads(v2.scoped_prompt(T,d).split('TARGET and SOURCE:',1)[1])
+        source=''.join(x['text'] for x in payload['blocks'])
+        self.assertIn('Партнёр EC предоставляет специальное предложение',source)
+        self.assertIn('Для просмотра условий необходимо авторизоваться',source)
+
 if __name__=='__main__':unittest.main()
