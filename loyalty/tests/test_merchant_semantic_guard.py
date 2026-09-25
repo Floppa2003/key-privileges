@@ -71,7 +71,8 @@ class SemanticGuard(unittest.TestCase):
                         'code':{'state':'not_stated','value':'','refs':[]},
                         'dates':[{'role':'offer','refs':['b0002']}],'uncertainties':[]}]}
         checked=b.check(T,d,out)
-        result=g.assess_result(T,checked,document=d)
+        checked['observed_at']=d['observed_at']
+        result=g.assess_result(T,checked)
         self.assertEqual(result['status'],'review_required')
         self.assertIn('expired_at_observation',result['offers'][0]['reasons'])
 
