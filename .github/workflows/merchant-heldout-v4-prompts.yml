@@ -1,0 +1,63 @@
+name: Merchant heldout v4 prompt materialization
+on:
+  push:
+    branches: [loyalty/general-merchant-research-20260925]
+    paths: [.github/workflows/merchant-heldout-v4-prompts.yml, loyalty/experiments/merchant_general/heldout-v4.json]
+permissions:
+  contents: read
+jobs:
+  prompts:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - name: Materialize frozen v4 prompts without gold labels
+        run: |
+          mkdir -p heldout-v4-prompts
+          PYTHONPATH=loyalty python - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+          import merchant_blocks_v2 as b
+
+          src=Path('loyalty/experiments/merchant_general/heldout-v4.json')
+          data=json.loads(src.read_text(encoding='utf-8'))
+          assert data['version']=='merchant-heldout-v4'
+          assert data['expected_labels_sent_to_model'] is False
+          out={
+              'corpus_version':data['version'],
+              'corpus_sha256':hashlib.sha256(src.read_bytes()).hexdigest(),
+              'labels_frozen_at':data['labels_frozen_at'],
+              'implementation_frozen_before_predictions':data['implementation_frozen_before_predictions'],
+              'materializer_commit':None,
+              'prompt_module_version':b.VERSION,
+              'expected_labels_sent_to_model':False,
+              'publication_allowed':False,
+              'cases':[],
+          }
+          for case in data['cases']:
+              s=case['source']
+              doc=b.build(s['markdown'],url=s['url'],observed_at=s['observed_at'],
+                          completeness=s['completeness'])
+              out['cases'].append({
+                  'id':case['id'],
+                  'url':s['url'],
+                  'target':case['target'],
+                  'source_sha256':doc['source_sha256'],
+                  'selected_block_ids':[x['id'] for x in b.scoped_blocks(case['target'],doc)],
+                  'prompt':b.scoped_prompt(case['target'],doc),
+              })
+          Path('heldout-v4-prompts/prompts.json').write_text(
+              json.dumps(out,ensure_ascii=False,indent=2),encoding='utf-8')
+          PY
+          git rev-parse HEAD > heldout-v4-prompts/materializer-commit.txt
+          sha256sum heldout-v4-prompts/prompts.json > heldout-v4-prompts/SHA256SUMS
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: merchant-heldout-v4-prompts-${{ github.run_id }}-${{ github.run_attempt }}
+          path: heldout-v4-prompts/
+          retention-days: 1
