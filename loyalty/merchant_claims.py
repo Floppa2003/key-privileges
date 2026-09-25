@@ -4,10 +4,24 @@ Claims are review tasks, not verified facts. They never permit publication.
 """
 from __future__ import annotations
 
-import merchant_blocks as blocks
+import merchant_blocks as blocks_v1
+import merchant_blocks_v2 as blocks_v2
 import merchant_general as core
 
 VERSION = 'merchant-claims-v1'
+
+BLOCK_MODULES = {
+    blocks_v1.VERSION: blocks_v1,
+    blocks_v2.VERSION: blocks_v2,
+}
+
+
+def _block_module(doc: dict):
+    try:
+        return BLOCK_MODULES[doc.get('version')]
+    except KeyError as exc:
+        raise ValueError('unsupported_block_version') from exc
+
 
 DATE_TEXT = {
     'booking': 'Указанная дата или период относится к сроку бронирования: ',
@@ -54,7 +68,7 @@ def _claim(source_sha256: str, offer_index: int, kind: str, number: int,
 
 def generate(target: dict, doc: dict, checked: dict) -> dict:
     """Convert hydrated block fields into atomic semantic-review claims."""
-    blocks.validate_document(doc)
+    _block_module(doc).validate_document(doc)
     claims: list[dict] = []
     reasons: list[str] = []
 
