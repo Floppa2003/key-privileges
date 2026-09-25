@@ -25,7 +25,8 @@ class AtomicClaims(unittest.TestCase):
         self.assertEqual([x['kind'] for x in bundle['claims']],['audience','benefit'])
         self.assertEqual(bundle['claims'][0]['evidence_refs'],['b0001'])
         self.assertEqual(bundle['claims'][1]['evidence_refs'],['b0001'])
-        self.assertEqual(bundle['claims'][0]['premise'],r['offers'][0]['source_context']['text'])
+        self.assertIn('Example Club',bundle['claims'][0]['premise'])
+        self.assertIn('Держателям EC предоставляется скидка 20%',bundle['claims'][0]['premise'])
         self.assertFalse(bundle['publication_allowed'])
 
     def test_conditions_are_separate_atomic_claims(self):
