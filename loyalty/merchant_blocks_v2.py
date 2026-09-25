@@ -183,6 +183,63 @@ def prompt(target:dict,doc:dict,max_chars:int=12000)->str:
     return value
 
 
+
+SCOPED_PROMPT = PROMPT.replace(
+    'literal\nrequires the exact published value.',
+    'literal requires a nonempty exact published value.'
+).replace(
+    'Copy source_sha256 exactly.',
+    'Do not emit duplicate offers for the same audience/benefit pair. A source date block has at most one functional role unless the source explicitly assigns multiple roles. Copy source_sha256 exactly.'
+)
+
+def _section_has_ancestor(doc:dict, section:str, owners:set[str])->bool:
+    while section is not None:
+        if section in owners:return True
+        section=doc['sections'][section]['parent']
+    return False
+
+def scoped_blocks(target:dict,doc:dict)->list[dict]:
+    """Bound model input to programme-owned evidence without domain-specific rules.
+
+    Programme-named sections retain their complete section context. Under a generic
+    heading, only blocks that themselves mention the programme plus their ancestor
+    headings are shown, preventing sibling promotions from entering model scope.
+    """
+    validate_document(doc)
+    target_headings={b['id'] for b in doc['blocks']
+                     if b['kind']=='heading' and core.mentions(b['text'],target)}
+    if target_headings:
+        chosen=[b for b in doc['blocks']
+                if _section_has_ancestor(doc,b['section'],target_headings)]
+    else:
+        direct=[b for b in doc['blocks'] if core.mentions(b['text'],target)]
+        chosen_ids={b['id'] for b in direct}
+        for block in direct:
+            section=block['section']
+            while section not in (None,'root'):
+                heading=next((b for b in doc['blocks']
+                              if b['id']==section and b['kind']=='heading'),None)
+                if heading is not None:chosen_ids.add(heading['id'])
+                section=doc['sections'][section]['parent']
+        chosen=[b for b in doc['blocks'] if b['id'] in chosen_ids]
+    if not chosen:
+        # No target evidence: retaining headings only gives the model enough
+        # structure to abstain without exposing unrelated promotional content.
+        chosen=[b for b in doc['blocks'] if b['kind']=='heading']
+    return chosen
+
+def scoped_prompt(target:dict,doc:dict,max_chars:int=12000)->str:
+    validate_document(doc)
+    selected=scoped_blocks(target,doc)
+    payload={'target':{k:target[k] for k in ('merchant','program','aliases')},
+             'source_sha256':doc['source_sha256'],'completeness':doc['completeness'],
+             'scope':'target_centric_v1',
+             'blocks':[{'id':b['id'],'section':b['section'],'kind':b['kind'],'text':b['text']}
+                       for b in selected]}
+    value=SCOPED_PROMPT+json.dumps(payload,ensure_ascii=False,separators=(',',':'))
+    if len(value)>max_chars:raise ValueError('prompt_budget_no_truncation')
+    return value
+
 def check(target:dict,doc:dict,output:dict)->dict:
     result={'version':VERSION,'publication_allowed':False,
             'semantic_verification':'not_performed','status':'review_required',
