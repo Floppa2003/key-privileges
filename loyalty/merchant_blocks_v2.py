@@ -257,6 +257,7 @@ def check(target:dict,doc:dict,output:dict)->dict:
             raise ValueError('offers_schema')
         if bool(output['offers'])!=(output['state']=='candidates'):
             raise ValueError('offer_state_schema')
+        seen_variants=set()
         for item in output['offers']:
             core.shape(item,{'program','audience','benefit','conditions','redemption',
                              'code','dates','uncertainties'})
@@ -264,6 +265,11 @@ def check(target:dict,doc:dict,output:dict)->dict:
                     ('program','audience','benefit','conditions','redemption')}
             if not fields['program'] or not fields['benefit']:
                 raise ValueError('evidence_missing')
+            variant=(tuple(b['id'] for b in fields['audience']),
+                     tuple(b['id'] for b in fields['benefit']))
+            if variant in seen_variants:
+                raise ValueError('duplicate_offer_variant')
+            seen_variants.add(variant)
             if not core.mentions(' '.join(b['text'] for b in fields['program']),target):
                 raise ValueError('wrong_program')
             code=item['code'];core.shape(code,{'state','value','refs'})
