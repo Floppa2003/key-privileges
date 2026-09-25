@@ -1,5 +1,6 @@
 import sys
 import unittest
+import json
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 import merchant_blocks_v2 as v2
@@ -51,6 +52,37 @@ class BlocksV2(unittest.TestCase):
         self.assertIn('refs MUST be nonempty',preamble)
         self.assertIn('uncertainties',preamble)
         self.assertIn('state=no_offer',preamble)
+
+    def test_scoped_prompt_excludes_neighbor_list_promotions(self):
+        md=('## Есть ли скидки?\n\n'
+            '- Для всех участников скидка 5%.\n'
+            '- -15% при оплате курса картой EC.\n'
+            '- Можно оплатить материнским капиталом.\n')
+        d=v2.build(md,url='https://example.test/',observed_at='x')
+        value=v2.scoped_prompt(T,d)
+        payload=json.loads(value.split('TARGET and SOURCE:',1)[1])
+        source=''.join(x['text'] for x in payload['blocks'])
+        self.assertIn('-15%',source)
+        self.assertNotIn('скидка 5%',source)
+        self.assertNotIn('материнским капиталом',source)
+        self.assertIn('Есть ли скидки?',source)
+
+    def test_scoped_prompt_keeps_full_section_when_heading_names_programme(self):
+        md=('## Example Club\n\n'
+            'Держателям карты скидка 20%.\n\n'
+            'Не суммируется с другими скидками.\n')
+        d=v2.build(md,url='https://example.test/',observed_at='x')
+        payload=json.loads(v2.scoped_prompt(T,d).split('TARGET and SOURCE:',1)[1])
+        source=''.join(x['text'] for x in payload['blocks'])
+        self.assertIn('скидка 20%',source)
+        self.assertIn('Не суммируется',source)
+
+    def test_scoped_prompt_strengthens_code_date_and_duplicate_contracts(self):
+        d=v2.build('## EC\n\nДержателям EC скидка 20%.\n',url='https://example.test/',observed_at='x')
+        preamble=v2.scoped_prompt(T,d).split('TARGET and SOURCE:',1)[0]
+        self.assertIn('literal requires a nonempty',preamble)
+        self.assertIn('Do not emit duplicate offers',preamble)
+        self.assertIn('at most one functional role',preamble)
 
     def test_v2_does_not_change_v1_version_contract(self):
         self.assertEqual(v2.VERSION,'merchant-blocks-v2')
