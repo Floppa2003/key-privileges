@@ -1,0 +1,57 @@
+{
+  "version": "merchant-heldout-observed-v1-on-v2",
+  "corpus": "heldout-v2.json",
+  "block_version": "merchant-blocks-v2",
+  "extractor_commit": "dbcd7471bdc678b693150e41c76160c8067b1d3e",
+  "labels_frozen_before_predictions": true,
+  "expected_labels_sent_to_model": false,
+  "publication_allowed": false,
+  "note": "Independent heldout-v2 predictions. Prompts were materialized from the frozen merchant_blocks_v2 scoped_prompt implementation. Raw model answers are preserved unchanged, including schema errors, duplicate variants, invalid references, and incorrect date roles. Firecrawl fetched the named live page as transport context, but the prompt explicitly required using only the supplied immutable numbered SOURCE blocks.",
+  "trials": [
+    {
+      "id": "litres-ekp-gift-discount",
+      "raw_answer": "```json\n{\"source_sha256\":\"e40e32ce2a61d8a717509589252a6c1745666501bc7a1f5a4d41a608b2caefd0\",\"state\":\"candidates\",\"offers\":[{\"program\":[\"b0000\"],\"audience\":[],\"benefit\":[\"b0001\",\"b0004\"],\"conditions\":[\"b0005\"],\"redemption\":[\"b0002\"],\"code\":{\"state\":\"not_stated\",\"value\":\"\",\"refs\":[]},\"dates\":[],\"uncertainties\":[]}]}\n```",
+      "metadata": {
+        "scrapeId": "01a0d84e-ef61-75eb-9636-82e7d13025d3",
+        "statusCode": 200,
+        "creditsUsed": 5
+      }
+    },
+    {
+      "id": "artparking-ekp-two-services",
+      "raw_answer": "```json\n{\"source_sha256\":\"e32b51527115b31ea2cda22c23e371fb2d433f5ba148cf0744e73f8d942febcb\",\"state\":\"candidates\",\"offers\":[{\"program\":[\"b0001\"],\"audience\":[\"b0007\",\"b0009\"],\"benefit\":[\"b0003\"],\"conditions\":[\"b0005\",\"b0010\",\"b0012\"],\"redemption\":[\"b0008\",\"b0009\"],\"code\":{\"state\":\"literal\",\"value\":\"edkarta\",\"refs\":[\"b0003\"]},\"dates\":[],\"uncertainties\":[]},{\"program\":[\"b0001\"],\"audience\":[\"b0007\",\"b0009\"],\"benefit\":[\"b0004\"],\"conditions\":[\"b0006\",\"b0010\",\"b0012\"],\"redemption\":[\"b0008\",\"b0009\"],\"code\":{\"state\":\"literal\",\"value\":\"edkarta\",\"refs\":[\"b0004\"]},\"dates\":[],\"uncertainties\":[]},{\"program\":[\"b0001\"],\"audience\":[\"b0007\",\"b0009\"],\"benefit\":[\"b0003\"],\"conditions\":[\"b0005\",\"b0010\",\"b0012\"],\"redemption\":[\"b0009\"],\"code\":{\"state\":\"not_stated\",\"value\":\"\",\"refs\":[]},\"dates\":[],\"uncertainties\":[]},{\"program\":[\"b0001\"],\"audience\":[\"b0007\",\"b0009\"],\"benefit\":[\"b0004\"],\"conditions\":[\"b0006\",\"b0010\",\"b0012\"],\"redemption\":[\"b0009\"],\"code\":{\"state\":\"not_stated\",\"value\":\"\",\"refs\":[]},\"dates\":[],\"uncertainties\":[]}],\"notes\":\"\"}\n```",
+      "metadata": {
+        "scrapeId": "01a0d84f-5bbc-74ab-8f25-0f1da6249da9",
+        "statusCode": 200,
+        "creditsUsed": 5
+      }
+    },
+    {
+      "id": "medi-ekp-two-discounts",
+      "raw_answer": "```json\n{\"source_sha256\":\"baa2944e682d3a839acd184c19aae266a16254ad0103d3a9966c8e88e666acdd\",\"state\":\"candidates\",\"offers\":[{\"program\":[\"b0000\"],\"audience\":[\"b0000\"],\"benefit\":[\"b0001\"],\"conditions\":[],\"redemption\":[],\"code\":{\"state\":\"not_stated\",\"value\":\"\",\"refs\":[]},\"dates\":[],\"uncertainties\":[]},{\"program\":[\"b0000\"],\"audience\":[\"b0000\"],\"benefit\":[\"b0002\"],\"conditions\":[],\"redemption\":[],\"code\":{\"state\":\"not_stated\",\"value\":\"\",\"refs\":[]},\"dates\":[],\"uncertainties\":[]}],\"notes\":\"\"}\n```",
+      "metadata": {
+        "scrapeId": "01a0d84f-b66a-77df-b59f-06792b4f6a7f",
+        "statusCode": 200,
+        "creditsUsed": 5
+      }
+    },
+    {
+      "id": "riviera-rzd-tiered-points",
+      "raw_answer": "```json\n{\"source_sha256\":\"c7c01a933edac4a98a748897b2361aadd058197316d124e94bc427c468b401ec\",\"state\":\"candidates\",\"offers\":[{\"program\":[\"b0000\"],\"audience\":[\"b0013\"],\"benefit\":[\"b0001\"],\"conditions\":[\"b0015\",\"b0016\"],\"redemption\":[\"b0009\",\"b0010\",\"b0014\"],\"code\":{\"state\":\"not_stated\",\"value\":\"\",\"refs\":[]},\"dates\":[{\"role\":\"publication\",\"refs\":[\"b0003\"]}],\"uncertainties\":[]},{\"program\":[\"b0000\"],\"audience\":[\"b0013\"],\"benefit\":[\"b0005\"],\"conditions\":[\"b0015\",\"b0016\"],\"redemption\":[\"b0009\",\"b0010\",\"b0014\"],\"code\":{\"state\":\"not_stated\",\"value\":\"\",\"refs\":[]},\"dates\":[{\"role\":\"publication\",\"refs\":[\"b0003\"]}],\"uncertainties\":[]},{\"program\":[\"b0000\"],\"audience\":[\"b0013\"],\"benefit\":[\"b0006\"],\"conditions\":[\"b0015\",\"b0016\"],\"redemption\":[\"b0009\",\"b0010\",\"b0014\"],\"code\":{\"state\":\"not_stated\",\"value\":\"\",\"refs\":[]},\"dates\":[{\"role\":\"publication\",\"refs\":[\"b0003\"]}],\"uncertainties\":[]}],\"notes\":\"\"}\n```",
+      "metadata": {
+        "scrapeId": "01a0d850-30cc-7262-ab35-5e5a189db256",
+        "statusCode": 200,
+        "creditsUsed": 5
+      }
+    },
+    {
+      "id": "neva-ekp-award-only",
+      "raw_answer": "```json\n{\"source_sha256\":\"41e2be05bf63956490f3d62df8c9d14e88132b4ada0ad14d98d3b3bdcb07fb54\",\"state\":\"candidates\",\"offers\":[],\"notes\":\"The source does not describe any reusable offers for the target programme. The text describes an award given to an individual for their interaction with the programme, not a benefit for programme members.\"}\n```",
+      "metadata": {
+        "scrapeId": "01a0d850-9abc-756e-97de-2e28d0399fdc",
+        "statusCode": 200,
+        "creditsUsed": 5
+      }
+    }
+  ]
+}

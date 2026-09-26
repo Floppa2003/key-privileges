@@ -1,0 +1,66 @@
+{
+  "version": "merchant-heldout-observed-v4",
+  "corpus": "heldout-v4.json",
+  "block_version": "merchant-blocks-v2",
+  "extractor_commit": "337606f21d84d581c467456d4b095f470ccd9d12",
+  "labels_frozen_before_predictions": true,
+  "expected_labels_sent_to_model": false,
+  "publication_allowed": false,
+  "note": "Independent heldout-v4 predictions from the frozen materialized prompts. Gold labels were not sent to the extractor. Raw model answers are preserved unchanged. Transport status is recorded separately from semantic evaluation.",
+  "trials": [
+    {
+      "id": "iskusnica-ekp-expired-2025",
+      "transport": {
+        "status": "success",
+        "status_code": 200,
+        "scrape_id": "01a0da67-ccbe-71a5-9234-8ec9aad80f41"
+      },
+      "raw_answer": "```json\n{\"source_sha256\":\"d4f8a45a546bce9ef1ebca494237830b1f3996ffaedb52247084dc046c4d890f\",\"state\":\"candidates\",\"offers\":[{\"program\":[\"b0000\",\"b0001\"],\"audience\":[\"b0001\"],\"benefit\":[\"b0001\"],\"conditions\":[\"b0001\",\"b0001\"],\"redemption\":[\"b0001\"],\"code\":{\"state\":\"not_stated\",\"value\":\"\",\"refs\":[]},\"dates\":[{\"role\":\"offer\",\"refs\":[\"b0001\"]},{\"role\":\"publication\",\"refs\":[\"b0001\"]}],\"uncertainties\":[]},{\"program\":[\"b0000\",\"b0001\"],\"audience\":[\"b0001\"],\"benefit\":[\"b0001\"],\"conditions\":[\"b0001\",\"b0001\"],\"redemption\":[\"b0001\"],\"code\":{\"state\":\"not_stated\",\"value\":\"\",\"refs\":[]},\"dates\":[{\"role\":\"offer\",\"refs\":[\"b0001\"]},{\"role\":\"publication\",\"refs\":[\"b0001\"]}],\"uncertainties\":[]}],\"notes\":\"\"}\n```"
+    },
+    {
+      "id": "muzcomedy-ekp-repertoire",
+      "transport": {
+        "status": "success",
+        "status_code": 200,
+        "scrape_id": "01a0da6b-3300-7520-896c-44f3ef49690d"
+      },
+      "raw_answer": "```json\n{\"source_sha256\":\"413a66fc75deba41117e0e9580b31bf6534ebb366b019f82a8976e18eec0b49b\",\"state\":\"candidates\",\"offers\":[{\"program\":[\"b0002\"],\"audience\":[\"b0003\"],\"benefit\":[\"b0003\"],\"conditions\":[\"b0003\",\"b0003\",\"b0003\"],\"redemption\":[\"b0003\"],\"code\":{\"state\":\"not_stated\",\"value\":\"\",\"refs\":[]},\"dates\":[],\"uncertainties\":[]},{\"program\":[\"b0002\"],\"audience\":[\"b0003\"],\"benefit\":[\"b0003\"],\"conditions\":[\"b0003\",\"b0003\",\"b0003\"],\"redemption\":[\"b0003\"],\"code\":{\"state\":\"not_stated\",\"value\":\"\",\"refs\":[]},\"dates\":[],\"uncertainties\":[]},{\"program\":[\"b0002\"],\"audience\":[\"b0004\"],\"benefit\":[\"b0004\"],\"conditions\":[\"b0004\",\"b0004\",\"b0004\"],\"redemption\":[\"b0004\"],\"code\":{\"state\":\"not_stated\",\"value\":\"\",\"refs\":[]},\"dates\":[],\"uncertainties\":[]}],\"notes\":\"\"}\n```"
+    },
+    {
+      "id": "rzdmuseum-ekp-cashier-only",
+      "transport": {
+        "status": "success",
+        "status_code": 200,
+        "scrape_id": "01a0da69-bd32-718b-893e-6a79a54e1558"
+      },
+      "raw_answer": "```json\n{\"source_sha256\":\"bf28c959124755a0a7f4a609986ecdd2231ab10ced50e38ba74bca25a4ec040a\",\"state\":\"candidates\",\"offers\":[{\"program\":[\"b0000\"],\"audience\":[\"b0002\"],\"benefit\":[\"b0002\"],\"conditions\":[\"b0003\"],\"redemption\":[\"b0002\"],\"code\":{\"state\":\"not_stated\",\"value\":\"\",\"refs\":[]},\"dates\":[],\"uncertainties\":[]}],\"notes\":\"\"}\n```"
+    },
+    {
+      "id": "get-ekp-individual-and-group",
+      "transport": {
+        "status": "success",
+        "status_code": 200,
+        "scrape_id": "01a0da6a-437a-70b8-bab7-45be40607f8f"
+      },
+      "raw_answer": "```json\n{\"source_sha256\":\"4f76b46510dc0c04966001455172b2d778b56b60558cf50c16a59c5ab0ba7873\",\"state\":\"candidates\",\"offers\":[{\"program\":[\"b0002\",\"b0003\"],\"audience\":[\"b0004\"],\"benefit\":[\"b0004\"],\"conditions\":[\"b0006\"],\"redemption\":[],\"code\":{\"state\":\"not_stated\",\"value\":\"\",\"refs\":[]},\"dates\":[],\"uncertainties\":[]},{\"program\":[\"b0002\",\"b0003\"],\"audience\":[\"b0004\"],\"benefit\":[\"b0004\"],\"conditions\":[\"b0006\"],\"redemption\":[],\"code\":{\"state\":\"not_stated\",\"value\":\"\",\"refs\":[]},\"dates\":[],\"uncertainties\":[]}],\"notes\":\"\"}\n```"
+    },
+    {
+      "id": "pushkinmuseum-ekp-events-only",
+      "transport": {
+        "status": "success",
+        "status_code": 200,
+        "scrape_id": "01a0da6a-807f-774e-a637-a0e0b2b15357"
+      },
+      "raw_answer": "```json\n{\"source_sha256\":\"d5a80a214936d979f0ad684965043848d9607e966dc39ce5c965eef3ed476eb7\",\"state\":\"candidates\",\"offers\":[{\"program\":[\"b0000\"],\"audience\":[\"b0001\"],\"benefit\":[\"b0001\"],\"conditions\":[\"b0002\",\"b0003\",\"b0004\"],\"redemption\":[\"b0003\",\"b0004\"],\"code\":{\"state\":\"not_stated\",\"value\":\"\",\"refs\":[]},\"dates\":[],\"uncertainties\":[]}],\"notes\":\"\"}\n```"
+    },
+    {
+      "id": "fclm-rzd-bonus-leader",
+      "transport": {
+        "status": "success",
+        "status_code": 200,
+        "scrape_id": "01a0da6a-ed53-711f-8762-a8c133b81d9c"
+      },
+      "raw_answer": "```json\n{\"source_sha256\":\"c58151a70e0f896c7b2924c1369eb1ff37f07b4978691ca8b1a9121820a8db8e\",\"state\":\"candidates\",\"offers\":[{\"program\":[\"b0000\"],\"audience\":[\"b0007\"],\"benefit\":[\"b0017\"],\"conditions\":[\"b0018\"],\"redemption\":[\"b0009\",\"b0011\",\"b0012\",\"b0013\",\"b0014\",\"b0020\"],\"code\":{\"state\":\"not_stated\",\"value\":\"\",\"refs\":[]},\"dates\":[],\"uncertainties\":[]}],\"notes\":\"\"}\n```"
+    }
+  ]
+}
