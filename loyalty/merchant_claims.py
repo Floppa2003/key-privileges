@@ -10,7 +10,6 @@ import merchant_blocks_v2 as blocks_v2
 import merchant_general as core
 
 VERSION = 'merchant-claims-v1'
-BLOCKS_BY_VERSION = {blocks_v1.VERSION: blocks_v1, blocks_v2.VERSION: blocks_v2}
 MATERIAL_HINT = re.compile(
     r"(?:скидк\w*|бесплат\w*|подар\w*|балл\w*|мил\w*|к[еэ]шб[еэ]к\w*|"
     r"промокод\w*|не\s+суммир\w*|не\s+(?:действ\w*|предостав\w*|распростран\w*)|"
@@ -75,9 +74,38 @@ def _claim(source_sha256: str, offer_index: int, kind: str, number: int,
     }
 
 
+def _validate_checked(target: dict, doc: dict, checked: dict, module) -> None:
+    """Rehydrate referenced IDs again; do not trust text or flags in a receipt."""
+    try:
+        raw_offers = []
+        for offer in checked['offers']:
+            item = {key: _refs(offer['fields'][key]) for key in
+                    ('program', 'audience', 'benefit', 'conditions', 'redemption')}
+            item['code'] = {key: offer['code'][key] for key in ('state', 'value', 'refs')}
+            item['dates'] = [{'role': date['role'], 'refs': _refs(date['blocks'])}
+                             for date in offer['dates']]
+            item['uncertainties'] = offer['uncertainties']
+            raw_offers.append(item)
+        raw = {'source_sha256': doc['source_sha256'],
+               'state': 'candidates' if raw_offers else 'no_offer',
+               'offers': raw_offers, 'notes': ''}
+        canonical = module.check(target, doc, raw)
+        if canonical != checked:
+            raise ValueError('checked_evidence_changed')
+    except (KeyError, TypeError, AttributeError) as exc:
+        raise ValueError('checked_evidence_changed') from exc
+
+
 def generate(target: dict, doc: dict, checked: dict) -> dict:
     """Convert hydrated block fields into atomic semantic-review claims."""
-    _block_module(doc).validate_document(doc)
+    module = _block_module(doc)
+    module.validate_document(doc)
+    if checked.get('problems'):
+        return {'version': VERSION, 'source_sha256': doc['source_sha256'],
+                'status': 'review_required',
+                'reasons': [f'block_check_problem:{p}' for p in checked['problems']],
+                'claims': [], 'unassigned_material_refs': [], 'publication_allowed': False}
+    _validate_checked(target, doc, checked, module)
     claims: list[dict] = []
     reasons: list[str] = []
 

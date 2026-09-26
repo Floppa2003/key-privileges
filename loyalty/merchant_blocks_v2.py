@@ -314,7 +314,7 @@ def scoped_prompt(target:dict,doc:dict,max_chars:int=12000)->str:
     return value
 
 def check(target:dict,doc:dict,output:dict)->dict:
-    result={'version':VERSION,'observed_at':doc.get('observed_at'),'publication_allowed':False,
+    result={'version':VERSION,'source_sha256':doc.get('source_sha256'),'observed_at':doc.get('observed_at'),'publication_allowed':False,
             'semantic_verification':'not_performed','status':'review_required',
             'offers':[],'problems':[]}
     try:

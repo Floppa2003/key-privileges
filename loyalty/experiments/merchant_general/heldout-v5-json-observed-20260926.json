@@ -1,0 +1,55 @@
+{
+  "version": "merchant-heldout-observed-v5",
+  "corpus": "heldout-v5.json",
+  "role": "development_comparison_not_new_holdout",
+  "block_version": "merchant-blocks-v2",
+  "labels_frozen_before_predictions": true,
+  "expected_labels_sent_to_model": false,
+  "publication_allowed": false,
+  "response_representation": "Tool-returned decoded json values serialized for legacy evaluator; NOT raw HTTP bytes. No field repair.",
+  "protocol": "json-prompt-trial-20260926.json",
+  "trials": [
+    {
+      "id": "lavka-ekp-unspecified-rate",
+      "transport": {"status": "success", "status_code": 200, "scrape_id": "01a0ddab-9667-76fd-8eea-9da8505f0cb9"},
+      "request_sha256": "957fb44463c86986e7a0b3612020e8465a95245899df5a07f7639be8cbf9b8ce",
+      "metadata": {"scrapeId": "01a0ddab-9667-76fd-8eea-9da8505f0cb9", "statusCode": 200, "creditsUsed": 5},
+      "raw_answer": "{\"source_sha256\":\"b2f268b4d5f7fe8eaa1c24b9138f13842edb295585ab3d31e35dab8cd60b01ee\",\"state\":\"candidates\",\"offers\":[{\"program\":[\"b0001\",\"b0002\"],\"audience\":[\"b0001\"],\"benefit\":[\"b0002\"],\"conditions\":[],\"redemption\":[],\"code\":{\"state\":\"not_stated\",\"value\":\"\",\"refs\":[]},\"dates\":[],\"uncertainties\":[]}],\"notes\":\"\"}"
+    },
+    {
+      "id": "atrium-rzd-generic-program-only",
+      "transport": {"status": "success", "status_code": 200, "scrape_id": "01a0ddae-b950-7156-a059-d143dc151c1c"},
+      "request_sha256": "869ba3f10daad2e1abd21b6575d539f8138a7810a13c6f30ebbf91daf9b4c174",
+      "metadata": {"scrapeId": "01a0ddae-b950-7156-a059-d143dc151c1c", "statusCode": 200, "creditsUsed": 5},
+      "raw_answer": "{\"source_sha256\":\"fbee58cb6f3a5610d8407d59d3118c5dcce9f0895321391424ee618a73642f58\",\"state\":\"no_offer\",\"offers\":[],\"uncertainties\":[],\"notes\":\"No specific merchant offer found that links goods/services, programme beneficiaries, and concrete benefits.\"}"
+    },
+    {
+      "id": "nevskybereg-rzd-500-per-night",
+      "transport": {"status": "success", "status_code": 200, "scrape_id": "01a0ddaf-a1f3-70c4-909d-b217bd53a8df"},
+      "request_sha256": "53c58018ca53af68bf7c91a9e9d55336d3ed3ae5fb65e0758997251b2e43b881",
+      "metadata": {"scrapeId": "01a0ddaf-a1f3-70c4-909d-b217bd53a8df", "statusCode": 200, "creditsUsed": 5},
+      "raw_answer": "{\"source_sha256\":\"db7f788aa71acf8192ebf2d4937cfbd7f437aded49fa02936269837cd671c71f\",\"state\":\"candidates\",\"offers\":[{\"program\":[\"b0000\"],\"audience\":[\"b0001\"],\"benefit\":[\"b0000\"],\"conditions\":[],\"redemption\":[\"b0001\"],\"code\":{\"state\":\"required_not_published\",\"value\":\"\",\"refs\":[\"b0000\",\"b0001\"]},\"dates\":[{\"role\":\"booking\",\"refs\":[\"b0000\",\"b0001\"]},{\"role\":\"stay\",\"refs\":[\"b0000\",\"b0001\"]}],\"uncertainties\":[]},{\"program\":[\"b0000\"],\"audience\":[\"b0001\"],\"benefit\":[\"b0001\"],\"conditions\":[\"b0001\"],\"redemption\":[\"b0001\"],\"code\":{\"state\":\"not_stated\",\"value\":\"\",\"refs\":[\"b0000\",\"b0001\"]},\"dates\":[{\"role\":\"stay\",\"refs\":[\"b0000\",\"b0001\"]},{\"role\":\"offer\",\"refs\":[\"b0001\"]},{\"role\":\"publication\",\"refs\":[]},{\"role\":\"unclear\",\"refs\":[]}],\"uncertainties\":[\"Missing explicit expiration date for offers.\"]}],\"notes\":\"\"}"
+    },
+    {
+      "id": "elagin-ekp-20-percent-two-venues",
+      "transport": {"status": "success", "status_code": 200, "scrape_id": "01a0ddb0-842a-716b-a039-8a5121795a88"},
+      "request_sha256": "0e52681af68315d700cbc670f0f7b92d2672365dde7d3ad4efa5afcf539385b7",
+      "metadata": {"scrapeId": "01a0ddb0-842a-716b-a039-8a5121795a88", "statusCode": 200, "creditsUsed": 5},
+      "raw_answer": "{\"source_sha256\":\"907696e13cb6a6088b731f8f9fdcf9b1a8276676358228419b62e2af7b4b1969\",\"state\":\"candidates\",\"offers\":[{\"program\":[\"b0001\"],\"audience\":[\"b0002\"],\"benefit\":[\"b0001\"],\"conditions\":[\"b0005\"],\"redemption\":[\"b0004\"],\"code\":{\"state\":\"not_stated\",\"value\":\"\",\"refs\":[\"b0001\",\"b0004\"]},\"dates\":[{\"role\":\"offer\",\"refs\":[\"b0001\"]}],\"uncertainties\":[]},{\"program\":[\"b0001\"],\"audience\":[\"b0003\"],\"benefit\":[\"b0001\"],\"conditions\":[\"b0005\"],\"redemption\":[\"b0004\"],\"code\":{\"state\":\"not_stated\",\"value\":\"\",\"refs\":[\"b0001\",\"b0004\"]},\"dates\":[{\"role\":\"offer\",\"refs\":[\"b0001\"]}],\"uncertainties\":[]}],\"notes\":\"\"}"
+    },
+    {
+      "id": "station-rzd-expired-2023",
+      "transport": {"status": "success", "status_code": 200, "scrape_id": "01a0ddb1-8ad4-77f9-beae-27f237a0cbc2"},
+      "request_sha256": "0f0244f6fbece9be7b537d367cb08ab60d6fe83cb8210fdfcb1837562eabefc8",
+      "metadata": {"scrapeId": "01a0ddb1-8ad4-77f9-beae-27f237a0cbc2", "statusCode": 200, "creditsUsed": 5},
+      "raw_answer": "{\"source_sha256\":\"55e638b52929b352da48724d213a02f4795593feb5cdea7acd310b2984d09a42\",\"state\":\"candidates\",\"offers\":[{\"program\":[\"b0001\"],\"audience\":[\"b0005\"],\"benefit\":[\"b0010\"],\"conditions\":[\"b0008\",\"b0009\",\"b0008\"],\"redemption\":[\"b0003\",\"b0006\"],\"code\":{\"state\":\"literal\",\"value\":\"RZDBONUS\",\"refs\":[\"b0003\"]},\"dates\":[{\"role\":\"booking\",\"refs\":[\"b0007\"]}]}],\"notes\":\"\"}"
+    },
+    {
+      "id": "golden-triangle-rzd-literal-code",
+      "transport": {"status": "success", "status_code": 200, "scrape_id": "01a0ddb2-86d7-71ed-9f10-4a319d65b174"},
+      "request_sha256": "1b665fe63f87ab6c8b967055b83a4b81a346755793cc8ecf3b0de378ef4acceb",
+      "metadata": {"scrapeId": "01a0ddb2-86d7-71ed-9f10-4a319d65b174", "statusCode": 200, "creditsUsed": 5},
+      "raw_answer": "{\"source_sha256\":\"a458aeb50374286051eb38acbe50a9f1cc8cf010cfe3cacb4699e12d1b1090b3\",\"state\":\"candidates\",\"offers\":[{\"program\":[\"b0002\",\"b0010\"],\"audience\":[\"b0009\",\"b0010\"],\"benefit\":[\"b0010\"],\"conditions\":[\"b0011\"],\"redemption\":[\"b0012\"],\"code\":{\"state\":\"literal\",\"value\":\"RZD\",\"refs\":[\"b0012\"]},\"dates\":[{\"role\":\"offer\",\"refs\":[\"b0011\"]}]}],\"notes\":\"\"}"
+    }
+  ]
+}

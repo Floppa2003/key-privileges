@@ -41,6 +41,9 @@ jobs:
           import json
           from pathlib import Path
           import merchant_heldout_eval as e
+          import merchant_blocks_v2 as b
+          import merchant_semantic_guard as g
+          import merchant_claims as c
           root=Path('loyalty/experiments/merchant_general')
           for version in ('v2','v4','v5'):
               observed=root/f'heldout-{version}-observed.json'
@@ -51,6 +54,27 @@ jobs:
               Path(f'merchant-blocks-output/heldout-{version}-eval.json').write_text(
                   json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
               print(version,report['passed_cases'],'/',report['cases'], 'publication_allowed=false')
+          observed=root/'heldout-v5-json-observed-20260926.json'
+          report=e.evaluate(root/'heldout-v5.json',observed)
+          Path('merchant-blocks-output/json-trial-eval.json').write_text(
+              json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
+          corpus=json.loads((root/'heldout-v5.json').read_text())
+          trials=json.loads(observed.read_text())['trials']
+          stages=[]
+          for case,trial in zip(corpus['cases'],trials):
+              assert case['id']==trial['id']
+              s=case['source']
+              doc=b.build(s['markdown'],url=s['url'],observed_at=s['observed_at'],completeness=s['completeness'])
+              checked=b.check(case['target'],doc,json.loads(trial['raw_answer']))
+              guarded=g.assess_result(case['target'],checked)
+              bundle=c.generate(case['target'],doc,checked)
+              assert guarded['publication_allowed'] is False and bundle['publication_allowed'] is False
+              stages.append({'id':case['id'],'block_problems':checked['problems'],
+                  'guard':guarded,'claim_status':bundle['status'],'claim_reasons':bundle['reasons'],
+                  'claim_count':len(bundle['claims']),'publication_allowed':False})
+          Path('merchant-blocks-output/json-trial-stages.json').write_text(
+              json.dumps(stages,ensure_ascii=False,indent=2),encoding='utf-8')
+          print('JSON development comparison',report['passed_cases'],'/',report['cases'],'not a production approval')
           PY
           sha256sum merchant-blocks-output/* > merchant-blocks-output/SHA256SUMS
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02

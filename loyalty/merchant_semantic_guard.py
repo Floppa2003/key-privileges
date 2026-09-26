@@ -111,9 +111,15 @@ def assess(target: dict, offer: dict, observed_at: str | None = None) -> dict:
 def assess_result(target: dict, checked: dict) -> dict:
     observed_at = checked.get('observed_at')
     offers = [assess(target, o, observed_at) for o in checked.get("offers", [])]
+    problems = checked.get('problems')
+    reasons = ([f'block_check_problem:{p}' for p in problems]
+               if isinstance(problems, list) else ['block_check_schema'])
+    if checked.get('status') != 'references_checked_needs_semantic_review':
+        reasons.append('upstream_review_required')
     return {
         "version": "merchant-semantic-guard-v1",
         "publication_allowed": False,
-        "status": "guard_pass_needs_independent_review" if offers and all(o["status"].startswith("guard_pass") for o in offers) else "review_required",
+        "status": "guard_pass_needs_independent_review" if offers and not reasons and all(o["status"].startswith("guard_pass") for o in offers) else "review_required",
+        "reasons": reasons,
         "offers": offers,
     }
