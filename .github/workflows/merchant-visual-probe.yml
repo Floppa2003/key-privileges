@@ -8,7 +8,7 @@ permissions:
 jobs:
   capture:
     runs-on: ubuntu-24.04
-    timeout-minutes: 8
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
@@ -19,87 +19,69 @@ jobs:
           python-version: '3.12'
       - run: python -m pip install -r loyalty/requirements.txt
       - run: python -m playwright install --with-deps chromium
-      - name: Capture only public rendered pages; do not extract offers or publish
+      - name: Recapture one known page after necessary-cookie choice; no offers activated
         run: |
-          mkdir -p visual-probe
+          mkdir -p visual-probe/golden_triangle
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
           git rev-parse HEAD > visual-probe/commit.txt
           cp .github/workflows/merchant-visual-probe.yml visual-probe/capture-workflow.yml
           PYTHONPATH=loyalty python - <<'PY'
-          import asyncio, hashlib, json, time
+          import asyncio, hashlib, json
           from datetime import datetime, timezone
           from pathlib import Path
           from playwright.async_api import async_playwright
           from public_transport import PublicSource
-
-          # Known development examples, NOT a blind holdout or production adapters.
-          CASES = [
-              ('rzd_museum', 'https://rzd-museum.ru/museum/news/v-muzej-zeleznyh-dorog-rossii-s-edinoj-kartoj-peterburzca', 'Единая карта петербуржца'),
-              ('golden_triangle', 'https://gthotel.ru/offers/', 'РЖД Бонус'),
-              ('iskusnica', 'https://iskusnica.spb.ru/loyalty-program/ekp/', 'Единая карта петербуржца'),
-          ]
-          ROOT = Path('visual-probe')
-          def save_json(path, data):
-              path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding='utf-8')
-
           async def run():
-              reports=[]
+              out=Path('visual-probe/golden_triangle')
+              url='https://gthotel.ru/offers/'
+              item={'id':'golden_triangle','requested_url':url,'target_program':'РЖД Бонус',
+                    'publication_allowed':False,'login_performed':False,'actions':[],
+                    'viewport':{'width':1280,'height':960},'native_pdf_media':'screen',
+                    'pdf_page_css_px':[1280,1800],
+                    'screenshot_and_pdf_are_sequential_captures':True}
               async with async_playwright() as p:
                   browser=await p.chromium.launch(headless=True)
-                  for name, url, program in CASES:
-                      out=ROOT/name;out.mkdir()
-                      item={'id':name,'requested_url':url,'target_program':program,
-                            'started_at':datetime.now(timezone.utc).isoformat(),
-                            'browser_version':browser.version,'login_performed':False,
-                            'publication_allowed':False,'clicks_performed':0,
-                            'viewport':{'width':1280,'height':960},
-                            'native_pdf_media':'screen','pdf_page_css_px':[1280,1800],
-                            'screenshot_and_pdf_are_sequential_captures':True}
-                      started=time.monotonic()
-                      try:
-                          async with PublicSource(browser,url) as source:
-                              await source.page.set_viewport_size(item['viewport'])
-                              await source.robots()
-                              await source.read(url,render=True)
-                              page=source.page
-                              # Trigger ordinary lazy loading without clicking offers or forms.
-                              for _ in range(24):
-                                  size=await page.evaluate('({y:scrollY,h:innerHeight,total:document.documentElement.scrollHeight})')
-                                  if size['total']>32000:
-                                      raise ValueError('page_exceeds_bounded_capture_height')
-                                  if size['y']+size['h']>=size['total']-2:break
-                                  await page.evaluate('window.scrollBy(0,800)')
-                                  await page.wait_for_timeout(200)
-                              await page.evaluate('window.scrollTo(0,0)')
-                              await page.wait_for_timeout(1200)
-                              await page.emulate_media(media='screen', reduced_motion='reduce')
-                              item.update(final_url=page.url,title=await page.title(),
-                                  observed_at=datetime.now(timezone.utc).isoformat(),
-                                  robots=source.robots_info,
-                                  closed_details=await page.locator('details:not([open])').count(),
-                                  collapsed_controls=await page.locator('[aria-expanded="false"]').count())
-                              text=await page.locator('body').inner_text()
-                              (out/'visible-text.txt').write_text(text,encoding='utf-8')
-                              await page.screenshot(path=str(out/'screen.png'),full_page=True,timeout=20000)
-                              await page.pdf(path=str(out/'page.pdf'),width='1280px',height='1800px',
-                                  margin={'top':'0','bottom':'0','left':'0','right':'0'},
-                                  print_background=True,display_header_footer=False,prefer_css_page_size=False)
-                              item['body_changed_between_captures']=(text!=await page.locator('body').inner_text())
-                              pdf=(out/'page.pdf').read_bytes();png=(out/'screen.png').read_bytes()
-                              if not pdf.startswith(b'%PDF-') or not png.startswith(b'\x89PNG\r\n\x1a\n'):
-                                  raise ValueError('invalid_capture_signature')
-                              if len(pdf)>20000000 or len(png)>20000000:
-                                  raise ValueError('capture_exceeds_size_budget')
-                              item['status']='captured_needs_visual_inspection'
-                              item['files']={f.name:{'bytes':f.stat().st_size,'sha256':hashlib.sha256(f.read_bytes()).hexdigest()} for f in out.iterdir() if f.is_file()}
-                      except Exception as exc:
-                          item.update(status='capture_failed',error_type=type(exc).__name__,error=str(exc)[:800])
-                      item['duration_seconds']=round(time.monotonic()-started,3)
-                      save_json(out/'capture.json',item);reports.append(item)
-                      print(name,item['status'])
+                  item['browser_version']=browser.version
+                  async with PublicSource(browser,url) as source:
+                      page=source.page
+                      await page.set_viewport_size(item['viewport'])
+                      await source.robots()
+                      await source.read(url,render=True)
+                      # The exact visible choice rejects optional cookies. No broad 'accept all'.
+                      control=page.get_by_text('Принять необходимые',exact=True)
+                      if await control.count()!=1 or not await control.is_visible():
+                          raise ValueError('necessary_cookie_control_missing_or_ambiguous')
+                      await control.click(timeout=5000)
+                      await page.wait_for_timeout(500)
+                      if await control.is_visible():
+                          raise ValueError('cookie_banner_not_dismissed')
+                      item['actions'].append('clicked_visible_necessary_cookies_only')
+                      for _ in range(24):
+                          size=await page.evaluate('({y:scrollY,h:innerHeight,total:document.documentElement.scrollHeight})')
+                          if size['total']>32000:raise ValueError('capture_height_budget')
+                          if size['y']+size['h']>=size['total']-2:break
+                          await page.evaluate('window.scrollBy(0,800)')
+                          await page.wait_for_timeout(200)
+                      await page.evaluate('window.scrollTo(0,0)')
+                      await page.wait_for_timeout(1200)
+                      await page.emulate_media(media='screen',reduced_motion='reduce')
+                      item.update(observed_at=datetime.now(timezone.utc).isoformat(),final_url=page.url,
+                          title=await page.title(),robots=source.robots_info,
+                          closed_details=await page.locator('details:not([open])').count(),
+                          collapsed_controls=await page.locator('[aria-expanded="false"]').count())
+                      text=await page.locator('body').inner_text()
+                      (out/'visible-text.txt').write_text(text,encoding='utf-8')
+                      await page.screenshot(path=str(out/'screen.png'),full_page=True,timeout=20000)
+                      await page.pdf(path=str(out/'page.pdf'),width='1280px',height='1800px',
+                          margin={'top':'0','bottom':'0','left':'0','right':'0'},print_background=True,
+                          display_header_footer=False,prefer_css_page_size=False)
+                      item['body_changed_between_captures']=(text!=await page.locator('body').inner_text())
+                      item['status']='captured_needs_visual_inspection'
+                      item['files']={f.name:{'bytes':f.stat().st_size,'sha256':hashlib.sha256(f.read_bytes()).hexdigest()} for f in out.iterdir() if f.is_file()}
                   await browser.close()
-              save_json(ROOT/'capture-report.json',{'purpose':'known-page PDF/image feasibility, no model inference',
-                  'publication_allowed':False,'results':reports})
+              (out/'capture.json').write_text(json.dumps(item,ensure_ascii=False,indent=2),encoding='utf-8')
+              Path('visual-probe/capture-report.json').write_text(json.dumps({'purpose':'single-page cookie-overlay correction; no model inference','results':[item],'publication_allowed':False},ensure_ascii=False,indent=2),encoding='utf-8')
+              print(item['status'])
           asyncio.run(run())
           PY
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
