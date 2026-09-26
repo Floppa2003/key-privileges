@@ -89,10 +89,10 @@ def _audience_explicit(pred: dict) -> bool:
 def evaluate(corpus_path: Path, observed_path: Path) -> dict:
     corpus=json.loads(corpus_path.read_text(encoding='utf-8'))
     observed=json.loads(observed_path.read_text(encoding='utf-8'))
-    if corpus.get('version') not in ('merchant-heldout-v1','merchant-heldout-v2','merchant-heldout-v3','merchant-heldout-v4'):
+    if corpus.get('version') not in ('merchant-heldout-v1','merchant-heldout-v2','merchant-heldout-v3','merchant-heldout-v4','merchant-heldout-v5'):
         raise ValueError('corpus_version')
     version=observed.get('version')
-    if version not in ('merchant-heldout-observed-v1','merchant-heldout-observed-v2-on-v1','merchant-heldout-observed-v1-on-v2','merchant-heldout-observed-v3','merchant-heldout-observed-v4'):
+    if version not in ('merchant-heldout-observed-v1','merchant-heldout-observed-v2-on-v1','merchant-heldout-observed-v1-on-v2','merchant-heldout-observed-v3','merchant-heldout-observed-v4','merchant-heldout-observed-v5'):
         raise ValueError('observed_version')
     block_version=observed.get('block_version','merchant-blocks-v1')
     if block_version=='merchant-blocks-v1':
