@@ -1,8 +1,6 @@
-name: Merchant visual batch - capture only
+name: Merchant visual batch - manual capture only
 on:
-  push:
-    branches: [loyalty/general-merchant-research-20260925]
-    paths: [loyalty/merchant_visual_capture.py, loyalty/experiments/visual/**, .github/workflows/merchant-visual-batch.yml]
+  workflow_dispatch:
 permissions:
   contents: read
 concurrency:
@@ -30,22 +28,14 @@ jobs:
           python -m pip install -r loyalty/requirements.txt
           python -m pip install Pillow==12.3.0 PyMuPDF==1.26.7
           python -m playwright install --with-deps chromium
-      - name: Full existing regressions and visual regressions
+      - name: Existing and visual regressions
         run: |
           python -m unittest discover -s loyalty/tests -v > visual-batch/tests-existing.log 2>&1
           python -m unittest discover -s loyalty/experiments/visual -p 'test_*.py' -v > visual-batch/tests-visual.log 2>&1
           node --test key/refresh.test.mjs > visual-batch/tests-key.log 2>&1
-      - name: Recapture 13 previously readable pages after native PDF fix
+      - name: Capture explicitly selected public-page manifest
         run: |
-          python - <<'PY'
-          import json
-          from pathlib import Path
-          targets=json.loads(Path('loyalty/experiments/visual/targets-20260927.json').read_text())
-          failed={'iskusnica','elagin','station','atrium','grandkarat'}
-          selected=[t for t in targets if t['id'] not in failed]
-          Path('visual-batch/selected-targets.json').write_text(json.dumps(selected,ensure_ascii=False))
-          PY
-          python loyalty/merchant_visual_capture.py --targets visual-batch/selected-targets.json --out visual-batch/captures --concurrency 2 | tee visual-batch/capture.log
+          python loyalty/merchant_visual_capture.py --targets loyalty/experiments/visual/targets-20260927.json --out visual-batch/captures --concurrency 2 | tee visual-batch/capture.log
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
