@@ -1,14 +1,18 @@
 {
   "schema_version": 1,
-  "fetched_at": "2026-09-27T12:00:00.094Z",
-  "source_mode": "netlify",
-  "remote_ok": false,
+  "fetched_at": "2026-09-27T16:57:01.185Z",
+  "source_mode": "netlify+supabase",
+  "remote_ok": true,
   "source_urls": {
     "base_catalog": "https://traveltg-bot.netlify.app/lib/data.js",
     "content_contract": "https://traveltg-bot.netlify.app/lib/content/contract.js",
     "remote_content": "https://qymhzqkenzsgszogkcdq.supabase.co/functions/v1/miniapp-content?locale=ru&environment=production"
   },
-  "remote_snapshot": null,
+  "remote_snapshot": {
+    "version": 2,
+    "published_at": null,
+    "schema_version": 1
+  },
   "content_sha256": "b8f4ee655740b2198774f35b6ff29e97ca844abe5b020743f3edd05184fa6556",
   "partners": [
     {

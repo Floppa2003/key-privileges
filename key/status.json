@@ -1,15 +1,13 @@
 {
   "schema_version": 1,
   "ok": true,
-  "fetched_at": "2026-09-27T12:00:00.094Z",
+  "fetched_at": "2026-09-27T16:57:01.185Z",
   "request_id": null,
   "triggered_by": "schedule",
   "partner_count": 23,
   "special_offer_count": 5,
-  "remote_ok": false,
-  "source_mode": "netlify",
+  "remote_ok": true,
+  "source_mode": "netlify+supabase",
   "content_sha256": "b8f4ee655740b2198774f35b6ff29e97ca844abe5b020743f3edd05184fa6556",
-  "warnings": [
-    "Supabase content override unavailable: The operation was aborted due to timeout"
-  ]
+  "warnings": []
 }
