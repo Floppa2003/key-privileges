@@ -12,7 +12,7 @@ concurrency:
 jobs:
   test:
     runs-on: ubuntu-24.04
-    timeout-minutes: 35
+    timeout-minutes: 20
     env:
       OLLAMA_HOST: 127.0.0.1:11434
       OLLAMA_NO_CLOUD: '1'
@@ -38,7 +38,7 @@ jobs:
           cp .github/workflows/merchant-local-cpu-check.yml cpu-result/workflow.yml
           lscpu > cpu-result/cpu.txt
           free -b > cpu-result/memory-before.txt
-          python -m pip install -r loyalty/requirements.txt jsonschema==4.26.0 PyMuPDF==1.26.7 psutil==7.0.0
+          python -m pip install -r loyalty/requirements.txt jsonschema==4.26.0 PyMuPDF==1.26.7 psutil==7.0.0 Pillow==12.3.0
           python -m unittest discover -s loyalty/tests -v > cpu-result/tests-existing.log 2>&1
           python -m unittest discover -s loyalty/experiments/local_visual -p 'test_*.py' -v > cpu-result/tests-probe.log 2>&1
           node --test key/refresh.test.mjs > cpu-result/tests-key.log 2>&1
@@ -68,9 +68,9 @@ jobs:
             sleep 1
           done
           timeout 480 "$RUNNER_TEMP/ollama/bin/ollama" pull qwen3.5:4b > cpu-result/pull.log 2>&1
-      - name: Measure sequential document extraction; no cloud API or publishing
+      - name: One reduced-image request for timed-out source, same prompt and text
         run: |
-          python loyalty/experiments/local_visual/run_cpu.py --source source-capture --out cpu-result --server-pid "$(cat cpu-result/server.pid)" | tee cpu-result/probe.log
+          python loyalty/experiments/local_visual/resized_retry.py --source source-capture --out cpu-result --server-pid "$(cat cpu-result/server.pid)" > cpu-result/probe.log 2>&1
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
