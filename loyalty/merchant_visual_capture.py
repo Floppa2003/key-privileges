@@ -49,7 +49,7 @@ async def hide_cookie_overlays(page) -> list[dict]:
     """Only fixed/sticky small cookie panes; never paywalls/auth or ordinary prose."""
     return await page.evaluate(r'''() => {
       const cookie=/(?:\bcookies?\b|куки|куки-файл)/i;
-      const gate=/(?:для доступа|войти|авториз|подписк|оплат|captcha|sign.?in|log.?in|subscribe|paywall)/i;
+      const gate=/(?:для доступа|войти|авториз|подписк|оплат|captcha|sign.?in|log.?in|subscribe|paywall|скидк|промокод|бонус|подар|cashback|discount|promo.?code|%|₽)/i;
       const candidates=[];
       for(const el of document.body.querySelectorAll('*')){
         const st=getComputedStyle(el),r=el.getBoundingClientRect();
@@ -109,9 +109,9 @@ async def capture_page(page, folder: Path, *, max_height: int = 32000) -> dict:
     }''')
     (folder/'text-boxes.json').write_text(json.dumps(text_boxes,ensure_ascii=False),encoding='utf-8')
     try:
-        await page.pdf(path=str(folder/'native.pdf'),width='1280px',height='1800px',
+        await asyncio.wait_for(page.pdf(path=str(folder/'native.pdf'),width='1280px',height='1800px',
                        margin={k:'0' for k in ('top','bottom','left','right')},
-                       print_background=True,display_header_footer=False,prefer_css_page_size=False,timeout=25000)
+                       print_background=True,display_header_footer=False,prefer_css_page_size=False),25)
     except Exception as exc:warnings.append('native_pdf_failed:'+type(exc).__name__)
     final_text=await page.locator('body').inner_text()
     if final_text!=text:warnings.append('text_changed_during_capture')

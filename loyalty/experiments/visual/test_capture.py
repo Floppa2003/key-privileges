@@ -6,7 +6,7 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[2]))
 from PIL import Image
 import fitz
 from playwright.async_api import async_playwright
-from merchant_visual_capture import tile_spans, screenshot_pdf, hide_cookie_overlays
+from merchant_visual_capture import tile_spans, screenshot_pdf, hide_cookie_overlays, capture_page
 
 class Tiles(unittest.TestCase):
     def test_tiles_cover_bottom_and_overlap_without_resizing(self):
@@ -64,5 +64,17 @@ class CookieOverlays(unittest.IsolatedAsyncioTestCase):
         await self.page.set_content('<article>Скидка 20% на печенье Cookies.</article>')
         self.assertEqual(await hide_cookie_overlays(self.page),[])
         self.assertTrue(await self.page.locator('article').is_visible())
+    async def test_capture_produces_secondary_native_pdf(self):
+        await self.page.set_content('<h1>Example Club</h1><p>Cardholders save 12%.</p>')
+        with tempfile.TemporaryDirectory() as td:
+            out=Path(td)
+            result=await capture_page(self.page,out)
+            self.assertTrue((out/'native.pdf').is_file(),result['warnings'])
+            with fitz.open(out/'native.pdf') as doc:
+                self.assertIn('Cardholders save 12%', ''.join(p.get_text() for p in doc))
+    async def test_cookie_named_promotional_overlay_is_not_hidden(self):
+        await self.page.set_content('<aside id="offer" style="position:fixed;bottom:0">Скидка 20% на Cookies. Промокод COOKIE20.</aside>')
+        self.assertEqual(await hide_cookie_overlays(self.page),[])
+        self.assertTrue(await self.page.locator('#offer').is_visible())
 
 if __name__=='__main__':unittest.main()
