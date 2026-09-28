@@ -1,0 +1,88 @@
+{
+  "version": "prompt-only-ab-1",
+  "source_capture_date": "2026-09-27",
+  "as_of": "2026-09-27",
+  "max_edge": 1024,
+  "cases": [
+    {
+      "id": "lavka",
+      "order": ["old", "defined"],
+      "request": "expanded-two/results/lavka/request-without-image-bytes.json",
+      "text": "expanded-two/results/lavka/visible-text.txt",
+      "images": ["expanded-two/results/lavka/page-1.png"],
+      "sha256": {
+        "expanded-two/results/lavka/request-without-image-bytes.json": "803d8ca25604cd7d7c4b80940dd31fa5d6a181013ce092995610ad948b85a892",
+        "expanded-two/results/lavka/visible-text.txt": "dc8d01211d8fb005179e189e4d8636d0ee479f3327f99c9679391b03325d1e8f",
+        "expanded-two/results/lavka/page-1.png": "bf1b96cb004a836f58206113f77728758c42fa395fec2c8bb502b39839b2fbd8"
+      }
+    },
+    {
+      "id": "muzcomedy",
+      "order": ["defined", "old"],
+      "request": "expanded-two/results/muzcomedy/request-without-image-bytes.json",
+      "text": "expanded-two/results/muzcomedy/visible-text.txt",
+      "images": ["expanded-two/results/muzcomedy/page-1.png", "expanded-two/results/muzcomedy/page-2.png", "expanded-two/results/muzcomedy/page-3.png"],
+      "sha256": {
+        "expanded-two/results/muzcomedy/request-without-image-bytes.json": "74bc0e0a005778856404e6d268c99437e96c23ef1eaa0dde2e17fefae5193d14",
+        "expanded-two/results/muzcomedy/visible-text.txt": "661224385db1cfba51282f1b474b14f5f6e58b0911b923e3b797fde14590737b",
+        "expanded-two/results/muzcomedy/page-1.png": "1ab834c003fa0eeb0a23f0f03e4dc5bd25dc6257096d6aaba0eae34d0611f509",
+        "expanded-two/results/muzcomedy/page-2.png": "aef999c2d9ceb35377242878bc8987802f7fe2de00ee08579d5df69423ff2559",
+        "expanded-two/results/muzcomedy/page-3.png": "76128acedc6f555dd59260c1aa2967fcaf4d39e11cb640d6783f33cf315ceb97"
+      }
+    },
+    {
+      "id": "nevsky",
+      "order": ["old", "defined"],
+      "request": "resolution/results/r1-nevsky-1024/request-without-image-bytes.json",
+      "text": "resolution/inputs/nevsky/visible-text.txt",
+      "images": ["resolution/results/r1-nevsky-1024/page-1.png", "resolution/results/r1-nevsky-1024/page-2.png", "resolution/results/r1-nevsky-1024/page-3.png"],
+      "sha256": {
+        "resolution/results/r1-nevsky-1024/request-without-image-bytes.json": "33b4d9955d6fdac2de988145bf6270f388f2245c7d8bb2b7ecd7ad0f574bf0f5",
+        "resolution/inputs/nevsky/visible-text.txt": "c6edb43ebff7a073fd1ec5b2381c3a5f3cda510080671f8a0fce8a89dcb6723a",
+        "resolution/results/r1-nevsky-1024/page-1.png": "a027cb913ef38d233c0c3554ace00aee18dbe92380c41acacabe24bc954808e5",
+        "resolution/results/r1-nevsky-1024/page-2.png": "0d758b98e1743b8bb62668730dda6247d5e62a5e5b0b675d54a2dab2c0e8972a",
+        "resolution/results/r1-nevsky-1024/page-3.png": "087e3ce745d9c8d231b037cfc88b4a7eeadda044692b032cd04c0ab16e91ec13"
+      }
+    },
+    {
+      "id": "academia",
+      "order": ["defined", "old"],
+      "request": "expanded-one/results/academia/request-without-image-bytes.json",
+      "text": "expanded-one/results/academia/visible-text.txt",
+      "images": ["expanded-one/results/academia/page-1.png", "expanded-one/results/academia/page-2.png"],
+      "sha256": {
+        "expanded-one/results/academia/request-without-image-bytes.json": "33085d646db0718b0f82cb9930ac545293c8e74546d69e52b1e02823e8b5b0da",
+        "expanded-one/results/academia/visible-text.txt": "5acfcb0de2f67171e64a85e1b98e12bf1547b1bd69c8e04ef27c3ab6c8f3912f",
+        "expanded-one/results/academia/page-1.png": "01746a79dbbfc1314b1a5e9adcbb763ada39cff3965902a98dae756159f7e107",
+        "expanded-one/results/academia/page-2.png": "7594d502bdbe3108871aa3bce3a654e0ada66c0faa8f9c917c26cef826166296"
+      }
+    },
+    {
+      "id": "rzd_museum",
+      "order": ["old", "defined"],
+      "request": "resolution/results/r1-rzd_museum-1024/request-without-image-bytes.json",
+      "text": "resolution/inputs/rzd_museum/visible-text.txt",
+      "images": ["resolution/results/r1-rzd_museum-1024/page-1.png", "resolution/results/r1-rzd_museum-1024/page-2.png"],
+      "sha256": {
+        "resolution/results/r1-rzd_museum-1024/request-without-image-bytes.json": "e1b3b72529abb5e3513315eb6717da4f360a56ff37202f6b57f591f421548c58",
+        "resolution/inputs/rzd_museum/visible-text.txt": "1873f6f0e7fa489332eaff0d3d298cf11ca5fe1b02af0053b5df4fc2d5dafe00",
+        "resolution/results/r1-rzd_museum-1024/page-1.png": "563bb85252d65708ed69423fff507baefe616f71712799a762aa99917b3313be",
+        "resolution/results/r1-rzd_museum-1024/page-2.png": "b98d2f926095015f20ab6e90722b9da6a0fd8085662aabefdae531035aee971c"
+      }
+    },
+    {
+      "id": "golden_triangle",
+      "order": ["defined", "old"],
+      "request": "resolution/results/r1-golden_triangle-1024/request-without-image-bytes.json",
+      "text": "resolution/inputs/golden_triangle/visible-text.txt",
+      "images": ["resolution/results/r1-golden_triangle-1024/page-1.png", "resolution/results/r1-golden_triangle-1024/page-2.png"],
+      "sha256": {
+        "resolution/results/r1-golden_triangle-1024/request-without-image-bytes.json": "6763896e229ac83037fd16d3551b9e7d2a2b0b5fd39136275a6c51e1f70f7663",
+        "resolution/inputs/golden_triangle/visible-text.txt": "6708cb5d13665c58fb63e207f02f65f723d5afdef89a7441bfe78e3976156dc9",
+        "resolution/results/r1-golden_triangle-1024/page-1.png": "1484512320c6b535739f58566496091bbba8587ab0c3124a52a72ebda25a8add",
+        "resolution/results/r1-golden_triangle-1024/page-2.png": "bf524d797e26780b2f859abf6d2011b639b4280f993bde27733a3a3affae6022"
+      }
+    }
+  ],
+  "publication_allowed": false
+}

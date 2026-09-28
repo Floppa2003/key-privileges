@@ -1,0 +1,97 @@
+name: Qwen prompt-only paired comparison
+on:
+  push:
+    branches: [loyalty/general-merchant-research-20260925]
+    paths: [.github/workflows/merchant-prompt-ab.yml]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: merchant-prompt-ab
+  cancel-in-progress: false
+jobs:
+  compare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        include:
+          - shard: one
+            cases: lavka muzcomedy
+          - shard: two
+            cases: nevsky academia
+          - shard: three
+            cases: rzd_museum golden_triangle
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          ref: ${{ github.sha }}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - name: Preserve execution and test exact code
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          mkdir -p ab-output/code
+          git rev-parse HEAD > ab-output/commit.txt
+          cp loyalty/experiments/prompt_ab/* ab-output/code/
+          cp loyalty/experiments/local_visual/run_cpu.py loyalty/experiments/resolution/benchmark.py loyalty/experiments/resolution/setup.sh ab-output/code/
+          cp .github/workflows/merchant-prompt-ab.yml ab-output/workflow.yml
+          lscpu > ab-output/cpu.txt
+          python -m pip install -r loyalty/requirements.txt Pillow==12.3.0 PyMuPDF==1.26.7 jsonschema==4.26.0 psutil==7.0.0
+          python -m unittest discover -s loyalty/tests -v > ab-output/tests-existing.log 2>&1
+          python -m unittest discover -s loyalty/experiments/prompt_ab -p 'test_*.py' -v > ab-output/tests-ab.log 2>&1
+          node --test key/refresh.test.mjs > ab-output/tests-key.log 2>&1
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          repository: Floppa2003/key-privileges
+          run-id: '36347254103'
+          artifact-ids: '10941528710'
+          github-token: ${{ github.token }}
+          path: sources/resolution
+          merge-multiple: true
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          repository: Floppa2003/key-privileges
+          run-id: '36427745001'
+          artifact-ids: '10972359157'
+          github-token: ${{ github.token }}
+          path: sources/expanded-one
+          merge-multiple: true
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          repository: Floppa2003/key-privileges
+          run-id: '36427745001'
+          artifact-ids: '10971774866'
+          github-token: ${{ github.token }}
+          path: sources/expanded-two
+          merge-multiple: true
+      - name: Install same pinned local model
+        run: |
+          export PYTHONPATH="$GITHUB_WORKSPACE/loyalty/experiments/local_visual"
+          bash loyalty/experiments/resolution/setup.sh > ab-output/setup.log 2>&1
+      - name: Paired old and defined prompts with identical evidence
+        run: |
+          set -euo pipefail
+          loyalty/experiments/resolution/.venv/bin/python loyalty/experiments/prompt_ab/prompt_ab.py --execute --source sources --out ab-output/results --ollama "$GITHUB_WORKSPACE/loyalty/experiments/resolution/.tools/ollama/bin/ollama" --cases ${{ matrix.cases }} > ab-output/inference.log 2>&1
+      - name: Preserve checksums and runtime diagnostics
+        if: always()
+        run: |
+          if test -d loyalty/experiments/resolution/setup-logs; then cp -r loyalty/experiments/resolution/setup-logs ab-output/; fi
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          root=Path('ab-output')
+          hashes={str(p.relative_to(root)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(root.rglob('*')) if p.is_file()}
+          (root/'SHA256SUMS.json').write_text(json.dumps(hashes,indent=2))
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: qwen-prompt-ab-${{ matrix.shard }}-${{ github.run_id }}
+          path: ab-output/
+          retention-days: 7
