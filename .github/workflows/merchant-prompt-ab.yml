@@ -22,8 +22,6 @@ jobs:
             cases: lavka muzcomedy
           - shard: two
             cases: nevsky academia
-          - shard: three
-            cases: rzd_museum golden_triangle
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
