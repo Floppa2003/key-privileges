@@ -12,11 +12,11 @@ import run_cpu as old
 import benchmark as runtime
 
 
-def with_prompt(request: dict, variant: str) -> dict:
+def with_prompt(request: dict, variant: str, candidate_path: Path | None = None) -> dict:
     if variant not in ('old','defined'):raise ValueError('unknown_prompt_variant')
     result=copy.deepcopy(request)
     if variant=='defined':
-        result['messages'][0]['content']=(HERE/'defined_prompt.txt').read_text(encoding='utf-8')
+        result['messages'][0]['content']=(candidate_path or HERE/'defined_prompt.txt').read_text(encoding='utf-8')
     return result
 
 
@@ -53,8 +53,12 @@ def main() -> int:
     p.add_argument('--cases',nargs='+',required=True)
     p.add_argument('--execute',action='store_true')
     p.add_argument('--ollama',type=Path)
+    p.add_argument('--plan',type=Path,default=HERE/'prompt-ab-plan.json')
+    p.add_argument('--candidate-prompt',type=Path,default=HERE/'defined_prompt.txt')
+    p.add_argument('--variants',nargs='+',choices=['old','defined'],default=['old','defined'])
     a=p.parse_args()
-    plan=json.loads((HERE/'prompt-ab-plan.json').read_text(encoding='utf-8'))
+    plan=json.loads(a.plan.read_text(encoding='utf-8'))
+    if len(set(a.variants)) != len(a.variants):p.error('duplicate_variant')
     specs={c['id']:c for c in plan['cases']}
     if len(set(a.cases))!=len(a.cases) or any(c not in specs for c in a.cases):p.error('unknown_or_duplicate_case')
     if a.out.exists():p.error('output_exists')
@@ -71,7 +75,8 @@ def main() -> int:
             (folder/f'page-{i}.png').write_bytes(checked_bytes(a.source,name,spec['sha256'][name]))
         (folder/'visible-text.txt').write_bytes(checked_bytes(a.source,spec['text'],spec['sha256'][spec['text']]))
         for variant in spec['order']:
-            out=folder/variant;out.mkdir();payload=with_prompt(request,variant)
+            if variant not in a.variants:continue
+            out=folder/variant;out.mkdir();payload=with_prompt(request,variant,a.candidate_prompt)
             brief=copy.deepcopy(payload);brief['messages'][-1].pop('images')
             old.save(out/'request-without-image-bytes.json',brief)
             row={'case':case,'variant':variant,'publication_allowed':False,'status':'prepared'}
@@ -90,6 +95,6 @@ def main() -> int:
             old.save(a.out/'summary.json',{'publication_allowed':False,'attempts':rows})
             print(json.dumps(row,ensure_ascii=False),flush=True)
     expected='completed' if a.execute else 'prepared'
-    return 0 if len(rows)==2*len(a.cases) and all(r['status']==expected for r in rows) else 2
+    return 0 if len(rows)==len(a.variants)*len(a.cases) and all(r['status']==expected for r in rows) else 2
 
 if __name__=='__main__':raise SystemExit(main())
