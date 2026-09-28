@@ -1,8 +1,6 @@
 name: Expanded Qwen 1024px - remaining public documents
 on:
-  push:
-    branches: [loyalty/general-merchant-research-20260925]
-    paths: [.github/workflows/merchant-expanded-1024.yml]
+  workflow_dispatch:
 permissions:
   contents: read
   actions: read
