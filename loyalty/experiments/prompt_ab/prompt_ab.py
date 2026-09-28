@@ -12,11 +12,20 @@ import run_cpu as old
 import benchmark as runtime
 
 
-def with_prompt(request: dict, variant: str, candidate_path: Path | None = None) -> dict:
+def with_prompt(request: dict, variant: str, candidate_path: Path | None = None,
+                candidate_schema: dict | None = None) -> dict:
     if variant not in ('old','defined'):raise ValueError('unknown_prompt_variant')
     result=copy.deepcopy(request)
     if variant=='defined':
         result['messages'][0]['content']=(candidate_path or HERE/'defined_prompt.txt').read_text(encoding='utf-8')
+        if candidate_schema is not None:
+            old.jsonschema.Draft202012Validator.check_schema(candidate_schema)
+            marker='\nСхема:\n'+json.dumps(result['format'],ensure_ascii=False)+'\nВсе изображения'
+            content=result['messages'][-1]['content']
+            if marker not in content:raise ValueError('embedded_schema_mismatch')
+            replacement='\nСхема:\n'+json.dumps(candidate_schema,ensure_ascii=False)+'\nВсе изображения'
+            result['messages'][-1]['content']=content.replace(marker,replacement,1)
+            result['format']=copy.deepcopy(candidate_schema)
     return result
 
 
@@ -55,8 +64,10 @@ def main() -> int:
     p.add_argument('--ollama',type=Path)
     p.add_argument('--plan',type=Path,default=HERE/'prompt-ab-plan.json')
     p.add_argument('--candidate-prompt',type=Path,default=HERE/'defined_prompt.txt')
+    p.add_argument('--candidate-schema',type=Path)
     p.add_argument('--variants',nargs='+',choices=['old','defined'],default=['old','defined'])
     a=p.parse_args()
+    schema=json.loads(a.candidate_schema.read_text(encoding='utf-8')) if a.candidate_schema else None
     plan=json.loads(a.plan.read_text(encoding='utf-8'))
     if len(set(a.variants)) != len(a.variants):p.error('duplicate_variant')
     specs={c['id']:c for c in plan['cases']}
@@ -76,7 +87,7 @@ def main() -> int:
         (folder/'visible-text.txt').write_bytes(checked_bytes(a.source,spec['text'],spec['sha256'][spec['text']]))
         for variant in spec['order']:
             if variant not in a.variants:continue
-            out=folder/variant;out.mkdir();payload=with_prompt(request,variant,a.candidate_prompt)
+            out=folder/variant;out.mkdir();payload=with_prompt(request,variant,a.candidate_prompt,schema)
             brief=copy.deepcopy(payload);brief['messages'][-1].pop('images')
             old.save(out/'request-without-image-bytes.json',brief)
             row={'case':case,'variant':variant,'publication_allowed':False,'status':'prepared'}
