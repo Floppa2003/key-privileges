@@ -27,6 +27,7 @@ jobs:
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
           mkdir -p regression-output
           git rev-parse HEAD > regression-output/commit.txt
+          export PYTHONPATH="$GITHUB_WORKSPACE/loyalty/experiments/local_visual"
           python -m pip install -r loyalty/requirements.txt Pillow==12.3.0 PyMuPDF==1.26.7 jsonschema==4.26.0 psutil==7.0.0
           python -m unittest discover -s loyalty/tests -v > regression-output/existing.log 2>&1
           python -m unittest discover -s loyalty/experiments/prompt_ab -p 'test_*.py' -v > regression-output/prompt.log 2>&1
