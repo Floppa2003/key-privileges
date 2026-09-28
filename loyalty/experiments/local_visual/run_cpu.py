@@ -48,10 +48,10 @@ def payload(target, text, images):
         'images':[base64.b64encode(i).decode('ascii') for i in images]}]}
 
 
-def parse_response(data):
+def parse_response(data, schema=None):
     if data.get('done') is not True or data.get('done_reason')!='stop':raise ValueError('incomplete_generation')
     try:
-        value=json.loads(data['message']['content']);jsonschema.validate(value,SCHEMA)
+        value=json.loads(data['message']['content']);jsonschema.validate(value,SCHEMA if schema is None else schema)
         if value['has_offer']!=bool(value['offers']):raise ValueError('offer_state_mismatch')
         return value
     except (KeyError,TypeError,json.JSONDecodeError,jsonschema.ValidationError) as exc:
@@ -111,7 +111,7 @@ def infer(client, request, out, pid):
         for key in ('model','done_reason','total_duration','load_duration','prompt_eval_count',
                     'prompt_eval_duration','eval_count','eval_duration'):
             result['returned_'+key]=data.get(key)
-        parsed=parse_response(data);save(out/'extracted.json',parsed);result['schema_valid']=True
+        parsed=parse_response(data, schema=request['format']);save(out/'extracted.json',parsed);result['schema_valid']=True
         loaded=client.get(BASE+'/api/ps',timeout=5);loaded.raise_for_status()
         save(out/'loaded-models.json',loaded.json())
         result['vram_bytes']=[m.get('size_vram') for m in loaded.json().get('models',[])]
