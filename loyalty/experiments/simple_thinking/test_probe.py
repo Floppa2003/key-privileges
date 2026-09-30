@@ -36,7 +36,7 @@ class ProbeTests(unittest.TestCase):
         request = probe.description_request(self.frozen, self.target, self.text, True)
         result = probe.structure_request(request, self.target, '  Неправленное описание.\n', {'type': 'object'})
         self.assertEqual(json.loads(result['messages'][1]['content']),
-                         {'target': self.target, 'description': '  Неправленное описание.\n'})
+                         {'target': self.target, 'description': '  Неправленное описание.\n', 'schema': {'type': 'object'}})
         self.assertIs(result['think'], False)
         self.assertNotIn('images', result['messages'][1])
         self.assertEqual(result['format'], {'type': 'object'})

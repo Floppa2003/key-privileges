@@ -48,7 +48,17 @@ def structure_request(description_req: dict, target: dict, description: str, sch
     request['messages'] = [{'role': 'system', 'content': STRUCTURE},
                            {'role': 'user', 'content': json.dumps(
                                {'target': target, 'description': description}, ensure_ascii=False)}]
-    return request
+    return with_visible_schema(request)
+
+
+def with_visible_schema(request: dict) -> dict:
+    result = copy.deepcopy(request)
+    content = json.loads(result["messages"][-1]["content"])
+    if "schema" in content and content["schema"] != result["format"]:
+        raise ValueError("prompt_schema_mismatch")
+    content["schema"] = copy.deepcopy(result["format"])
+    result["messages"][-1]["content"] = json.dumps(content, ensure_ascii=False)
+    return result
 
 
 def parse_answer(response: dict, schema: dict | None):
@@ -60,14 +70,14 @@ def parse_answer(response: dict, schema: dict | None):
     return content if schema is None else common.parse_response(response, schema)
 
 
-def infer(request: dict, binary: Path, out: Path) -> dict:
+def infer(request: dict, binary: Path, out: Path, *, max_seconds: int = 900) -> dict:
     out.mkdir()
     brief = copy.deepcopy(request)
     brief['messages'][-1].pop('images', None)
     common.save(out / 'request.json', brief)
     row = {'status': 'failed', 'requested_think': request['think'], 'publication_allowed': False,
            'input_kind': 'original_pages_and_text' if 'images' in request['messages'][-1] else 'model_description',
-           'max_seconds': 900, 'max_output_tokens': request['options']['num_predict']}
+           'max_seconds': max_seconds, 'max_output_tokens': request['options']['num_predict']}
     samples = []
     done = threading.Event()
     sampler = None
@@ -101,7 +111,7 @@ def infer(request: dict, binary: Path, out: Path) -> dict:
             sampler.start()
             start = time.monotonic()
             try:
-                response = server.client.post(runtime.BASE + '/api/chat', json=request, timeout=(5, 900))
+                response = server.client.post(runtime.BASE + '/api/chat', json=request, timeout=(5, max_seconds))
                 row['seconds'] = time.monotonic() - start
                 row['http_status'] = response.status_code
                 (out / 'response.json').write_bytes(response.content)
