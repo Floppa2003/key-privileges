@@ -4,7 +4,7 @@
   "properties": {
     "has_offer": {
       "type": "boolean",
-      "description": "True only when the source states a concrete benefit for the target loyalty programme at the target partner."
+      "description": "Есть ли в источнике конкретная выгода целевой программы у партнёра."
     },
     "offers": {
       "type": "array",
@@ -21,74 +21,74 @@
               "gift",
               "other"
             ],
-            "description": "Kind of benefit: discount, points, cashback, gift, or other."
+            "description": "Тип выгоды."
           },
           "value": {
             "type": [
               "number",
               "null"
             ],
-            "description": "Numeric amount of the benefit when explicitly published; otherwise null. Do not infer a missing percentage or amount."
+            "description": "Опубликованная числовая величина выгоды; если не указана — null."
           },
           "unit": {
             "type": [
               "string",
               "null"
             ],
-            "description": "Unit corresponding to value, such as %, RUB, or points; null when value has no published unit."
+            "description": "Единица величины value; если не указана — null."
           },
           "basis": {
             "type": [
               "string",
               "null"
             ],
-            "description": "What value is applied to or what earns it, e.g. ticket price or each night. Not a user action and not an accrual deadline."
+            "description": "К чему применяется выгода или за что она начисляется. Не действие пользователя и не срок начисления."
           },
           "audience": {
             "type": "string",
-            "description": "Who is eligible for this target-programme offer, including membership/card status and published tier or segment. Do not broaden to all customers."
+            "description": "Кто имеет право на предложение целевой программы."
           },
           "restrictions": {
             "type": "array",
             "items": {
               "type": "string"
             },
-            "description": "Published scope, limits, exclusions, eligible products/services/locations/tariffs, combining rules, minimums and other conditions. Do not put user actions or accrual timing here."
+            "description": "Опубликованные область действия, лимиты, исключения и прочие условия целевого предложения. Не действия пользователя."
           },
           "redemption": {
             "type": "array",
             "items": {
               "type": "string"
             },
-            "description": "Only published actions the user must or may take to obtain the benefit, such as buy at a cashier, show a card, enter a member number in a named field, or use a promo code. Do not put the purpose of points here."
+            "description": "Только действия пользователя, прямо указанные внутри условий целевой программы для получения выгоды."
           },
           "promo_code": {
             "type": [
               "string",
               "null"
             ],
-            "description": "Literal published promo code only. A loyalty member number, card number or account number is not a promo code."
+            "description": "Только буквальный опубликованный промокод; номер участника не является промокодом."
           },
           "valid_until": {
             "type": [
               "string",
               "null"
             ],
-            "description": "Explicit end date or end condition of this offer only. Do not use the evaluation date, publication date, booking deadline, or accrual deadline."
+            "description": "Только опубликованный срок окончания целевого предложения; не дата проверки, публикации или начисления."
           },
           "accrual_timing": {
             "type": [
               "string",
               "null"
             ],
-            "description": "When points/cashback/other accrued benefit will be credited relative to an event, preserving any published duration, e.g. within 45 days after checkout. Not the earning basis."
+            "description": "Когда начисляемая выгода поступит относительно события; не база начисления."
           },
           "evidence": {
             "type": "array",
             "items": {
               "type": "string"
             },
-            "description": "Short verbatim quotations from the target programme section that support the benefit and material conditions. Never quote neighbouring programmes as evidence."
+            "description": "Короткие дословные цитаты только из условий целевой программы, подтверждающие выгоду и существенные условия."
           },
           "practical_advice": {
             "type": "array",
@@ -112,7 +112,7 @@
                 "basis"
               ]
             },
-            "description": "Optional low-risk practical inference not stated as a published condition. Keep empty when no separate advice is useful; never duplicate redemption or invent mandatory requirements."
+            "description": "Необязательный практический вывод, которого нет в опубликованных условиях; не дублировать redemption."
           }
         },
         "required": [
@@ -130,14 +130,14 @@
           "practical_advice"
         ]
       },
-      "description": "Offers belonging only to the target programme. Do not include neighbouring programmes or general concessions."
+      "description": "Только предложения целевой программы; не включать соседние программы и общие льготы."
     },
     "unknowns": {
       "type": "array",
       "items": {
         "type": "string"
       },
-      "description": "Only material facts about the target offer that are genuinely unknown or ambiguous in the source. Do not invent doubts about facts the source states clearly."
+      "description": "Только действительно неизвестные или неоднозначные существенные параметры целевого предложения."
     }
   },
   "required": [
