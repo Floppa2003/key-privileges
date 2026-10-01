@@ -1,0 +1,148 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "has_offer": {
+      "type": "boolean",
+      "description": "True only when the source states a concrete benefit for the target loyalty programme at the target partner."
+    },
+    "offers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "benefit_kind": {
+            "type": "string",
+            "enum": [
+              "discount",
+              "points",
+              "cashback",
+              "gift",
+              "other"
+            ],
+            "description": "Kind of benefit: discount, points, cashback, gift, or other."
+          },
+          "value": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "description": "Numeric amount of the benefit when explicitly published; otherwise null. Do not infer a missing percentage or amount."
+          },
+          "unit": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Unit corresponding to value, such as %, RUB, or points; null when value has no published unit."
+          },
+          "basis": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "What value is applied to or what earns it, e.g. ticket price or each night. Not a user action and not an accrual deadline."
+          },
+          "audience": {
+            "type": "string",
+            "description": "Who is eligible for this target-programme offer, including membership/card status and published tier or segment. Do not broaden to all customers."
+          },
+          "restrictions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Published scope, limits, exclusions, eligible products/services/locations/tariffs, combining rules, minimums and other conditions. Do not put user actions or accrual timing here."
+          },
+          "redemption": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Only published actions the user must or may take to obtain the benefit, such as buy at a cashier, show a card, enter a member number in a named field, or use a promo code. Do not put the purpose of points here."
+          },
+          "promo_code": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Literal published promo code only. A loyalty member number, card number or account number is not a promo code."
+          },
+          "valid_until": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Explicit end date or end condition of this offer only. Do not use the evaluation date, publication date, booking deadline, or accrual deadline."
+          },
+          "accrual_timing": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "When points/cashback/other accrued benefit will be credited relative to an event, preserving any published duration, e.g. within 45 days after checkout. Not the earning basis."
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Short verbatim quotations from the target programme section that support the benefit and material conditions. Never quote neighbouring programmes as evidence."
+          },
+          "practical_advice": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "text": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "basis": {
+                  "type": "string",
+                  "enum": [
+                    "inference"
+                  ]
+                }
+              },
+              "required": [
+                "text",
+                "basis"
+              ]
+            },
+            "description": "Optional low-risk practical inference not stated as a published condition. Keep empty when no separate advice is useful; never duplicate redemption or invent mandatory requirements."
+          }
+        },
+        "required": [
+          "benefit_kind",
+          "value",
+          "unit",
+          "basis",
+          "audience",
+          "restrictions",
+          "redemption",
+          "promo_code",
+          "valid_until",
+          "accrual_timing",
+          "evidence",
+          "practical_advice"
+        ]
+      },
+      "description": "Offers belonging only to the target programme. Do not include neighbouring programmes or general concessions."
+    },
+    "unknowns": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Only material facts about the target offer that are genuinely unknown or ambiguous in the source. Do not invent doubts about facts the source states clearly."
+    }
+  },
+  "required": [
+    "has_offer",
+    "offers",
+    "unknowns"
+  ]
+}
