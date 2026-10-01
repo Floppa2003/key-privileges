@@ -4,7 +4,7 @@ One model call per frozen document. No intermediate description, no Jev, no repa
 Experimental only; never publishes.
 """
 from __future__ import annotations
-import argparse, copy, json, sys
+import argparse, copy, json, os, sys
 import jsonschema
 from pathlib import Path
 
@@ -23,6 +23,7 @@ how_to_get — только действие пользователя для п�
 
 def build_request(frozen: dict, target: dict, text: str, schema: dict) -> dict:
     request = copy.deepcopy(frozen)
+    request["model"] = os.environ.get("DIRECT_MODEL", request["model"])
     request["think"] = True
     request["format"] = copy.deepcopy(schema)
     request["options"]["num_predict"] = 8192
