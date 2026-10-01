@@ -49,10 +49,10 @@ jobs:
       max-parallel: 4
       matrix:
         include:
-          - case: muzcomedy
-            artifact: '11092173951'
-          - case: nevsky
-            artifact: '11092462751'
+          - case: rzd_museum
+            artifact: '11092615920'
+          - case: lavka
+            artifact: '11092032661'
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
