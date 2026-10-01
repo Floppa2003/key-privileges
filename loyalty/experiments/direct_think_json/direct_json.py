@@ -4,7 +4,7 @@ One model call per frozen document. No intermediate description, no Jev, no repa
 Experimental only; never publishes.
 """
 from __future__ import annotations
-import argparse, copy, json, sys
+import argparse, copy, json, sys\nimport jsonschema
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -52,7 +52,13 @@ def main() -> int:
     frozen = frozen_io.load_request(a.source, spec)
     target = json.loads(frozen["messages"][-1]["content"].split("\n", 1)[0])
     text = frozen_io.checked_bytes(a.source, spec["text"], spec["sha256"][spec["text"]]).decode("utf-8")
-    schema = json.loads((HERE.parent / "prompt_ab" / "practical_schema.json").read_text())
+    legacy_schema = json.loads((HERE.parent / "prompt_ab" / "practical_schema.json").read_text())
+    schema = copy.deepcopy(legacy_schema)
+    offer_schema = schema["properties"]["offers"]["items"]
+    redemption_schema = offer_schema["properties"].pop("redemption")
+    redemption_schema["description"] = "Что пользователь должен или может сделать, чтобы получить эту выгоду. Не на что потом потратить баллы."
+    offer_schema["properties"]["how_to_get"] = redemption_schema
+    offer_schema["required"] = ["how_to_get" if x == "redemption" else x for x in offer_schema["required"]]
 
     a.out.mkdir(parents=True)
     common.save(a.out / "frozen-input.json", spec)
@@ -64,10 +70,18 @@ def main() -> int:
 
     request = build_request(frozen, target, text, schema)
     result = infer(request, a.ollama.resolve(), a.out / "direct", max_seconds=1800)
-    result.update(case=a.case, stage="direct_json_think_true", publication_allowed=False)
+    result.update(case=a.case, stage="direct_json_think_true_clear_field_name", publication_allowed=False)
+    if result.get("status") == "completed" and result.get("schema_valid"):
+        raw = json.loads((a.out / "direct" / "extracted.json").read_text())
+        legacy = copy.deepcopy(raw)
+        for offer in legacy["offers"]:
+            offer["redemption"] = offer.pop("how_to_get")
+        jsonschema.validate(legacy, legacy_schema)
+        common.save(a.out / "legacy-extracted.json", legacy)
+        result["legacy_schema_valid"] = True
     common.save(a.out / "summary.json", result)
     print(json.dumps(result, ensure_ascii=False), flush=True)
-    return 0 if result.get("status") == "completed" and result.get("schema_valid") else 2
+    return 0 if result.get("status") == "completed" and result.get("schema_valid") and result.get("legacy_schema_valid") else 2
 
 
 if __name__ == "__main__":
