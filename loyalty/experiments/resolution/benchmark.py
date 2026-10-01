@@ -148,21 +148,25 @@ class Server:
         self.client.close()
 
 
-def check_runtime(server: Server) -> dict:
+def check_runtime(server: Server, model: str | None = None) -> dict:
     def get(path):
         response = server.client.get(BASE + path, timeout=10)
         response.raise_for_status()
         return response.json()
-    local = old.local_model(get('/api/tags'))
-    if local.get('digest', '').removeprefix('sha256:') != DIGEST:
+    model = model or old.MODEL
+    matches = [m for m in get('/api/tags').get('models', []) if m.get('name') == model]
+    if len(matches) != 1 or any(matches[0].get(k) for k in ('remote_model', 'remote_host')):
+        raise ValueError('local_weights_not_confirmed')
+    local = matches[0]
+    if model == old.MODEL and local.get('digest', '').removeprefix('sha256:') != DIGEST:
         raise ValueError('model_digest_mismatch; do_not_silently_change_the_model')
     if get('/api/ps').get('models'):
         raise ValueError('fresh_server_already_has_loaded_model')
-    response = server.client.post(BASE + '/api/show', json={'model': old.MODEL}, timeout=10)
+    response = server.client.post(BASE + '/api/show', json={'model': model}, timeout=10)
     response.raise_for_status()
     if 'vision' not in response.json().get('capabilities', []):
         raise ValueError('vision_not_supported')
-    return {'version': VERSION, 'local_model': local, 'endpoint': BASE,
+    return {'version': VERSION, 'model': model, 'local_model': local, 'endpoint': BASE,
             'fresh_process_tree': True, 'cloud_disabled_by_environment': True,
             'publication_allowed': False}
 
