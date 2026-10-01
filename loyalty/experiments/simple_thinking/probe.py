@@ -85,7 +85,8 @@ def infer(request: dict, binary: Path, out: Path, *, max_seconds: int = 900) -> 
     try:
         with runtime.Server(binary, out / 'ollama.log') as server:
             common.save(out / 'runtime.json', runtime.check_runtime(server))
-            requested_model = request.get('model', common.MODEL)\n            show = server.client.post(runtime.BASE + '/api/show', json={'model': requested_model}, timeout=10)
+            requested_model = request.get('model', common.MODEL)
+            show = server.client.post(runtime.BASE + '/api/show', json={'model': requested_model}, timeout=10)
             show.raise_for_status()
             common.save(out / 'model-show.json', show.json())
             if request['think'] and 'thinking' not in show.json().get('capabilities', []):
