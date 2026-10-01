@@ -13,7 +13,7 @@ permissions:
   actions: read
 concurrency:
   group: merchant-direct-think-json
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   regression:
