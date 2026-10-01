@@ -52,7 +52,7 @@ def main() -> int:
     frozen = frozen_io.load_request(a.source, spec)
     target = json.loads(frozen["messages"][-1]["content"].split("\n", 1)[0])
     text = frozen_io.checked_bytes(a.source, spec["text"], spec["sha256"][spec["text"]]).decode("utf-8")
-    schema = json.loads((HERE / "described_schema.json").read_text())
+    schema = json.loads((HERE.parent / "prompt_ab" / "practical_schema.json").read_text())
 
     a.out.mkdir(parents=True)
     common.save(a.out / "frozen-input.json", spec)
