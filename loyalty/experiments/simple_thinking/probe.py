@@ -84,8 +84,8 @@ def infer(request: dict, binary: Path, out: Path, *, max_seconds: int = 900) -> 
     start = None
     try:
         with runtime.Server(binary, out / 'ollama.log') as server:
-            common.save(out / 'runtime.json', runtime.check_runtime(server))
             requested_model = request.get('model', common.MODEL)
+            common.save(out / 'runtime.json', runtime.check_runtime(server, model=requested_model))
             show = server.client.post(runtime.BASE + '/api/show', json={'model': requested_model}, timeout=10)
             show.raise_for_status()
             common.save(out / 'model-show.json', show.json())
@@ -125,7 +125,7 @@ def infer(request: dict, binary: Path, out: Path, *, max_seconds: int = 900) -> 
                 content = data.get('message', {}).get('content') or ''
                 (out / 'answer.txt').write_text(content, encoding='utf-8')
                 parsed = parse_answer(data, request.get('format'))
-                if data.get('model') != common.MODEL:
+                if data.get('model') != requested_model:
                     raise ValueError('returned_model_mismatch')
                 if request['think'] and not row['thinking_chars']:
                     raise ValueError('requested_thinking_not_observed')
