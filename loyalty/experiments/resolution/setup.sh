@@ -25,17 +25,19 @@ mkdir -p .tools/ollama
 tar --zstd -xf "$archive" -C .tools/ollama
 .venv/bin/python - <<'PY'
 from pathlib import Path
+import os
 import subprocess
 import benchmark as b
 binary=b.ROOT/'.tools/ollama/bin/ollama'
 with b.Server(binary,b.ROOT/'setup-logs/ollama.log') as server:
     response=server.client.get(b.BASE+'/api/tags',timeout=10)
     response.raise_for_status()
-    matches=[m for m in response.json().get('models',[]) if m.get('name')==b.old.MODEL]
+    model=os.environ.get('OLLAMA_MODEL', b.old.MODEL)
+    matches=[m for m in response.json().get('models',[]) if m.get('name')==model]
     if not matches:
         with (b.ROOT/'setup-logs/model-pull.log').open('wb') as log:
-            subprocess.run([str(binary),'pull',b.old.MODEL],env=b.process_env(),
-                           stdout=log,stderr=subprocess.STDOUT,check=True,timeout=900)
-    b.old.save(b.ROOT/'setup-logs/runtime.json',b.check_runtime(server))
+            subprocess.run([str(binary),'pull',model],env=b.process_env(),
+                           stdout=log,stderr=subprocess.STDOUT,check=True,timeout=1200)
+    b.old.save(b.ROOT/'setup-logs/runtime.json',b.check_runtime(server, model=model))
 print('Setup verified. No document inference performed.')
 PY
