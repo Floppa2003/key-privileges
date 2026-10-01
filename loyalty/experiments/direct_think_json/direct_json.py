@@ -4,7 +4,8 @@ One model call per frozen document. No intermediate description, no Jev, no repa
 Experimental only; never publishes.
 """
 from __future__ import annotations
-import argparse, copy, json, sys\nimport jsonschema
+import argparse, copy, json, sys
+import jsonschema
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
