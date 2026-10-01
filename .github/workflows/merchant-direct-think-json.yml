@@ -7,6 +7,7 @@ on:
     paths:
       - .github/workflows/merchant-direct-think-json.yml
       - loyalty/experiments/direct_think_json/direct_json.py
+      - loyalty/experiments/direct_think_json/described_schema.json
 permissions:
   contents: read
   actions: read
