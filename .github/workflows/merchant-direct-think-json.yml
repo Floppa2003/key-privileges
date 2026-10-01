@@ -1,4 +1,5 @@
 name: Qwen direct think JSON diagnostic v2
+# described-schema retry
 # One-stage: full evidence + think=true -> JSON
 on:
   push:
