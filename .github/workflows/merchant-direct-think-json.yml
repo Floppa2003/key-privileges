@@ -1,4 +1,5 @@
 name: Qwen direct think JSON diagnostic v2
+# One-stage: full evidence + think=true -> JSON
 on:
   push:
     branches: [loyalty/general-merchant-research-20260925]
