@@ -1,8 +1,10 @@
-name: Qwen direct think JSON diagnostic
+name: Qwen direct think JSON diagnostic v2
 on:
   push:
     branches: [loyalty/general-merchant-research-20260925]
-    paths: [.github/workflows/merchant-direct-think-json.yml]
+    paths:
+      - .github/workflows/merchant-direct-think-json.yml
+      - loyalty/experiments/direct_think_json/direct_json.py
 permissions:
   contents: read
   actions: read
