@@ -1,6 +1,9 @@
 name: Merchant visual batch - manual capture only
 on:
   workflow_dispatch:
+  push:
+    branches: [loyalty/general-merchant-research-20260925]
+    paths: [.github/workflows/merchant-visual-batch.yml]
 permissions:
   contents: read
 concurrency:
@@ -41,4 +44,4 @@ jobs:
         with:
           name: merchant-visual-batch-${{ github.run_id }}
           path: visual-batch/
-          retention-days: 3
+          retention-days: 14
