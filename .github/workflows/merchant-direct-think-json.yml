@@ -1,4 +1,5 @@
 name: Qwen direct think JSON diagnostic v2
+# 9B runtime-model retry
 # described-schema retry
 # One-stage: full evidence + think=true -> JSON
 on:
