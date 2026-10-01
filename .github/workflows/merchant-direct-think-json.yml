@@ -39,7 +39,10 @@ jobs:
   direct:
     needs: regression
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
+    timeout-minutes: 75
+    env:
+      OLLAMA_MODEL: qwen3.5:9b-q4_K_M
+      DIRECT_MODEL: qwen3.5:9b-q4_K_M
     strategy:
       fail-fast: false
       max-parallel: 4
