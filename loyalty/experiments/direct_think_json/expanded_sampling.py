@@ -106,7 +106,12 @@ def load_case(source: Path, case: str, out: Path) -> tuple[dict, dict, dict]:
         "keep_alive": "5m",
         "format": schema,
         "options": {
-            "temperature": 1.0,\n            "top_p": 0.95,\n            "top_k": 20,\n            "min_p": 0.0,\n            "presence_penalty": 1.5,\n            "repeat_penalty": 1.0,
+            "temperature": 1.0,
+            "top_p": 0.95,
+            "top_k": 20,
+            "min_p": 0.0,
+            "presence_penalty": 1.5,
+            "repeat_penalty": 1.0,
             "seed": 1,
             "num_ctx": 32768,
             "num_predict": 8192,
