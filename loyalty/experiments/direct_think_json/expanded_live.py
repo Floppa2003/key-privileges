@@ -37,6 +37,8 @@ def model_schema(legacy: dict) -> dict:
     offer = schema["properties"]["offers"]["items"]
     field = offer["properties"].pop("redemption")
     field["description"] = "Что пользователь должен или может сделать, чтобы получить эту выгоду. Не на что потом потратить баллы."
+    offer["properties"]["value"]["description"] = "Числовая величина основной выгоды. Для относительного увеличения вида «на N% больше баллов/кэшбэка» укажи N."
+    offer["properties"]["unit"]["description"] = "Единица value. Для относительного увеличения в процентах используй «%»; для фиксированных баллов — «баллов»."
     offer["properties"]["how_to_get"] = field
     offer["required"] = ["how_to_get" if x == "redemption" else x for x in offer["required"]]
     return schema
@@ -105,7 +107,7 @@ def load_case(source: Path, case: str, out: Path) -> tuple[dict, dict, dict]:
         "options": {
             "temperature": 0,
             "seed": 1,
-            "num_ctx": 16384,
+            "num_ctx": 32768,
             "num_predict": 8192,
             "num_thread": 4,
             "num_gpu": 0,
@@ -151,7 +153,7 @@ def main() -> int:
     brief["messages"][-1].pop("images")
     common.save(a.out / "request-without-images.json", brief)
 
-    result = infer(request, a.ollama.resolve(), a.out / "direct", max_seconds=3600)
+    result = infer(request, a.ollama.resolve(), a.out / "direct", max_seconds=5400)
     result.update(case=a.case, stage="expanded_live_direct_json_think_true_9b", publication_allowed=False)
     if result.get("status") == "completed" and result.get("schema_valid"):
         raw = json.loads((a.out / "direct" / "extracted.json").read_text())
