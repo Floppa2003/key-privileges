@@ -31,6 +31,12 @@ LEGACY_SCHEMA = HERE.parent / "prompt_ab" / "practical_schema.json"
 MAX_IMAGE_EDGE = 1024
 MAX_PAGES = 8
 
+SCHEMA_PROMPT_SUFFIX = """
+SCHEMA уже согласована с инструкцией и содержит все нужные поля, включая how_to_get.
+Не анализируй и не перепроверяй структуру SCHEMA и не обсуждай возможные противоречия в ней.
+Используй SCHEMA как заданный формат; reasoning посвяти только содержанию источника и затем выдай финальный JSON.
+"""
+
 
 def model_schema(legacy: dict) -> dict:
     schema = copy.deepcopy(legacy)
@@ -113,7 +119,7 @@ def load_case(source: Path, case: str, out: Path) -> tuple[dict, dict, dict]:
             "num_gpu": 0,
         },
         "messages": [
-            {"role": "system", "content": SYSTEM},
+            {"role": "system", "content": SYSTEM + SCHEMA_PROMPT_SUFFIX},
             {
                 "role": "user",
                 "content": "TARGET: " + json.dumps(target, ensure_ascii=False)
