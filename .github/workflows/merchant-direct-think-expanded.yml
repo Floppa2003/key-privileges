@@ -9,7 +9,7 @@ permissions:
   contents: read
   actions: read
 concurrency:
-  group: merchant-direct-think-expanded
+  group: merchant-direct-think-expanded-schema-loop
   cancel-in-progress: true
 
 jobs:
