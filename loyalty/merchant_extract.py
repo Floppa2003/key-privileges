@@ -177,6 +177,7 @@ The retry budget bounds admission of new attempts/waits; socket timeouts bound I
                 try:
                     obj = parse_final(data, schema)
                     save(out / 'extracted.json', obj)
+                    result.pop('error', None)
                     result.update(status='completed', schema_valid=True, returned_model=data['modelVersion'],
                                   usage=data.get('usageMetadata'))
                 except (ValueError, KeyError, TypeError, AttributeError) as exc:

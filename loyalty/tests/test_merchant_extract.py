@@ -109,6 +109,7 @@ class DirectGeminiTests(unittest.TestCase):
         clock = Clock(); result = self.infer(transport, clock)
         self.assertEqual(result['status'], 'completed')
         self.assertEqual([a['http_status'] for a in result['attempts']], [503, 200])
+        self.assertNotIn('error', result)
         self.assertEqual(clock.waits, [15])
         self.assertEqual(transport.calls[0][1]['data'], transport.calls[1][1]['data'])
         self.assertEqual(transport.calls[0][0], 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent')
