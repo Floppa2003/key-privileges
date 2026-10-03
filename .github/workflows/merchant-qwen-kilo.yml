@@ -1,10 +1,10 @@
-name: Gemini direct migration checks
+name: Qwen Kilo merchant checks
 on:
   workflow_dispatch:
   push:
     branches: [loyalty/general-merchant-research-20260925]
     paths:
-      - .github/workflows/merchant-gemini-direct.yml
+      - .github/workflows/merchant-qwen-kilo.yml
       - loyalty/merchant_extract.py
       - loyalty/merchant_prompt.txt
       - loyalty/merchant_offer.schema.json
@@ -14,7 +14,7 @@ permissions:
   contents: read
   actions: read
 concurrency:
-  group: merchant-gemini-direct
+  group: merchant-qwen-kilo
   cancel-in-progress: false
 jobs:
   regression:
@@ -48,11 +48,11 @@ jobs:
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
-          name: gemini-direct-regressions-${{ github.run_id }}-${{ github.run_attempt }}
+          name: qwen-kilo-regressions-${{ github.run_id }}-${{ github.run_attempt }}
           path: regression-output/
           retention-days: 14
   smoke:
-    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[gemini-smoke]')
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[qwen-smoke]')
     needs: regression
     runs-on: ubuntu-24.04
     timeout-minutes: 20
@@ -70,8 +70,8 @@ jobs:
           python -m pip install -r loyalty/merchant-requirements.txt
           mkdir -p output/code
           git rev-parse HEAD > output/commit.txt
-          cp loyalty/merchant_extract.py loyalty/merchant_prompt.txt loyalty/merchant_offer.schema.json loyalty/merchant-requirements.txt loyalty/MERCHANT_GEMINI.md loyalty/tests/test_merchant_extract.py output/code/
-          cp .github/workflows/merchant-gemini-direct.yml output/workflow.yml
+          cp loyalty/merchant_extract.py loyalty/merchant_prompt.txt loyalty/merchant_offer.schema.json loyalty/merchant-requirements.txt loyalty/MERCHANT_QWEN.md loyalty/tests/test_merchant_extract.py output/code/
+          cp .github/workflows/merchant-qwen-kilo.yml output/workflow.yml
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
           repository: Floppa2003/key-privileges
@@ -120,13 +120,13 @@ jobs:
               target=json.loads(json.loads(raw)['messages'][-1]['content'].split('\n',1)[0])
               docs.append({'id':case,'target':target,'text':spec['text'],'images':spec['images'],
                   'sha256':{name:spec['sha256'][name] for name in (spec['text'],*spec['images'])}})
-          (root/'gemini-manifest.json').write_text(json.dumps({'documents':docs},ensure_ascii=False,indent=2))
+          (root/'qwen-manifest.json').write_text(json.dumps({'documents':docs},ensure_ascii=False,indent=2))
           Path('output/frozen-manifest.json').write_text(json.dumps({'documents':docs},ensure_ascii=False,indent=2))
           PYCODE
-      - name: Four documents through selected direct Gemini runtime, at most twelve POSTs
+      - name: Four documents through selected Kilo Qwen runtime, one catalog GET and at most twelve POSTs
         env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: python loyalty/merchant_extract.py --manifest sources/gemini-manifest.json --out output/results --execute > output/inference.log 2>&1
+          KILO_API_KEY: ${{ secrets.KILO_API_KEY }}
+        run: python loyalty/merchant_extract.py --manifest sources/qwen-manifest.json --out output/results --execute > output/inference.log 2>&1
       - name: Preserve checksums
         if: always()
         run: |
@@ -140,6 +140,6 @@ jobs:
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
-          name: gemini-direct-${{ github.run_id }}-${{ github.run_attempt }}
+          name: qwen-kilo-${{ github.run_id }}-${{ github.run_attempt }}
           path: output/
           retention-days: 14

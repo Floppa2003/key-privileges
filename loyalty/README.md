@@ -11,7 +11,7 @@ Each record keeps a stable ID, program/partner, benefit, conditions, redemption 
 
 ## Model-based merchant extraction
 
-The selected model-based entrypoint is now `merchant_extract.py` with direct `gemini-3.8-flash`, full prepared PNG/text input and bounded transient HTTP retries. See [Gemini execution and input contract](MERCHANT_GEMINI.md). This review-only stage is separate from the deterministic daily pipeline below; it does not publish to Sheets. Historical Qwen/Kilo comparisons are retained as experiments, not selected defaults.
+The selected model-based entrypoint is `merchant_extract.py` with `qwen/qwen3.8-27b:free` through Kilo, full prepared PNG/text input and bounded transient HTTP retries. See [Qwen execution and input contract](MERCHANT_QWEN.md). An unauthenticated catalog preflight checks the exact free multimodal/structured route before generation; there is no paid or alternate-model fallback. This review-only stage remains separate from the deterministic daily pipeline below and does not publish to Sheets. Previous Gemini/Qwen experiments and their raw results remain historical evidence.
 
 ## Running
 

@@ -1,4 +1,4 @@
-"""Direct Gemini contracts: complete input, fixed model, bounded retry, no repair."""
+"""Kilo Qwen contracts: complete input, fixed model, bounded retry, no repair."""
 import base64
 import copy
 import hashlib
@@ -18,10 +18,17 @@ SCHEMA = {'type': 'object', 'additionalProperties': False, 'properties': {
 EMPTY = {'has_offer': False, 'offers': [], 'unknowns': []}
 
 
-def answer(content=None, finish='STOP', model='gemini-3.8-flash'):
-    return {'modelVersion': model, 'candidates': [{'finishReason': finish,
-            'content': {'parts': [{'text': json.dumps(EMPTY) if content is None else content}]}}],
-            'usageMetadata': {'promptTokenCount': 20, 'candidatesTokenCount': 8}}
+MODEL = 'qwen/qwen3.8-27b:free'
+CATALOG = {'data': [{'id': MODEL, 'isFree': True,
+    'pricing': {'prompt': '0', 'completion': '0'},
+    'architecture': {'input_modalities': ['text', 'image']},
+    'supported_parameters': ['reasoning', 'structured_outputs']}]}
+
+
+def answer(content=None, finish='stop', model=MODEL):
+    return {'model': model, 'choices': [{'index': 0, 'finish_reason': finish,
+            'message': {'role': 'assistant', 'content': json.dumps(EMPTY) if content is None else content}}],
+            'usage': {'prompt_tokens': 20, 'completion_tokens': 8, 'total_tokens': 28, 'cost': 0}}
 
 
 class Response:
@@ -33,9 +40,16 @@ class Response:
 
 class Transport:
     """Only the external HTTP boundary is faked; the request and retry logic are real."""
-    def __init__(self, responses):
+    def __init__(self, responses, catalog=None):
+        self.catalog = Response(data=CATALOG) if catalog is None else catalog
+        self.gets = []
         self.responses = list(responses)
         self.calls = []
+
+    def get(self, url, **kwargs):
+        self.gets.append((url, kwargs))
+        if isinstance(self.catalog, Exception): raise self.catalog
+        return self.catalog
 
     def post(self, url, **kwargs):
         self.calls.append((url, kwargs))
@@ -51,13 +65,12 @@ class Clock:
     def sleep(self, seconds): self.waits.append(seconds); self.t += seconds
 
 
-class DirectGeminiTests(unittest.TestCase):
+class KiloQwenTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.out = Path(self.temp.name) / 'run'
-        self.payload = {'generationConfig': {'responseJsonSchema': SCHEMA},
-                        'contents': [{'parts': [{'text': 'A 10%\nB foreign'}]}]}
+        self.payload = {'model': MODEL, 'stream': False, 'messages': [{'role': 'user', 'content': 'A 10%\nB foreign'}]}
 
     def infer(self, transport, clock=None):
         clock = clock or Clock()
@@ -71,22 +84,23 @@ class DirectGeminiTests(unittest.TestCase):
                                  [b'first', b'second'], SCHEMA, 'exact system')
         self.assertIsInstance(actual, dict)
         self.assertEqual(actual, {
-            'systemInstruction': {'parts': [{'text': 'exact system'}]},
-            'contents': [{'role': 'user', 'parts': [
-                {'text': 'TARGET: ' + json.dumps(target, ensure_ascii=False) + '\nSCHEMA: '
-                 + json.dumps(SCHEMA, ensure_ascii=False) + '\nВсе изображения идут по порядку страниц. Полный текст:\nA 10%\nB foreign\nA continuation'},
-                {'inlineData': {'mimeType': 'image/png', 'data': 'Zmlyc3Q='}},
-                {'inlineData': {'mimeType': 'image/png', 'data': 'c2Vjb25k'}}]}],
-            'generationConfig': {'temperature': 1.0, 'maxOutputTokens': 8192,
-                'thinkingConfig': {'thinkingLevel': 'HIGH', 'includeThoughts': False},
-                'responseMimeType': 'application/json', 'responseJsonSchema': SCHEMA}})
+            'model': MODEL, 'stream': False, 'temperature': 1.0, 'max_tokens': 8192,
+            'reasoning': {'enabled': True, 'effort': 'high'},
+            'messages': [{'role': 'system', 'content': 'exact system'},
+                {'role': 'user', 'content': [
+                    {'type': 'text', 'text': 'TARGET: ' + json.dumps(target, ensure_ascii=False) + '\nSCHEMA: '
+                     + json.dumps(SCHEMA, ensure_ascii=False) + '\nВсе изображения идут по порядку страниц. Полный текст:\nA 10%\nB foreign\nA continuation'},
+                    {'type': 'image_url', 'image_url': {'url': 'data:image/png;base64,Zmlyc3Q='}},
+                    {'type': 'image_url', 'image_url': {'url': 'data:image/png;base64,c2Vjb25k'}}]}],
+            'response_format': {'type': 'json_schema', 'json_schema': {
+                'name': 'loyalty_offer', 'strict': True, 'schema': SCHEMA}}})
 
     def test_completed_json_is_not_changed(self):
         self.assertEqual(m.parse_final(answer(), SCHEMA), EMPTY)
 
     def test_partial_foreign_and_thought_only_outputs_rejected(self):
-        thought = answer(); thought['candidates'][0]['content']['parts'][0]['thought'] = True
-        for data in (answer(finish='MAX_TOKENS'), answer(model='other'), thought, answer('')):
+        thought = answer(''); thought['choices'][0]['message']['reasoning'] = json.dumps(EMPTY)
+        for data in (answer(finish='length'), answer(model='other'), thought, answer('')):
             with self.subTest(data=data):
                 with self.assertRaises(ValueError): m.parse_final(data, SCHEMA)
 
@@ -98,10 +112,11 @@ class DirectGeminiTests(unittest.TestCase):
             with self.subTest(text=text):
                 with self.assertRaises(ValueError): m.parse_final(answer(text), SCHEMA)
 
-    def test_no_model_tools_or_multiple_candidates(self):
-        tool = answer(); tool['candidates'][0]['content']['parts'].append({'functionCall': {'name': 'x'}})
-        many = answer(); many['candidates'] *= 2
-        for data in (tool, many):
+    def test_no_model_tools_refusals_or_multiple_choices(self):
+        tool = answer(); tool['choices'][0]['message']['tool_calls'] = [{'function': {'name': 'x'}}]
+        many = answer(); many['choices'] *= 2
+        refusal = answer(); refusal['choices'][0]['message']['refusal'] = 'not allowed'
+        for data in (tool, many, refusal):
             with self.assertRaises(ValueError): m.parse_final(data, SCHEMA)
 
     def test_transient_retry_reuses_exact_body_and_preserves_both_attempts(self):
@@ -112,8 +127,8 @@ class DirectGeminiTests(unittest.TestCase):
         self.assertNotIn('error', result)
         self.assertEqual(clock.waits, [15])
         self.assertEqual(transport.calls[0][1]['data'], transport.calls[1][1]['data'])
-        self.assertEqual(transport.calls[0][0], 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent')
-        self.assertEqual(transport.calls[0][1]['headers']['x-goog-api-key'], 'TEST_API_SECRET')
+        self.assertEqual(transport.calls[0][0], 'https://api.kilo.ai/api/gateway/chat/completions')
+        self.assertEqual(transport.calls[0][1]['headers']['Authorization'], 'Bearer TEST_API_SECRET')
         self.assertFalse(transport.calls[0][1]['allow_redirects'])
         self.assertTrue((self.out / 'attempt-1/response.json').exists())
         self.assertEqual(json.loads((self.out / 'extracted.json').read_text()), EMPTY)
@@ -197,6 +212,7 @@ class DirectGeminiTests(unittest.TestCase):
             self.assertEqual(m.retry_delay({'Retry-After': value}, {}, now=10), 0)
 
 
+
 class ManifestTests(unittest.TestCase):
     def setUp(self):
         from PIL import Image
@@ -240,17 +256,20 @@ class ManifestTests(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertFalse(http.called)
         summary = json.loads((self.root/'output/summary.json').read_text())
-        self.assertEqual(summary['requested_model'], 'gemini-3.8-flash')
+        self.assertEqual(summary['requested_model'], MODEL)
         self.assertEqual(summary['http_attempts'], 0)
         self.assertFalse(summary['publication_allowed'])
 
-    def test_execute_cli_uses_direct_gemini_and_saves_source_and_result(self):
+    def test_execute_cli_uses_free_kilo_and_saves_source_and_result(self):
         import os
         transport = Transport([Response()]); transport.close = lambda: None
-        with patch.dict(os.environ, {'GEMINI_API_KEY': 'TEST_API_SECRET'}), patch('merchant_extract.requests.Session', return_value=transport):
+        with patch.dict(os.environ, {'KILO_API_KEY': 'TEST_API_SECRET'}), patch('merchant_extract.requests.Session', return_value=transport):
             code = m.main(['--manifest', str(self.manifest), '--out', str(self.root/'output'), '--execute'])
         self.assertEqual(code, 0)
         self.assertEqual(len(transport.calls), 1)
+        self.assertEqual(len(transport.gets), 1)
+        self.assertEqual(transport.gets[0][0], 'https://api.kilo.ai/api/gateway/models')
+        self.assertNotIn('Authorization', transport.gets[0][1].get('headers', {}))
         self.assertEqual((self.root/'output/a/page-1.png').read_bytes(), (self.root/'one.png').read_bytes())
         self.assertEqual(json.loads((self.root/'output/a/direct/extracted.json').read_text()), EMPTY)
         self.assertFalse(any(b'TEST_API_SECRET' in p.read_bytes() for p in (self.root/'output').rglob('*') if p.is_file()))
@@ -259,7 +278,7 @@ class ManifestTests(unittest.TestCase):
         import os
         self.write([self.spec, {**self.spec, 'id': 'b'}, {**self.spec, 'id': 'c'}])
         transport = Transport([Response(), Response(403, {}), Response()]); transport.close = lambda: None
-        with patch.dict(os.environ, {'GEMINI_API_KEY': 'TEST_API_SECRET'}), patch('merchant_extract.requests.Session', return_value=transport), patch('merchant_extract.time.sleep'):
+        with patch.dict(os.environ, {'KILO_API_KEY': 'TEST_API_SECRET'}), patch('merchant_extract.requests.Session', return_value=transport), patch('merchant_extract.time.sleep'):
             code = m.main(['--manifest', str(self.manifest), '--out', str(self.root/'output'), '--execute'])
         self.assertEqual(code, 2)
         self.assertEqual(len(transport.calls), 2)
@@ -267,6 +286,65 @@ class ManifestTests(unittest.TestCase):
         self.assertEqual(summary['completed'], 1)
         self.assertEqual(summary['not_attempted'], ['c'])
         self.assertFalse((self.root/'output/b/direct/extracted.json').exists())
+
+    def test_catalog_unavailable_paid_or_incompatible_never_generates(self):
+        import os
+        variants = [Response(503, {}), Response(data={'data': []})]
+        for patch_model in ({'isFree': False}, {'pricing': {'prompt': '0', 'completion': '0.01'}},
+                            {'pricing': {'prompt': '0', 'completion': 'NaN'}},
+                            {'architecture': {'input_modalities': ['text']}},
+                            {'supported_parameters': ['reasoning']}, {'supported_parameters': ['structured_outputs']}):
+            variants.append(Response(data={'data': [{**CATALOG['data'][0], **patch_model}]}))
+        for index, catalog in enumerate(variants):
+            with self.subTest(index=index):
+                transport = Transport([Response()], catalog=catalog); transport.close = lambda: None
+                out = self.root / f'blocked-{index}'
+                with patch.dict(os.environ, {'KILO_API_KEY': 'TEST_API_SECRET'}), patch('merchant_extract.requests.Session', return_value=transport):
+                    code = m.main(['--manifest', str(self.manifest), '--out', str(out), '--execute'])
+                self.assertEqual(code, 2)
+                self.assertEqual(len(transport.gets), 1)
+                self.assertEqual(transport.calls, [])
+                status = json.loads((out/'summary.json').read_text())
+                self.assertEqual(status['not_attempted'], ['a'])
+                self.assertEqual(status.get('preflight', {}).get('status'), 'blocked')
+
+    def test_catalog_transport_error_is_saved_and_not_retried(self):
+        import os, requests
+        transport = Transport([Response()], catalog=requests.ReadTimeout('unknown'))
+        transport.close = lambda: None
+        out = self.root/'failed-preflight'
+        with patch.dict(os.environ, {'KILO_API_KEY': 'TEST_API_SECRET'}), patch('merchant_extract.requests.Session', return_value=transport):
+            code = m.main(['--manifest', str(self.manifest), '--out', str(out), '--execute'])
+        self.assertEqual(code, 2)
+        self.assertEqual(len(transport.gets), 1)
+        self.assertEqual(transport.calls, [])
+        self.assertEqual(json.loads((out/'preflight/summary.json').read_text())['error_type'], 'ReadTimeout')
+
+
+class KiloSafetyTests(unittest.TestCase):
+    setUp = KiloQwenTests.setUp
+    infer = KiloQwenTests.infer
+    def test_paid_or_other_model_payload_never_sent(self):
+        for model in ('qwen/qwen3.8-27b', 'other', None):
+            transport = Transport([Response()])
+            with self.assertRaisesRegex(ValueError, 'unapproved_request_model'):
+                m.infer({**self.payload, 'model': model}, SCHEMA, self.out, 'TEST_API_SECRET', session=transport)
+            self.assertEqual(transport.calls, [])
+
+    def test_provider_alias_without_free_suffix_is_accepted(self):
+        self.assertEqual(m.parse_final(answer(model='qwen/qwen3.8-27b'), SCHEMA), EMPTY)
+
+    def test_reported_nonzero_cost_stops_batch_without_acceptance(self):
+        data = answer(); data['usage']['cost'] = 0.01
+        result = self.infer(Transport([Response(data=data)]))
+        self.assertEqual(result['status'], 'failed_validation')
+        self.assertEqual(result['error'], 'nonzero_reported_cost')
+        self.assertFalse((self.out/'extracted.json').exists())
+
+    def test_malformed_choices_rejected_as_validation_error(self):
+        for choices in (None, {}, [None], [{'finish_reason': 'stop', 'message': None}]):
+            with self.assertRaises(ValueError):
+                m.parse_final({'model': MODEL, 'choices': choices}, SCHEMA)
 
 
 if __name__ == '__main__': unittest.main()
