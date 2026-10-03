@@ -1,0 +1,148 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "has_offer": {
+      "type": "boolean",
+      "description": "Есть ли в источнике конкретная выгода целевой программы у партнёра."
+    },
+    "offers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "benefit_kind": {
+            "type": "string",
+            "enum": [
+              "discount",
+              "points",
+              "cashback",
+              "gift",
+              "other"
+            ],
+            "description": "Тип выгоды."
+          },
+          "value": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "description": "Опубликованная числовая величина выгоды; если не указана — null."
+          },
+          "unit": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Единица величины value; если не указана — null."
+          },
+          "basis": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "К чему применяется выгода или за что она начисляется. Не действие пользователя и не срок начисления."
+          },
+          "audience": {
+            "type": "string",
+            "description": "Кто имеет право на предложение целевой программы."
+          },
+          "restrictions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Опубликованные область действия, лимиты, исключения и прочие условия целевого предложения. Не действия пользователя."
+          },
+          "redemption": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Только действия пользователя, прямо указанные внутри условий целевой программы для получения выгоды."
+          },
+          "promo_code": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Только буквальный опубликованный промокод; номер участника не является промокодом."
+          },
+          "valid_until": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Только опубликованный срок окончания целевого предложения; не дата проверки, публикации или начисления."
+          },
+          "accrual_timing": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Когда начисляемая выгода поступит относительно события; не база начисления."
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Короткие дословные цитаты только из условий целевой программы, подтверждающие выгоду и существенные условия."
+          },
+          "practical_advice": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "text": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "basis": {
+                  "type": "string",
+                  "enum": [
+                    "inference"
+                  ]
+                }
+              },
+              "required": [
+                "text",
+                "basis"
+              ]
+            },
+            "description": "Необязательный практический вывод, которого нет в опубликованных условиях; не дублировать redemption."
+          }
+        },
+        "required": [
+          "benefit_kind",
+          "value",
+          "unit",
+          "basis",
+          "audience",
+          "restrictions",
+          "redemption",
+          "promo_code",
+          "valid_until",
+          "accrual_timing",
+          "evidence",
+          "practical_advice"
+        ]
+      },
+      "description": "Только предложения целевой программы; не включать соседние программы и общие льготы."
+    },
+    "unknowns": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Только действительно неизвестные или неоднозначные существенные параметры целевого предложения."
+    }
+  },
+  "required": [
+    "has_offer",
+    "offers",
+    "unknowns"
+  ]
+}

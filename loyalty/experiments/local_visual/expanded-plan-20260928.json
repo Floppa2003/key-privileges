@@ -1,0 +1,24 @@
+{
+  "version": "qwen-expanded-1024-v1",
+  "edge": 1024,
+  "model": "qwen3.5:4b",
+  "source_artifact": 10921671754,
+  "source_run": 36288278400,
+  "source_archive_sha256": "f9a7edb14f8e7a8bd260779ab13bab81056ea34611c2a196376a2a3b57696eeb",
+  "baseline_commit": "d3d496a0d9c5509feddc7a357403482d78d388d2",
+  "as_of": "2026-09-27",
+  "publication_allowed": false,
+  "note": "All 10 saved captures not used in the earlier three-document Qwen trial. Previously seen by ChatGPT; not a blind benchmark. No prompt/schema/model changes. Ladoga is preflight-only because 14 pages exceed the existing 8-page limit; never truncate.",
+  "cases": [
+    {"id":"academia","merchant":"ACADEMIA","program":"Единая карта петербуржца","pages":2,"files":{"reading.pdf":"8f5d0d6f2d5145976216ffda4346ec5953f2d3b9d83512a8878ebca623a209b5","visible-text.txt":"5acfcb0de2f67171e64a85e1b98e12bf1547b1bd69c8e04ef27c3ab6c8f3912f","capture.json":"4ab83a9bc7d95da7c6d0f09a0f94c84d90d958fe89ddb7fe5bbb516382e34ede"}},
+    {"id":"ladoga","merchant":"Ладожские Дюны","program":"Единая карта петербуржца","pages":14,"files":{"reading.pdf":"9b71ae0ff17c5ffc981acdb8813481466350da6f8b5b661099558e7d8b3204c2","visible-text.txt":"a4ac63a57df3acc1f32600e0c8acd0866463a5320a85ff63db69e2fdefcd9859","capture.json":"2ce918855fc70f1217c16ee1db81b65d350d89923becc1f059e30dcb663cd278"}},
+    {"id":"brawl","merchant":"iLocked BRAWL STARS","program":"Единая карта петербуржца","pages":6,"files":{"reading.pdf":"185a017da938931111bb5a0208f298255e068abe72bdec05d5cf7fcbd3cf792b","visible-text.txt":"1feaa14431065239f3bbecf6011c7f5809036cc031f719f0fd33cc60b0ebf119","capture.json":"99f9d3d0b0d739675e27e278b7a50a72a8fdd456c649d8c8b31b2ac112ef4ef6"}},
+    {"id":"lavka","merchant":"Книжная лавка писателей","program":"Единая карта петербуржца","pages":1,"files":{"reading.pdf":"72045c792a5a1c4b4251a2a07abc66805f327fddd123152e0160c942f353dbf0","visible-text.txt":"dc8d01211d8fb005179e189e4d8636d0ee479f3327f99c9679391b03325d1e8f","capture.json":"452bee57d8a1c4b783396f2ba4889d87edaf812037e00ebe43ad82a4999e8fd9"}},
+    {"id":"fclm","merchant":"ФК Локомотив","program":"РЖД Бонус","pages":4,"files":{"reading.pdf":"d53f26cb0e7111cf5065eefe70cc0e2aacd31bfeb08b266bb56ee90483210e11","visible-text.txt":"2d24893eba78568229da1bb63b8c0ae251873baf557b10c4e8ec55e363a454d4","capture.json":"f420d74d61814020e36a0f4028280a87a8ce4168419ac797a07b101631175a3d"}},
+    {"id":"get","merchant":"Экспозиционно-выставочный комплекс ГЭТ","program":"Единая карта петербуржца","pages":2,"files":{"reading.pdf":"e27ed497b5c6fa51e32d31d54394798f8640d55e68a2264bbac1cc398a39e428","visible-text.txt":"a6415036e88bbafaaff2e74268949c3b1e0073a6098ca41b39ef169adb3970ed","capture.json":"dd816593b81f89b3f5f9707b3ed5ef04cc21470db41784f7fd8e998ba850078f"}},
+    {"id":"muzcomedy","merchant":"Театр музыкальной комедии","program":"Единая карта петербуржца","pages":3,"files":{"reading.pdf":"a15282e7d8b279c38b935c44c64f4d6a28f6faa98b343c7404d1999fcdd05d84","visible-text.txt":"661224385db1cfba51282f1b474b14f5f6e58b0911b923e3b797fde14590737b","capture.json":"c1d6c6c0adf117cf3f499f02dae806a41eed652513ba05ef492f1e38f7f3e600"}},
+    {"id":"pushkin","merchant":"Всероссийский музей А. С. Пушкина","program":"Единая карта петербуржца","pages":4,"files":{"reading.pdf":"ca71fcda205f41ba4d6acc52fcb3af7675e093b674060805fd3ce187442db71f","visible-text.txt":"b16a8b3e1f67c19b0e6e0961653ce5dfe9e49e9c0034d60031997fb34d004b4a","capture.json":"982b68157cee43732e4596db0c5649ce97e9b59072095d9e091527920a57ccc4"}},
+    {"id":"diplomat","merchant":"Отель Дипломат","program":"РЖД Бонус","pages":2,"files":{"reading.pdf":"172673cda312f8f5103fd8de392574898b36545ef451158cd1262be1c2eee183","visible-text.txt":"a1b513c18f5f75706c216fe09ccdd5a91cbe48c10d6c0c62041f18818065c019","capture.json":"67a2712b9d13c3e4a5ebd6fff08dc972f365034dd24d3908eaf5faad1d185b09"}},
+    {"id":"taivas","merchant":"Taivas","program":"РЖД Бонус","pages":2,"files":{"reading.pdf":"d7b1289609f2a06de17361b56a10a14b6cc3a00e72be90c722d48368dce52601","visible-text.txt":"bf60d3fa45897f97b51a48d0c04def0a3c55e24cec1447b7cb3bf62e0b068563","capture.json":"6ebf8e16c93dfabcd2ff2422eaa0d25628747e6bcd9e5659dcd6530c3b49a42f"}}
+  ]
+}
