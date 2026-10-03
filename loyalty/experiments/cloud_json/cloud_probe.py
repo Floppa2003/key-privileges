@@ -23,7 +23,19 @@ BASE_URLS = {'gemini': 'https://generativelanguage.googleapis.com/v1beta',
 CASES = ('muzcomedy', 'nevsky', 'rzd_museum', 'lavka')
 
 
-def build_payload(provider: str, baseline: dict) -> dict:
+
+def resolve_model(provider: str, model: str | None) -> str:
+    if provider not in MODELS:
+        raise ValueError('unknown_provider')
+    chosen = MODELS[provider] if model is None else model
+    allowed = (MODELS[provider], 'qwen/qwen3.8-27b:free') if provider == 'kilo' else (MODELS[provider],)
+    if chosen not in allowed:
+        raise ValueError('unapproved_model')
+    return chosen
+
+
+def build_payload(provider: str, baseline: dict, model: str | None = None) -> dict:
+    model = resolve_model(provider, model)
     system, user = baseline['messages']
     schema = copy.deepcopy(baseline['format'])
     if provider == 'gemini':
@@ -34,7 +46,7 @@ def build_payload(provider: str, baseline: dict) -> dict:
                     'thinkingConfig': {'thinkingLevel': 'HIGH', 'includeThoughts': False},
                     'responseMimeType': 'application/json', 'responseJsonSchema': schema}}
     if provider == 'kilo':
-        return {'model': MODELS[provider], 'stream': False, 'temperature': 1.0, 'max_tokens': 8192,
+        return {'model': model, 'stream': False, 'temperature': 1.0, 'max_tokens': 8192,
                 'reasoning': {'enabled': True, 'effort': 'high'},
                 'messages': [{'role': 'system', 'content': system['content']},
                     {'role': 'user', 'content': [{'type': 'text', 'text': user['content']}, *[
@@ -45,11 +57,12 @@ def build_payload(provider: str, baseline: dict) -> dict:
     raise ValueError('unknown_provider')
 
 
-def parse_final(provider: str, data: dict, schema: dict) -> dict:
+def parse_final(provider: str, data: dict, schema: dict, model: str | None = None) -> dict:
     """Never repair content, harvest thoughts, or accept a different model/unfinished response."""
+    model = resolve_model(provider, model)
     if provider == 'gemini':
         version = data.get('modelVersion', '')
-        if version != MODELS[provider] and not version.startswith(MODELS[provider] + '-'):
+        if version != model and not version.startswith(model + '-'):
             raise ValueError('returned_model_mismatch')
         choices = data.get('candidates', [])
         if len(choices) != 1 or choices[0].get('finishReason') != 'STOP':
@@ -59,7 +72,10 @@ def parse_final(provider: str, data: dict, schema: dict) -> dict:
             raise ValueError('unexpected_tool_call')
         content = ''.join(p.get('text', '') for p in parts if not p.get('thought'))
     elif provider == 'kilo':
-        if data.get('model') not in (MODELS[provider], 'minimax/minimax-m3', 'MiniMax-M3'):
+        aliases = (model, model.removesuffix(':free'))
+        if model == 'minimax/minimax-m3:free':
+            aliases += ('MiniMax-M3',)
+        if data.get('model') not in aliases:
             raise ValueError('returned_model_mismatch')
         choices = data.get('choices', [])
         if len(choices) != 1 or choices[0].get('finish_reason') != 'stop':
@@ -82,14 +98,15 @@ def parse_final(provider: str, data: dict, schema: dict) -> dict:
     return obj
 
 
-def select_model(provider: str, data: dict) -> dict:
+def select_model(provider: str, data: dict, model: str | None = None) -> dict:
+    model = resolve_model(provider, model)
     if provider == 'gemini':
-        if data.get('name') != 'models/' + MODELS[provider] or 'generateContent' not in data.get('supportedGenerationMethods', []):
+        if data.get('name') != 'models/' + model or 'generateContent' not in data.get('supportedGenerationMethods', []):
             raise ValueError('requested_gemini_model_unavailable')
         return data
     if provider != 'kilo':
         raise ValueError('unknown_provider')
-    matches = [m for m in data.get('data', []) if m.get('id') == MODELS[provider]]
+    matches = [m for m in data.get('data', []) if m.get('id') == model]
     if len(matches) != 1:
         raise ValueError('requested_free_model_unavailable')
     m = matches[0]
@@ -100,7 +117,8 @@ def select_model(provider: str, data: dict) -> dict:
         raise ValueError('nonzero_or_missing_price')
     if not {'image', 'text'} <= set(m.get('architecture', {}).get('input_modalities', [])):
         raise ValueError('multimodal_input_not_confirmed')
-    if not {'response_format', 'reasoning'} <= set(m.get('supported_parameters', [])):
+    supported = set(m.get('supported_parameters', []))
+    if 'reasoning' not in supported or not supported.intersection({'response_format', 'structured_outputs'}):
         raise ValueError('requested_parameters_not_confirmed')
     return m
 
@@ -179,14 +197,19 @@ def prepare(source: Path, out: Path) -> dict:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--provider', choices=tuple(MODELS), required=True)
+    parser.add_argument('--model', choices=(*MODELS.values(), 'qwen/qwen3.8-27b:free'))
     parser.add_argument('--source', type=Path, required=True)
     parser.add_argument('--out', type=Path, required=True)
     args = parser.parse_args()
+    try:
+        model = resolve_model(args.provider, args.model)
+    except ValueError as exc:
+        parser.error(str(exc))
     if args.out.exists():
         parser.error('output_exists')
     args.out.mkdir(parents=True)
     rows = []
-    summary = {'provider': args.provider, 'requested_model': MODELS[args.provider],
+    summary = {'provider': args.provider, 'requested_model': model,
                'publication_allowed': False, 'semantic_review': 'pending',
                'planned_samples': 12, 'inference_http_attempts': 0, 'attempts': rows}
     key = os.environ.get(args.provider.upper() + '_API_KEY', '')
@@ -200,15 +223,15 @@ def main() -> int:
             raise ValueError('missing_actions_secret')
         prepared = prepare(args.source, args.out)
         base = BASE_URLS[args.provider]
-        model_url = base + ('/models/' + MODELS['gemini'] if args.provider == 'gemini' else '/models')
+        model_url = base + ('/models/' + model if args.provider == 'gemini' else '/models')
         pre = session.get(model_url, headers=headers if args.provider == 'gemini' else {},
                           timeout=(10, 30), allow_redirects=False)
         (args.out / 'preflight-response.json').write_bytes(scrub_bytes(pre.content, [key]))
         summary['preflight_http_status'] = pre.status_code
         if pre.status_code != 200:
             raise ValueError('preflight_http_error')
-        save(args.out / 'selected-model.json', select_model(args.provider, pre.json()))
-        url = base + ('/models/' + MODELS['gemini'] + ':generateContent' if args.provider == 'gemini' else '/chat/completions')
+        save(args.out / 'selected-model.json', select_model(args.provider, pre.json(), model=model))
+        url = base + ('/models/' + model + ':generateContent' if args.provider == 'gemini' else '/chat/completions')
         stop = False
         for repeat in range(1, 4):
             for case in CASES:
@@ -217,7 +240,7 @@ def main() -> int:
                 row = {'case': case, 'repeat': repeat, 'status': 'failed', 'schema_valid': False,
                        'publication_allowed': False, 'semantic_review': 'pending'}
                 request = prepared[case]
-                payload = build_payload(args.provider, request)
+                payload = build_payload(args.provider, request, model=model)
                 body = json.dumps(payload, ensure_ascii=False).encode('utf-8')
                 save(folder / 'request.json', request_log(args.provider, payload))
                 row['request_body_sha256'] = hashlib.sha256(body).hexdigest()
@@ -238,7 +261,7 @@ def main() -> int:
                     row['usage'] = data.get('usageMetadata', data.get('usage'))
                     row['finish_reasons'] = [c.get('finishReason', c.get('finish_reason'))
                                             for c in data.get('candidates', data.get('choices', []))]
-                    obj = parse_final(args.provider, data, request['format'])
+                    obj = parse_final(args.provider, data, request['format'], model=model)
                     save(folder / 'extracted.json', obj)
                     row.update(status='completed', schema_valid=True)
                 except (requests.RequestException, ValueError, KeyError, TypeError) as exc:

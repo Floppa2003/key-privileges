@@ -129,4 +129,38 @@ class CloudContracts(unittest.TestCase):
             self.assertEqual(payload, before)
 
 
+
+    def test_explicit_qwen_keeps_payload_except_model_identity(self):
+        expected = build_payload('kilo', self.baseline)
+        expected['model'] = 'qwen/qwen3.8-27b:free'
+        self.assertEqual(build_payload('kilo', self.baseline, model='qwen/qwen3.8-27b:free'), expected)
+
+    def test_paid_auto_and_cross_provider_models_are_rejected(self):
+        for provider, model in (('kilo', 'minimax/minimax-m3'), ('kilo', 'openrouter/free'),
+                                ('gemini', 'qwen/qwen3.8-27b:free')):
+            with self.subTest(provider=provider, model=model):
+                with self.assertRaises(ValueError): build_payload(provider, self.baseline, model=model)
+
+    def test_structured_outputs_metadata_accepts_exact_free_qwen(self):
+        m = {**self.model(), 'id': 'qwen/qwen3.8-27b:free',
+             'supported_parameters': ['structured_outputs', 'reasoning']}
+        try:
+            actual = select_model('kilo', {'data': [m]}, model=m['id'])
+        except ValueError:
+            actual = None
+        self.assertEqual(actual, m)
+        for change in ({'isFree': False}, {'pricing': {'prompt': '0', 'completion': '1'}},
+                       {'supported_parameters': ['reasoning']},
+                       {'architecture': {'input_modalities': ['text']}}):
+            with self.assertRaises(ValueError):
+                select_model('kilo', {'data': [{**m, **change}]}, model=m['id'])
+
+    def test_qwen_response_cannot_be_substituted_with_minimax(self):
+        with self.assertRaises(ValueError):
+            parse_final('kilo', self.response('kilo'), SCHEMA, model='qwen/qwen3.8-27b:free')
+        data = self.response('kilo')
+        data['model'] = 'qwen/qwen3.8-27b'
+        self.assertEqual(parse_final('kilo', data, SCHEMA, model='qwen/qwen3.8-27b:free'), EMPTY)
+
+
 if __name__ == '__main__': unittest.main()
