@@ -9,6 +9,10 @@ The current pipeline is v2: `collect_normalized.py` -> `normalized.json` / `offe
 
 Each record keeps a stable ID, program/partner, benefit, conditions, redemption text, lexical rates and promo codes, source dates/status, actual detail URL or shared-page locator, source-specific tables/fields, observation time and integrity hash. Normalization is **not** automatic confirmation of eligibility, current availability or a combinable final price. Unknown dates remain unknown; inspect conditions text too.
 
+## Model-based merchant extraction
+
+The selected model-based entrypoint is now `merchant_extract.py` with direct `gemini-3.8-flash`, full prepared PNG/text input and bounded transient HTTP retries. See [Gemini execution and input contract](MERCHANT_GEMINI.md). This review-only stage is separate from the deterministic daily pipeline below; it does not publish to Sheets. Historical Qwen/Kilo comparisons are retained as experiments, not selected defaults.
+
 ## Running
 
 ```sh
