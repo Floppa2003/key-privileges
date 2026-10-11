@@ -1,0 +1,10 @@
+[
+ {"id":"academia","merchant":"ACADEMIA","root":"https://academia-suites.ru/","program":"Единая карта петербуржца","aliases":["ЕКП","Единой карты петербуржца"]},
+ {"id":"london","merchant":"London Express","root":"https://online-london.com/","program":"Единая карта петербуржца","aliases":["ЕКП","Единой карты петербуржца"]},
+ {"id":"elcom","merchant":"ЭЛКОМ","root":"https://elcom-kids.ru/","program":"Единая карта петербуржца","aliases":["ЕКП","Единой карты петербуржца"]},
+ {"id":"artstudio","merchant":"ARTSTUDIO M103","root":"https://artstudiom103.ru/","program":"Единая карта петербуржца","aliases":["ЕКП","Единой карты петербуржца"]},
+ {"id":"teplohod","merchant":"Теплоход СПб","root":"https://teplohodspb.com/","program":"Единая карта петербуржца","aliases":["ЕКП","Единой карты петербуржца"]},
+ {"id":"grandkarat","merchant":"Grand Karat","root":"https://grandkarat.com/","program":"РЖД Бонус","aliases":["РЖД-Бонус"]},
+ {"id":"parusa","merchant":"Алые паруса","root":"https://a-parusa.com/","program":"Единая карта петербуржца","aliases":["ЕКП","Единой карты петербуржца"]},
+ {"id":"museum","merchant":"Музей искусства Санкт-Петербурга XX–XXI веков","root":"https://mispxx-xxi.ru/","program":"Единая карта петербуржца","aliases":["ЕКП","Единой карты петербуржца"]}
+]

@@ -1,0 +1,69 @@
+{
+  "version": "merchant-heldout-observed-v5",
+  "corpus": "heldout-v5.json",
+  "corpus_sha256": "c9e01e2f3ab8c418317a0c1a83e13eb7dd2c4946f3c731259675619caf9be355",
+  "block_version": "merchant-blocks-v2",
+  "extractor_commit": "c152bb9a6f60dd1efddd9b3caf68732ccdfdd8dc",
+  "materializer_commit": "fa83e81aeae3007661359ecd2d9e07cfe3619cd9",
+  "prompt_artifact_sha256": "a649cbf69bbc057eae8aae6da109d3f39fe5c0273d48d5c567be831f4126c6c5",
+  "labels_frozen_before_predictions": true,
+  "expected_labels_sent_to_model": false,
+  "publication_allowed": false,
+  "note": "Independent heldout-v5 raw predictions using prompts materialized from the frozen corpus. Predictions are preserved unchanged; no gold labels were supplied to the extractor. Live merchant pages were used only as Firecrawl transport context while the prompt instructed the extractor to use the immutable numbered SOURCE blocks.",
+  "trials": [
+    {
+      "id": "lavka-ekp-unspecified-rate",
+      "transport": {
+        "status": "success",
+        "status_code": 200,
+        "scrape_id": "01a0da8a-9e02-7661-a96d-aad8ed25fd49"
+      },
+      "raw_answer": "```json\n{\"source_sha256\":\"b2f268b4d5f7fe8eaa1c24b9138f13842edb295585ab3d31e35dab8cd60b01ee\",\"state\":\"candidates\",\"offers\":[{\"program\":[\"b0001\"],\"audience\":[\"b0001\"],\"benefit\":[\"b0002\"],\"conditions\":[],\"redemption\":[],\"code\":{\"state\":\"not_stated\",\"value\":\"\",\"refs\":[]},\"dates\":[],\"uncertainties\":[]}],\"notes\":\"\"}\n```"
+    },
+    {
+      "id": "atrium-rzd-generic-program-only",
+      "transport": {
+        "status": "success",
+        "status_code": 200,
+        "scrape_id": "01a0da8b-246e-71eb-9b8a-493598b60d79"
+      },
+      "raw_answer": "```json\n{\"source_sha256\":\"fbee58cb6f3a5610d8407d59d3118c5dcce9f0895321391424ee618a73642f58\",\"state\":\"candidates\",\"offers\":[{\"program\":[\"b0000\",\"b0001\"],\"audience\":[\"b0001\"],\"benefit\":[\"b0002\"],\"conditions\":[],\"redemption\":[\"b0009\",\"b0011\"],\"code\":{\"state\":\"not_stated\",\"value\":\"\",\"refs\":[]},\"dates\":[],\"uncertainties\":[]},{\"program\":[\"b0000\",\"b0001\"],\"audience\":[\"b0001\"],\"benefit\":[\"b0016\"],\"conditions\":[\"b0016\"],\"redemption\":[],\"code\":{\"state\":\"not_stated\",\"value\":\"\",\"refs\":[]},\"dates\":[],\"uncertainties\":[]},{\"program\":[\"b0000\",\"b0001\"],\"audience\":[\"b0017\"],\"benefit\":[\"b0002\"],\"conditions\":[],\"redemption\":[\"b0009\",\"b0011\"],\"code\":{\"state\":\"not_stated\",\"value\":\"\",\"refs\":[]},\"dates\":[],\"uncertainties\":[]}],\"notes\":\"\"}\n```"
+    },
+    {
+      "id": "nevskybereg-rzd-500-per-night",
+      "transport": {
+        "status": "success",
+        "status_code": 200,
+        "scrape_id": "01a0da8b-dcdb-7761-8783-45675c23115a"
+      },
+      "raw_answer": "```json\n{\"source_sha256\":\"db7f788aa71acf8192ebf2d4937cfbd7f437aded49fa02936269837cd671c71f\",\"state\":\"candidates\",\"offers\":[{\"program\":[\"b0000\"],\"audience\":[\"b0001\"],\"benefit\":[\"b0000\"],\"conditions\":[\"b0001\"],\"redemption\":[\"b0001\"],\"code\":{\"state\":\"literal\",\"value\":\"\",\"refs\":[\"b0001\"]},\"dates\":[],\"uncertainties\":[]},{\"program\":[\"b0000\"],\"audience\":[\"b0001\"],\"benefit\":[\"b0000\"],\"conditions\":[\"b0001\"],\"redemption\":[\"b0001\"],\"code\":{\"state\":\"literal\",\"value\":\"\",\"refs\":[\"b0001\"]},\"dates\":[],\"uncertainties\":[]}],\"notes\":\"\"}\n```"
+    },
+    {
+      "id": "elagin-ekp-20-percent-two-venues",
+      "transport": {
+        "status": "success",
+        "status_code": 200,
+        "scrape_id": "01a0da8c-e79d-74e4-ace8-9506486203a9"
+      },
+      "raw_answer": "```json\n{\"source_sha256\":\"907696e13cb6a6088b731f8f9fdcf9b1a8276676358228419b62e2af7b4b1969\",\"state\":\"candidates\",\"offers\":[{\"program\":[\"b0000\"],\"audience\":[\"b0001\"],\"benefit\":[\"b0001\"],\"conditions\":[\"b0005\"],\"redemption\":[\"b0004\"],\"code\":{\"state\":\"not_stated\",\"value\":\"\",\"refs\":[]},\"dates\":[],\"uncertainties\":[]},{\"program\":[\"b0000\"],\"audience\":[\"b0001\"],\"benefit\":[\"b0001\"],\"conditions\":[\"b0005\"],\"redemption\":[\"b0004\"],\"code\":{\"state\":\"not_stated\",\"value\":\"\",\"refs\":[]},\"dates\":[],\"uncertainties\":[]},{\"program\":[\"b0000\"],\"audience\":[\"b0001\"],\"benefit\":[\"b0001\"],\"conditions\":[\"b0005\"],\"redemption\":[\"b0004\"],\"code\":{\"state\":\"not_stated\",\"value\":\"\",\"refs\":[]},\"dates\":[],\"uncertainties\":[]},{\"program\":[\"b0000\"],\"audience\":[\"b0001\"],\"benefit\":[\"b0001\"],\"conditions\":[\"b0005\"],\"redemption\":[\"b0004\"],\"code\":{\"state\":\"not_stated\",\"value\":\"\",\"refs\":[]},\"dates\":[],\"uncertainties\":[]},{\"program\":[\"b0000\"],\"audience\":[\"b0001\"],\"benefit\":[\"b0001\"],\"conditions\":[\"b0005\"],\"redemption\":[\"b0004\"],\"code\":{\"state\":\"not_stated\",\"value\":\"\",\"refs\":[]},\"dates\":[],\"uncertainties\":[]}],\"notes\":\"\"}\n```"
+    },
+    {
+      "id": "station-rzd-expired-2023",
+      "transport": {
+        "status": "success",
+        "status_code": 200,
+        "scrape_id": "01a0da8d-7a97-744d-b6f9-964d425e24ca"
+      },
+      "raw_answer": "```json\n{\"source_sha256\":\"55e638b52929b352da48724d213a02f4795593feb5cdea7acd310b2984d09a42\",\"state\":\"candidates\",\"offers\":[{\"program\":[\"b0000\"],\"audience\":[\"b0001\"],\"benefit\":[\"b0001\",\"b0010\"],\"conditions\":[\"b0002\",\"b0006\",\"b0008\",\"b0009\",\"b0010\"],\"redemption\":[\"b0005\"],\"code\":{\"state\":\"literal\",\"value\":\"RZDBONUS\",\"refs\":[\"b0003\",\"b0005\"]},\"dates\":[{\"role\":\"offer\",\"refs\":[\"b0007\"]},{\"role\":\"publication\",\"refs\":[\"b0007\"]}],\"uncertainties\":[]}],\"notes\":\"\"}\n```"
+    },
+    {
+      "id": "golden-triangle-rzd-literal-code",
+      "transport": {
+        "status": "success",
+        "status_code": 200,
+        "scrape_id": "01a0da8d-954e-7250-95a5-3416b0ec9149"
+      },
+      "raw_answer": "```json\n{\"source_sha256\":\"a458aeb50374286051eb38acbe50a9f1cc8cf010cfe3cacb4699e12d1b1090b3\",\"state\":\"candidates\",\"offers\":[{\"program\":[\"b0009\"],\"audience\":[\"b0009\"],\"benefit\":[\"b0010\"],\"conditions\":[\"b0010\"],\"redemption\":[\"b0010\"],\"code\":{\"state\":\"literal\",\"value\":\"RZD\",\"refs\":[\"b0010\"]},\"dates\":[],\"uncertainties\":[]},{\"program\":[\"b0009\"],\"audience\":[\"b0009\"],\"benefit\":[\"b0010\"],\"conditions\":[\"b0010\"],\"redemption\":[\"b0010\"],\"code\":{\"state\":\"literal\",\"value\":\"RZD\",\"refs\":[\"b0010\"]},\"dates\":[],\"uncertainties\":[]}],\"notes\":\"\"}\n```"
+    }
+  ]
+}
