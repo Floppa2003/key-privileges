@@ -1,0 +1,46 @@
+name: Independent merchant NLI experiment
+on:
+  push:
+    branches: [loyalty/general-merchant-research-20260925]
+    paths: [loyalty/merchant_nli.py, loyalty/experiments/merchant_general/nli-cases.json, .github/workflows/merchant-nli-check.yml]
+permissions:
+  contents: read
+concurrency:
+  group: merchant-nli-experiment
+  cancel-in-progress: false
+jobs:
+  independent-nli:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      HF_HUB_DISABLE_TELEMETRY: '1'
+      HF_HUB_DISABLE_XET: '1'
+      HF_HUB_DISABLE_IMPLICIT_TOKEN: '1'
+      TOKENIZERS_PARALLELISM: 'false'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          ref: ${{ github.sha }}
+      - name: Verify exact triggering commit
+        run: test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - name: Save exact probe inputs before inference
+        run: |
+          mkdir -p merchant-nli-output
+          git rev-parse HEAD > merchant-nli-output/commit.txt
+          cp loyalty/merchant_nli.py loyalty/experiments/merchant_general/nli-cases.json loyalty/experiments/merchant_general/BLOCK_EVAL.md merchant-nli-output/
+      - name: Install isolated CPU classifier dependencies
+        run: |
+          python -m pip install onnxruntime==1.23.2 tokenizers==0.22.1 huggingface_hub==0.36.0 numpy==2.2.6
+          python -m pip freeze > merchant-nli-output/packages.txt
+      - name: Evaluate frozen propositions without sending their labels to the model
+        run: python loyalty/merchant_nli.py --cases loyalty/experiments/merchant_general/nli-cases.json --out merchant-nli-output/nli-report.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: merchant-nli-${{ github.run_id }}-${{ github.run_attempt }}
+          path: merchant-nli-output/
+          retention-days: 1

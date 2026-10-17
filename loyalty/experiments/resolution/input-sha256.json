@@ -1,0 +1,19 @@
+{
+  "inputs/golden_triangle/page-2.png": "5d189f519f5920839b08af162dae901e85e31b48c94db4b4797eb4c06caa0381",
+  "inputs/golden_triangle/visible-text.txt": "6708cb5d13665c58fb63e207f02f65f723d5afdef89a7441bfe78e3976156dc9",
+  "inputs/golden_triangle/request-without-image-bytes.json": "6763896e229ac83037fd16d3551b9e7d2a2b0b5fd39136275a6c51e1f70f7663",
+  "inputs/golden_triangle/input-manifest.json": "83b149515460863ba9f1e08c3bfea679ce1f754a3e2a03199e939b9029fca1af",
+  "inputs/golden_triangle/page-1.png": "35af9ee13819c00c2249f222bc57f41f8017fc13abcb51ab55bad22c465e529d",
+  "inputs/nevsky/page-3.png": "563352fa4d60275964f09e9abed61b679e16148add464484985a2446dbd124b1",
+  "inputs/nevsky/page-2.png": "191945bc2a56171f8ba3ecce8ecbdb37ff8bbb31f241bd517c6a417647bcb721",
+  "inputs/nevsky/visible-text.txt": "c6edb43ebff7a073fd1ec5b2381c3a5f3cda510080671f8a0fce8a89dcb6723a",
+  "inputs/nevsky/request-without-image-bytes.json": "33b4d9955d6fdac2de988145bf6270f388f2245c7d8bb2b7ecd7ad0f574bf0f5",
+  "inputs/nevsky/input-manifest.json": "a8f607088d0a9db683326c128b8f55fd2dc6bca4e1a857f3df98b7e4c6de130b",
+  "inputs/nevsky/page-1.png": "81b95437087ff12fdbc215b7878b4856f4c408a759edc97172a6ed34b69b7ab7",
+  "inputs/rzd_museum/page-2.png": "44ec767b5e9ad7cacfb70b1a138016242291d197f20dce4d83713d61129aaab0",
+  "inputs/rzd_museum/visible-text.txt": "1873f6f0e7fa489332eaff0d3d298cf11ca5fe1b02af0053b5df4fc2d5dafe00",
+  "inputs/rzd_museum/request-without-image-bytes.json": "e1b3b72529abb5e3513315eb6717da4f360a56ff37202f6b57f591f421548c58",
+  "inputs/rzd_museum/input-manifest.json": "ee705a47cf62a485f2c89267ef7bf3dd1b545a525c4c2e8a0a306b8de3988ed2",
+  "inputs/rzd_museum/page-1.png": "280f8a0618979641b3e63067e9aad6456293a3bc58229e68ccdae83ee3ed143f",
+  "run_cpu.py": "9be979aa260fa64dea9a3069caca52a0f8a2f79092516d7ab9a936eb7f99859a"
+}
