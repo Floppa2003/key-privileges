@@ -1,0 +1,136 @@
+name: Verify and apply content discovery repair
+on:
+  push:
+    branches: [fix/content-driven-discovery-20261022]
+    paths: [.github/workflows/apply-content-fix.yml]
+permissions:
+  contents: read
+concurrency:
+  group: apply-content-discovery-repair
+  cancel-in-progress: false
+jobs:
+  verify:
+    if: github.repository == 'Floppa2003/key-privileges'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          ref: ${{ github.sha }}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - name: Verify immutable payload and exact source preconditions
+        run: |
+          set -euo pipefail
+          mkdir -p regression-output/staged
+          cp diagnostics/content-fix/* regression-output/staged/
+          python - <<'PY'
+          import base64,bz2,hashlib,json,subprocess
+          from pathlib import Path
+          root=Path('diagnostics/content-fix');out=Path('regression-output')
+          expected=['b966bde7defc4b634adeef3a39ef12381a599bc4dfdb260426fa12090d597f72','6b5cf1d888ced1007c0c54aaba2a1366129f934550a37b24d1344c33ccc42f11','cd6164839a31fd0d85becdc58723309802c2a49b4dabbdab34ee45daeaa7f5d6','8e50aa30b7b97953eb9554ba702955f320627aa9fb43ccfba57b6051a7dc0020']
+          parts=[(root/f'part{i}.b64').read_bytes() for i in range(1,5)]
+          hashes=[hashlib.sha256(p).hexdigest() for p in parts]
+          (out/'payload-hashes.json').write_text(json.dumps(hashes,indent=2))
+          for i,(actual,wanted) in enumerate(zip(hashes,expected),1):
+              if actual!=wanted:raise ValueError(f'payload_part_{i}_hash_mismatch')
+          compressed=base64.b64decode(b''.join(parts),validate=True)
+          assert hashlib.sha256(compressed).hexdigest()=='906a066a87811fe62f7e3f284fe06631a99c186c3f795dddf14ce8ab3e60b77f'
+          patch=bz2.decompress(compressed)
+          assert len(patch)==166410 and hashlib.sha256(patch).hexdigest()=='755f9ca76873a7e43f1e2520ee2c0bc39b47a26d88c25f11575e4d6d62864d82'
+          manifest=json.loads((root/'manifest.json').read_text())
+          assert len(manifest['files'])==28
+          for row in manifest['files']:
+              p=Path(row['path'])
+              assert p.parts[0]=='loyalty' and '..' not in p.parts and not p.is_symlink()
+              actual=hashlib.sha256(p.read_bytes()).hexdigest() if p.exists() else None
+              assert actual==row['before'],row['path']
+          (out/'fix.patch').write_bytes(patch)
+          subprocess.run(['git','apply','--check',str(out/'fix.patch')],check=True)
+          subprocess.run(['git','apply','--index',str(out/'fix.patch')],check=True)
+          changed=subprocess.check_output(['git','diff','--cached','--name-only']).decode().splitlines()
+          assert set(changed)=={r['path'] for r in manifest['files']}
+          for row in manifest['files']:
+              assert hashlib.sha256(Path(row['path']).read_bytes()).hexdigest()==row['sha256'],row['path']
+          (out/'manifest.json').write_text(json.dumps(manifest,indent=2))
+          print('Verified all 4 payload parts and all 28 before/after source hashes.')
+          PY
+      - name: Install regression dependencies
+        run: |
+          python -m pip install -r loyalty/requirements.txt
+          sudo apt-get update -qq && sudo apt-get install -y poppler-utils
+      - name: Full regression and mutation tests
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s loyalty/tests -v > regression-output/tests.log 2>&1
+          node --test key/refresh.test.mjs > regression-output/key-tests.log 2>&1
+          git diff --check --cached
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          repository: Floppa2003/key-privileges
+          run-id: '39685263932'
+          artifact-ids: '12385379666'
+          github-token: ${{ github.token }}
+          path: captured-current
+          merge-multiple: true
+      - name: Replay exact current public source captures
+        run: python loyalty/tests/replay_content_capture.py captured-current --output regression-output/current-replay.json
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          repository: Floppa2003/key-privileges
+          run-id: '39583519809'
+          artifact-ids: '12337983960'
+          github-token: ${{ github.token }}
+          path: captured-historical
+          merge-multiple: true
+      - name: Verify historical published row compatibility
+        env:
+          PYTHONPATH: loyalty
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from normalized import validate_offer
+          files=list(Path('captured-historical').rglob('normalized.json'))
+          assert len(files)==1
+          bundle=json.loads(files[0].read_text())
+          for row in bundle['records']:validate_offer(row)
+          result={'historical_rows':len(bundle['records']),'errors':0}
+          Path('regression-output/historical-replay.json').write_text(json.dumps(result,indent=2))
+          print(result)
+          PY
+      - name: Persist only successfully verified source files to the repair branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = 'refs/heads/fix/content-driven-discovery-20261022'
+          python - <<'PY'
+          import json,hashlib
+          from pathlib import Path
+          for row in json.loads(Path('regression-output/manifest.json').read_text())['files']:
+              assert hashlib.sha256(Path(row['path']).read_bytes()).hexdigest()==row['sha256'],row['path']
+          PY
+          git diff --exit-code
+          remote=$(gh api repos/Floppa2003/key-privileges/git/ref/heads/fix/content-driven-discovery-20261022 --jq .object.sha)
+          test "$remote" = "$GITHUB_SHA"
+          git rm diagnostics/content-fix/part1.b64 diagnostics/content-fix/part2.b64 diagnostics/content-fix/part3.b64 diagnostics/content-fix/part4.b64 diagnostics/content-fix/manifest.json
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'fix(loyalty): discover current offers and tiers without content allowlists'
+          auth=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)
+          echo "::add-mask::$auth"
+          git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $auth" push origin HEAD:refs/heads/fix/content-driven-discovery-20261022
+          git rev-parse HEAD > regression-output/commit.txt
+          git archive --format=zip HEAD > regression-output/source.zip
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: verified-content-fix-${{ github.run_id }}-${{ github.run_attempt }}
+          path: regression-output/
+          retention-days: 14
