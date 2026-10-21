@@ -80,26 +80,41 @@ class PublicContinuationTests(unittest.TestCase):
         clause = own.get_text(' ', strip=True)
         own.string = 'Подробности отсутствуют'
         dom.body.append(BeautifulSoup('<p>' + clause + '</p>', 'html.parser'))
-        with self.assertRaises(ValueError): parse(raw=str(dom))
+        row, = parse(raw=str(dom))
+        self.assertEqual(row['record_kind'], 'source_observation')
+        self.assertEqual(row['benefit_text'], '')
+        self.assertEqual(row['rates'], [])
+        self.assertIsNone(row['details']['gift'])
+        self.assertNotIn(clause, row['conditions_text'])
 
-    def test_missing_duplicate_or_changed_critical_terms_fail(self):
+    def test_missing_duplicate_structure_and_invalid_quantities_fail(self):
         raw = (FIX / 'ladoga.html').read_text()
         for changed in (raw + raw, raw.replace('js-product-name', 'other'),
                         raw.replace('t778__descr', 'other'),
-                        raw.replace('любого из домов', ''),
-                        raw.replace('сапбордов', 'лодок'),
                         raw.replace('от 2х суток', 'от 0х суток'),
-                        raw.replace('2 часа проката', '0 часа проката'),
-                        raw.replace('на выбор', 'одновременно'),
-                        raw.replace('При бронировании', 'Скидка 10%. При бронировании')):
+                        raw.replace('2 часа проката', '0 часа проката')):
             with self.subTest(changed=changed[:50]), self.assertRaises(ValueError): parse(raw=changed)
 
-    def test_missing_and_changed_eligibility_link_fail(self):
+    def test_changed_gift_wording_keeps_current_clause_without_old_metadata(self):
         raw = (FIX / 'ladoga.html').read_text()
-        for changed in (raw.replace('https://ekp.spb.ru/capabilities?capability=offer',
-                                    'https://example.test/unreviewed'),
-                        raw.replace('href=', 'data-old-href=')):
-            with self.assertRaises(ValueError): parse(raw=changed)
+        for old, new in (('любого из домов', ''), ('сапбордов', 'лодок'), ('на выбор', 'одновременно')):
+            with self.subTest(new=new):
+                row, = parse(raw=raw.replace(old, new))
+                self.assertIsNone(row['details']['gift'])
+                self.assertIsNone(row['details']['minimum_stay'])
+                if new:
+                    self.assertIn(new, row['conditions_text'])
+                self.assertIn('ПОДАРОК', row['benefit_text'])
+
+    def test_changed_eligibility_links_are_evidence_not_fetch_authority(self):
+        raw = (FIX / 'ladoga.html').read_text()
+        row, = parse(raw=raw.replace('https://ekp.spb.ru/capabilities?capability=offer',
+                                    'https://example.test/unreviewed'))
+        self.assertEqual(row['details']['published_links'], ['https://example.test/unreviewed'])
+        self.assertFalse(row['details']['linked_page_read'])
+        row, = parse(raw=raw.replace('href=', 'data-old-href='))
+        self.assertEqual(row['details']['published_links'], [])
+        self.assertFalse(row['details']['linked_page_read'])
 
     def test_source_owned_additional_conditions_are_not_dropped(self):
         dom = BeautifulSoup((FIX / 'ladoga.html').read_text(), 'html.parser')

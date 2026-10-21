@@ -113,6 +113,22 @@ A quoted price or a non-stacking rule alone is not a positive reward.
     return list(dict.fromkeys(claims)), terms
 
 
+def literal_rates(body):
+    """Canonical rates for the same reward phrases used by literal_benefits."""
+    _, terms = literal_benefits(body)
+    result = []
+    for term in terms:
+        if term['kind'] not in ('discount', 'cashback'):
+            continue
+        rate = {k: term[k] for k in ('kind', 'value', 'unit', 'qualifier')}
+        rate.update(basis_amount=None, basis_unit=None, evidence=term['fragment'])
+        if 'value_min' in term:
+            rate['min_value'] = term['value_min']
+        if rate not in result:
+            result.append(rate)
+    return result
+
+
 def action_clauses(body):
     return '\n'.join(s for s in sentences(body) if re.search(
         r'чтобы\s+воспольз|(?:необходимо|нужно)\s+(?:запис|предъяв|указ|оформ|брониров|зарегистр)|'

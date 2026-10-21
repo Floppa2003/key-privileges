@@ -36,6 +36,16 @@ as the repair for a new promotion.
   Dom Knigi accepts changed repeat count and conditions without restoring old text.
 - GPB product options and Utair Generations: current options and multiplier are
   data; old coupon codes/tier names were removed as document-identity requirements.
+- Ladoga EKP: discover all programme-owned product cards by source IDs, retain
+  current links and page notes, and extract current gift/discount clauses. New
+  items do not inherit old gift quantities; unfamiliar terms remain observations.
+- HSE alumni: unanchored sections match names in the current catalogue, not a
+  single historical business. Exact/delimited matching and ambiguity checks keep
+  neighboring partner conditions separate. Legacy heading aliases are readback only.
+- Smartavia: tariff names are current labels, not a fixed `1+N` grammar. A traveler
+  count is filled only when that syntax explicitly provides it, otherwise unknown.
+- FlyStation/Ladoga raw rates use the same scoped reward phrases as their literal
+  extraction: prepayment percentages are retained as conditions, not extra discounts.
 - Collector diagnostics preserve bounded machine ValueError codes while refusing
   arbitrary exception text that may contain credentials.
 

@@ -1,4 +1,4 @@
-"""HSE's public card inventory joined to its own named-anchor sections only."""
+"""HSE public inventory joined to source-owned anchors or current card headings."""
 from __future__ import annotations
 import hashlib,json,re
 from urllib.parse import urljoin,urlsplit
@@ -11,20 +11,33 @@ from model import clean_url
 
 ROOT='https://alumni.hse.ru/loyalty/partners/'
 PROGRAM='Карта выпускника НИУ ВШЭ'
-# Reviewed source identity only, never a cached rate/code. The catalogue's
-# #mordapechat target is absent, but its exact printed heading is public.
+# Historical readback only. Live discovery matches current catalogue names;
+# this alias preserves the validation of previously published evidence.
 UNANCHORED_HEADINGS={'mordapechat':'Морда довольна. Студия печати'}
 
 
-def heading_identity(section):
+def heading_matches_name(heading, name):
+    """An exact current card name, optionally followed by a delimited descriptor."""
+    h=text(heading).casefold();n=text(name).casefold()
+    return bool(n) and (h==n or any(h.startswith(n+separator) for separator in ('. ', ': ', ' — ', ' – ')))
+
+
+def heading_identity(section, names):
     titles={text(h.get_text(' ',strip=True)) for h in section.select('h1,h2,h3')}
-    matches=[key for key,title in UNANCHORED_HEADINGS.items() if title in titles]
+    matches=[(key,title) for key,name in names.items() for title in titles if heading_matches_name(title,name)]
     if len(matches)>1:raise ValueError('hse_ambiguous_heading_ownership')
     return matches[0] if matches else None
 
 
 def source_location(block,full):
     if not isinstance(block,dict) or not re.fullmatch('[A-Za-z0-9_-]{1,100}',block.get('anchor','')):raise ValueError('hse_invalid_block_identity')
+    if block.get('identity_method')=='catalogue_heading':
+        heading=block.get('detail_heading','')
+        if (not full or not heading_matches_name(heading,block.get('name',''))
+            or not block['body'].startswith(heading+'\n')):
+            raise ValueError('hse_catalogue_heading_identity')
+        return ROOT,'page_block','builder-section with catalogue-owned heading '+heading
+    # Retained historical records only; current discovery never uses this alias.
     if block.get('identity_method')=='reviewed_heading':
         heading=UNANCHORED_HEADINGS.get(block['anchor'])
         if (not full or not heading or block.get('detail_heading')!=heading
@@ -100,6 +113,11 @@ def blocks(raw):
     if len(roots)!=1:raise ValueError('hse_programme_body')
     root=roots[0];cards=root.select('.fa-person__item')
     if not 1<=len(cards)<=200:raise ValueError('hse_card_count')
+    names={}
+    for item in cards:
+        for label in item.select('.fa-person__name'):
+            target=urlsplit(urljoin(ROOT,label.get('href','').strip()))
+            if target.fragment:names[target.fragment]=text(label.get_text(' ',strip=True))
     seen=set();result=[]
     for card in cards:
         labels=card.select('.fa-person__name');summaries=card.select('.fa-person__info')
@@ -124,20 +142,20 @@ def blocks(raw):
             for node in owner.next_siblings:
                 if not isinstance(node,Tag):continue
                 if node.select('a[name]') or node.select('.nom h1'):break
-                heading_owner=heading_identity(node)
-                if heading_owner and heading_owner!=anchor:break
+                heading_owner=heading_identity(node,names)
+                if heading_owner and heading_owner[0]!=anchor:break
                 if node.select('.fa-person__item'):raise ValueError('hse_detail_reentered_inventory')
                 if text(node.get_text(' ',strip=True)):parts.append(node)
             state='detail' if parts else 'empty_section'
-        elif anchor in UNANCHORED_HEADINGS:
+        else:
             matches=[node for node in root.find_all('div',class_='builder-section',recursive=False)
-                     if heading_identity(node)==anchor]
+                     if (owned:=heading_identity(node,names)) and owned[0]==anchor]
             if len(matches)>1:raise ValueError('hse_duplicate_heading_target')
             if matches:
                 node=matches[0]
                 if node.select('a[name],.fa-person__item'):raise ValueError('hse_heading_anchor_conflict')
                 parts=[node];state='detail'
-                identity={'identity_method':'reviewed_heading','detail_heading':UNANCHORED_HEADINGS[anchor]}
+                identity={'identity_method':'catalogue_heading','detail_heading':heading_identity(node,names)[1]}
         body=content(parts) if parts else '';links=[]
         if len(body)>12000:raise ValueError('hse_detail_size')
         for part in parts:

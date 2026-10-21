@@ -262,13 +262,18 @@ def smartavia_records(cfg,nodes,terms,details,warnings,url,now):
     if not 1<=len(cards)<=20:raise ValueError('smartavia_plan_count_outside_bound')
     records=[];labels=set()
     for card in cards:
-        value=content([card]);m=match(r'Тариф (1\+(?:0|[1-9]\d*))(?=\s|[.,:;!?]|$)',value,'smartavia_plan_label_missing');key=m[1]
+        value=content([card])
+        labels_in_card=re.findall(r'(?:^|\n)Тариф[ \t]+(.+?)(?=\.\s|\n|$)',value)
+        if len(labels_in_card)!=1:raise ValueError('smartavia_plan_label_missing_or_ambiguous')
+        key=labels_in_card[0].strip()
+        if not key:raise ValueError('smartavia_plan_label_missing')
+        travelers=re.fullmatch(r'1\+(0|[1-9]\d*)',key)
         if key in labels:raise ValueError('smartavia_duplicate_plan_label')
         labels.add(key)
         price=match(r'Оформить за ('+NUM+r')\s*₽',value,'smartavia_plan_price_missing')
         segments=match(r'(\d+) сегментов со скидкой (\d+) ₽',value,'smartavia_segments_missing')
         baggage=match(r'(\d+) услуг «Багаж (\d+) кг» со скидкой (\d+) ₽',value,'smartavia_baggage_missing')
-        d={**details,'subscription_plan':{'label':key,'additional_travelers':int(key.split('+')[1]),
+        d={**details,'subscription_plan':{'label':key,'additional_travelers':int(travelers[1]) if travelers else None,
            'annual_rub':number(price[1]),'flight_segments':int(segments[1]),'flight_discount_rub':segments[2],
            'baggage_services':int(baggage[1]),'baggage_kg':int(baggage[2]),'baggage_discount_rub':baggage[3],
            'evidence':value},'scope':'published_plan_card_and_common_subscription_rules'}
