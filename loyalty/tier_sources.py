@@ -2,6 +2,7 @@
 from __future__ import annotations
 import json
 import math
+from decimal import Decimal
 import re
 from urllib.parse import urljoin
 from bs4 import BeautifulSoup, Tag
@@ -11,7 +12,8 @@ from read_budget import within_source_budget
 
 URAL_URL='https://www.uralairlines.ru/wings_rules/'
 UTAIR_URL='https://media.utair.ru/status'
-UTAIR_TIERS=('Start','Basic','Bronze','Silver','Gold','Platinum')
+# Historical ID aliases are not an accepted-tier list. New labels are discovered.
+URAL_LEGACY_IDS={'Синий':'blue','Серебряный':'silver','Золотой':'gold'}
 
 
 def heading_body(heading):
@@ -29,15 +31,23 @@ def ural_tiers(raw, observed_at):
     for h in headings:
         if re.match(r'Бонусы программы|Уровни участия',text(h.get_text())):
             general.append(content([h,*heading_body(h)]))
+    observed=[];seen=set()
+    for heading in headings:
+        match=re.fullmatch(r'(.+?)\s+уровень',text(heading.get_text()),re.I)
+        if not match:continue
+        label=match[1].strip()
+        if not label or label.casefold() in seen:raise ValueError('ural_tier_heading_missing_or_duplicated')
+        seen.add(label.casefold());observed.append((label,heading))
+    if not observed or len(observed)>100:raise ValueError('ural_tier_inventory_bound')
     rows=[]
-    for key,label in (('blue','Синий'),('silver','Серебряный'),('gold','Золотой')):
-        matching=[h for h in headings if text(h.get_text())==label+' уровень']
-        if len(matching)!=1:raise ValueError('ural_tier_heading_missing_or_duplicated')
-        nodes=heading_body(matching[0]);body=BeautifulSoup(''.join(map(str,nodes)),'html.parser')
+    for label,heading in observed:
+        key=URAL_LEGACY_IDS.get(label,label.casefold())
+        nodes=heading_body(heading);body=BeautifulSoup(''.join(map(str,nodes)),'html.parser')
         first=body.select_one('li')
         if first is None:raise ValueError('ural_qualification_missing')
         qualification=text(first.get_text(' ',strip=True))
-        if 'Присваивается' not in qualification:raise ValueError('ural_qualification_not_recognized')
+        if sum('Присваивается' in text(n.get_text()) for n in body.select('li'))>1:
+            raise ValueError('ural_tier_boundary_ambiguous')
         q={'evidence':qualification,'registration':bool(re.search('при регистрации',qualification,re.I)),
            'flights':None,'spend_rub':None,'operator':None,'window':None,'required_previous_tier':None}
         f=re.search(r'(\d+) пол[её]тов',qualification,re.I)
@@ -46,7 +56,12 @@ def ural_tiers(raw, observed_at):
         if amount:q['spend_rub']=number(amount[1].strip())
         if f and amount and 'либо' in qualification:q['operator']='OR'
         if re.search(r'1 календарного года',qualification):q['window']='calendar_year'
-        if re.search('участнику серебряного уровня',qualification,re.I):q['required_previous_tier']='Серебряный'
+        previous=re.search(r'участнику\s+([^,.]+?)\s+уровня',qualification,re.I)
+        if previous:
+            q['required_previous_tier_evidence']=previous[0]
+            candidates=[name for name,_ in observed if previous[1].casefold() in
+                (name.casefold(),re.sub(r'ый$', 'ого', name.casefold()),re.sub(r'ий$', 'его', name.casefold()))]
+            if len(candidates)==1:q['required_previous_tier']=candidates[0]
         rates=[]
         for paragraph in body.select('p'):
             for line in content([paragraph]).splitlines():
@@ -54,7 +69,7 @@ def ural_tiers(raw, observed_at):
                 if m:
                     rates.append({'kind':'points','value':number(m[1]),'unit':'percent',
                         'reward_unit':'program_bonus','basis':'airfare_as_published','evidence':line})
-        if not rates:raise ValueError('ural_flight_rate_section_missing')
+        # A non-percentage tier remains a tier: preserve its complete section.
         evidence=content(nodes)
         rows.append(make_offer('ural_tiers','tier:'+key,'Уральские авиалинии — «Крылья»',
             'Уральские авиалинии',evidence,URAL_URL,observed_at,title=label+' уровень',
@@ -81,26 +96,37 @@ def _inside(node,rect):
     return left<=x+w/2<=left+width and top<=y+h/2<=top+height
 
 
-def utair_tab(raw, tier):
-    if tier not in UTAIR_TIERS:raise ValueError('unknown_utair_tier')
+def utair_tabs(raw):
+    """Discover every current tab from the site's geometry, not a name enum."""
     soup=BeautifulSoup(raw,'html.parser')
     nav=soup.select('#rec759374982')
     if len(nav)!=1:raise ValueError('utair_tab_header_missing')
+    blocks=nav[0].select('.status-block')
+    if not blocks or len(blocks)>100:raise ValueError('utair_tab_inventory_bound')
     elements=nav[0].select('.t396__elem[data-elem-type="text"]')
-    labels=[x for x in elements if text(x.get_text(' ',strip=True))==tier]
-    if len(labels)!=1:raise ValueError('utair_tier_label_missing_or_duplicated')
-    matching=[x for x in nav[0].select('.status-block') if _inside(labels[0],_rect(x))]
-    if len(matching)!=1:raise ValueError('utair_tab_geometry_ambiguous')
-    box=_rect(matching[0])
-    prices=[text(x.get_text(' ',strip=True)) for x in elements if x is not labels[0] and _inside(x,box)]
-    if len(prices)!=1:raise ValueError('utair_qualification_ambiguous')
-    hints=[text(x.get_text(' ',strip=True)) for x in nav[0].select('.t396__elem[data-elem-type="tooltip"]') if _inside(x,box)]
-    if len(hints)>1:raise ValueError('utair_qualification_window_ambiguous')
-    amount=re.fullmatch(r'[cс] (\d+) тыс\. руб\.',prices[0],re.I)
-    if not amount and prices[0].casefold()!='бесплатно':raise ValueError('utair_qualification_format_changed')
-    window='calendar_year' if hints and 'календарном году' in hints[0] else None
-    return {'tier':tier,'qualification_text':prices[0],'scope_text':hints[0] if hints else None,
-            'spend_rub':str(int(amount[1])*1000) if amount else None,'window':window}
+    result={};owned=set()
+    for block in blocks:
+        box=_rect(block)
+        texts=sorted([n for n in elements if _inside(n,box)],key=lambda n:(_rect(n)[1],_rect(n)[0]))
+        if len(texts)!=2 or any(id(n) in owned for n in texts):raise ValueError('utair_tab_geometry_ambiguous')
+        owned.update(id(n) for n in texts)
+        tier,price=[text(n.get_text(' ',strip=True)) for n in texts]
+        if not tier or tier.casefold() in {t.casefold() for t in result}:raise ValueError('utair_duplicate_or_empty_tier')
+        hints=[text(n.get_text(' ',strip=True)) for n in nav[0].select('.t396__elem[data-elem-type="tooltip"]') if _inside(n,box)]
+        if len(hints)>1:raise ValueError('utair_qualification_window_ambiguous')
+        amount=re.fullmatch(r'[cс] (\d+(?:[.,]\d+)?) тыс\. руб\.',price,re.I)
+        window='calendar_year' if hints and 'календарном году' in hints[0] else None
+        result[tier]={'tier':tier,'qualification_text':price,'scope_text':hints[0] if hints else None,
+                      'spend_rub':number(str(Decimal(amount[1].replace(',', '.'))*1000)) if amount else None,
+                      'window':window}
+    if len(owned)!=len(elements):raise ValueError('utair_unowned_tab_text')
+    return result
+
+
+def utair_tab(raw, tier):
+    tabs=utair_tabs(raw)
+    if tier not in tabs:raise ValueError('utair_tier_not_in_current_page')
+    return tabs[tier]
 
 
 def utair_intro_context(raw):
@@ -117,7 +143,7 @@ def utair_intro_context(raw):
 
 
 def utair_tier(panel_html, tab, exclusions, observed_at, *, intro_context=None):
-    if tab.get('tier') not in UTAIR_TIERS:raise ValueError('invalid_utair_selected_tier')
+    if not isinstance(tab.get('tier'),str) or not tab['tier'].strip():raise ValueError('invalid_utair_selected_tier')
     soup=BeautifulSoup(panel_html,'html.parser')
     panels=soup.select('.t-rec.description.active')
     if len(panels)!=1:raise ValueError('utair_panel_not_uniquely_active')
@@ -149,14 +175,14 @@ def utair_tier(panel_html, tab, exclusions, observed_at, *, intro_context=None):
 
 async def collect_utair_tiers(client,cfg,report,now,limit):
     raw=await within_source_budget(client,lambda:client.read(UTAIR_URL,render=True))
-    headers={tier:utair_tab(raw,tier) for tier in UTAIR_TIERS}
+    headers=utair_tabs(raw)
     soup=BeautifulSoup(raw,'html.parser')
     exclusions=[text(n.get_text(' ',strip=True)) for n in soup.select('.t-rec')
                 if text(n.get_text(' ',strip=True)).startswith('Привилегии не предоставляются')]
     if len(exclusions)!=1:raise ValueError('utair_general_exclusions_not_found')
     report['discovered']=len(headers);rows=[];panels=set()
     nav=client.page.locator('#rec759374982')
-    for tier in UTAIR_TIERS[:limit]:
+    for tier in list(headers)[:limit]:
         try:
             async def read_tier():
                 await nav.scroll_into_view_if_needed(timeout=4000)
@@ -188,6 +214,6 @@ async def collect_utair_tiers(client,cfg,report,now,limit):
 async def collect_ural_tiers(client,cfg,report,now,limit):
     raw=await within_source_budget(client,lambda:client.read(URAL_URL,render=True))
     rows=ural_tiers(raw,now);report['discovered']=len(rows)
-    report['coverage']='all_three_public_tier_sections_with_nested_conditions; no member eligibility verification'
+    report['coverage']=json.dumps({'method':'all_current_tier_headings','discovered_tiers':[r['details']['tier'] for r in rows],'no_member_eligibility_verification':True},ensure_ascii=False)
     if limit<len(rows):report['errors'].append({'phase':'tier','reason':'record_limit','limit':limit})
     return rows[:limit]

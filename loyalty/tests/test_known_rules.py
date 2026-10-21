@@ -92,9 +92,11 @@ class KnownRuleRegressionTests(unittest.TestCase):
   h='''<main><div class="promo">Аэрофлот Бонус.<div class="condition_earn">Накопить мили. При заказе через турагентство 1 миля за каждые потраченные 90 ₽. При заказе поездки в i’way 1 миля за каждые потраченные 50 ₽.</div>Использовать мили: корпоративные поездки исключены.</div></main>'''
   r=parse('af_iway_rules',h)[0];d={x['channel']:x['basis_amount'] for x in r['details']['earning_rules']}
   self.assertEqual(d,{'travel_agent':'90','direct':'50'})
- def test_changed_generations_multiplier_fails_not_hardcoded_double(self):
+ def test_changed_generations_multiplier_is_extracted_not_hardcoded_double(self):
   h='''<div id="rec586475392">Поколения Utair - тройные мили. Молодежь от 16 до 25 лет, от 55 лет (для женщин), от 60 лет (для мужчин).</div><div id="rec586348980">для молодежи UYOUTHWM; для людей старшего поколения UPENSWM. Срок действия миль составляет 3 года. Покупка и полет в одном месяце.</div>'''
-  with self.assertRaises(ValueError):parse('utair_generations_rules',h)
+  row=parse('utair_generations_rules',h)[0]
+  self.assertEqual(row['details']['reward_multiplier'],3)
+  self.assertIn('тройные',row['details']['reward_multiplier_evidence'])
 
 class SmartaviaTests(unittest.TestCase):
  def fixture(self):

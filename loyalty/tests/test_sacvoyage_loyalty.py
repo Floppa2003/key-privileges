@@ -39,31 +39,43 @@ class SacvoyageTests(unittest.TestCase):
             self.assertIsNone(r['valid_until']);validate_offer(r)
 
     def test_missing_rate_cannot_come_from_other_audience(self):
-        with self.assertRaises(ValueError):extract(SID,page().replace('скидку 7%','привилегию'),URL,NOW)
+        rows=extract(SID,page().replace('скидку 7%','привилегию'),URL,NOW)
+        self.assertEqual(rows[0]['rates'],[])
+        self.assertEqual(rows[0]['record_kind'],'source_observation')
+        self.assertEqual(rows[1]['rates'][0]['value'],'12')
 
-    def test_multiple_rates_fail_instead_of_cross_offer_blending(self):
-        with self.assertRaises(ValueError):extract(SID,page('7% или 9'),URL,NOW)
+    def test_alternative_rates_stay_in_their_own_section(self):
+        rows=extract(SID,page('7% или 9'),URL,NOW)
+        self.assertEqual([r['value'] for r in rows[0]['rates']],['7','9'])
+        self.assertEqual([r['value'] for r in rows[1]['rates']],['12'])
+        self.assertIn('или',rows[0]['conditions_text'])
 
     def test_duplicate_missing_and_moved_panels_fail(self):
-        for raw in (page().replace('services__text','other'),page().replace('Реферальная программа','Other'),
+        for raw in (page().replace('services__text','other'),page().replace('Реферальная программа','Программа лояльности'),
                     page().replace('</main>','<h2 class="about__title">Скидки</h2></main>')):
             with self.subTest(raw=raw),self.assertRaises(ValueError):extract(SID,raw,URL,NOW)
 
-    def test_unexpected_terms_structure_cannot_be_silently_skipped(self):
+    def test_new_clause_markup_is_preserved_not_silently_skipped(self):
         for extra in ('<div>Не действует по субботам.</div>', 'Не действует по субботам.'):
             raw=page().replace('</div></main>',extra+'</div></main>')
-            with self.assertRaises(ValueError):extract(SID,raw,URL,NOW)
+            rows=extract(SID,raw,URL,NOW)
+            self.assertTrue(any('Не действует по субботам.' in r['conditions_text'] for r in rows))
 
-    def test_current_account_notice_is_required(self):
-        with self.assertRaises(ValueError):extract(SID,page().replace('Условия могут меняться. Актуальная скидка в личном кабинете.',''),URL,NOW)
+    def test_removed_account_notice_is_not_invented(self):
+        rows=extract(SID,page().replace('Условия могут меняться. Актуальная скидка в личном кабинете.',''),URL,NOW)
+        self.assertTrue(all('Актуальная скидка в личном кабинете.' not in r['conditions_text'] for r in rows))
 
     def test_missing_material_restriction_is_not_assumed(self):
-        with self.assertRaises(ValueError):extract(SID,page().replace('корпоративным','другим'),URL,NOW)
+        rows=extract(SID,page().replace('корпоративным','другим'),URL,NOW)
+        self.assertIn('другим тарифам',rows[0]['conditions_text'])
+        self.assertNotIn('корпоративным',rows[0]['conditions_text'])
 
     def test_hidden_and_comment_rates_do_not_supply_values(self):
         raw=page().replace('При регистрации получаете скидку 7%',
                           '<span hidden>При регистрации скидка 7%</span><!-- скидка 7% -->При регистрации')
-        with self.assertRaises(ValueError):extract(SID,raw,URL,NOW)
+        rows=extract(SID,raw,URL,NOW)
+        self.assertEqual(rows[0]['rates'],[])
+        self.assertEqual(rows[0]['record_kind'],'source_observation')
 
     def test_exact_url_rejects_other_program_and_tracking(self):
         for url in (URL+'?code=other',URL+'#other','https://sacvoyage.ru/partners/rzhd-bonus/'):

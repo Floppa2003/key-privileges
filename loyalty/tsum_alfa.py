@@ -1,4 +1,4 @@
-"""Two TSUM loyalty tiers from the merchant's public Alfa Only page.
+"""Current TSUM loyalty tiers from the merchant's public Alfa Only page.
 
 The advertised percentages are shop loyalty credit, not cash or miles. The
 merchant's expandable FAQ is a normal UI component; navigation and scripts are
@@ -52,7 +52,7 @@ def one(soup, selector):
     return nodes[0]
 
 
-def derived(e, tier):
+def legacy_derived(e, tier):
     """Reconstruct row fields from source-owned card/FAQ evidence on readback."""
     if (e.get('url') != URL or e.get('reward_currency') != 'TSUM_DLT_loyalty_credit'
             or not re.fullmatch(r'[a-f0-9]{64}', e.get('page_sha256', ''))
@@ -87,6 +87,50 @@ def derived(e, tier):
     return benefit, conditions, redemption
 
 
+def current_rate(e,tier):
+    card=e['cards'][tier]
+    m=re.fullmatch(re.escape(tier)+r'\s+(\d+(?:[.,]\d+)?)%',card)
+    if not m:return None
+    rate=number(m[1])
+    if not 0<=float(rate)<=100:raise ValueError('alfa_tsum_invalid_rate')
+    answer=' '.join(e['faq'].values())
+    # A newly listed card needs no separately hardcoded FAQ clause. Where
+    # the source supplies an independent comparison, it must agree.
+    matches=re.findall(r'(\d+(?:[.,]\d+)?)% вместо \d+(?:[.,]\d+)?% по карте '+re.escape(tier)+r'(?!\w)',answer)
+    if any(number(v)!=rate for v in matches):raise ValueError('alfa_tsum_tier_rate_disagreement')
+    return rate
+
+
+def derived(e,tier):
+    if e.get('projection_version') is None:return legacy_derived(e,tier)
+    from content_discovery import validate_faq,faq_text
+    cards=e.get('cards')
+    if (e.get('projection_version')!=2 or e.get('url')!=URL or
+        not re.fullmatch('[a-f0-9]{64}',e.get('page_sha256','')) or
+        not isinstance(cards,dict) or not 1<=len(cards)<=100 or tier not in cards or
+        any(not isinstance(k,str) or not k or not isinstance(v,str) or not v for k,v in cards.items())):
+        raise ValueError('alfa_tsum_evidence_identity')
+    validate_faq(e['faq'])
+    if not e.get('redemption'):raise ValueError('alfa_tsum_activation_missing')
+    answer=' '.join(e['faq'].values())
+    credit=bool(re.search(r'к[еэ]шб[еэ]к на карту лояльности ЦУМа и ДЛТ',answer,re.I))
+    rate=current_rate(e,tier)
+    if rate is not None and credit:
+        benefit=f'Кешбэк бонусами на карту лояльности ЦУМа и ДЛТ: {rate}% по карте {tier}.'
+    else:
+        # An upgrade, an unknown unit or a textual rate is retained as source
+        # evidence, not forced into the old cashback interpretation.
+        benefit=cards[tier]
+    return benefit,faq_text(e['faq']),e['redemption']
+
+
+def record_kind(e,tier):
+    if e.get('projection_version') is None:return 'partner_offer'
+    answer=' '.join(e['faq'].values())
+    return ('partner_offer' if current_rate(e,tier) is not None and re.search(
+        r'к[еэ]шб[еэ]к на карту лояльности ЦУМа и ДЛТ',answer,re.I) else 'source_observation')
+
+
 def extract_tsum(source, soup, url, observed_at, cfg):
     if source != SOURCE_ID or url != URL:
         raise ValueError('alfa_tsum_requested_url_mismatch')
@@ -101,8 +145,8 @@ def extract_tsum(source, soup, url, observed_at, cfg):
         if q in all_faq:
             raise ValueError('alfa_tsum_duplicate_question')
         all_faq[q] = a
-    if any(q not in all_faq for q in QUESTIONS):
-        raise ValueError('alfa_tsum_required_question_missing')
+    from content_discovery import validate_faq
+    validate_faq(all_faq)
     cards = {}
     for n in soup.select('[class*="AlfaOnly__bounsWrapper___"]'):
         label = clean(one(n, '[class*="AlfaOnly__leftSide___"]'))
@@ -110,18 +154,18 @@ def extract_tsum(source, soup, url, observed_at, cfg):
             raise ValueError('alfa_tsum_duplicate_tier')
         cards[label] = clean(n)
     block = one(soup, '[class*="AlfaOnly__privelegiesBlock___"]')
-    evidence = {'url': URL, 'heading': heading, 'cards': cards,
-                'faq': {q: all_faq[q] for q in QUESTIONS}, 'redemption': clean(block),
+    evidence = {'projection_version':2,'url': URL, 'heading': heading, 'cards': cards,
+                'faq': all_faq, 'redemption': clean(block),
                 'page_sha256': hashlib.sha256(str(soup).encode()).hexdigest(),
                 'reward_currency': 'TSUM_DLT_loyalty_credit',
                 'hash_basis': 'BeautifulSoup_HTML_serialization'}
     rows = []
-    for tier in ('Orange', 'Black'):
+    for tier in cards:
         benefit, conditions, redemption = derived(evidence, tier)
         rows.append(make_offer(SOURCE_ID, 'loyalty-cashback:' + tier.lower(), 'Alfa Only',
             'ЦУМ / ДЛТ', benefit, URL, observed_at, title='ЦУМ / ДЛТ — ' + tier,
             conditions=conditions, redemption=redemption, category='Покупки',
-            link_kind='page_block', locator='AlfaOnly__bounsWrapper / tier=' + tier,
+            record_kind=record_kind(evidence,tier),link_kind='page_block', locator='AlfaOnly__bounsWrapper / tier=' + tier,
             details={'source_scope': 'reviewed_merchant_page_not_program_catalog',
                      'tsum_tier': tier, 'tsum_evidence': evidence,
                      'authenticated_catalogue_equivalence': False}, warnings=WARNINGS))
@@ -135,7 +179,7 @@ def validate_record(row):
     if (row.get('source_id') != SOURCE_ID or row.get('source_url') != URL
             or row.get('native_id') != 'loyalty-cashback:' + tier.lower()
             or row.get('program') != 'Alfa Only' or row.get('partner_name') != 'ЦУМ / ДЛТ'
-            or row.get('record_kind') != 'partner_offer' or row.get('source_status') != 'published'
+            or row.get('record_kind') != record_kind(d.get('tsum_evidence',{}),tier) or row.get('source_status') != 'published'
             or row.get('link_kind') != 'page_block' or row.get('benefit_url') is not None
             or row.get('benefit_text') != benefit or row.get('conditions_text') != conditions
             or row.get('redemption_text') != redemption or row.get('valid_from') is not None

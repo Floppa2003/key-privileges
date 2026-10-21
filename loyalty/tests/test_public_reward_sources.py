@@ -80,11 +80,15 @@ class PublicRewardTests(unittest.TestCase):
         original=m.parse(html('mantera-faq.html'),NOW)[0];row,reason=record_row(common(original),NOW[:10]);self.assertIsNone(reason)
         for marker in ('пилотного','ограниченном числе отелей','услуги проживания','до оформления','наличных невозможно','календарных','рабочих'):self.assertIn(marker,row[5])
         self.assertTrue(any('calendar_versus_business' in s for s in original['warnings']))
-    def test_mantera_missing_terms_or_pilot_fails(self):
-        s=BeautifulSoup(html('mantera-faq.html'),'html.parser');next(n for n in s.select('.MuiAccordion-root') if m.QUESTIONS[2] in n.get_text()).decompose()
-        with self.assertRaises(ValueError):m.parse(str(s),NOW)
-        s=BeautifulSoup(html('mantera-faq.html'),'html.parser');s.select_one('.pilot-loyalty-banner-icon').parent.decompose()
-        with self.assertRaises(ValueError):m.parse(str(s),NOW)
+    def test_mantera_removed_terms_or_pilot_not_restored_from_snapshot(self):
+        s=BeautifulSoup(html('mantera-faq.html'),'html.parser')
+        next(n for n in s.select('.MuiAccordion-root') if m.QUESTIONS[2] in n.get_text()).decompose()
+        rows=m.parse(str(s),NOW)
+        self.assertTrue(all(m.QUESTIONS[2] not in r['conditions_text'] for r in rows))
+        s=BeautifulSoup(html('mantera-faq.html'),'html.parser')
+        s.select_one('.pilot-loyalty-banner-icon').parent.decompose()
+        rows=m.parse(str(s),NOW)
+        self.assertTrue(all('пилотного запуска' not in r['conditions_text'] for r in rows))
     def test_mantera_rates_not_hardcoded(self):
         old=m.parse(html('mantera-faq.html'),NOW)[0];new=m.parse(html('mantera-faq.html').replace('с начислением 3%','с начислением 4%'),NOW)[0]
         self.assertEqual(old['id'],new['id']);self.assertEqual(common(new)['benefits'][0]['value'],'4')

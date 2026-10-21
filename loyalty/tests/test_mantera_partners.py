@@ -80,16 +80,20 @@ class PublicManteraPartners(unittest.TestCase):
                 n=s.new_tag('a',attrs={'class':'load-more'});ul.parent.append(n)
             with self.assertRaises(ValueError): pair(str(s))
 
-    def test_missing_critical_terms_and_rate_conflict_fail(self):
+    def test_current_terms_update_but_cross_source_rate_conflict_fails(self):
         s=BeautifulSoup(html('mantera-partners.html'),'html.parser')
         next(n for n in s.select('.accordion__item') if h.QUESTIONS[0] in n.get_text()).decompose()
-        with self.assertRaises(ValueError): pair(str(s))
+        rows,_=pair(str(s))
+        self.assertTrue(rows)
+        for row in rows:validate_offer(row)
         with self.assertRaisesRegex(ValueError,'source_rate_conflict'):
             pair(b=html('mantera-redemption.html').replace('3 %','4 %'))
 
-    def test_new_redemption_alias_needs_review_instead_of_guessing(self):
-        with self.assertRaisesRegex(ValueError,'unreviewed_name_mapping'):
-            pair(b=html('mantera-redemption.html').replace('Долина 960, Кортьярд и Марриотт','Неизвестный отель'))
+    def test_unknown_redemption_name_kept_without_assigning_it_to_old_hotels(self):
+        rows,_=pair(b=html('mantera-redemption.html').replace('Долина 960, Кортьярд и Марриотт','Неизвестный отель'))
+        for row in rows:
+            self.assertIn('Неизвестный отель',row['conditions_text'])
+            self.assertFalse(any(b['kind']=='redeem_points' for b in common(row)['benefits']))
 
     def test_rehash_cannot_change_identity_or_promote_unknown_spending(self):
         rows,_=pair()

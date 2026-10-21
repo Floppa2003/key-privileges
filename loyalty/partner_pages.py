@@ -151,16 +151,19 @@ def utair_partners(soup,url,observed_at):
         target=canonical_url(a['href']);host=urlsplit(target).hostname
         if target in seen:continue
         seen.add(target)
-        if host not in names:raise ValueError('Unknown Utair partner destination; identity review required')
+        # Display aliases preserve existing IDs; an unseen destination is data,
+        # not permission to visit it. This function never fetches the link.
+        display=names.get(host) or text(a.get('aria-label')) or host
         tier_rates=[]
         for clause in re.split(r'(?<=[.!])\s+',claim):
-            tiers=re.findall(r'\b(?:Start|Basic|Bronze|Silver|Gold|Platinum)\b',clause)
+            scope=re.search(r'для уровн(?:я|ей)\s+(.+?)(?:\s+[—–-]|$)',clause,re.I)
+            tiers=re.findall(r'\b[A-Za-z][A-Za-z0-9-]*\b',scope[1]) if scope else []
             rate=re.search(r'(\d+(?:[.,]\d+)?)%\s+милями',clause)
             if tiers and rate:tier_rates.append({'tiers':tiers,'value':rate[1].replace(',','.'),'unit':'percent_miles','evidence':clause})
         native=host+urlsplit(target).path
-        rows.append(make_offer('utair_media',native,'Utair Status',names[host],claim,url,observed_at,
+        rows.append(make_offer('utair_media',native,'Utair Status',display,claim,url,observed_at,
             conditions=claim,redemption='Переход по опубликованной ссылке партнёра; полные условия на стороне партнёра не проверены.',
             link_kind='page_block',locator='#rec774882292 a[href="'+a['href']+'"]',
-            details={'partner_url':target,'tier_rates':tier_rates,'partner_identity_origin':'reviewed_destination_domain'},
+            details={'partner_url':target,'tier_rates':tier_rates,'partner_identity_origin':'published_destination_not_independently_verified'},
             warnings=['public_partner_card_summary_not_full_partner_terms']))
     return rows

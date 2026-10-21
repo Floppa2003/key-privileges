@@ -46,7 +46,11 @@ from alfa_partner_rules import collect as collect_alfa_partner_pdfs
 
 
 def error_record(exc,phase,url=''):
+    # Preserve safe machine diagnostic codes, never arbitrary exception text
+    # from source pages or credentials.
     reason=str(exc) if isinstance(exc,RuntimeError) else type(exc).__name__
+    if isinstance(exc,ValueError) and re.fullmatch(r'[a-z][a-z0-9_]{0,159}',str(exc)):
+        reason=str(exc)
     marker=re.search(r'ERR_[A-Z_]+',str(exc))
     if marker:reason=marker[0]
     alfa_marker=re.fullmatch(r'alfa_[a-z0-9_]{1,120}',str(exc))

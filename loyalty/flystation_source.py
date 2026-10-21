@@ -7,37 +7,71 @@ from public_reward_projection import make_record
 
 SOURCE='flystation_public'
 URL='https://flystation.net/promotions'
-PANELS={'Раннее бронирование':'advance','День рождения в аэротрубе':'birthday',
+LEGACY_IDS={'Раннее бронирование':'advance','День рождения в аэротрубе':'birthday',
         'Счастливые часы в аэротрубе':'happy-hours','Скидка после полёта':'after-flight',
         'Хочу ЕЩЁ!':'extra-time','Стать спортсменом':'sport-start'}
 
 def inventory(raw):
-    soup=BeautifulSoup(raw,'html.parser');roots=soup.select('section.promotions')
+    from content_discovery import clean_dom, label_id
+    soup=clean_dom(raw);roots=soup.select('section.promotions')
     if len(roots)!=1:raise ValueError('flystation_missing_root')
     nodes=roots[0].select('.promotions__slider-item-text')
-    if not 1<=len(nodes)<=30:raise ValueError('flystation_inventory_bound')
+    if not nodes or len(nodes)>2500:raise ValueError('flystation_inventory_bound')
     result=[];seen=set()
     for n in nodes:
         ps=n.find_all('p',recursive=False)
         title=compact(ps[0].get_text(' ',strip=True)) if ps else ''
-        if title not in PANELS or title in seen:raise ValueError('flystation_unreviewed_or_duplicate_panel')
-        seen.add(title);html=str(n)
-        result.append(dict(native=PANELS[title],url=URL,title=title,panel_html=html,
-                           panel_sha256=sha(html),page_sha256=sha(raw)))
+        if not title:raise ValueError('flystation_missing_heading')
+        # Compatibility aliases preserve already published row IDs. They do not
+        # select a parser or reject new labels; every card takes the same path.
+        native=LEGACY_IDS.get(title, label_id(title, 'promotion'))
+        if native in seen:raise ValueError('flystation_duplicate_identity')
+        seen.add(native);html=str(n)
+        result.append(dict(native=native,url=URL,title=title,panel_html=html,
+                           projection_version=2,panel_sha256=sha(html),page_sha256=sha(raw)))
     return result
+
+
+def source_fields(e):
+    if e.get('projection_version') is None:
+        return legacy_source_fields(e)
+    if e.get('projection_version') != 2:raise ValueError('flystation_projection_version')
+    from content_discovery import label_id, literal_benefits, action_clauses
+    from public_reward_projection import plain
+    identity(e,SOURCE)
+    if e.get('url')!=URL or sha(e.get('panel_html',''))!=e.get('panel_sha256'):
+        raise ValueError('flystation_evidence_identity')
+    soup=BeautifulSoup(e['panel_html'],'html.parser');nodes=soup.select('.promotions__slider-item-text')
+    if len(nodes)!=1:raise ValueError('flystation_panel_identity')
+    ps=nodes[0].find_all('p',recursive=False)
+    title=compact(plain(ps[0])) if ps else ''
+    if title!=e.get('title') or LEGACY_IDS.get(title,label_id(title,'promotion'))!=e['native']:
+        raise ValueError('flystation_heading_identity')
+    body='\n'.join(plain(p) for p in ps[1:] if plain(p))
+    if not body:raise ValueError('flystation_empty_terms')
+    claims,terms=literal_benefits(body)
+    warnings=['not_EKP_catalogue_recovery','source_end_date_not_stated',
+              'published_example_prices_not_used_as_additional_discount_rates','booking_availability_not_verified']
+    if not claims:warnings.append('unclassified_block_retained_as_evidence')
+    return dict(native=e['native'],program=PROGRAMS[SOURCE],partner='FlyStation',title=title,
+        benefit='\n'.join(claims) if claims else title,conditions=body,activation=action_clauses(body),
+        url=URL,category='Развлечения / аэротруба',locator='section.promotions; heading '+title,
+        terms=terms,kind='partner_offer' if claims else 'source_observation',
+        scope={'own_public_promotion':True,'EKP_entitlement_inferred':False},warnings=warnings)
+
 
 def must(pattern,value):
     match=re.search(pattern,value,re.I)
     if not match:raise ValueError('flystation_required_clause_missing')
     return match
 
-def source_fields(e):
+def legacy_source_fields(e):
     identity(e,SOURCE)
     if e.get('url')!=URL or sha(e.get('panel_html',''))!=e.get('panel_sha256'):raise ValueError('flystation_evidence_identity')
     soup=BeautifulSoup(e['panel_html'],'html.parser');nodes=soup.select('.promotions__slider-item-text')
     if len(nodes)!=1:raise ValueError('flystation_panel_identity')
     ps=[compact(p.get_text(' ',strip=True))for p in nodes[0].find_all('p',recursive=False)];ps=[p for p in ps if p]
-    if not ps or ps[0]!=e.get('title') or PANELS.get(ps[0])!=e['native']:raise ValueError('flystation_heading_identity')
+    if not ps or ps[0]!=e.get('title') or LEGACY_IDS.get(ps[0])!=e['native']:raise ValueError('flystation_heading_identity')
     native=e['native'];body='\n'.join(ps[1:]);terms=[];benefits=[];activation=''
     if native in ('extra-time','sport-start'):
         if re.search(r'скидк|в подарок|бесплатн|вместо|\d\s*%',body,re.I):raise ValueError('flystation_price_only_changed_requires_review')
@@ -95,5 +129,5 @@ async def collect(client,cfg,report,now,limit):
         except ExcludedOffer as exc:excluded[e['native']]=str(exc)
         except (ValueError,RuntimeError) as exc:add_error(report,exc,e['native'])
     if len(es)>limit:report['errors'].append({'phase':'catalog','reason':'detail_limit_reached'})
-    reported(report,rows,[e['native']for e in es],excluded,scope='all_public_promotion_panels_not_protected_EKP_terms',transport='verified_apex_host')
+    reported(report,rows,[e['native']for e in es],excluded,scope='all_discovered_public_panels_with_unclassified_evidence_not_protected_EKP_terms',transport='verified_apex_host')
     return rows
