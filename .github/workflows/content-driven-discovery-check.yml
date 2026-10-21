@@ -1,12 +1,15 @@
 name: Content-driven discovery regression
 on:
   push:
-    branches: [fix/content-driven-discovery-20261022]
-    paths: [loyalty/**, .github/workflows/content-driven-discovery-check.yml]
+    branches: [main, fix/content-driven-discovery-20261022]
+    paths: [loyalty/**, key/**, .github/workflows/content-driven-discovery-check.yml]
+  pull_request:
+    paths: [loyalty/**, key/**, .github/workflows/content-driven-discovery-check.yml]
+  workflow_dispatch:
 permissions:
   contents: read
 concurrency:
-  group: content-driven-discovery-check
+  group: content-driven-discovery-check-${{ github.ref }}
   cancel-in-progress: false
 jobs:
   regression:
@@ -27,12 +30,13 @@ jobs:
       - name: Install test dependencies
         run: |
           python -m pip install -r loyalty/requirements.txt
-          python -m pip download --no-deps --only-binary=:all: protego==0.6.2 pypdf==6.18.1 -d regression-output/wheels
-      - name: Run full regression suite
+          sudo apt-get update -qq && sudo apt-get install -y poppler-utils
+      - name: Run full regression and content mutation suites
         run: |
           set -euo pipefail
           python -m unittest discover -s loyalty/tests -v > regression-output/tests.log 2>&1
           node --test key/refresh.test.mjs > regression-output/key-tests.log 2>&1
+          git diff --exit-code
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
