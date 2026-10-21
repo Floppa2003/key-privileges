@@ -28,6 +28,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p regression-output/staged
+          git archive --format=zip HEAD > regression-output/source-before.zip
           cp diagnostics/content-fix/* regression-output/staged/
           python - <<'PY'
           import base64,bz2,hashlib,json,subprocess
@@ -35,6 +36,12 @@ jobs:
           root=Path('diagnostics/content-fix');out=Path('regression-output')
           expected=['b966bde7defc4b634adeef3a39ef12381a599bc4dfdb260426fa12090d597f72','6b5cf1d888ced1007c0c54aaba2a1366129f934550a37b24d1344c33ccc42f11','cd6164839a31fd0d85becdc58723309802c2a49b4dabbdab34ee45daeaa7f5d6','8e50aa30b7b97953eb9554ba702955f320627aa9fb43ccfba57b6051a7dc0020']
           parts=[(root/f'part{i}.b64').read_bytes() for i in range(1,5)]
+          # Exact transport repair: original expected checksums remain unchanged.
+          repairs=[(0,4117,b'qq','83a85894e17ee7daeaffac5ef3d9dfa640d802c6aa2e20513b5690805c3ae999'),(1,3864,b'iI','db59cfe9f2424aaf6fed534ce27d30e132ded80bead7167bfae39abf88dbced6')]
+          for index,offset,inserted,bad_hash in repairs:
+              if hashlib.sha256(parts[index]).hexdigest()==bad_hash:
+                  assert parts[index][offset:offset+len(inserted)]==inserted
+                  parts[index]=parts[index][:offset]+parts[index][offset+len(inserted):]
           hashes=[hashlib.sha256(p).hexdigest() for p in parts]
           (out/'payload-hashes.json').write_text(json.dumps(hashes,indent=2))
           for i,(actual,wanted) in enumerate(zip(hashes,expected),1):
