@@ -24,52 +24,45 @@ jobs:
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with:
           python-version: '3.12'
-      - name: Verify immutable payload and exact source preconditions
+      - name: Verify exact patch and source preconditions
         run: |
           set -euo pipefail
           mkdir -p regression-output/staged
           git archive --format=zip HEAD > regression-output/source-before.zip
-          cp diagnostics/content-fix/* regression-output/staged/
+          cp diagnostics/content-followup-*.patch regression-output/staged/
           python - <<'PY'
-          import base64,bz2,hashlib,json,subprocess
+          import hashlib,json,subprocess
           from pathlib import Path
-          root=Path('diagnostics/content-fix');out=Path('regression-output')
-          expected=['b966bde7defc4b634adeef3a39ef12381a599bc4dfdb260426fa12090d597f72','6b5cf1d888ced1007c0c54aaba2a1366129f934550a37b24d1344c33ccc42f11','cd6164839a31fd0d85becdc58723309802c2a49b4dabbdab34ee45daeaa7f5d6','8e50aa30b7b97953eb9554ba702955f320627aa9fb43ccfba57b6051a7dc0020']
-          parts=[(root/f'part{i}.b64').read_bytes() for i in range(1,5)]
-          # Exact transport repair: original expected checksums remain unchanged.
-          repairs=[(0,4117,b'qq','83a85894e17ee7daeaffac5ef3d9dfa640d802c6aa2e20513b5690805c3ae999'),(1,3864,b'iI','db59cfe9f2424aaf6fed534ce27d30e132ded80bead7167bfae39abf88dbced6')]
-          for index,offset,inserted,bad_hash in repairs:
-              if hashlib.sha256(parts[index]).hexdigest()==bad_hash:
-                  assert parts[index][offset:offset+len(inserted)]==inserted
-                  parts[index]=parts[index][:offset]+parts[index][offset+len(inserted):]
-          hashes=[hashlib.sha256(p).hexdigest() for p in parts]
-          (out/'payload-hashes.json').write_text(json.dumps(hashes,indent=2))
-          for i,(actual,wanted) in enumerate(zip(hashes,expected),1):
-              if actual!=wanted:raise ValueError(f'payload_part_{i}_hash_mismatch')
-          compressed=base64.b64decode(b''.join(parts),validate=True)
-          assert hashlib.sha256(compressed).hexdigest()=='906a066a87811fe62f7e3f284fe06631a99c186c3f795dddf14ce8ab3e60b77f'
-          patch=bz2.decompress(compressed)
-          assert len(patch)==166410 and hashlib.sha256(patch).hexdigest()=='755f9ca76873a7e43f1e2520ee2c0bc39b47a26d88c25f11575e4d6d62864d82'
-          manifest=json.loads((root/'manifest.json').read_text())
-          assert len(manifest['files'])==28
-          for row in manifest['files']:
-              p=Path(row['path'])
-              assert p.parts[0]=='loyalty' and '..' not in p.parts and not p.is_symlink()
-              actual=hashlib.sha256(p.read_bytes()).hexdigest() if p.exists() else None
-              assert actual==row['before'],row['path']
-          (out/'fix.patch').write_bytes(patch)
-          subprocess.run(['git','apply','--check',str(out/'fix.patch')],check=True)
-          subprocess.run(['git','apply','--index',str(out/'fix.patch')],check=True)
+          expected={
+            'loyalty/CONTENT_DISCOVERY.md':('91e00f3a1151b1dec954b663284d51ff81fd9e4512891b5ec21526237f681dfe','d5c618949c87f99af379bf0094907fd3d69756f711ba7b215594777d7781a051'),
+            'loyalty/content_discovery.py':('63e4b7297a27efce6357bca76a17137a6b0aaa72824cecfa24652992c8f8b8d2','97a8850ed5f9e1b36100aab6c0f508c667446e98ba6c5994243dd501c47302a4'),
+            'loyalty/ekp_stays_public.py':('d369f958a76e3dccc067d907a56429439d2a56b706c77925576656029d4f6a37','f7174e6668d780d909cf570a7afb68e0c6d6819eec6c1e7ce1ffd2e32d81b489'),
+            'loyalty/hse_alumni.py':('86cdc5bd4c8bf3d34519d98784db630eed7de1c4368ea03dd5fa26f7aa9667dc','d0a6a178d43a57758c2d4be61a6d854ab56c91e78e0b29f93767743fa068353a'),
+            'loyalty/known_rules.py':('586ae5bee18c4b7b2383a7335ddca69c9c85b138c0b3ca149cd824b90d2cc47c','1d8ca3471baf365261bad095de6e16d6fed21d9629132533be52f5eaf4d7bc90'),
+            'loyalty/normalized.py':('798e6d2142ffd29e2739cde22ee2477b03c3a69ad21e001c8dd2d43394952bc4','bc17e76e13454e927c8eefaf3ebb4ef0f1fef08fe6c6920c03c957c962e3be64'),
+            'loyalty/tests/test_content_discovery_remaining.py':(None,'54c4a2eb7f2d39cf78a71bd9820f519f32e0f252f2bfda915aeaf58a7ab715e0'),
+            'loyalty/tests/test_ekp_public_20260925.py':('d0653dcc5564633c29baec170dd1ad0563fedf501428e31bc76444e6bcb17238','5969d5a5febdbc54b145c17271449292c18e973e9ee66754a9f3b6e441a3094f'),
+            'loyalty/tests/test_known_rules.py':('f1106cfcb93f408a60c86df6c15b3a192a2be85b4c40c09357cc4151f27accc3','755fad8de4378e0a13eb74d009331f4513d62555e5fa019c738cb9cd16e923f9')}
+          patch=b''.join(Path(f'diagnostics/content-followup-{i}.patch').read_bytes() for i in (1,2))
+          assert hashlib.sha256(patch).hexdigest()=='bdf759806742d466348ff28e2c52033a4bc26fe1784b76c36eff4237dbf70dd1'
+          for name,(before,after) in expected.items():
+              p=Path(name)
+              assert p.parts[0]=='loyalty' and not p.is_symlink()
+              assert (hashlib.sha256(p.read_bytes()).hexdigest() if p.exists() else None)==before,name
+          path=Path('regression-output/followup.patch');path.write_bytes(patch)
+          subprocess.run(['git','apply','--check',str(path)],check=True)
+          subprocess.run(['git','apply','--index',str(path)],check=True)
           changed=subprocess.check_output(['git','diff','--cached','--name-only']).decode().splitlines()
-          assert set(changed)=={r['path'] for r in manifest['files']}
-          for row in manifest['files']:
-              assert hashlib.sha256(Path(row['path']).read_bytes()).hexdigest()==row['sha256'],row['path']
-          (out/'manifest.json').write_text(json.dumps(manifest,indent=2))
-          print('Verified all 4 payload parts and all 28 before/after source hashes.')
+          assert set(changed)==set(expected)
+          for name,(_,after) in expected.items():
+              assert hashlib.sha256(Path(name).read_bytes()).hexdigest()==after,name
+          Path('regression-output/manifest.json').write_text(json.dumps(expected,indent=2))
+          print('Verified patch and all 9 before/after source hashes.')
           PY
       - name: Install regression dependencies
         run: |
           python -m pip install -r loyalty/requirements.txt
+          python -m pip download --no-deps --only-binary=:all: protego==0.6.2 -d regression-output/wheels
           sudo apt-get update -qq && sudo apt-get install -y poppler-utils
       - name: Full regression and mutation tests
         run: |
@@ -85,7 +78,7 @@ jobs:
           github-token: ${{ github.token }}
           path: captured-current
           merge-multiple: true
-      - name: Replay exact current public source captures
+      - name: Replay current public source captures
         run: python loyalty/tests/replay_content_capture.py captured-current --output regression-output/current-replay.json
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
@@ -111,7 +104,7 @@ jobs:
           Path('regression-output/historical-replay.json').write_text(json.dumps(result,indent=2))
           print(result)
           PY
-      - name: Persist only successfully verified source files to the repair branch
+      - name: Persist only successfully verified files to repair branch
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -120,16 +113,16 @@ jobs:
           python - <<'PY'
           import json,hashlib
           from pathlib import Path
-          for row in json.loads(Path('regression-output/manifest.json').read_text())['files']:
-              assert hashlib.sha256(Path(row['path']).read_bytes()).hexdigest()==row['sha256'],row['path']
+          for name,(_,expected) in json.loads(Path('regression-output/manifest.json').read_text()).items():
+              assert hashlib.sha256(Path(name).read_bytes()).hexdigest()==expected,name
           PY
           git diff --exit-code
           remote=$(gh api repos/Floppa2003/key-privileges/git/ref/heads/fix/content-driven-discovery-20261022 --jq .object.sha)
           test "$remote" = "$GITHUB_SHA"
-          git rm diagnostics/content-fix/part1.b64 diagnostics/content-fix/part2.b64 diagnostics/content-fix/part3.b64 diagnostics/content-fix/part4.b64 diagnostics/content-fix/manifest.json
+          git rm diagnostics/content-followup-1.patch diagnostics/content-followup-2.patch
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git commit -m 'fix(loyalty): discover current offers and tiers without content allowlists'
+          git commit -m 'fix(loyalty): remove remaining label gates and scope literal reward rates'
           auth=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)
           echo "::add-mask::$auth"
           git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $auth" push origin HEAD:refs/heads/fix/content-driven-discovery-20261022
@@ -138,6 +131,6 @@ jobs:
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
-          name: verified-content-fix-${{ github.run_id }}-${{ github.run_attempt }}
+          name: verified-content-followup-${{ github.run_id }}-${{ github.run_attempt }}
           path: regression-output/
           retention-days: 14
