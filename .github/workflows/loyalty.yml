@@ -31,7 +31,8 @@ jobs:
     # Forks do not inherit scheduled crawling; manual/branch checks still work.
     if: github.event_name != 'schedule' || github.repository == 'Floppa2003/key-privileges'
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    # Setup, regression and artifact upload are outside the collector's 1000s budget.
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
