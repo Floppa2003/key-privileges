@@ -24,6 +24,8 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m pip install -r loyalty/requirements.txt
+      - name: Install PDF test dependency
+        run: sudo apt-get update -qq && sudo apt-get install -y poppler-utils
       - name: Complete regressions and preserve exact executed code
         run: |
           mkdir -p external-tests
