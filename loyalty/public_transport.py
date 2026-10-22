@@ -9,9 +9,12 @@ from protego import Protego
 from bs4 import BeautifulSoup
 from model import clean_url
 from normalized import BLOCKED
-from source_diagnostics import ReadError
+from source_diagnostics import ReadError, ParseError
 from playwright.async_api import Error as BrowserError, TimeoutError as BrowserTimeout
 
+
+# Structural readiness only: offer names, values and counts remain source data.
+CONTENT_READY_JS = "selectors => (Array.isArray(selectors) ? selectors : [selectors]).every(selector => Array.from(document.querySelectorAll(selector)).some(n => (n.textContent || '').trim().length > 0))"
 
 def retryable_read_error(exc: Exception) -> bool:
     """Transient transport failures only; never authentication, TLS or policy errors."""
@@ -112,19 +115,19 @@ class PublicSource:
     async def __aexit__(self,*_):
         if self.context:await self.context.close()
 
-    async def navigate(self, url: str) -> tuple[int, str]:
+    async def navigate(self, url: str, *, ready_selector=None) -> tuple[int, str]:
         # Preserve the same anonymous context/URL. Only failed connections retry;
         # actual HTTP refusals and access challenges remain terminal for this read.
         for attempt in range(3):
             try:
-                return await self._navigate_once(url)
+                return await self._navigate_once(url, **({'ready_selector': ready_selector} if ready_selector else {}))
             except Exception as exc:
                 if not retryable_read_error(exc) or attempt == 2:
                     raise
                 await asyncio.sleep(max(self.request_interval, 2 ** attempt))
         raise AssertionError('unreachable navigation retry state')
 
-    async def _navigate_once(self, url: str) -> tuple[int, str]:
+    async def _navigate_once(self, url: str, *, ready_selector=None) -> tuple[int, str]:
         """Observe the final main document; never click or solve access challenges."""
         if not allowed_request(url, self.host):
             raise RuntimeError('request_outside_public_source')
@@ -150,7 +153,27 @@ class PublicSource:
             final = latest[-1]
             if not allowed_request(final.url, self.host) or not allowed_request(self.page.url, self.host):
                 raise RuntimeError('unexpected_redirect')
-            return final.status, await self.page.content()
+            body = await self.page.content()
+            if ready_selector:
+                # Fail on refusals before waiting, then re-check the final main
+                # document: hydration can coincide with a redirect or an error.
+                check_response(final.status, body)
+                try:
+                    await self.page.wait_for_function(CONTENT_READY_JS, arg=ready_selector, timeout=10000)
+                except BrowserTimeout:
+                    final = latest[-1]
+                    if not allowed_request(final.url, self.host) or not allowed_request(self.page.url, self.host):
+                        raise RuntimeError('unexpected_redirect')
+                    body = await self.page.content()
+                    check_response(final.status, body)
+                    raise ParseError('page_content_not_ready',
+                                     selector=', '.join(ready_selector) if isinstance(ready_selector, list) else ready_selector) from None
+                final = latest[-1]
+                if not allowed_request(final.url, self.host) or not allowed_request(self.page.url, self.host):
+                    raise RuntimeError('unexpected_redirect')
+                body = await self.page.content()
+                check_response(final.status, body)
+            return final.status, body
         finally:
             self.page.remove_listener('response', observe)
 
@@ -235,12 +258,18 @@ class PublicSource:
             await asyncio.sleep(max(self.request_interval, 2**attempt))
         raise AssertionError('unreachable retry state')
 
-    async def read(self,url: str,*,render=False) -> str:
+    async def read(self,url: str,*,render=False,ready_selector=None) -> str:
+        if ready_selector is not None:
+            if not render:
+                raise ValueError('readiness_requires_render')
+            selectors = ready_selector if isinstance(ready_selector, list) else [ready_selector]
+            if not 1 <= len(selectors) <= 20 or any(not isinstance(q, str) or not 1 <= len(q) <= 240 or '\n' in q for q in selectors):
+                raise ValueError('invalid_readiness_selector')
         self.check_url(url)
         async with self.lock:
             await asyncio.sleep(self.request_interval)
             if render:
-                status,body=await self.navigate(url)
+                status,body=await self.navigate(url, **({'ready_selector': ready_selector} if ready_selector else {}))
                 check_response(status,body)
             else:
                 res=await self.fetch_read(url,method='GET')

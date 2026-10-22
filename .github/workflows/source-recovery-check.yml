@@ -41,7 +41,7 @@ jobs:
       - name: Check repaired sources before the complete collection
         id: smoke
         env:
-          SOURCE_IDS: hse_alumni,smartavia_rules,mantera_moments,af_parkfly,af_primbank_rules
+          SOURCE_IDS: hse_alumni,smartavia_rules,mantera_moments,af_parkfly,af_primbank_rules,t2_mixx,t2_selection,t2_mixx_s,t2_powerbank,t2_mixx_rules
         run: |
           set -euo pipefail
           xvfb-run -a python loyalty/collect_normalized.py --limit 500 --sources "$SOURCE_IDS" --out repair-output/smoke 2>&1 | tee repair-output/smoke.log

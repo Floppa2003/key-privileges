@@ -163,10 +163,11 @@ async def one(browser,cfg,now,limit):
                 elif mode=='known_rules':records=await collect_known_rules(client,cfg,report,now,limit)
                 elif mode=='utair_documents':records=await collect_documents(client,cfg,report,now,limit)
                 elif mode=='html':
-                    raw=await client.read(cfg['url'],render=True)
+                    readiness={'ready_selector':cfg['ready_selector']} if cfg.get('ready_selector') else {}
+                    raw=await client.read(cfg['url'],render=True,**readiness)
                     records=extract(cfg['id'],raw,cfg['url'],now)
                     if not records:
-                        raw=await client.read(cfg['url'],render=True)
+                        raw=await client.read(cfg['url'],render=True,**readiness)
                         records=extract(cfg['id'],raw,cfg['url'],now)
                     if not records:raise RuntimeError('no_offer_blocks_found')
                     report['discovered']=len(records);report['coverage']=cfg.get('coverage_scope','all_matched_blocks_on_public_page')
