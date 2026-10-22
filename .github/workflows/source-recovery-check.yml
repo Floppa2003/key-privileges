@@ -2,7 +2,7 @@ name: Source recovery acceptance
 on:
   push:
     branches: [fix/source-errors-20261022]
-    paths: [.github/workflows/source-recovery-check.yml]
+    paths: [.github/workflows/source-recovery-check.yml, loyalty/**]
 permissions:
   contents: read
 concurrency:
@@ -10,101 +10,40 @@ concurrency:
   cancel-in-progress: false
 jobs:
   verify:
-    if: github.repository == 'Floppa2003/key-privileges' && github.actor == 'Floppa2003' && github.ref == 'refs/heads/fix/source-errors-20261022'
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
-    permissions:
-      contents: write
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
-          fetch-depth: 0
-          persist-credentials: true
+          persist-credentials: false
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with:
           python-version: '3.12'
-      - name: Apply verified recovery delta
+      - name: Preserve execution snapshot and install dependencies
         run: |
           set -euo pipefail
-          mkdir -p repair-output
-          git rev-parse HEAD > repair-output/execution-commit.txt
-          cp .github/workflows/source-recovery-check.yml repair-output/bootstrap-workflow.yml
-          cp .github/recovery-part-*.b64 repair-output/
-          python - <<'PY'
-          import base64,gzip,hashlib,json,subprocess
-          from pathlib import Path,PurePosixPath
-          digest=lambda b:hashlib.sha256(b).hexdigest()
-          packed=''.join(Path(f'.github/recovery-part-{i}.b64').read_text().strip() for i in range(4))
-          # Correct transfer transcription only; the independent payload digest is mandatory.
-          corrections={
-            'jqENLtvaFFD':'jqENvaFFD','BNC7By1tSN':'BNC7riSN',
-            'OypMvMvNDy':'OypMvNDy','YtwdUpeDs2+9':'YtwdU2+9',
-            'TfWt7seeMbo1b6AbcM8':'TfWt7tseUNdbo2asM8',
-            'KENu6oa2e2e9':'KENu6oa2e9','BD2jwLzWzbv7LZ':'BD2jwLzW6LOxLZ',
-            'fuhlm/+rmrm2':'fuhlm/+rm2','H21j1u9sMbtG':'H21j1u9sEgG',
-            'MHLgvwNBvD3Zv':'MHLgvwNB3Zv'}
-          for old,new in corrections.items():
-              packed=packed.replace(old,new)
-          raw=gzip.decompress(base64.b64decode(packed,validate=True))
-          assert digest(raw)=='f5fb905b511834baeeade99957a47b703df6cdddf66ac42bd65466fdc5acb0dd','payload_digest_mismatch'
-          plan=json.loads(raw)
-          assert plan['base']=='b48620c27864eb9765e91f7f265a99c491367f9a'
-          pending=[];seen=set()
-          workflow='.github/workflows/source-recovery-check.yml'
-          for item in plan['files']:
-              path=item['path'];p=Path(path);parts=PurePosixPath(path)
-              assert not parts.is_absolute() and '..' not in parts.parts
-              assert path not in seen and (path.startswith('loyalty/') or path==workflow)
-              assert not p.is_symlink()
-              seen.add(path)
-              if path==workflow:
-                  old=subprocess.check_output(['git','show',plan['base']+':'+path])
-              else:
-                  old=p.read_bytes() if p.exists() else b''
-              if item['before'] is None:
-                  assert not p.exists(),'new_file_exists:'+path
-              else:
-                  assert digest(old)==item['before'],'preimage_mismatch:'+path
-              text=old.decode('utf-8');last=0
-              for start,end,replacement in item['edits']:
-                  assert last<=start<=end<=len(text)
-                  last=end
-              for start,end,replacement in reversed(item['edits']):
-                  text=text[:start]+replacement+text[end:]
-              data=text.encode('utf-8')
-              assert digest(data)==item['after'],'postimage_mismatch:'+path
-              pending.append((p,data))
-          for p,data in pending:
-              p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(data)
-          for i in range(4):Path(f'.github/recovery-part-{i}.b64').unlink()
-          Path('repair-output/applied-hashes.json').write_text(json.dumps({str(p):digest(d) for p,d in pending},indent=2))
-          Path('repair-output/final-workflow.yml').write_bytes(Path(workflow).read_bytes())
-          print('Verified and applied',len(pending),'files')
-          PY
-      - name: Install regression dependencies
-        run: |
-          set -euo pipefail
+          mkdir -p repair-output/dependencies
+          git rev-parse HEAD > repair-output/commit.txt
+          git archive --format=zip HEAD > repair-output/source.zip
           python -m pip install -r loyalty/requirements.txt
           sudo apt-get update -qq && sudo apt-get install -y poppler-utils tesseract-ocr tesseract-ocr-rus
-      - name: Full regression of exact repaired tree
+      - name: Full regression
         run: |
           set -euo pipefail
           python -m unittest discover -s loyalty/tests -v > repair-output/tests.log 2>&1
           node --test key/refresh.test.mjs > repair-output/key-tests.log 2>&1
-          git diff --check
-      - name: Commit tested code on isolated repair branch
+          git diff --exit-code
+      - name: Install browser for full public collection
+        run: python -m playwright install --with-deps chromium
+      - name: Collect all registered public routes without publication
+        run: xvfb-run -a python loyalty/collect_normalized.py --limit 500 --out repair-output/collection
+      - name: Validate public rows and report all source routes
+        if: always()
         run: |
-          set -euo pipefail
-          test "$GITHUB_REF" = refs/heads/fix/source-errors-20261022
-          cp repair-output/bootstrap-workflow.yml .github/workflows/source-recovery-check.yml
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add loyalty .github/recovery-part-0.b64 .github/recovery-part-1.b64 .github/recovery-part-2.b64 .github/recovery-part-3.b64
-          git diff --cached --name-only > repair-output/changed-files.txt
-          git commit -m 'fix: recover source parsers and truthful source health with safe transport diagnostics'
-          git push origin HEAD:refs/heads/fix/source-errors-20261022
-          git rev-parse HEAD > repair-output/repaired-commit.txt
-          git archive --format=zip HEAD > repair-output/source.zip
+          if test -f repair-output/collection/normalized.json; then
+            python loyalty/sheets_normalized.py --input repair-output/collection/normalized.json > repair-output/publication-validation.log
+            python loyalty/source_lifecycle.py --input repair-output/collection/normalized.json > repair-output/source-health.json
+          fi
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
