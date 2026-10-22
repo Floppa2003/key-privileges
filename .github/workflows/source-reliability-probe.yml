@@ -1,0 +1,74 @@
+name: Source reliability diagnostic (no publication)
+on:
+  push:
+    branches: [fix/source-reliability-20261022]
+    paths: [.github/workflows/source-reliability-probe.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: source-reliability-diagnostic
+  cancel-in-progress: false
+jobs:
+  diagnose:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - name: Install public-reader dependencies and preserve portable test wheels
+        run: |
+          set -euo pipefail
+          mkdir -p probe-output/wheels
+          git rev-parse HEAD > probe-output/commit.txt
+          python -m pip install -r loyalty/requirements.txt
+          python -m pip download --no-deps --dest probe-output/wheels protego==0.6.2 pypdf==6.18.1
+          sudo apt-get update -qq && sudo apt-get install -y poppler-utils
+          python -m playwright install --with-deps chromium
+      - name: Capture the four public parser inputs using the ordinary reader
+        env:
+          PYTHONPATH: loyalty
+        run: |
+          python - <<'PY'
+          import asyncio,json
+          from pathlib import Path
+          from playwright.async_api import async_playwright
+          from public_transport import PublicSource
+          from collect_normalized import error_record
+          from mantera_hotel import URL as HOTEL
+          cfgs=json.loads(Path('loyalty/sources_normalized.json').read_text())
+          urls={c['id']:c['url'] for c in cfgs if c['id'] in ('hse_alumni','smartavia_rules','af_parkfly')}
+          urls['mantera_hotel']=HOTEL
+          async def main():
+              out=Path('probe-output/pages');out.mkdir(parents=True)
+              result=[]
+              async with async_playwright() as p:
+                  browser=await p.chromium.launch()
+                  try:
+                      for sid,url in urls.items():
+                          try:
+                              async with PublicSource(browser,url) as reader:
+                                  await reader.robots()
+                                  raw=await reader.read(url,render=True)
+                                  (out/(sid+'.html')).write_text(raw)
+                                  result.append({'id':sid,'url':url,'status':'captured','robots':reader.robots_info})
+                          except Exception as exc:
+                              result.append({'id':sid,'url':url,'status':'failed',**error_record(exc,'capture',url)})
+                  finally: await browser.close()
+              (out/'results.json').write_text(json.dumps(result,ensure_ascii=False,indent=2))
+          asyncio.run(main())
+          PY
+      - name: Recheck all 22 failing sources on the same runner; never publish
+        run: |
+          xvfb-run -a python loyalty/collect_normalized.py --limit 500 --sources 'noname,ural,mir,mir_neva,nordwind,coral,coral_promo,rzd,aeroflot,ekp,loyals,af_parkfly,ural_tiers,t2_magnit_rules,t2_registration_rules,smartavia_rules,af_primbank_rules,ural_smart_rules,hse_alumni,alfa_only_partner_offers,club_avolta_public,mantera_moments' --out probe-output/collection
+      - name: Preserve public diagnostics
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: source-reliability-probe-${{ github.run_id }}-${{ github.run_attempt }}
+          path: probe-output/
+          retention-days: 7
