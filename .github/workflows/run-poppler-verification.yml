@@ -22,10 +22,9 @@ jobs:
           set -euo pipefail
           test "$GITHUB_RUN_ATTEMPT" = 1
           test "$(gh api repos/Floppa2003/key-privileges/git/ref/heads/main --jq .object.sha)" = debde8a59d8e0154506f2b8227eecee3003261bc
-          test "$(gh api repos/Floppa2003/key-privileges/git/ref/heads/fix/poppler-before-tests-20261022 --jq .object.sha)" = 6480682712f99fd7e3be5bfc8a4deee70cbb08c5
           printf '%s\n' '{"ref":"main"}' | gh api --method POST repos/Floppa2003/key-privileges/actions/workflows/content-driven-discovery-check.yml/dispatches --input -
           echo 'Dispatched main read-only regression'
           printf '%s\n' '{"ref":"main","inputs":{"limit":"500","sources":"","publish":false}}' | gh api --method POST repos/Floppa2003/key-privileges/actions/workflows/loyalty.yml/dispatches --input -
           echo 'Dispatched main collection with publish=false'
-          printf '%s\n' '{"ref":"fix/poppler-before-tests-20261022"}' | gh api --method POST repos/Floppa2003/key-privileges/actions/workflows/loyalty-free-access.yml/dispatches --input -
-          echo 'Dispatched free-access regression on repair branch; source and publish jobs require main and will skip'
+          printf '%s\n' '{"ref":"verify/poppler-release-20261022"}' | gh api --method POST repos/Floppa2003/key-privileges/actions/workflows/loyalty-free-access.yml/dispatches --input -
+          echo 'Dispatched free-access regression on verification branch; source and publish jobs require main and will skip'
