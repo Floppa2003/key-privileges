@@ -80,8 +80,16 @@ def parse(raw,observed_at):
     if 'мантера моменты' not in plain(one(soup,'h1')).casefold():raise ValueError('mantera_hotel_page_identity')
     # The hotel owns this page; only a positive participation statement with
     # its name supports membership, not an arbitrary name elsewhere in a footer.
-    participation=[plain(n) for n in soup.select('p') if NAME in plain(n) and re.search(r'включая отель|участву|участни',plain(n),re.I)]
-    if len(participation)!=1:raise ValueError('mantera_hotel_owned_blocks')
+    participation=[]
+    name=re.escape(NAME)
+    positive=re.compile(r'включая\s+отель\s+'+name+r'|' + name +
+                        r'\s+(?:является\s+участником|участвует)\s+в?\s*программ',re.I)
+    negative=re.compile(name+r'\s+(?:больше\s+)?не\s+(?:участвует|является\s+участником)',re.I)
+    for node in soup.select('p'):
+        value=plain(node)
+        if negative.search(value):raise ValueError('mantera_hotel_participation_conflict')
+        if positive.search(value) and value not in participation:participation.append(value)
+    if not participation:raise ValueError('mantera_hotel_owned_blocks')
     table=one(soup,'table')
     headers=[plain(n) for n in table.select('thead th')]
     # Column meanings are a schema, not the current data in its rows.
@@ -94,6 +102,6 @@ def parse(raw,observed_at):
         if n.parent is not None:n.decompose()
     context=plain(context)
     e=dict(projection_version=2,kind='hotel_participation',url=URL,page_sha256=hashlib.sha256(raw.encode()).hexdigest(),
-        participation=participation[0],context=context,activation=action_clauses(context),faq=faq,
+        participation='\n'.join(participation),context=context,activation=action_clauses(context),faq=faq,
         table=[[plain(n) for n in tr.select('td')] for tr in table.select('tbody tr')])
     return make_record('mantera_moments',e,observed_at)

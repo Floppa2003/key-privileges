@@ -37,12 +37,18 @@ class UnanchoredTests(unittest.TestCase):
     def test_missing_heading_has_no_invented_fallback(self):
         row=parse_catalog(fixture().replace('<h2>'+TITLE+'</h2>','<h2>Different business</h2>'),NOW)[1]
         self.assertEqual(row['record_kind'],'source_observation');self.assertEqual(row['promo_codes'],[])
-    def test_duplicate_matching_heading_fails_closed(self):
+    def test_matching_heading_in_another_anchored_section_is_not_borrowed(self):
         raw=fixture().replace('<h2>Other</h2>',f'<h2>{TITLE}</h2>')
-        with self.assertRaises(ValueError):parse_catalog(raw,NOW)
+        rows=parse_catalog(raw,NOW)
+        self.assertEqual(rows[1]['promo_codes'],['PRINT_ONLY'])
+        self.assertEqual(rows[2]['promo_codes'],['OTHER_ONLY'])
+        self.assertNotIn('OTHER_ONLY',rows[1]['promo_codes'])
     def test_explicit_different_anchor_cannot_be_borrowed(self):
         raw=fixture().replace(f'<h2>{TITLE}</h2>',f'<a name="different"></a><h2>{TITLE}</h2>')
-        with self.assertRaises(ValueError):parse_catalog(raw,NOW)
+        rows=parse_catalog(raw,NOW)
+        self.assertEqual(rows[1]['record_kind'],'source_observation')
+        self.assertEqual(rows[1]['promo_codes'],[])
+        self.assertEqual(rows[0]['promo_codes'],['DESIGN_ONLY'])
     def test_added_real_anchor_takes_precedence_without_duplicate(self):
         raw=fixture().replace(f'<div class="builder-section"><h2>{TITLE}',f'<div class="builder-section"><a name="mordapechat"></a></div><div class="builder-section"><h2>{TITLE}')
         rows=parse_catalog(raw,NOW);self.assertEqual(len(rows),3)

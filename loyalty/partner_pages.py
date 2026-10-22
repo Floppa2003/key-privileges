@@ -6,6 +6,7 @@ from datetime import datetime
 from urllib.parse import urlsplit
 from bs4 import BeautifulSoup
 from normalized import make_offer,text,canonical_url
+from source_diagnostics import ParseError
 
 CONFIG=json.loads(Path(__file__).with_suffix('.json').read_text(encoding='utf8'))
 MONTHS={'января':1,'февраля':2,'марта':3,'апреля':4,'мая':5,'июня':6,'июля':7,
@@ -30,7 +31,7 @@ def required(soup,selectors):
     nodes=[]
     for selector in selectors:
         matches=soup.select(selector)
-        if not matches:raise ValueError('Reviewed partner content selector disappeared: '+selector)
+        if not matches:raise ParseError('partner_content_selector_missing',selector=selector,matches=0)
         nodes.extend(matches)
     return nodes
 
@@ -74,7 +75,9 @@ def extract_partner_page(source,soup,url,observed_at):
     if cfg.get('parser') == 'tsum_alfa':
         from tsum_alfa import extract_tsum
         return extract_tsum(source,soup,url,observed_at,cfg)
-    blocks=required(soup,cfg['selectors']);terms=content(blocks)
+    blocks=required(soup,cfg['selectors'])
+    if cfg.get('unique_content') and len(blocks)!=1:raise ParseError('partner_content_ambiguous',selector=' + '.join(cfg['selectors']),matches=len(blocks))
+    terms=content(blocks)
     flat=re.sub(r'\s+',' ',terms)
     program_rx=r'Аэрофлот.{0,5}Бону[сc]' if source.startswith('af_') else r'РЖД.{0,5}Бонус' if source.startswith('rzd_') else r'Един\w* карт\w* петербуржца|ЕКП'
     program_rx=cfg.get('program_regex',program_rx)

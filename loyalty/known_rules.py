@@ -13,6 +13,7 @@ from bs4 import BeautifulSoup
 from normalized import canonical_url,make_offer,number,text
 from partner_pages import content,MONTHS
 from read_budget import within_source_budget
+from source_diagnostics import ParseError
 
 CONFIG=json.loads(Path(__file__).with_suffix('.json').read_text(encoding='utf8'))
 NUM=r'\d[\d \u00a0\u202f]*(?:[.,]\d+)?'
@@ -74,7 +75,7 @@ def scoped(source,raw,url):
     for selector in cfg['selectors']:
         found=soup.select(selector)
         if not found or (cfg.get('single_selectors',True) and len(found)!=1):
-            raise ValueError('known_rule_scope_missing_or_ambiguous:'+selector)
+            raise ParseError('known_rule_scope_missing_or_ambiguous', selector=selector, matches=len(found))
         nodes.extend(found)
     handler=cfg.get('handler')
     if handler=='headquarters':
@@ -263,7 +264,11 @@ def smartavia_records(cfg,nodes,terms,details,warnings,url,now):
     records=[];labels=set()
     for card in cards:
         value=content([card])
-        labels_in_card=re.findall(r'(?:^|\n)Тариф[ \t]+(.+?)(?=\.\s|\n|$)',value)
+        # The visible label and value may be separate sibling blocks. Read
+        # only this card's title; do not join the following price/benefit text.
+        titles=card.select('.sm-title-extra')
+        labels_in_card=([text(n.get_text(' ',strip=True)) for n in titles] if titles else
+                        re.findall(r'(?:^|\n)Тариф\s+([^\n]+?)(?=\.\s|\n|$)',value))
         if len(labels_in_card)!=1:raise ValueError('smartavia_plan_label_missing_or_ambiguous')
         key=labels_in_card[0].strip()
         if not key:raise ValueError('smartavia_plan_label_missing')
@@ -333,7 +338,8 @@ async def collect_known_rules(client,cfg,report,now,limit):
         if settings.get('handler')=='gpb':
             raw=await within_source_budget(client,lambda:read_public_product(client,cfg['url']))
         else:
-            raw=await within_source_budget(client,lambda:client.read(cfg['url'],render=settings.get('render',True)))
+            readiness={'ready_selector':cfg['ready_selector']} if cfg.get('ready_selector') else {}
+            raw=await within_source_budget(client,lambda:client.read(cfg['url'],render=settings.get('render',True),**readiness))
         if settings.get('ready_text'):
             selector=settings['selectors'][0]
             async def ready_article():
