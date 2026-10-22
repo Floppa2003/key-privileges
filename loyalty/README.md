@@ -12,6 +12,8 @@ Each record keeps a stable ID, program/partner, benefit, conditions, redemption 
 ## Running
 
 ```sh
+# Ubuntu/Debian: the PDF geometry tests require pdftotext.
+sudo apt-get update -qq && sudo apt-get install -y poppler-utils
 python -m pip install -r loyalty/requirements.txt
 python -m unittest discover -s loyalty/tests -v
 node --test key/refresh.test.mjs

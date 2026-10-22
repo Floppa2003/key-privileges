@@ -2,9 +2,9 @@ name: Content-driven discovery regression
 on:
   push:
     branches: [main, fix/content-driven-discovery-20261022]
-    paths: [loyalty/**, key/**, .github/workflows/content-driven-discovery-check.yml]
+    paths: [loyalty/**, key/**, .github/workflows/**]
   pull_request:
-    paths: [loyalty/**, key/**, .github/workflows/content-driven-discovery-check.yml]
+    paths: [loyalty/**, key/**, .github/workflows/**]
   workflow_dispatch:
 permissions:
   contents: read
