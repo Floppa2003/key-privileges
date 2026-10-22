@@ -1,0 +1,42 @@
+name: Source recovery acceptance
+on:
+  push:
+    branches: [fix/source-errors-20261022]
+    paths: [.github/workflows/source-recovery-check.yml]
+permissions:
+  contents: read
+concurrency:
+  group: source-recovery-acceptance
+  cancel-in-progress: false
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - name: Preserve execution snapshot and install dependencies
+        run: |
+          set -euo pipefail
+          mkdir -p repair-output/dependencies
+          git rev-parse HEAD > repair-output/commit.txt
+          git archive --format=zip HEAD > repair-output/source.zip
+          python -m pip install -r loyalty/requirements.txt
+          python -m pip download --no-deps protego==0.6.2 -d repair-output/dependencies
+          sudo apt-get update -qq && sudo apt-get install -y poppler-utils
+      - name: Full regression
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s loyalty/tests -v > repair-output/tests.log 2>&1
+          node --test key/refresh.test.mjs > repair-output/key-tests.log 2>&1
+          git diff --exit-code
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: source-recovery-${{ github.run_id }}-${{ github.run_attempt }}
+          path: repair-output/
+          retention-days: 14
