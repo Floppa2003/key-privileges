@@ -93,7 +93,7 @@ def scoped(source,raw,url):
         products=[n for n in nodes if any(re.fullmatch(r'TariffsMsbItemContent_root__(?!.*__)[A-Za-z0-9_-]+',c) for c in n.get('class',[]))]
         titles=['Условия по карте','Условия программы лояльности «Аэрофлот Бонус»']
         accordions=[n.parent.parent for n in nodes if text(n.get_text(' ',strip=True)) in titles]
-        if len(products)!=2 or len(accordions)!=2:raise ValueError('gpb_public_sections_ambiguous')
+        if not 1<=len(products)<=100 or len(accordions)!=len(set(titles)):raise ValueError('gpb_public_sections_ambiguous')
         nodes=products+accordions
     terms=content(nodes)
     if any(x.casefold() not in flat(terms).casefold() for x in cfg['required']):
@@ -111,14 +111,21 @@ def parse_known_rule(source,raw,url,observed_at):
     benefit=terms;start=end=None;handler=cfg.get('handler')
     if handler=='gpb':
         options=[];benefit_clauses=[]
-        for node,label,paid in zip(nodes[:2],('Без Газпром Бонус «Плюс»','С Газпром Бонус «Плюс»'),(False,True)):
+        products=[n for n in nodes if any(re.fullmatch(r'TariffsMsbItemContent_root__(?!.*__)[A-Za-z0-9_-]+',c) for c in n.get('class',[]))]
+        labels=set()
+        for node in products:
             value=flat(node.get_text(' ',strip=True))
-            if not value.startswith(label):raise ValueError('gpb_subscription_label_mismatch')
+            heading=node.select('h5')
+            if len(heading)!=1:raise ValueError('gpb_subscription_label_missing')
+            label=flat(heading[0].get_text(' ',strip=True))
+            if not label or label in labels:raise ValueError('gpb_subscription_label_duplicate')
+            labels.add(label)
             rate=match(r'Мили «Аэрофлот Бонус» (\d+(?:[.,]\d+)?) мили за (\d+) ₽ покупок',value,'gpb_rate_missing')
             cap=match(r'Максимум миль в месяц ('+NUM+r')(?= Переводы|$)',value,'gpb_cap_missing')
             benefit_clauses.append(label+': '+rate[0]+'; '+cap[0])
-            cost=match(r'далее [—-] (\d+) ₽ в месяц',value,'gpb_subscription_price_missing')[1] if paid else '0'
-            if not paid and 'Бесплатно' not in value:raise ValueError('gpb_free_option_missing')
+            monthly=re.search(r'(?:далее\s*[—–-]\s*)?(\d+(?:[.,]\d+)?)\s*₽\s*в месяц',value,re.I)
+            cost=number(monthly[1]) if monthly else '0' if re.search(r'Бесплатно',value,re.I) else None
+            paid=(float(cost)>0) if cost is not None else None
             options.append({'subscription':paid,'label':label,'miles':number(rate[1]),'basis_rub':rate[2],
                 'monthly_cap_miles':number(cap[1]),'monthly_subscription_rub':cost,'evidence':value})
         minimum=match(r'Минимальная сумма покупок по карте в месяц [—–-] ('+NUM+r') ₽',terms,'gpb_minimum_missing')
@@ -211,8 +218,9 @@ def parse_known_rule(source,raw,url,observed_at):
         youthcode=match(r'для молодежи\s+([A-Z][A-Z0-9]+)',terms,'generations_youth_code_missing')
         seniorcode=match(r'для людей старшего поколения\s+([A-Z][A-Z0-9]+)',terms,'generations_senior_code_missing')
         life=match(r'Срок действия миль.{0,60}составляет (\d+) года',terms,'generations_reward_lifetime_missing')
-        multiplier=match(r'двойные мили',terms,'generations_multiplier_not_recognized')
-        details.update(reward_multiplier=2,reward_multiplier_evidence=multiplier[0],
+        multiplier=re.search(r'(двойные|тройные|четверные|\d+-кратные) мили',terms,re.I)
+        factor=({'двойные':2,'тройные':3,'четверные':4}.get(multiplier[1].lower()) or int(multiplier[1].split('-')[0])) if multiplier else None
+        details.update(reward_multiplier=factor,reward_multiplier_evidence=multiplier[0] if multiplier else None,
           reward_lifetime_years=int(life[1]),reward_lifetime_evidence=life[0],
           audiences=[{'audience':'youth','age_min':int(young[1]),'age_max':int(young[2]),'promo_code':youthcode[1],'evidence':[young[0],youthcode[0]]},
                      {'audience':'senior','women_age_min':int(senior[1]),'men_age_min':int(senior[2]),'promo_code':seniorcode[1],'evidence':[senior[0],seniorcode[0]]}])
@@ -254,13 +262,18 @@ def smartavia_records(cfg,nodes,terms,details,warnings,url,now):
     if not 1<=len(cards)<=20:raise ValueError('smartavia_plan_count_outside_bound')
     records=[];labels=set()
     for card in cards:
-        value=content([card]);m=match(r'Тариф (1\+(?:0|[1-9]\d*))(?=\s|[.,:;!?]|$)',value,'smartavia_plan_label_missing');key=m[1]
+        value=content([card])
+        labels_in_card=re.findall(r'(?:^|\n)Тариф[ \t]+(.+?)(?=\.\s|\n|$)',value)
+        if len(labels_in_card)!=1:raise ValueError('smartavia_plan_label_missing_or_ambiguous')
+        key=labels_in_card[0].strip()
+        if not key:raise ValueError('smartavia_plan_label_missing')
+        travelers=re.fullmatch(r'1\+(0|[1-9]\d*)',key)
         if key in labels:raise ValueError('smartavia_duplicate_plan_label')
         labels.add(key)
         price=match(r'Оформить за ('+NUM+r')\s*₽',value,'smartavia_plan_price_missing')
         segments=match(r'(\d+) сегментов со скидкой (\d+) ₽',value,'smartavia_segments_missing')
         baggage=match(r'(\d+) услуг «Багаж (\d+) кг» со скидкой (\d+) ₽',value,'smartavia_baggage_missing')
-        d={**details,'subscription_plan':{'label':key,'additional_travelers':int(key.split('+')[1]),
+        d={**details,'subscription_plan':{'label':key,'additional_travelers':int(travelers[1]) if travelers else None,
            'annual_rub':number(price[1]),'flight_segments':int(segments[1]),'flight_discount_rub':segments[2],
            'baggage_services':int(baggage[1]),'baggage_kg':int(baggage[2]),'baggage_discount_rub':baggage[3],
            'evidence':value},'scope':'published_plan_card_and_common_subscription_rules'}

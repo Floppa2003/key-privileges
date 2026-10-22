@@ -260,8 +260,7 @@
       ".option-detail-t2-other-conditions-container"
     ],
     "required": [
-      "MiXX M",
-      "Федеральный"
+      "MiXX M"
     ],
     "record_kind": "program_rules",
     "supplements": [
@@ -337,10 +336,7 @@
       "#rec586348980"
     ],
     "required": [
-      "Поколения Utair",
-      "UYOUTHWM",
-      "UPENSWM",
-      "одном месяце"
+      "Поколения Utair"
     ],
     "record_kind": "program_rules",
     "handler": "generations",
@@ -446,8 +442,7 @@
     "single_selectors": false,
     "render": false,
     "required": [
-      "Без Газпром Бонус «Плюс»",
-      "С Газпром Бонус «Плюс»",
+      "Аэрофлот Бонус",
       "Минимальная сумма покупок по карте в месяц",
       "Стоимость обслуживания"
     ],
@@ -468,8 +463,7 @@
     ],
     "required": [
       "Крылья",
-      "Рамада Екатеринбург",
-      "не распространяется на специальные предложения"
+      "Рамада Екатеринбург"
     ],
     "record_kind": "program_rules",
     "supplements": [
@@ -485,8 +479,7 @@
       ".section.m-70.mt-20"
     ],
     "required": [
-      "Крылья",
-      "предъявлении карты"
+      "Крылья"
     ],
     "record_kind": "program_rules",
     "supplements": [
@@ -514,11 +507,7 @@
       "#rec754529990 [data-elem-id=\"1716885851096\"]"
     ],
     "required": [
-      "Крылья",
-      "От Smart",
-      "Синей",
-      "Серебряной",
-      "Золотой"
+      "Крылья"
     ],
     "record_kind": "program_rules",
     "supplements": [
@@ -534,10 +523,7 @@
       ".item-page [itemprop='articleBody'] > p:not(hr ~ p)"
     ],
     "required": [
-      "Крылья",
-      "Синей",
-      "Серебряной",
-      "Золотой"
+      "Крылья"
     ],
     "record_kind": "program_rules",
     "supplements": [
@@ -574,8 +560,7 @@
     ],
     "required": [
       "GLORIA",
-      "Крылья",
-      "Вид карты"
+      "Крылья"
     ],
     "record_kind": "program_rules",
     "supplements": [
@@ -595,8 +580,7 @@
       ".content.-detail .ustyle"
     ],
     "required": [
-      "Крылья",
-      "URALAIRLINES"
+      "Крылья"
     ],
     "record_kind": "program_rules",
     "supplements": [
@@ -612,10 +596,7 @@
       "li.b-special-offers-list__item:has(h2:-soup-contains(\"Программа лояльности «Крылья»\"))"
     ],
     "required": [
-      "Крылья",
-      "Silver",
-      "Gold",
-      "Делюкс"
+      "Крылья"
     ],
     "record_kind": "program_rules",
     "supplements": [
@@ -636,10 +617,7 @@
     ],
     "required": [
       "Крылья",
-      "Ангара",
-      "синей",
-      "серебряной",
-      "золотой"
+      "Ангара"
     ],
     "record_kind": "program_rules",
     "supplements": [
@@ -655,8 +633,7 @@
       ".itemFullText"
     ],
     "required": [
-      "Крылья",
-      "акционные"
+      "Крылья"
     ],
     "record_kind": "program_rules",
     "supplements": [

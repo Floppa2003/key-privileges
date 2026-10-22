@@ -170,6 +170,9 @@ def content_hash(record: dict) -> str:
 
 
 def offer_rates(source_id, value):
+    if source_id in ('ekp_ladoga_public', 'flystation_public'):
+        from content_discovery import literal_rates
+        return literal_rates(value)
     if source_id=='hse_alumni':
         from hse_alumni import hse_rates
         return hse_rates(value)

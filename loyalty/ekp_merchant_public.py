@@ -5,6 +5,8 @@ import re
 from datetime import datetime
 from bs4 import BeautifulSoup, Comment, Tag
 from normalized import make_offer, text
+from public_reward_projection import plain
+from content_discovery import label_id, action_clauses
 
 WARNINGS = ['independent_public_partner_page_not_authenticated_EKP_card',
             'regional_card_equivalence_not_verified', 'user_eligibility_not_verified',
@@ -50,27 +52,26 @@ def extract_merchant(source, soup, url, observed_at, cfg):
         if compact(one(block, 'h1')) != 'Единая карта петербуржца':
             raise ValueError('ekp_artparking_identity')
         ps = [compact(p) for p in block.find_all('p', recursive=False) if compact(p)]
-        offers = [p for p in ps if p.startswith('Скидки предоставляются на следующие услуги')]
-        if len(offers) != 1:
-            raise ValueError('ekp_artparking_offer_block')
-        offer = offers[0]
-        pairs = re.findall(r'(Концерты www\.artparking\.org|Детские программы www\.gorodmus\.ru)\s*[–—-]\s*(\d+(?:[.,]\d+)?%)\s+Промокод\s+([A-Za-z0-9_-]+)', offer)
-        if len(pairs) != 2 or len({p[0] for p in pairs}) != 2 or len(re.findall(r'\d+(?:[.,]\d+)?%', offer)) != 2:
-            raise ValueError('ekp_artparking_product_rates')
-        common = [p for p in ps if p != offer and not p.startswith(('Программа лояльности', 'Детские программы Центра'))]
-        children = [p for p in ps if p.startswith('Детские программы Центра')]
-        joined = '\n'.join(common)
-        if len(children) != 1 or not all(x in joined for x in ('предварительной брони', 'при наличии свободных мест',
-                'двумя способами', 'необходимо предъявить Единую карту', 'Зеленогорской кирхе')):
-            raise ValueError('ekp_artparking_redemption_or_exclusion')
-        rows = []
-        for label, rate, code in pairs:
-            kid = label.startswith('Детские')
-            own = ('Скидка на ' + label + ': ' + rate + '. Промокод ' + code)
-            terms = '\n'.join([own, *common, *(children if kid else [])])
-            rows.append(make('детские программы' if kid else 'концерты', own, terms,
-                '\n'.join(p for p in common if 'способами' in p or 'Важное условие' in p) + ('\n' + children[0] if kid else ''),
-                '#main > .container; ' + label, details={'product_scope': label, 'public_literal_code': True}))
+        pairs=[];offer_nodes=[]
+        for node in block.find_all('p',recursive=False):
+            local=[]
+            for line in plain(node).splitlines():
+                m=re.fullmatch(r'(.+?\s+(?:www\.|https?://)[^\s]+)\s*[–—-]\s*(\d+(?:[.,]\d+)?%)\s+Промокод\s+([A-Za-z0-9_-]+)',line)
+                if m:local.append(m.groups())
+            if local:pairs.extend(local);offer_nodes.append(compact(node))
+        if not pairs or len({p[0] for p in pairs})!=len(pairs):raise ValueError('ekp_artparking_product_rates')
+        labels={label:re.split(r'\s+(?:www\.|https?://)',label,1)[0] for label,_,_ in pairs}
+        remaining=[p for p in ps if p not in offer_nodes and not p.startswith('Программа лояльности')]
+        scoped={label:[p for p in remaining if p.startswith(prefix)] for label,prefix in labels.items()}
+        common=[p for p in remaining if not any(p in owned for owned in scoped.values())]
+        rows=[]
+        legacy_ids={'Концерты':'концерты','Детские программы':'детские программы'}
+        for label,rate,code in pairs:
+            own='Скидка на '+label+': '+rate+'. Промокод '+code
+            terms='\n'.join([own,*common,*scoped[label]])
+            activation='\n'.join(p for p in [*common,*scoped[label]] if re.search(r'получен|предъяв|оплачив|способ|промокод',p,re.I))
+            rows.append(make(legacy_ids.get(labels[label]) or label_id(label,'service'),own,terms,activation,
+                '#main > .container; '+label,details={'product_scope':label,'public_literal_code':True}))
         return rows
 
     if source == 'ekp_domknigi_public':
@@ -80,18 +81,16 @@ def extract_merchant(source, soup, url, observed_at, cfg):
         if not ps or not ps[0].startswith('Дом книги и Единая карта петербуржца'):
             raise ValueError('ekp_domknigi_identity')
         rates = re.findall(r'скидка\s+(\d+(?:[.,]\d+)?%)', terms, re.I)
-        if len(rates) != 2 or len(set(rates)) != 1:
+        if not rates or len(set(rates)) != 1:
             raise ValueError('ekp_domknigi_rate_disagreement')
-        period = re.findall(r'Срок проведения:\s*с (\d{2}\.\d{2}\.\d{4})\s*[—–-]\s*до распоряжения отдела маркетинга', terms)
-        if len(period) != 1 or not all(x in terms for x in ('не суммируется', 'Оплатить покупку бонусами также нельзя',
-                'Интернет', 'назвать промокод на кассе')):
-            raise ValueError('ekp_domknigi_conditions')
-        start = datetime.strptime(period[0], '%d.%m.%Y').date().isoformat()
+        period=re.findall(r'Срок проведения:\s*с (\d{2}\.\d{2}\.\d{4})',terms)
+        if len(set(period))>1:raise ValueError('ekp_domknigi_conditions')
+        start=datetime.strptime(period[0],'%d.%m.%Y').date().isoformat() if period else None
         links = sorted(set(a['href'] for a in block.select('a[href]')))
         return [make('весь ассортимент', ps[0], terms,
             '\n'.join(p for p in ps if 'назвать промокод на кассе' in p or 'Интернет' in p),
             'article.page-single__article', valid_from=start,
-            details={'published_links': links, 'validity_evidence': 'Срок проведения: с ' + period[0] + ' — до распоряжения отдела маркетинга',
+            details={'published_links': links, 'validity_evidence': next((p for p in ps if p.startswith('Срок проведения:')),None),
                      'public_literal_code': False, 'publication_date_is_not_validity': True})]
 
     if source == 'ekp_itc_public':

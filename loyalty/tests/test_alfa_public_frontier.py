@@ -30,11 +30,14 @@ class TsumTests(unittest.TestCase):
         self.soup = BeautifulSoup(self.html, 'html.parser')
 
     def rows(self):
+        return [r for r in self.all_rows() if r['record_kind']=='partner_offer']
+
+    def all_rows(self):
         return extract_tsum(SOURCE_ID, self.soup, URL, NOW, {})
 
     def test_actual_tiers_only_not_baseline_rates(self):
         rows = self.rows()
-        self.assertEqual([(r['details']['tsum_tier'], r['rates'][0]['value']) for r in rows], [('Orange','8'), ('Black','20')])
+        self.assertEqual({r['details']['tsum_tier']:r['rates'][0]['value'] for r in rows}, {'Orange':'8', 'Black':'20'})
         for r in rows:
             self.assertEqual(len(r['rates']), 1)
             self.assertIn('бонусами', r['benefit_text'])
@@ -49,10 +52,11 @@ class TsumTests(unittest.TestCase):
                            'картами Аэрофлот, S7, Апельсин', '15-й день', '1 бонус = 1 рубль', 'Нет, начисляется только',
                            'брендов-исключений', 'А-Клуб', 'Кешбэк за возвращённые товары не начисляется'):
                 self.assertIn(marker, r['conditions_text'])
-            self.assertNotIn('2990', r['conditions_text'])
+            self.assertIn('2990', r['conditions_text'])
+            self.assertNotIn('2990', r['benefit_text'])
 
     def test_router_uses_the_same_parser(self):
-        self.assertEqual(extract(SOURCE_ID, self.html, URL, NOW), self.rows())
+        self.assertEqual(extract(SOURCE_ID, self.html, URL, NOW), self.all_rows())
 
     def test_tier_card_and_faq_disagreement_fails(self):
         n = self.soup.select('[class*="AlfaOnly__bounsWrapper___"]')[1]
@@ -61,18 +65,19 @@ class TsumTests(unittest.TestCase):
             self.rows()
 
     def test_consistent_rate_update_is_not_hardcoded_and_keeps_id(self):
-        old = self.rows()[0]
+        old = next(r for r in self.rows() if r['details']['tsum_tier']=='Orange')
         self.soup = BeautifulSoup(self.html.replace('8%', '9%'), 'html.parser')
-        new = self.rows()[0]
+        new = next(r for r in self.rows() if r['details']['tsum_tier']=='Orange')
         self.assertEqual(new['rates'][0]['value'], '9')
         self.assertEqual(old['id'], new['id'])
         self.assertNotEqual(old['content_sha256'], new['content_sha256'])
 
-    def test_required_payment_exception_cannot_silently_disappear(self):
+    def test_removed_payment_exception_is_not_reinserted_from_old_snapshot(self):
         n = next(n for n in self.soup.select('[data-test-id="accordionWrapper"]') if 'СБП или QR-кода' in n.get_text())
         n.decompose()
-        with self.assertRaisesRegex(ValueError, 'required_question_missing'):
-            self.rows()
+        for row in self.all_rows():
+            self.assertNotIn('СБП или QR-кода',row['conditions_text'])
+            validate_offer(row)
 
     def test_duplicate_tier_and_question_fail(self):
         for selector in ('[class*="AlfaOnly__bounsWrapper___"]', '[data-test-id="accordionWrapper"]'):
@@ -117,7 +122,7 @@ class TsumTests(unittest.TestCase):
 
     def test_scripts_do_not_become_offer_evidence(self):
         self.soup.select_one('[class*="AlfaOnly__privelegiesBlock___"]').append(BeautifulSoup('<script>Secret 99% discount</script>', 'html.parser'))
-        r = self.rows()[0]
+        r = next(r for r in self.rows() if r['details']['tsum_tier']=='Orange')
         self.assertNotIn('Secret', r['redemption_text'])
         self.assertEqual(r['rates'][0]['value'], '8')
 

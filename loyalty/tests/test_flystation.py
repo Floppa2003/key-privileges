@@ -13,11 +13,11 @@ from test_catalogue_expansion import bundle,OLD,NEW
 RAW=Path(__file__).with_name('fixtures_live').joinpath('flystation-promotions.html').read_text()
 def entries():return inventory(RAW)
 class FlyStation(unittest.TestCase):
-    def test_real_inventory_and_price_only_exclusions(self):
+    def test_real_inventory_includes_price_only_observations(self):
         es=entries();self.assertEqual(len(es),6)
         for e in es:
             if e['native'] in ('extra-time','sport-start'):
-                with self.assertRaises(ExcludedOffer):source_fields(e)
+                self.assertEqual(source_fields(e)['kind'],'source_observation')
         self.assertEqual(len(self.accepted()),4)
     def accepted(self):return[e for e in entries()if e['native']not in ('extra-time','sport-start')]
     def test_advance_scope_is_separate_for_each_rate(self):
@@ -35,7 +35,7 @@ class FlyStation(unittest.TestCase):
         self.assertEqual(f['terms'][0]['value'],'15')
     def test_certificate_sharing_capacity_is_not_lost_with_price_examples(self):
         f=source_fields(next(e for e in entries()if e['native']=='after-flight'))
-        self.assertIn('4 минуты: (могут полетать до 2 человек)',f['conditions'])
+        self.assertIn('4 минуты',f['conditions']);self.assertIn('(могут полетать до 2 человек)',f['conditions'])
         self.assertIn('от 2 до 15 человек',f['conditions'])
     def test_source_period_is_unknown_and_ekp_not_inferred(self):
         for e in self.accepted():
@@ -45,9 +45,12 @@ class FlyStation(unittest.TestCase):
         self.assertTrue(health_summary(p,expected_sources=[SOURCE])[0]['healthy'])
         for row in prepare(p)['parser_offers']:
             v,reason=reader(row,OLD[:10]);self.assertIsNotNone(v);self.assertIsNone(reason)
-    def test_unreviewed_panel_is_an_error_not_silent_exclusion(self):
-        bad=RAW.replace('Хочу ЕЩЁ!','Новая неизвестная скидка')
-        with self.assertRaises(ValueError):inventory(bad)
+    def test_new_title_is_in_inventory_not_silently_excluded(self):
+        changed=RAW.replace('Хочу ЕЩЁ!','Новая неизвестная акция')
+        current=inventory(changed)
+        self.assertEqual(len(current),6)
+        entry=next(e for e in current if e['title']=='Новая неизвестная акция')
+        self.assertEqual(source_fields(entry)['kind'],'source_observation')
     def test_duplicate_identity_fails(self):
         with self.assertRaises(ValueError):inventory(RAW.replace('Скидка после полёта','День рождения в аэротрубе'))
     def test_evidence_modification_or_cross_panel_identity_rejected(self):
@@ -55,9 +58,11 @@ class FlyStation(unittest.TestCase):
         with self.assertRaises(ValueError):source_fields(e)
         e=self.accepted()[0];e['native']='birthday'
         with self.assertRaises(ValueError):source_fields(e)
-    def test_new_discount_in_price_only_panel_requires_review(self):
+    def test_new_discount_in_price_only_panel_is_extracted_from_current_text(self):
         e=next(e for e in entries()if e['native']=='extra-time');e['panel_html']=e['panel_html'].replace('2500 рублей','2500 рублей со скидкой 10%');e['panel_sha256']=sha(e['panel_html'])
-        with self.assertRaisesRegex(ValueError,'price_only'):source_fields(e)
+        f=source_fields(e)
+        self.assertEqual(f['kind'],'partner_offer')
+        self.assertEqual([(t['kind'],t['value']) for t in f['terms']],[('discount','10')])
     def test_publication_hold_and_return_preserve_manual_notes(self):
         es=self.accepted();p=bundle(SOURCE,es);old=[['header']*26]+[r+['manual']for r in prepare(p)['parser_offers']]
         later=bundle(SOURCE,es[1:],now=NEW)
@@ -77,7 +82,7 @@ class FlyCollector(unittest.IsolatedAsyncioTestCase):
             async def read(self,url):return RAW
         report=dict(source_id=SOURCE,errors=[])
         rs=await collect(Client(),dict(url='https://flystation.net/promotions'),report,OLD,500)
-        self.assertEqual(len(rs),4);self.assertTrue(report['native_inventory_v1']['complete']);self.assertEqual(len(report['native_inventory_v1']['ids']),6)
+        self.assertEqual(len(rs),6);self.assertEqual(sum(r['record_kind']=='partner_offer' for r in rs),4);self.assertTrue(report['native_inventory_v1']['complete']);self.assertEqual(len(report['native_inventory_v1']['ids']),6)
     async def test_limit_is_partial_not_full_coverage(self):
         class Client:
             async def read(self,url):return RAW

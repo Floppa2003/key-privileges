@@ -9,7 +9,7 @@ SOURCE = 'mantera_moments'
 URL = 'https://lk.manteratravel.ru/faq'
 PROGRAM = 'Мантера Моменты'
 TIER_QUESTION = 'Какие статусы существуют в программе (Гость, Ценитель, Знаток, Эксперт, Легенда) и чем они отличаются?'
-TIERS = ('Гость', 'Ценитель', 'Знаток', 'Эксперт', 'Легенда')
+LEGACY_TIERS = ('Гость', 'Ценитель', 'Знаток', 'Эксперт', 'Легенда')
 QUESTIONS = (
     'Кто может стать участником программы?',
     'Как зарегистрироваться в программе лояльности?',
@@ -29,7 +29,7 @@ QUESTIONS = (
 )
 
 
-def source_fields(e):
+def legacy_source_fields(e):
     if e.get('kind') == 'public_partner':
         from mantera_partners import source_fields as partner_fields
         return partner_fields(e)
@@ -40,7 +40,7 @@ def source_fields(e):
         raise ValueError('mantera_evidence_url')
     tier = e.get('tier'); line = e.get('tier_clause', '')
     m = re.fullmatch(re.escape(str(tier)) + r' — (?:базовый )?статус с начислением (\d+(?:[.,]\d+)?)%, списанием (\d+(?:[.,]\d+)?)%, (.+)', line)
-    if tier not in TIERS or not m or any(not 0 < float(number(v)) <= 100 for v in m.group(1, 2)):
+    if tier not in LEGACY_TIERS or not m or any(not 0 < float(number(v)) <= 100 for v in m.group(1, 2)):
         raise ValueError('mantera_tier_clause')
     faq = e.get('faq', {})
     if set(faq) != set(QUESTIONS) or any(not isinstance(v, str) or not v for v in faq.values()): raise ValueError('mantera_required_terms')
@@ -72,28 +72,89 @@ def source_fields(e):
         scope={'member_tier': tier, 'pilot_accommodation_only': True, 'eligibility_not_verified': True}, warnings=warnings)
 
 
+def tier_parts(line):
+    match=re.fullmatch(r'(.+?)\s+[—–-]\s+(.+)',line)
+    if not match:raise ValueError('mantera_tier_label_missing')
+    return match[1].strip(),match[2]
+
+
+def source_fields(e):
+    if e.get('kind') == 'public_partner':
+        from mantera_partners import source_fields as partner_fields
+        return partner_fields(e)
+    if e.get('kind') == 'hotel_participation':
+        from mantera_hotel import source_fields as hotel_fields
+        return hotel_fields(e)
+    if e.get('projection_version') is None:
+        return legacy_source_fields(e)
+    if e.get('projection_version') != 2:raise ValueError('mantera_projection_version')
+    from content_discovery import faq_text,validate_faq
+    if e.get('url') != URL or not re.fullmatch(r'[a-f0-9]{64}',e.get('page_sha256','')):
+        raise ValueError('mantera_evidence_url')
+    tier,body=tier_parts(e.get('tier_clause',''))
+    if tier!=e.get('tier'):raise ValueError('mantera_tier_identity')
+    names=e.get('tier_inventory',[])
+    if not names or len(names)!=len(set(names)) or tier not in names:
+        raise ValueError('mantera_tier_inventory')
+    validate_faq(e.get('faq'))
+    terms=[]
+    for kind,pattern,qualifier in (
+        ('earn_points',r'начисл\w*\s+(\d+(?:[.,]\d+)?)\s*%','exact'),
+        ('redeem_points',r'списан\w*\s+(?:до\s+)?(\d+(?:[.,]\d+)?)\s*%','up_to')):
+        found=list(re.finditer(pattern,body,re.I))
+        if len(found)>1:raise ValueError('mantera_ambiguous_tier_rate')
+        if found:
+            value=number(found[0][1])
+            if not 0<=float(value)<=100:raise ValueError('mantera_invalid_tier_rate')
+            terms.append(dict(kind=kind,value=value,unit='percent',qualifier=qualifier,
+                              reward_unit='Mantera_bonus_not_cash',fragment=e['tier_clause']))
+    warnings=['bonus_redemption_cap_not_discount','programme_eligibility_not_verified']
+    if not terms:
+        warnings.append('tier_rates_unclassified_original_clause_preserved')
+    questions=faq_text(e['faq'])
+    if 'календарных' in questions and 'рабочих' in questions:
+        warnings.append('source_conflict_calendar_versus_business_accrual_days')
+    conditions='\n'.join(x for x in (e.get('pilot',''),e.get('tier_context',''),e['tier_clause'],questions) if x)
+    return dict(native='tier:'+tier,program=PROGRAM,partner=PROGRAM,title=PROGRAM+' — '+tier,
+        benefit='Бонусы «Мантера Моменты»: '+e['tier_clause'],conditions=conditions,
+        activation=e.get('registration',''),url=URL,category='Отели / бонусы',kind='tier_benefit' if terms else 'source_observation',
+        link_kind='page_block',locator='FAQ; '+e['tier_heading']+'; '+tier,terms=terms,
+        scope={'member_tier':tier,'published_program_context':e.get('pilot',''),'eligibility_not_verified':True},
+        warnings=warnings)
+
+
 def parse(raw, observed_at):
-    soup = BeautifulSoup(raw, 'html.parser'); faq = {}; root = None
-    for node in soup.select('.MuiAccordion-root'):
-        q = plain(one(node, 'h3'))
-        a = plain(one(node, '.MuiAccordionDetails-root'))
-        if q in faq: raise ValueError('mantera_duplicate_question')
-        faq[q] = a
-        if q == TIER_QUESTION: root = node
-    if root is None or any(q not in faq for q in QUESTIONS): raise ValueError('mantera_required_questions_missing')
-    pilot_node = one(soup, '.pilot-loyalty-banner-icon').parent
-    pilot = plain(pilot_node)
-    block = one(root, '.payload-richtext')
-    clauses = [re.sub(r'\s+', ' ', plain(n)) for n in block.select('ul > li')]
-    if len(clauses) != len(TIERS): raise ValueError('mantera_unreviewed_tier_count')
-    context = plain(one(block, 'p:first-child'))
-    if '365 дней' not in context: raise ValueError('mantera_qualification_period_changed')
-    records = []
-    for tier, line in zip(TIERS, clauses):
-        evidence = dict(url=URL, page_sha256=hashlib.sha256(raw.encode()).hexdigest(), tier=tier,
-            tier_clause=line, tier_context=context, pilot=pilot, faq={q:faq[q] for q in QUESTIONS})
-        records.append(make_record(SOURCE, evidence, observed_at))
-    return records
+    from content_discovery import read_faq
+    soup=BeautifulSoup(raw,'html.parser')
+    nodes=soup.select('.MuiAccordion-root')
+    all_faq=read_faq(nodes,'h3','.MuiAccordionDetails-root',plain)
+    candidates=[]
+    for node in nodes:
+        for listing in node.select('.MuiAccordionDetails-root ul'):
+            lines=[re.sub(r'\s+',' ',plain(n)).strip() for n in listing.find_all('li',recursive=False)]
+            if lines and any(re.search(r'\s[—–-]\s.*(?:начисл|списан|статус)',line,re.I) for line in lines):
+                candidates.append((node,listing,lines))
+    if len(candidates)!=1:raise ValueError('mantera_tier_section_ambiguous_or_missing')
+    node,listing,lines=candidates[0]
+    names=[tier_parts(line)[0] for line in lines]
+    if len(names)!=len(set(names)) or len(names)>100:raise ValueError('mantera_tier_inventory')
+    heading=plain(one(node,'h3'))
+    # The other tier clauses never become this tier's scope or rate.
+    faq={q:a for q,a in all_faq.items() if q!=heading}
+    context=BeautifulSoup(str(one(node,'.MuiAccordionDetails-root')),'html.parser')
+    for ul in context.select('ul'):ul.decompose()
+    context=plain(context)
+    banners=soup.select('.pilot-loyalty-banner-icon')
+    if len(banners)>1:raise ValueError('mantera_duplicate_banner')
+    pilot=plain(banners[0].parent) if banners else ''
+    registration='\n'.join(plain(n) for n in soup.select('.MuiAccordionDetails-root ol'))
+    rows=[]
+    for name,line in zip(names,lines):
+        evidence=dict(url=URL,page_sha256=hashlib.sha256(raw.encode()).hexdigest(),projection_version=2,
+            tier=name,tier_clause=line,tier_heading=heading,tier_context=context,tier_inventory=names,
+            pilot=pilot,faq=faq,registration=registration)
+        rows.append(make_record(SOURCE,evidence,observed_at))
+    return rows
 
 
 async def collect(client, cfg, report, observed_at, limit):
@@ -123,5 +184,5 @@ async def collect(client, cfg, report, observed_at, limit):
         report['errors'].append({'phase':'public_partner_inventory', 'url':mantera_partners.ROSTER_URL,
             'reason':str(exc)[:140] if isinstance(exc,(RuntimeError,ValueError)) else type(exc).__name__})
     report['discovered'] = len(records)+len(report['errors'])
-    report['coverage'] = 'five_FAQ_tiers;independent_Congress_page;public_named_participants_and_scoped_resort_redemption;not_all_group_businesses'
+    report['coverage'] = 'all_current_FAQ_tiers;independent_Congress_page;public_named_participants_and_scoped_resort_redemption;not_all_group_businesses'
     return records

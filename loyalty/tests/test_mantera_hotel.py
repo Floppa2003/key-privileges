@@ -26,12 +26,15 @@ class ManteraHotelTests(unittest.TestCase):
         node.string='Группа объединяет разные отели.'
         raw=str(s)
         with self.assertRaises(ValueError):h.parse(raw,NOW)
-    def test_missing_conditions_or_duplicate_table_fails(self):
-        for bad in ('condition','table'):
-            s=BeautifulSoup(html('mantera-congress.html'),'html.parser')
-            if bad=='condition':s.select('.MuiAccordion-root')[0].decompose()
-            else:s.body.append(copy.copy(s.table))
-            with self.assertRaises(ValueError):h.parse(str(s),NOW)
+    def test_changed_faq_is_current_data_but_duplicate_table_fails(self):
+        s=BeautifulSoup(html('mantera-congress.html'),'html.parser')
+        removed=s.select('.MuiAccordion-root')[0]
+        heading=removed.select_one('h3').get_text(' ',strip=True)
+        removed.decompose()
+        row=h.parse(str(s),NOW)
+        self.assertNotIn(heading,row['conditions_text'])
+        s.body.append(copy.copy(s.table))
+        with self.assertRaises(ValueError):h.parse(str(s),NOW)
     def test_hotel_rate_change_is_not_hardcoded(self):
         old=h.parse(html('mantera-congress.html'),NOW)
         s=BeautifulSoup(html('mantera-congress.html'),'html.parser')

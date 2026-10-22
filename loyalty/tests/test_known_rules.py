@@ -92,9 +92,11 @@ class KnownRuleRegressionTests(unittest.TestCase):
   h='''<main><div class="promo">Аэрофлот Бонус.<div class="condition_earn">Накопить мили. При заказе через турагентство 1 миля за каждые потраченные 90 ₽. При заказе поездки в i’way 1 миля за каждые потраченные 50 ₽.</div>Использовать мили: корпоративные поездки исключены.</div></main>'''
   r=parse('af_iway_rules',h)[0];d={x['channel']:x['basis_amount'] for x in r['details']['earning_rules']}
   self.assertEqual(d,{'travel_agent':'90','direct':'50'})
- def test_changed_generations_multiplier_fails_not_hardcoded_double(self):
+ def test_changed_generations_multiplier_is_extracted_not_hardcoded_double(self):
   h='''<div id="rec586475392">Поколения Utair - тройные мили. Молодежь от 16 до 25 лет, от 55 лет (для женщин), от 60 лет (для мужчин).</div><div id="rec586348980">для молодежи UYOUTHWM; для людей старшего поколения UPENSWM. Срок действия миль составляет 3 года. Покупка и полет в одном месяце.</div>'''
-  with self.assertRaises(ValueError):parse('utair_generations_rules',h)
+  row=parse('utair_generations_rules',h)[0]
+  self.assertEqual(row['details']['reward_multiplier'],3)
+  self.assertIn('тройные',row['details']['reward_multiplier_evidence'])
 
 class SmartaviaTests(unittest.TestCase):
  def fixture(self):
@@ -107,6 +109,12 @@ class SmartaviaTests(unittest.TestCase):
   self.assertEqual(rs[3]['details']['subscription_plan']['flight_segments'],20)
   self.assertEqual(rs[-1]['details']['discount_basis'],'annual_subscription_not_air_ticket')
   self.assertIsNone(rs[0]['valid_until'])
- def test_missing_duplicate_or_unknown_plan_label_rejected(self):
-  for a,b in [('Тариф 1+2','Тариф 1+3'),('Тариф 1+2','Тариф X+2')]:
+ def test_missing_or_duplicate_plan_label_rejected(self):
+  for a,b in [('Тариф 1+2','Тариф 1+3'),('Тариф 1+2','Без названия')]:
    with self.assertRaises(ValueError):parse('smartavia_rules',self.fixture().replace(a,b))
+ def test_arbitrary_plan_label_retained_without_inventing_traveler_count(self):
+  rows=parse('smartavia_rules',self.fixture().replace('Тариф 1+2','Тариф X+2'))
+  plan=rows[2]['details']['subscription_plan']
+  self.assertEqual(plan['label'],'X+2')
+  self.assertIsNone(plan['additional_travelers'])
+  self.assertEqual(plan['annual_rub'],'2790')

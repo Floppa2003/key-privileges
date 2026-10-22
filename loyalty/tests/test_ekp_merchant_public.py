@@ -46,10 +46,12 @@ class PublicMerchantTests(unittest.TestCase):
         raw = (FIXTURES / 'itc.html').read_text().replace('-15%', '-12%')
         self.assertEqual(parse('itc', raw)[0]['rates'][0]['value'], '12')
 
-    def test_missing_product_or_exclusion_fails(self):
+    def test_current_product_count_and_exclusions_are_source_data(self):
         raw = (FIXTURES / 'artparking.html').read_text()
-        for remove in ('Детские программы www.gorodmus.ru – 5% Промокод edkarta', 'Зеленогорской кирхе'):
-            with self.assertRaises(ValueError): parse('artparking', raw.replace(remove, ''))
+        rows=parse('artparking',raw.replace('Детские программы www.gorodmus.ru – 5% Промокод edkarta',''))
+        self.assertEqual(len(rows),1)
+        for row in parse('artparking',raw.replace('Зеленогорской кирхе','')):
+            self.assertNotIn('Зеленогорской кирхе',row['conditions_text'])
 
     def test_domknigi_start_not_article_date_and_no_invented_code(self):
         row, = parse('domknigi')
@@ -61,10 +63,14 @@ class PublicMerchantTests(unittest.TestCase):
         self.assertIn('Интернет', row['redemption_text'])
         self.assertIn('назвать промокод на кассе', row['redemption_text'])
 
-    def test_domknigi_rate_conflict_missing_scope_and_wrong_date_fail(self):
+    def test_domknigi_rate_conflict_and_invalid_explicit_date_fail(self):
         raw = (FIXTURES / 'domknigi.html').read_text()
-        for value in (raw.replace('10%', '11%', 1), raw.replace('Оплатить покупку бонусами также нельзя', ''), raw.replace('24.02.2026', '31.02.2026')):
+        for value in (raw.replace('10%', '11%', 1), raw.replace('24.02.2026', '31.02.2026')):
             with self.assertRaises(ValueError): parse('domknigi', value)
+
+    def test_domknigi_changed_restrictions_not_restored_from_prior_text(self):
+        raw=(FIXTURES/'domknigi.html').read_text().replace('Оплатить покупку бонусами также нельзя','')
+        self.assertNotIn('Оплатить покупку бонусами также нельзя',parse('domknigi',raw)[0]['conditions_text'])
 
     def test_itc_payment_not_merely_showing_card(self):
         row, = parse('itc')

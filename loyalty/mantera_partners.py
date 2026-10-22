@@ -55,13 +55,17 @@ def valid_names(names):
 
 
 def read_table(table):
-    from mantera_source import TIERS
-    if not isinstance(table, list) or len(table) != len(TIERS):
+    if not isinstance(table, list) or not 1 <= len(table) <= 100:
         raise ValueError('mantera_partner_tier_count')
     result = []
-    for cells, tier in zip(table, TIERS):
-        if len(cells) != 4 or cells[0] != tier or not cells[1]:
+    seen=set()
+    for cells in table:
+        if not isinstance(cells,list) or len(cells)!=4 or not all(isinstance(c,str) for c in cells):
             raise ValueError('mantera_partner_tier_identity')
+        tier=compact(cells[0])
+        if not tier or tier.casefold() in seen or not cells[1]:
+            raise ValueError('mantera_partner_tier_identity')
+        seen.add(tier.casefold())
         earn = re.fullmatch(r'(\d+(?:[.,]\d+)?)\s*%', cells[2])
         spend = re.fullmatch(r'до\s+(\d+(?:[.,]\d+)?)\s*%', cells[3])
         if not earn or not spend or not all(0 < float(number(m[1])) <= 100 for m in (earn, spend)):
@@ -93,19 +97,19 @@ def parse_roster(raw):
     faq = {}
     for node in root.select('.accordion__item'):
         question = compact(plain(one(node, '.accordion__item-button-text')))
-        if question in QUESTIONS:
+        if question != ROSTER_HEADING:
             if question in faq:
                 raise ValueError('mantera_partner_duplicate_question')
             faq[question] = plain(one(node, '.accordion__item-content'))
     counter = [compact(plain(n)) for n in soup.select('.feature-content h3')
                if re.fullmatch(r'\d+ партнеров программы', compact(plain(n)))]
-    if len(counter) != 1:
-        raise ValueError('mantera_partner_counter_missing')
+    if len(counter) > 1:
+        raise ValueError('mantera_partner_counter_ambiguous')
     rules = [compact(plain(n)) for n in section(soup, 'Как работает программа').select('.block--content li')]
     participation = compact(plain(one(section(soup, 'Как стать участником'), '.block--head_caption')))
     return {'url': ROSTER_URL, 'page_sha256': hashlib.sha256(raw.encode()).hexdigest(),
             'names': names, 'table': rows, 'faq': faq, 'rules': rules,
-            'registration': participation, 'declared_count': int(counter[0].split()[0])}
+            'registration': participation, 'declared_count': int(counter[0].split()[0]) if counter else None}
 
 
 def parse_resort(raw):
@@ -125,7 +129,7 @@ def parse_resort(raw):
             'clause': clauses[0], 'table': table[1:]}
 
 
-def validate_evidence(roster, resort):
+def legacy_validate_evidence(roster, resort):
     for evidence, url in ((roster, ROSTER_URL), (resort, RESORT_URL)):
         if evidence.get('url') != url or not re.fullmatch('[a-f0-9]{64}', evidence.get('page_sha256', '')):
             raise ValueError('mantera_partner_source_identity')
@@ -135,7 +139,7 @@ def validate_evidence(roster, resort):
     tiers = read_table(roster['table'])
     other = read_table(resort['table'])
     # Compare qualification and rates, normalizing only whitespace and dash glyphs.
-    semantic = lambda table: [(t, re.sub(r'[\s–—-]', '', q), e, s) for t, q, e, s in table]
+    semantic = lambda table: sorted((t, re.sub(r'[\s–—-]', '', q), e, s) for t, q, e, s in table)
     if semantic(tiers) != semantic(other):
         raise ValueError('mantera_partner_source_rate_conflict')
     faq = roster['faq']
@@ -160,12 +164,12 @@ def validate_evidence(roster, resort):
     return tiers, names
 
 
-def source_fields(e):
+def legacy_source_fields(e):
     from mantera_source import PROGRAM
     if e.get('kind') != 'public_partner' or e.get('url') != ROSTER_URL:
         raise ValueError('mantera_public_partner_identity')
     roster, resort = e['roster'], e['resort']
-    tiers, redeemable = validate_evidence(roster, resort)
+    tiers, redeemable = legacy_validate_evidence(roster, resort)
     name = e['name']
     if name not in roster['names'] or name == CONGRESS:
         raise ValueError('mantera_public_partner_not_listed_or_duplicate')
@@ -205,10 +209,77 @@ def source_fields(e):
                 scope={'hotel':name, 'eligibility_not_verified':True, 'redemption_publicly_supported':can_redeem}, warnings=warnings)
 
 
+def validate_evidence(roster, resort):
+    from content_discovery import validate_faq
+    for evidence,url in ((roster,ROSTER_URL),(resort,RESORT_URL)):
+        if evidence.get('url')!=url or not re.fullmatch('[a-f0-9]{64}',evidence.get('page_sha256','')):
+            raise ValueError('mantera_partner_source_identity')
+    valid_names(roster['names']);validate_faq(roster['faq'])
+    count=roster.get('declared_count')
+    if count is not None and (type(count) is not int or not 0<=count<=10000):raise ValueError('mantera_partner_counter_identity')
+    tiers=read_table(roster['table']);other=read_table(resort['table'])
+    semantic=lambda table:sorted((t,re.sub(r'[\s–—-]','',q),e,s) for t,q,e,s in table)
+    if semantic(tiers)!=semantic(other):raise ValueError('mantera_partner_source_rate_conflict')
+    if (not isinstance(roster.get('rules'),list) or not roster['rules'] or
+        any(not isinstance(v,str) or not v for v in roster['rules']) or not roster.get('registration')):
+        raise ValueError('mantera_partner_rules_missing')
+    # Only source-resolved names support redemption. Unknown/ambiguous aliases
+    # do not crash the roster and are not promoted to confirmed membership.
+    match=re.search(r'в отелях (.+?) бонусы можно и копить, и тратить[.!]',resort['clause'],re.I)
+    aliases=re.split(r',\s*|\s+и\s+',match[1]) if match else []
+    if len(set(aliases))!=len(aliases):raise ValueError('mantera_resort_duplicate_name')
+    names=set();unresolved=[]
+    for alias in aliases:
+        exact=[n for n in roster['names'] if native_id(n)==native_id(alias)]
+        mapped=REDEMPTION_ALIASES.get(alias)
+        if len(exact)==1:names.add(exact[0])
+        elif mapped in roster['names']:names.add(mapped)
+        else:unresolved.append(alias)
+    return tiers,names,unresolved
+
+
+def source_fields(e):
+    if e.get('projection_version') is None:return legacy_source_fields(e)
+    if e.get('projection_version')!=2:raise ValueError('mantera_partner_projection_version')
+    from mantera_source import PROGRAM
+    from content_discovery import faq_text,action_clauses
+    if e.get('kind')!='public_partner' or e.get('url')!=ROSTER_URL:raise ValueError('mantera_public_partner_identity')
+    roster,resort=e['roster'],e['resort'];tiers,redeemable,unresolved=validate_evidence(roster,resort)
+    name=e['name']
+    if name not in roster['names'] or name==CONGRESS:raise ValueError('mantera_public_partner_not_listed_or_duplicate')
+    can_redeem=name in redeemable;terms=[];earning=[];spending=[];qualification=[]
+    for tier,threshold,earn,spend in tiers:
+        scope={'member_tier':tier,'annual_spend_clause':threshold,'hotel':name}
+        earning.append(tier+' — '+earn+'%')
+        terms.append(dict(kind='earn_points',value=earn,unit='percent',qualifier='exact',reward_unit='Mantera_bonus_not_cash',fragment=earning[-1],scope=scope))
+        qualification.append(tier+': сумма покупок за год '+threshold+'.')
+        if can_redeem:
+            spending.append(tier+' — до '+spend+'%')
+            terms.append(dict(kind='redeem_points',value=spend,unit='percent',qualifier='up_to',reward_unit='Mantera_bonus_not_cash',fragment=spending[-1],scope=scope))
+    benefit='Начисление бонусов по статусу: '+'; '.join(earning)+'.'
+    if can_redeem:benefit+='\nОплата накопленными бонусами: '+'; '.join(spending)+'.'
+    conditions=[*qualification,*roster['rules'],faq_text(roster['faq']),resort['clause'].split(' Присоединяйтесь,')[0],
+        'Источник условий списания: '+RESORT_URL,
+        'Партнёр назван в публичном списке программы. Личный доступ и конкретное бронирование не проверялись.']
+    warnings=['public_named_roster_not_all_group_businesses','bonus_not_cash','bonus_redemption_cap_not_discount']
+    if not can_redeem:
+        warnings.append('hotel_redemption_not_confirmed')
+        conditions.append('Возможность списания именно у этого партнёра отдельно не подтверждена; общие лимиты программы не означают доступность списания во всех объектах.')
+    if unresolved:warnings.append('unresolved_redemption_names_preserved_in_source_clause')
+    count=roster.get('declared_count')
+    if count is not None and count!=len(roster['names']):
+        warnings.append('source_partner_counter_conflicts_with_named_roster')
+        conditions.append(f"Счётчик источника: {count}; именованных позиций в списке: {len(roster['names'])}. Полнота всей программы не подтверждена.")
+    return dict(native=native_id(name),program=PROGRAM,partner=name,title=PROGRAM+' → '+name,
+        benefit=benefit,conditions='\n'.join(conditions),activation='\n'.join(filter(None,(roster['registration'],action_clauses(faq_text(roster['faq']))))),
+        url=ROSTER_URL,category='Отели / бонусы',link_kind='page_block',locator=ROSTER_HEADING+'; '+name,terms=terms,
+        scope={'hotel':name,'eligibility_not_verified':True,'redemption_publicly_supported':can_redeem},warnings=warnings)
+
+
 def parse_pair(roster_raw, resort_raw, observed_at):
     roster, resort = parse_roster(roster_raw), parse_resort(resort_raw)
     validate_evidence(roster, resort)
-    records = [make_record('mantera_moments', {'kind':'public_partner', 'url':ROSTER_URL,
+    records = [make_record('mantera_moments', {'projection_version':2,'kind':'public_partner', 'url':ROSTER_URL,
                'name':name, 'roster':roster, 'resort':resort}, observed_at)
                for name in roster['names'] if name != CONGRESS]
     inventory = {'version':1, 'roster_url':ROSTER_URL, 'resort_url':RESORT_URL,
@@ -231,7 +302,6 @@ async def collect(browser, deadline, observed_at):
 
 def health(report, records):
     """Verify the observed named inventory instead of a magic record count."""
-    from mantera_source import TIERS
     meta = report.get('mantera_public_inventory')
     if (report.get('status') != 'ok' or report.get('errors') or not isinstance(meta, dict)
             or meta.get('version') != 1 or meta.get('roster_url') != ROSTER_URL or meta.get('resort_url') != RESORT_URL):
@@ -239,7 +309,17 @@ def health(report, records):
     try:
         names = valid_names(meta['names'])
         expected_partners = {record_id(native_id(n)) for n in names if n != CONGRESS}
-        expected_base = {record_id('tier:'+t) for t in TIERS} | {record_id('hotel:mantera-resort-congress')}
+        tier_rows=[r for r in records if r['native_id'].startswith('tier:')]
+        inventories=[r['details']['public_reward_evidence'].get('tier_inventory') for r in tier_rows]
+        if not inventories or any(v!=inventories[0] for v in inventories):return False
+        if inventories[0] is None:
+            # Legacy retained snapshots only; newly collected rows carry the
+            # full observed tier inventory, including missing-row detection.
+            from mantera_source import LEGACY_TIERS
+            names_tiers=list(LEGACY_TIERS)
+        else:names_tiers=inventories[0]
+        if not names_tiers or len(names_tiers)!=len(set(names_tiers)):return False
+        expected_base = {record_id('tier:'+t) for t in names_tiers} | {record_id('hotel:mantera-resort-congress')}
         ids = [r['id'] for r in records]
         if (set(meta['record_ids']) != expected_partners or len(meta['record_ids']) != len(expected_partners)
                 or set(ids) != expected_base | expected_partners or len(ids) != len(set(ids))

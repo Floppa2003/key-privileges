@@ -99,3 +99,10 @@ reported ingestion limit, not an access refusal or permission to reuse old data.
 Utair reuses the common source-deadline error contract: a deadline stops further
 document requests and retains previously read records, rather than hiding the
 reason behind a generic exception class.
+
+## Content-derived catalogues and tiers
+
+The 2026-10-22 repair removes current-title/count admission lists from the affected
+promotion and tier collectors. See [CONTENT_DISCOVERY.md](CONTENT_DISCOVERY.md) for
+scope, legacy readback, evidence-only handling and required mutation tests. A new
+label alone must never cause failure, silent exclusion, or manual registration.
