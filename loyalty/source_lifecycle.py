@@ -170,25 +170,40 @@ def reader_hold(raw, as_of):
     return None
 
 def health_summary(bundle, *, expected_sources=None):
-    """Separate source health from the publication of other successful sources."""
+    """All routes are visible; inventory reconciliation remains a separate signal."""
+    from collections import Counter
+    from pathlib import Path
+    from source_diagnostics import category
+    configs={c['id']:c for c in json.loads(Path(__file__).with_name('sources_normalized.json').read_text())}
     report_ids = [r['source_id'] for r in bundle['sources']]
     if len(report_ids) != len(set(report_ids)):
         raise ValueError('duplicate_source_health_report')
     snapshots = validate_inventories(bundle)
-    health = []
+    counts=Counter(r['source_id'] for r in bundle['records'])
+    health=[]
     for r in bundle['sources']:
-        sid = r['source_id']
-        if sid not in FRESHNESS_DAYS:
-            continue
-        complete = sid in snapshots
-        health.append({'source_id': sid, 'healthy': complete, 'status': r['status'],
-                       'records': r['normalized'], 'errors': len(r['errors'])})
+        sid=r['source_id'];probe=configs.get(sid,{}).get('mode')=='probe'
+        errors=r['errors'];count=r['normalized'];inventory=sid in FRESHNESS_DAYS
+        complete=sid in snapshots if inventory else None
+        categories=sorted({category(e.get('reason','unknown')) for e in errors})
+        if probe:state='not_implemented_in_this_route'
+        elif counts[sid]!=count:state='record_count_mismatch'
+        elif errors:state='partial' if count else 'failed'
+        elif r['status']=='ok' and count:state='complete_reported_scope'
+        elif complete:state='complete_inventory_no_offers'
+        else:state='not_established'
+        healthy=(not probe and not errors and counts[sid]==count and
+                 (complete if inventory else state=='complete_reported_scope'))
+        health.append({'source_id':sid,'healthy':bool(healthy),'status':r['status'],
+                       'records':count,'errors':len(errors),'route_kind':'access_probe' if probe else 'collector',
+                       'extraction_state':state,'inventory_complete':complete,'error_categories':categories})
     if expected_sources is not None:
-        if not set(expected_sources) <= set(FRESHNESS_DAYS):
-            raise ValueError('unsupported_expected_health_source')
-        for sid in sorted(set(expected_sources) - set(report_ids)):
-            health.append({'source_id':sid, 'healthy':False, 'status':'missing_source_report',
-                           'records':0, 'errors':1})
+        if not set(expected_sources)<=set(configs):raise ValueError('unsupported_expected_health_source')
+        for sid in sorted(set(expected_sources)-set(report_ids)):
+            health.append({'source_id':sid,'healthy':False,'status':'missing_source_report',
+                           'records':0,'errors':1,'route_kind':'access_probe' if configs[sid]['mode']=='probe' else 'collector',
+                           'extraction_state':'not_established','inventory_complete':None,
+                           'error_categories':['missing_report']})
     return health
 
 if __name__ == '__main__':
@@ -201,7 +216,7 @@ if __name__ == '__main__':
     from source_selection import select_sources
     configs = json.loads(Path(__file__).with_name('sources_normalized.json').read_text())
     selected = select_sources(configs, args.sources)
-    expected = [c['id'] for c in selected if c['id'] in FRESHNESS_DAYS]
+    expected = [c['id'] for c in selected]
     bundle = json.loads(Path(args.input).read_text())
     health = health_summary(bundle, expected_sources=expected)
     from collection_runtime import execution_health
@@ -209,9 +224,9 @@ if __name__ == '__main__':
     print(json.dumps({'collection_execution': execution, 'source_health': health}, ensure_ascii=False))
     import os
     if os.getenv('GITHUB_STEP_SUMMARY'):
-        lines=['## Collection execution and public reward source health', '',
-               f"Execution complete: {execution['healthy']}; state: {execution['state']}; reports: {execution['reported_sources']}/{execution['expected_sources']}.", '', '| Source | Healthy | Records | Errors |', '|---|---|---:|---:|']
-        lines.extend(f"| {r['source_id']} | {r['healthy']} | {r['records']} | {r['errors']} |" for r in health)
+        lines=['## Collection execution and all registered source routes', '',
+               f"Execution complete: {execution['healthy']}; state: {execution['state']}; reports: {execution['reported_sources']}/{execution['expected_sources']}.", '', '| Source | Route | Healthy | Records | Errors | Extraction |', '|---|---|---|---:|---:|---|']
+        lines.extend(f"| {r['source_id']} | {r['route_kind']} | {r['healthy']} | {r['records']} | {r['errors']} | {r['extraction_state']} |" for r in health)
         with open(os.environ['GITHUB_STEP_SUMMARY'],'a') as f:
             f.write('\n'.join(lines)+'\n')
     raise SystemExit(0 if execution['healthy'] and all(r['healthy'] for r in health) else 1)

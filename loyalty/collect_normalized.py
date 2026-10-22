@@ -15,7 +15,7 @@ from bs4 import BeautifulSoup
 from playwright.async_api import async_playwright
 from adapters import extract,next_state,s7_catalog,s7_detail,mir_detail,PROGRAMS,node_text,ural_catalog,key_catalog,mir_page_url
 from normalized import VERSION,make_offer,content_hash,validate_offer,text
-from public_transport import PublicSource
+from public_transport import PublicSource, RobotsCache
 from source_selection import select_sources
 from mir_regions import collect_mir
 from reviewed_pdf import extract_rgo_pdf
@@ -45,17 +45,7 @@ from alfa_public_rules import collect_core as collect_alfa_public_core, collect_
 from alfa_partner_rules import collect as collect_alfa_partner_pdfs
 
 
-def error_record(exc,phase,url=''):
-    # Preserve safe machine diagnostic codes, never arbitrary exception text
-    # from source pages or credentials.
-    reason=str(exc) if isinstance(exc,RuntimeError) else type(exc).__name__
-    if isinstance(exc,ValueError) and re.fullmatch(r'[a-z][a-z0-9_]{0,159}',str(exc)):
-        reason=str(exc)
-    marker=re.search(r'ERR_[A-Z_]+',str(exc))
-    if marker:reason=marker[0]
-    alfa_marker=re.fullmatch(r'alfa_[a-z0-9_]{1,120}',str(exc))
-    if alfa_marker:reason=alfa_marker.group(0)
-    return {'phase':phase,'path':urlsplit(url).path,'reason':reason[:180]}
+from source_diagnostics import error_record, final_status
 
 
 async def collect_s7(client,cfg,report,now,limit):
@@ -133,7 +123,8 @@ async def collect_key(report,now):
 async def one(browser,cfg,now,limit):
     report={'source_id':cfg['id'],'name':cfg['name'],'root':cfg['url'],'status':'failed',
             'discovered':0,'normalized':0,'failed':0,'coverage':'not_collected',
-            'region':None,'errors':[],'observed_at':now}
+            'region':None,'errors':[],'observed_at':now,
+            'route_kind':'access_probe' if cfg['mode']=='probe' else 'collector'}
     records=[];client=None
     deadline=time.monotonic()+source_budget(cfg)
     try:
@@ -188,11 +179,11 @@ async def one(browser,cfg,now,limit):
         report['discovered_items']=report['discovered']
         report['discovered']=max(report['discovered'],len(records))
         report['normalized']=len(records)
-        report['status']='partial' if report['errors'] else 'ok' if records else 'no_normalized_records'
+        report['status']=final_status(records,report['errors'])
     except Exception as exc:
         phase='robots' if client is not None and client.policy is None else 'source'
         report['errors'].append(error_record(exc,phase,cfg['url']))
-        report['status']='failed' if not records else 'partial'
+        report['status']=final_status(records,report['errors'])
         report['normalized']=len(records)
     if client is not None and getattr(client,'robots_info',None):
         report['robots']=client.robots_info
@@ -234,6 +225,7 @@ async def main():
     atomic_json(out/'code_hashes.json',manifest)
     async with async_playwright() as p:
         browser=await p.chromium.launch()
+        browser._loyalty_robots_cache=RobotsCache()
         try:
             await collect_batch(cfgs,lambda cfg:one(browser,cfg,now,args.limit),
                                 source_budget,checkpoint,now)

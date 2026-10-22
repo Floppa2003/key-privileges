@@ -110,8 +110,12 @@ class RemainingDiscoveryTests(unittest.TestCase):
     def test_hse_ambiguous_current_names_do_not_borrow_a_heading(self):
         raw=page(card('first','Одна марка')+card('second','Одна марка'),
                  '<div class="builder-section"><h2>Одна марка</h2><p>Скидка 17%</p></div>')
-        with self.assertRaisesRegex(ValueError,'hse_ambiguous_heading_ownership'):
-            parse_catalog(raw,NOW)
+        rows=parse_catalog(raw,NOW)
+        self.assertEqual(len(rows),2)
+        for row in rows:
+            self.assertEqual(row['record_kind'],'source_observation')
+            self.assertEqual(row['benefit_text'],'')
+            self.assertEqual(row['details']['public_catalog_block']['detail_state'],'ambiguous_heading')
 
     def test_smartavia_arbitrary_plan_label_does_not_require_1_plus_n(self):
         from test_known_rules import SmartaviaTests, parse as parse_rule

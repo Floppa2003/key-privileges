@@ -18,6 +18,7 @@ from recovered_contract import (API, SOURCES, CA_FILES, HTTP_PROFILE, HTTP_WARNI
 from normalized import make_offer, text, number, content_hash
 from document_text import extract_pdf, document_records
 from public_transport import check_response, robots_document
+from source_diagnostics import ReadError, error_record
 from known_rules import linked_documents
 
 MAX_BYTES = 5_000_000
@@ -100,6 +101,17 @@ class ScopedReader:
 
 
     def _get(self, url, *, ca_download=False):
+        for attempt in range(3):
+            try:
+                return self._get_once(url,ca_download=ca_download)
+            except ReadError as exc:
+                if str(exc) not in ('source_connection_failed','source_timeout') or attempt==2:raise
+                pause=max(self.interval,2**attempt)
+                if time.monotonic()+pause+2>=self.deadline:raise
+                time.sleep(pause)
+        raise AssertionError('unreachable source retry state')
+
+    def _get_once(self, url, *, ca_download=False):
         if ca_download:
             if url not in {u for u,_ in CA_FILES}:
                 raise ValueError('unreviewed_CA_download')
@@ -131,8 +143,12 @@ class ScopedReader:
                     status, headers, raw = response.status_code, dict(response.headers), bytes(data)
             except requests.exceptions.SSLError:
                 raise RuntimeError('source_certificate_verification_failed') from None
-            except requests.RequestException:
-                raise RuntimeError('source_transport_failed') from None
+            except requests.Timeout as exc:
+                raise ReadError('source_timeout',error_type=type(exc).__name__) from None
+            except requests.ConnectionError as exc:
+                raise ReadError('source_connection_failed',error_type=type(exc).__name__) from None
+            except requests.RequestException as exc:
+                raise ReadError('source_transport_failed',error_type=type(exc).__name__) from None
             finally:
                 self.last_read = time.monotonic()
             if status == 429 or response.headers.get('Retry-After'):
@@ -151,7 +167,7 @@ class ScopedReader:
         if self.policy is None or not self.policy.can_fetch(url,'LoyaltyCatalogResearchBot'):
             raise RuntimeError('robots_disallow')
         status, headers, raw = self._get(url)
-        body = raw.decode('utf-8')
+        body = raw[:350].decode('utf-8',errors='replace') if self.spec.get('format')=='pdf' else raw.decode('utf-8')
         check_response(status, body)
         return headers, raw
 
@@ -235,7 +251,7 @@ def collect_loyals(reader, cfg, report, now, limit):
                 stop = 'advertised_collection_exhausted'
                 break
         except (RuntimeError, ValueError, KeyError, TypeError) as exc:
-            report['errors'].append({'phase':'public_api','page':page,'reason':str(exc)[:160]})
+            report['errors'].append({**error_record(exc,'public_api',url),'page':page})
             stop = 'read_or_validation_error'
             break
     complete = total is not None and len(records)==total and len(seen)==total and not report['errors']
@@ -338,6 +354,14 @@ def _collect(cfg, report, now, limit, *, include_documents=True):
         if cfg['id']=='loyals':
             return collect_loyals(reader,cfg,report,now,limit)
         _, raw=reader.read(cfg['url'])
+        if SOURCES[cfg['id']].get('format')=='pdf':
+            from known_pdf import pdf_pages, parse_pdf_pages
+            row=parse_pdf_pages(cfg['id'],pdf_pages(raw),now,document_sha256=hashlib.sha256(raw).hexdigest())
+            row['details']['transport']=transport_evidence(cfg['id'])
+            row['content_sha256']=content_hash(row)
+            report['discovered']=1
+            report['coverage']='verified_exact_public_PDF; all native-text pages; supplementary rules'
+            return [row]
         parent=parse_bank_page(cfg['id'],raw.decode('utf-8'),now)
         records=[parent];inventory=[];seen=set()
         links=parent['details']['linked_documents']

@@ -118,6 +118,41 @@ def blocks(raw):
         for label in item.select('.fa-person__name'):
             target=urlsplit(urljoin(ROOT,label.get('href','').strip()))
             if target.fragment:names[target.fragment]=text(label.get_text(' ',strip=True))
+    # Reserve explicit-anchor sections before considering heading-only joins.
+    # The first nonempty section after an anchor belongs to that anchor even
+    # when its shorter display title also matches a different catalogue card.
+    explicit_parts={};reserved=set()
+    for anchor in names:
+        targets=root.find_all('a',attrs={'name':anchor})
+        if len(targets)>1:raise ValueError('hse_duplicate_target')
+        if not targets:continue
+        owner=targets[0].find_parent('div',class_='builder-section')
+        if owner is None or owner.parent is not root:raise ValueError('hse_anchor_owner')
+        if len(owner.select('a[name]'))!=1:raise ValueError('hse_anchor_ambiguous')
+        parts=[owner] if text(owner.get_text(' ',strip=True)) else []
+        for node in owner.next_siblings:
+            if not isinstance(node,Tag):continue
+            if node.select('a[name]') or node.select('.nom h1'):break
+            if node.select('.fa-person__item'):raise ValueError('hse_detail_reentered_inventory')
+            if not text(node.get_text(' ',strip=True)):continue
+            if parts:
+                try:owned=heading_identity(node,names)
+                except ValueError:break  # An ambiguous next heading is a boundary.
+                if owned and owned[0]!=anchor:break
+            parts.append(node)
+        explicit_parts[anchor]=parts
+        reserved.update(id(node) for node in parts)
+    # A named section not in today's catalogue is still not ownerless. Never
+    # use it to fill an unrelated card whose explicit anchor is missing.
+    for marker in root.select('a[name]'):
+        if marker.get('name') in names:continue
+        owner=marker.find_parent('div',class_='builder-section')
+        if owner is None or owner.parent is not root:continue
+        reserved.add(id(owner))
+        for node in owner.next_siblings:
+            if not isinstance(node,Tag):continue
+            if node.select('a[name]') or node.select('.nom h1'):break
+            reserved.add(id(node))
     seen=set();result=[]
     for card in cards:
         labels=card.select('.fa-person__name');summaries=card.select('.fa-person__info')
@@ -130,32 +165,27 @@ def blocks(raw):
             or not re.fullmatch('[A-Za-z0-9_-]{1,100}',u.fragment) or not name or not summary):raise ValueError('hse_card_identity')
         anchor=u.fragment
         if anchor in seen:raise ValueError('hse_duplicate_card')
-        seen.add(anchor);targets=root.find_all('a',attrs={'name':anchor})
-        if len(targets)>1:raise ValueError('hse_duplicate_target')
+        seen.add(anchor)
         parts=[];state='missing_anchor';identity={}
-        if targets:
-            owner=targets[0].find_parent('div',class_='builder-section')
-            if owner is None or owner.parent is not root:raise ValueError('hse_anchor_owner')
-            # Support text in the anchor's own section, but never a neighbouring anchor.
-            if len(owner.select('a[name]'))!=1:raise ValueError('hse_anchor_ambiguous')
-            if text(owner.get_text(' ',strip=True)):parts.append(owner)
-            for node in owner.next_siblings:
-                if not isinstance(node,Tag):continue
-                if node.select('a[name]') or node.select('.nom h1'):break
-                heading_owner=heading_identity(node,names)
-                if heading_owner and heading_owner[0]!=anchor:break
-                if node.select('.fa-person__item'):raise ValueError('hse_detail_reentered_inventory')
-                if text(node.get_text(' ',strip=True)):parts.append(node)
+        if anchor in explicit_parts:
+            parts=explicit_parts[anchor]
             state='detail' if parts else 'empty_section'
         else:
-            matches=[node for node in root.find_all('div',class_='builder-section',recursive=False)
-                     if (owned:=heading_identity(node,names)) and owned[0]==anchor]
-            if len(matches)>1:raise ValueError('hse_duplicate_heading_target')
-            if matches:
-                node=matches[0]
-                if node.select('a[name],.fa-person__item'):raise ValueError('hse_heading_anchor_conflict')
-                parts=[node];state='detail'
-                identity={'identity_method':'catalogue_heading','detail_heading':heading_identity(node,names)[1]}
+            matches=[];ambiguous=False
+            for node in root.find_all('div',class_='builder-section',recursive=False):
+                if id(node) in reserved or node.select('a[name],.fa-person__item,.nom h1'):continue
+                titles={text(h.get_text(' ',strip=True)) for h in node.select('h1,h2,h3')}
+                candidates=[(key,title) for key,name in names.items() for title in titles
+                            if heading_matches_name(title,name)]
+                own=[title for key,title in candidates if key==anchor]
+                if not own:continue
+                if len(candidates)!=1:ambiguous=True
+                else:matches.append((node,own[0]))
+            if ambiguous or len(matches)>1:
+                state='ambiguous_heading'
+            elif matches:
+                node,heading=matches[0];parts=[node];state='detail'
+                identity={'identity_method':'catalogue_heading','detail_heading':heading}
         body=content(parts) if parts else '';links=[]
         if len(body)>12000:raise ValueError('hse_detail_size')
         for part in parts:

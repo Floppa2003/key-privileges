@@ -263,7 +263,11 @@ def smartavia_records(cfg,nodes,terms,details,warnings,url,now):
     records=[];labels=set()
     for card in cards:
         value=content([card])
-        labels_in_card=re.findall(r'(?:^|\n)Тариф[ \t]+(.+?)(?=\.\s|\n|$)',value)
+        # The visible label and value may be separate sibling blocks. Read
+        # only this card's title; do not join the following price/benefit text.
+        titles=card.select('.sm-title-extra')
+        labels_in_card=([text(n.get_text(' ',strip=True)) for n in titles] if titles else
+                        re.findall(r'(?:^|\n)Тариф\s+([^\n]+?)(?=\.\s|\n|$)',value))
         if len(labels_in_card)!=1:raise ValueError('smartavia_plan_label_missing_or_ambiguous')
         key=labels_in_card[0].strip()
         if not key:raise ValueError('smartavia_plan_label_missing')

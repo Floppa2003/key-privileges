@@ -15,6 +15,7 @@ HTTP_WARNING = 'transport_unencrypted_and_unauthenticated'
 API = 'http://loyals.ru/wp-json/wp/v2/posts'
 WP_FIELDS = 'id,date_gmt,modified_gmt,link,title,content,excerpt,status,type,slug,categories,tags'
 SOURCES = {
+    'af_primbank_rules': {'url': 'https://www.primbank.ru/d/tariffs-aeroflot-bonus', 'profile': CA_PROFILE, 'format': 'pdf'},
     'loyals': {'url': 'http://loyals.ru/', 'profile': HTTP_PROFILE},
     'af_vtb_rules': {'url': 'https://www.vtb.ru/privilegia/karty/debetovye/privilegiya-aeroflot/', 'profile': CA_PROFILE},
     'nspk_ekp_rules': {'url': 'https://www.nspk.ru/press-center/details/00d06ff9-ac6f-41fd-9aad-39965b9762cd', 'profile': CA_PROFILE},
@@ -82,6 +83,16 @@ def validate_recovered(r: dict) -> None:
     if sid not in SOURCES:
         if r['source_url'].startswith('http:'):
             raise ValueError('HTTP is exclusive to the reviewed Loyals source')
+        return
+    if SOURCES[sid].get('format')=='pdf':
+        # Earlier native-PDF rows were read with standard verified TLS. They
+        # remain valid without claiming the newly introduced scoped CA profile.
+        trust=r['details'].get('transport')
+        if trust is not None and trust!=transport_evidence(sid):
+            raise ValueError('recovered_source_transport_evidence_mismatch')
+        if (r['source_url']!=SOURCES[sid]['url'] or r['record_kind']!='program_rules'
+                or r['details'].get('extraction_method')!='native_pdf_text_with_reviewed_clause_parser'):
+            raise ValueError('recovered_pdf_identity_mismatch')
         return
     if r['details'].get('transport') != transport_evidence(sid):
         raise ValueError('recovered_source_transport_evidence_mismatch')
