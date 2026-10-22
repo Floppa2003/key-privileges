@@ -3,6 +3,7 @@ on:
   push:
     branches: [fix/source-errors-20261022]
     paths: [.github/workflows/source-recovery-check.yml, loyalty/**]
+  workflow_dispatch:
 permissions:
   contents: read
 concurrency:
@@ -11,7 +12,8 @@ concurrency:
 jobs:
   verify:
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    # Leave room for dependency installation AND the collector's own 1000s budget.
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
@@ -26,6 +28,7 @@ jobs:
           git rev-parse HEAD > repair-output/commit.txt
           git archive --format=zip HEAD > repair-output/source.zip
           python -m pip install -r loyalty/requirements.txt
+          python -m pip download --no-deps protego==0.6.2 -d repair-output/dependencies
           sudo apt-get update -qq && sudo apt-get install -y poppler-utils tesseract-ocr tesseract-ocr-rus
       - name: Full regression
         run: |
@@ -33,10 +36,22 @@ jobs:
           python -m unittest discover -s loyalty/tests -v > repair-output/tests.log 2>&1
           node --test key/refresh.test.mjs > repair-output/key-tests.log 2>&1
           git diff --exit-code
-      - name: Install browser for full public collection
+      - name: Install browser for public collection
         run: python -m playwright install --with-deps chromium
+      - name: Check repaired sources before the complete collection
+        id: smoke
+        env:
+          SOURCE_IDS: hse_alumni,smartavia_rules,mantera_moments,af_parkfly,af_primbank_rules
+        run: |
+          set -euo pipefail
+          xvfb-run -a python loyalty/collect_normalized.py --limit 500 --sources "$SOURCE_IDS" --out repair-output/smoke 2>&1 | tee repair-output/smoke.log
+          python loyalty/sheets_normalized.py --input repair-output/smoke/normalized.json > repair-output/smoke-validation.log
+          python loyalty/source_lifecycle.py --input repair-output/smoke/normalized.json --sources "$SOURCE_IDS" > repair-output/smoke-health.json
       - name: Collect all registered public routes without publication
-        run: xvfb-run -a python loyalty/collect_normalized.py --limit 500 --out repair-output/collection
+        if: success() || steps.smoke.outcome == 'failure'
+        run: |
+          set -euo pipefail
+          xvfb-run -a python loyalty/collect_normalized.py --limit 500 --out repair-output/collection 2>&1 | tee repair-output/collection.log
       - name: Validate public rows and report all source routes
         if: always()
         run: |
