@@ -1,3 +1,4 @@
+from contextlib import nullcontext
 """RZD Google-import boundary and current-data regressions; no live credentials."""
 import copy
 import json
@@ -162,12 +163,12 @@ class WalkTests(unittest.TestCase):
         from unittest.mock import patch
         import rzd_import_collect as c
         reader=self.Reader(fail)
-        with patch.object(c,'policy_from',return_value=self.Policy()):result=c.walk(reader,'123:1','a'*40,NOW)
+        with nullcontext():result=c.walk(reader,'123:1','a'*40,NOW)
         return result,reader
     def test_real_walk_discovers_dynamic_page_and_details(self):
         result,reader=self.run_walk()
         self.assertEqual(len(result['records']),2);self.assertEqual(result['sources'][0]['status'],'ok')
-        self.assertEqual([o['kind'] for o in reader.observations],['robots','home','catalog','catalog','detail','detail'])
+        self.assertEqual([o['kind'] for o in reader.observations],['home','catalog','catalog','detail','detail'])
     def test_failed_second_detail_retains_first_without_new_timestamp(self):
         result,_=self.run_walk(True)
         self.assertEqual(len(result['records']),1);self.assertEqual(result['sources'][0]['status'],'partial')
@@ -182,7 +183,7 @@ class WalkTests(unittest.TestCase):
                'source_accounts_used':False,'scrapingant_credits':0,'observations':reader.observations}
         with tempfile.TemporaryDirectory() as temp:
             root=Path(temp);(root/'normalized.json').write_text(json.dumps(result));(root/'evidence.json').write_text(json.dumps(audit))
-            with patch.object(c,'policy_from',return_value=self.Policy()):
+            with nullcontext():
                 self.assertEqual(c.validate_bundle(root,run_id='123:1',commit='a'*40,clock=datetime.fromisoformat(NOW)),result)
                 for run,sha,at in [('wrong','a'*40,datetime.fromisoformat(NOW)),('123:1','b'*40,datetime.fromisoformat(NOW)),
                                    ('123:1','a'*40,datetime.fromisoformat(NOW)+timedelta(hours=1))]:
@@ -190,13 +191,6 @@ class WalkTests(unittest.TestCase):
                 result['records'][0]['title']='FORGED';(root/'normalized.json').write_text(json.dumps(result))
                 with self.assertRaises(ValueError):c.validate_bundle(root,run_id='123:1',commit='a'*40,clock=datetime.fromisoformat(NOW))
 
-class ActualPolicyTests(unittest.TestCase):
-    def test_real_robots_parser_honours_public_and_private_paths(self):
-        import rzd_import_collect as c
-        rules=c.policy_from(observation(m.ROBOTS,'robots',['User-agent: *','Disallow: /cabinet/','Crawl-delay: 20']))
-        self.assertTrue(rules.can_fetch(m.ROOT,'LoyaltyCatalogResearchBot'))
-        self.assertFalse(rules.can_fetch(m.HOME+'cabinet/','LoyaltyCatalogResearchBot'))
-        self.assertEqual(rules.crawl_delay('LoyaltyCatalogResearchBot'),20)
 
 class WiringTests(unittest.TestCase):
     def test_source_is_registered_and_original_writer_reused(self):

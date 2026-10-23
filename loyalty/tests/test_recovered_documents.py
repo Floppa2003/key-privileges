@@ -26,15 +26,14 @@ class LinkedDocumentTests(unittest.TestCase):
   r.bind_document_links([{'url':'https://www.vtb.ru/media/later.pdf'}])
   with self.assertRaises(ValueError):r.allowed(u)
   r.__exit__()
- def test_direct_download_records_robots_and_keeps_verified_tls(self):
-  from protego import Protego
+ def test_direct_download_needs_no_robots_and_keeps_verified_tls(self):
   r=ScopedReader(cfg('af_vtb_rules'),{},time.monotonic()+90)
   u='https://www.vtb.ru/media/new.pdf';r.bind_document_links([{'url':u}])
-  r.policy=Protego.parse('User-agent: *\nDisallow: /media/')
+
   data=pdf(['Public document rules 13 percent.'])
   with patch.object(r.session,'get',return_value=Response(body=data)) as get:
    received,meta=r.read_document(u)
-  self.assertEqual(received,data);self.assertFalse(meta['robots_allows_crawling'])
+  self.assertEqual(received,data);self.assertNotIn('robots_allows_crawling',meta)
   self.assertIs(get.call_args.kwargs['verify'],True);r.__exit__()
  def test_actual_collector_discovers_new_names_and_changed_content(self):
   class Reader:

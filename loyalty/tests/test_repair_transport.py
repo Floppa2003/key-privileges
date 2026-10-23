@@ -3,7 +3,6 @@ import sys, unittest
 from pathlib import Path
 from unittest.mock import AsyncMock, patch
 from playwright.async_api import TimeoutError as BrowserTimeout, Error as BrowserError
-from protego import Protego
 sys.path.insert(0, str(Path(__file__).parents[1]))
 from public_transport import PublicSource, check_response
 
@@ -21,7 +20,7 @@ class Requests:
         return obj
 class RepairTests(unittest.IsolatedAsyncioTestCase):
     def client(self,items):
-        c=PublicSource(None,URL);c.context=type('Context',(),{'request':Requests(items)})();c.policy=Protego.parse('');return c
+        c=PublicSource(None,URL);c.context=type('Context',(),{'request':Requests(items)})();return c
     async def test_timed_out_public_get_recovers_without_mutating_request(self):
         c=self.client([BrowserTimeout('request timed out'),Response()])
         with patch('public_transport.asyncio.sleep',new_callable=AsyncMock):

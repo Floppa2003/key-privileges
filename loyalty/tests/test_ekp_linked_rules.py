@@ -161,26 +161,27 @@ class Network(unittest.TestCase):
         session=Mock();session.get.side_effect=replies
         client=r.Reader('',session=session,sleep=lambda _:None)
         return client,session
-    def test_policy_denial_never_fetches_target(self):
-        client,s=self.reader([Response(b'User-agent: *\nDisallow: /upload/\n',mime='text/plain')])
-        with self.assertRaisesRegex(ValueError,'el_source_policy'):client.read(URL)
-        self.assertEqual(s.get.call_count,1)
+    def test_document_read_has_no_robots_request(self):
+        data=pdf(['Current linked conditions'])
+        client,s=self.reader([Response(data,mime='application/pdf')])
+        self.assertEqual(client.read(URL)[0],data)
+        self.assertEqual([call.args[0] for call in s.get.call_args_list],[URL])
     def test_target_403_and_429_stop_without_proxy_retry(self):
         for status in (403,429):
-            client,s=self.reader([Response(b'User-agent: *\nAllow: /\n',mime='text/plain'),Response(b'no',status=status)])
+            client,s=self.reader([Response(b'no',status=status)])
             with self.assertRaises(ValueError):client.read(URL)
-            self.assertEqual(s.get.call_count,2)
+            self.assertEqual(s.get.call_count,1)
     def test_direct_pdf_needs_no_api_key(self):
         data=pdf(['Document source conditions'])
-        client,s=self.reader([Response(b'User-agent: *\nAllow: /\n',mime='text/plain'),Response(data,mime='application/pdf')])
+        client,s=self.reader([Response(data,mime='application/pdf')])
         self.assertEqual(client.read(URL)[0],data);self.assertEqual(client.reserved,0)
     def test_foreign_redirect_is_not_followed(self):
-        client,s=self.reader([Response(b'User-agent: *\nAllow: /\n',mime='text/plain'),Response(b'',status=302,headers={'Location':'https://private.example/file'})])
+        client,s=self.reader([Response(b'',status=302,headers={'Location':'https://private.example/file'})])
         with self.assertRaises(ValueError):client.read(URL)
-        self.assertEqual(s.get.call_count,2)
+        self.assertEqual(s.get.call_count,1)
     def test_declarations_and_credit_limits_remain_bounded(self):
-        client,s=self.reader([Response(b'User-agent: *\nAllow: /\nCrawl-delay: 9\n',mime='text/plain'),Response(pdf(['Rules']),mime='application/pdf')])
-        client.read(URL);self.assertEqual(client.delays['mpclinic.ru'],9)
+        client,s=self.reader([Response(pdf(['Rules']),mime='application/pdf')])
+        client.read(URL);self.assertGreater(client.next_at['mpclinic.ru'],0)
         client.key='synthetic';client.free_checked=True;client.reserved=r.MAX_CREDITS
         with self.assertRaisesRegex(ValueError,'el_credit_budget'):client.raw(URL,provider='datacenter')
     def test_provider_auth_refusal_halts_all_further_provider_calls(self):

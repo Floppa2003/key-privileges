@@ -9,7 +9,6 @@ from unittest.mock import AsyncMock,patch
 sys.path.insert(0,str(Path(__file__).parents[1]))
 import utair_support as support
 from public_transport import PublicSource
-from protego import Protego
 from test_utair_support import fixture,NOW
 
 class Page:
@@ -33,7 +32,7 @@ class Page:
 class ReadTests(unittest.IsolatedAsyncioTestCase):
     async def read(self,sequence,on_content=None):
         page=Page(sequence);page.on_content=(lambda:on_content(page)) if on_content else None
-        client=PublicSource(None,support.ROOT);client.page=page;client.policy=Protego.parse('')
+        client=PublicSource(None,support.ROOT);client.page=page
         clock=[0]
         async def sleep(_):
             clock[0]+=6
@@ -83,12 +82,12 @@ class RoutingTests(unittest.IsolatedAsyncioTestCase):
         with patch.object(collect,'collect_utair',side_effect=reader) as call:
             report,rows=await collect.one(None,cfg,NOW,10)
         self.assertEqual(report['status'],'ok');self.assertEqual(len(rows),1);call.assert_awaited_once()
-    async def test_robots_denial_never_navigates_article(self):
+    async def test_article_is_read_without_auxiliary_preflight(self):
         @asynccontextmanager
         async def session():yield object(),object()
-        with patch('installed_browser.installed_chrome',session),patch.object(PublicSource,'robots',new=AsyncMock(side_effect=RuntimeError('robots_disallow'))),patch.object(support,'read_article',new=AsyncMock()) as read:
-            with self.assertRaisesRegex(RuntimeError,'robots_disallow'):
-                await support.collect_utair({'id':'utair','url':support.ROOT},{'errors':[]},NOW,10)
-            read.assert_not_awaited()
+        with patch('installed_browser.installed_chrome',session),patch.object(support,'read_article',new=AsyncMock(return_value=(fixture(),[200]))) as read:
+            rows=await support.collect_utair({'id':'utair','url':support.ROOT},{'errors':[]},NOW,10)
+            self.assertTrue(rows);read.assert_awaited_once()
+        self.assertFalse(hasattr(PublicSource,'robots'))
 
 if __name__=='__main__':unittest.main()

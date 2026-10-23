@@ -7,7 +7,6 @@ from pathlib import Path
 from unittest.mock import patch
 
 from bs4 import BeautifulSoup
-from protego import Protego
 from playwright.async_api import TimeoutError as BrowserTimeout
 
 sys.path[:0] = [str(Path(__file__).parents[1]), str(Path(__file__).parent)]
@@ -85,8 +84,7 @@ class ReplaySource(transport.PublicSource):
         self.request_interval = 0
         return self
 
-    async def robots(self):
-        self.policy = Protego.parse('User-agent: *\nAllow: /')
+
 
 
 class HydrationTests(unittest.IsolatedAsyncioTestCase):
@@ -94,7 +92,7 @@ class HydrationTests(unittest.IsolatedAsyncioTestCase):
         c = transport.PublicSource(None, URL)
         c.page = page
         c.request_interval = 0
-        c.policy = Protego.parse('User-agent: *\nAllow: /')
+
         return c
 
     async def test_real_collector_waits_for_t2_offer_not_just_http_200(self):

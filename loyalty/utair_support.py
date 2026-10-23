@@ -139,16 +139,12 @@ async def collect_utair(cfg,report,observed_at,limit):
     async with installed_chrome() as (context,page):
         client=PublicSource(None,ROOT);client.context=context;client.page=page
         client.deadline=time.monotonic()+120
-        try:
-            await within_source_budget(client,client.robots)
-            raw,statuses=await within_source_budget(client,lambda:read_article(client))
-            rows=parse_article(raw,observed_at)
-            report['discovered']=len(rows)
-            report['coverage']=json.dumps({'method':'live_public_support_article_leaves',
-                'article_url':ROOT,'leaf_blocks':len(rows),'returned':min(limit,len(rows)),
-                'main_document_statuses':statuses,'full_program_catalog':False,
-                'linked_terms_checked':False,'tls_verification':True},ensure_ascii=False)
-            if len(rows)>limit:report['errors'].append({'phase':'extraction','reason':'record_limit'})
-            return rows[:limit]
-        finally:
-            if getattr(client,'robots_info',None):report['robots']=client.robots_info
+        raw,statuses=await within_source_budget(client,lambda:read_article(client))
+        rows=parse_article(raw,observed_at)
+        report['discovered']=len(rows)
+        report['coverage']=json.dumps({'method':'live_public_support_article_leaves',
+            'article_url':ROOT,'leaf_blocks':len(rows),'returned':min(limit,len(rows)),
+            'main_document_statuses':statuses,'full_program_catalog':False,
+            'linked_terms_checked':False,'tls_verification':True},ensure_ascii=False)
+        if len(rows)>limit:report['errors'].append({'phase':'extraction','reason':'record_limit'})
+        return rows[:limit]

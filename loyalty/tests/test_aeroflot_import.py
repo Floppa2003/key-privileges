@@ -183,8 +183,8 @@ class WalkAndBundleTests(unittest.TestCase):
     def test_current_discovery_detail_and_scope_exception(self):
         reader=SourceReader();b=c.walk(reader,'123:1',NOW)
         self.assertEqual(len(b['records']),2);self.assertEqual(b['sources'][0]['status'],'ok')
-        self.assertEqual([o['kind'] for o in reader.observations],['robots','discovery','catalog','detail','detail'])
-        self.assertEqual(b['sources'][0]['robots']['catalogue_read_basis'],m.PERMISSION)
+        self.assertEqual([o['kind'] for o in reader.observations],['discovery','catalog','detail','detail'])
+        self.assertNotIn('robots',b['sources'][0])
     def test_failed_detail_preserves_valid_partial_result(self):
         b=c.walk(SourceReader(True),'123:1',NOW)
         self.assertEqual(len(b['records']),1);self.assertEqual(b['sources'][0]['status'],'partial')

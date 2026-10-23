@@ -1,3 +1,4 @@
+from contextlib import nullcontext
 """Real catalogue ownership, changed inputs, and failed-detail fallback."""
 import copy,json,sys,unittest,tempfile
 from pathlib import Path
@@ -62,7 +63,7 @@ class Tests(unittest.TestCase):
                 else:raise ValueError('rzd_import_error_cell')
                 self.observations.append(o);return o
         reader=Reader()
-        with patch.object(c,'policy_from',return_value=WalkTests.Policy()):
+        with nullcontext():
             b=c.walk(reader,'123:1','a'*40,NOW,include_previews=True)
             self.assertEqual(len(b['records']),1);self.assertEqual(b['sources'][0]['status'],'partial')
             scope=json.loads(b['sources'][0]['coverage']);self.assertEqual(scope['accepted_detail_records'],0)
@@ -120,7 +121,7 @@ class Tests(unittest.TestCase):
                 if kind=='home':return observation(url,kind,['РЖД Бонус','/partners/'])
                 if kind=='catalog_cards':return observation(url,kind,[a.sanitize(html())])
                 return observation(url,kind,['Партнер Пример','Скидка 17% для участников РЖД Бонус. Не суммируется с другими акциями.'])
-        with patch.object(c,'policy_from',return_value=WalkTests.Policy()):b=c.walk(Reader(),'123:1','a'*40,NOW,include_previews=True)
+        with nullcontext():b=c.walk(Reader(),'123:1','a'*40,NOW,include_previews=True)
         self.assertEqual(len(b['records']),1);self.assertEqual(b['sources'][0]['status'],'ok')
         self.assertEqual(b['records'][0]['native_id'],'/promo/offer-71/')
         self.assertEqual(json.loads(b['sources'][0]['coverage'])['accepted_catalogue_previews'],0)
@@ -136,7 +137,7 @@ class Tests(unittest.TestCase):
                 else:raise ValueError('rzd_import_error_cell')
                 self.observations.append(o);return o
         reader=Reader()
-        with patch.object(c,'policy_from',return_value=WalkTests.Policy()),patch.object(c,'MAX_DETAILS',2):
+        with nullcontext(),patch.object(c,'MAX_DETAILS',2):
             b=c.walk(reader,'123:1','a'*40,NOW,include_previews=True)
             self.assertEqual(len(b['records']),2);self.assertEqual(b['sources'][0]['discovered'],3)
             audit={'run_id':'123:1','commit':'a'*40,'started_at':NOW,'finished_at':NOW,'cleanup_verified':True,
@@ -144,17 +145,5 @@ class Tests(unittest.TestCase):
             with tempfile.TemporaryDirectory() as temp:
                 p=Path(temp);(p/'normalized.json').write_text(json.dumps(b));(p/'evidence.json').write_text(json.dumps(audit))
                 self.assertEqual(c.validate_bundle(p,run_id='123:1',commit='a'*40,clock=datetime.fromisoformat(NOW)),b)
-    def test_policy_denial_is_not_replaced_with_preview(self):
-        a=self.module()
-        class Policy(WalkTests.Policy):
-            def can_fetch(self,url,agent):return '/promo/' not in url
-        class Reader:
-            def read(self,url,kind):
-                if kind=='robots':return observation(url,kind,['User-agent: *'])
-                if kind=='home':return observation(url,kind,['РЖД Бонус','/partners/'])
-                if kind=='catalog_cards':return observation(url,kind,[a.sanitize(html())])
-                raise AssertionError('Denied target requested')
-        with patch.object(c,'policy_from',return_value=Policy()):b=c.walk(Reader(),'123:1','a'*40,NOW,include_previews=True)
-        self.assertFalse(b['records']);self.assertEqual(b['sources'][0]['errors'][0]['reason'],'rzd_policy_disallow')
 
 if __name__=='__main__':unittest.main()

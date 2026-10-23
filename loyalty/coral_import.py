@@ -47,17 +47,11 @@ def formula(url):
         else:c.checked_url(url,'/promo/',2)
     return f'=IMPORTDATA("{url}";"¦";"en_US")'
 
-def policy(raw):
-    from protego import Protego
-    if not re.search(r'^User-agent\s*:',raw,re.I|re.M) or '<html' in raw.lower() or 'captcha' in raw.lower():
-        raise ValueError('cg_robots_unreadable')
-    if not re.search(r'^Sitemap:\s*'+re.escape(SITEMAP)+r'\s*$',raw,re.M|re.I):raise ValueError('cg_sitemap_not_advertised')
-    return Protego.parse(raw)
 
 def sanitize(raw,url):
     if len(raw)>2000000:raise ValueError('cg_response_bound')
     if url==ROBOTS:
-        policy(raw);return raw
+        return raw  # Legacy stored observation, not a prerequisite.
     if url==SITEMAP:
         if '<!DOCTYPE' in raw.upper() or '<!ENTITY' in raw.upper():raise ValueError('cg_xml_entities')
         root=ET.fromstring(raw)
@@ -196,11 +190,8 @@ def map_detail(obs,sid,entry,observed_at):
 def collect(reader,run_id,observed_at):
     results={s:{'records':[],'errors':[],'excluded':[],'discovered':0} for s in ('coral','coral_promo')};counts={}
     try:
-        rules=policy(checked(reader.read(ROBOTS)))
-        rate=rules.request_rate('LoyaltyCatalogResearchBot');reader.delay=max(5,rules.crawl_delay('LoyaltyCatalogResearchBot') or 0,rate.seconds/rate.requests if rate else 0)
-        if reader.delay>60:raise ValueError('cg_source_delay_bound')
+        reader.delay=5
         def read(url):
-            if not rules.can_fetch(url,'LoyaltyCatalogResearchBot'):raise ValueError('cg_robots_disallow')
             return reader.read(url)
         club=read(c.CLUB);promo=read(c.PROMO);sitemap=read(SITEMAP)
         targets,cat_count,promo_count=candidates(club,promo,sitemap);counts={'categories':cat_count,'promo_index':promo_count}
@@ -276,19 +267,15 @@ def validate_bundle(folder,run_id,commit,clock):
     supplied={r['source_id']:r for r in b.get('sources',[])}
     if len(supplied)!=len(b.get('sources',[])):raise ValueError('cg_source_reports')
     targets=[]
-    if retries and not all(u in lookup for u in (ROBOTS,c.CLUB,c.PROMO,SITEMAP)):raise ValueError('cg_retry_without_discovery')
-    if all(u in lookup for u in (ROBOTS,c.CLUB,c.PROMO,SITEMAP)):
-        rules=policy(checked(lookup[ROBOTS]));targets,ncats,npromo=candidates(lookup[c.CLUB],lookup[c.PROMO],lookup[SITEMAP])
+    if retries and not all(u in lookup for u in (c.CLUB,c.PROMO,SITEMAP)):raise ValueError('cg_retry_without_discovery')
+    if all(u in lookup for u in (c.CLUB,c.PROMO,SITEMAP)):
+        targets,ncats,npromo=candidates(lookup[c.CLUB],lookup[c.PROMO],lookup[SITEMAP])
         counts={'categories':ncats,'promo_index':npromo}
-        controls=(c.CLUB,c.PROMO,SITEMAP)
-        if not all(rules.can_fetch(u,'LoyaltyCatalogResearchBot') for u in controls):raise ValueError('cg_policy_binding')
         for sid,_ in targets:results[sid]['discovered']+=1
-        allowed={u for u in (ROBOTS,c.CLUB,c.PROMO,SITEMAP)}|{e['url'] for s,e in targets}
-        if any(not rules.can_fetch(u,'LoyaltyCatalogResearchBot') for u in seen):raise ValueError('cg_retry_policy')
+        allowed={ROBOTS,c.CLUB,c.PROMO,SITEMAP}|{e['url'] for s,e in targets}
         for sid,entry in targets:
             obs=lookup.get(entry['url'])
             if not obs:continue
-            if not rules.can_fetch(obs['url'],'LoyaltyCatalogResearchBot'):raise ValueError('cg_policy_binding')
             try:r=map_detail(obs,sid,entry,b['observed_at'])
             except ValueError:continue
             if r:
@@ -302,7 +289,6 @@ def validate_bundle(folder,run_id,commit,clock):
             for entry in entries[:linked.MAX_RULES]:
                 obs=lookup.get(entry['url'])
                 if not obs:continue
-                if not rules.can_fetch(obs['url'],'LoyaltyCatalogResearchBot'):raise ValueError('cg_rule_policy')
                 if any(instant(lookup[p['source_url']]['calculated_at'])>instant(obs['requested_at']) for p in entry['parents']):
                     raise ValueError('cg_rule_before_parent')
                 try:r=linked.map_rule(obs,entry,b['observed_at'])

@@ -1,11 +1,9 @@
-"""Anonymous same-origin reads, finite timeouts, robots and challenge checks."""
+"""Anonymous same-origin reads, finite timeouts, rate limits and challenge checks."""
 from __future__ import annotations
 import asyncio
 import re
 import time
-import copy
 from urllib.parse import urlsplit
-from protego import Protego
 from bs4 import BeautifulSoup
 from model import clean_url
 from normalized import BLOCKED
@@ -22,7 +20,6 @@ def retryable_read_error(exc: Exception) -> bool:
         isinstance(exc, BrowserError) and bool(re.search(
             r"net::ERR_(?:CONNECTION_TIMED_OUT|CONNECTION_RESET|NETWORK_CHANGED|EMPTY_RESPONSE)(?:\b|$)",
             str(exc))))
-
 
 
 def allowed_request(url: str, host: str) -> bool:
@@ -47,67 +44,15 @@ def check_response(status: int, body: str) -> None:
         raise ReadError('access_challenge',status=status,body=body)
 
 
-def robots_document(status: int, body: str) -> tuple[str,str]:
-    """Interpret robots only; never use this function for a target response."""
-    if status==429:
-        raise RuntimeError('robots_http_429')
-    if 400<=status<500:
-        return '', 'unavailable_4xx'
-    if not 200<=status<300:
-        raise RuntimeError(f'robots_http_{status}')
-    if len(body.encode('utf-8'))>1024*1024:
-        raise RuntimeError('robots_response_too_large')
-    body='\n'.join(line for line in body.splitlines() if not line.lstrip().startswith('#'))
-    # Some origins wrap actual rules in <pre>. Extract rules, not HTML tags.
-    # An arbitrary home/challenge page still is not a robots rule set.
-    if re.search(r'<(?:!doctype|html|head|body|pre)\b',body,re.I):
-        soup=BeautifulSoup(body,'html.parser')
-        title=soup.title.get_text(' ',strip=True) if soup.title else ''
-        if BLOCKED.search(title):
-            raise RuntimeError('robots_not_readable')
-        for node in soup.select('script,style'):node.decompose()
-        visible=soup.get_text('\n')
-        if not re.search(r'^\s*user-agent\s*:',visible,re.I|re.M):
-            raise RuntimeError('robots_not_readable')
-        body=visible
-    # Ignore challenge words when they are merely paths or comments in real
-    # rules, e.g. Disallow: /captcha/ and Disallow: /forbidden/.
-    directives=re.search(r'^\s*(?:user-agent|allow|disallow|sitemap)\s*:',body,re.I|re.M)
-    if not directives and BLOCKED.search(body[:350]):
-        raise RuntimeError('robots_not_readable')
-    return body,'rules_loaded' if body.strip() else 'empty_2xx'
-
-
-class RobotsCache:
-    """Single-flight successful policy reads; lifetime is one browser run."""
-    def __init__(self, ttl=300, clock=time.monotonic):
-        self.ttl=ttl;self.clock=clock;self.entries={};self.locks={};self.read_locks={}
-
-    async def load(self, client):
-        key=(client.host,'LoyaltyCatalogResearchBot')
-        client.lock=self.read_locks.setdefault(key,asyncio.Lock())
-        async with self.locks.setdefault(key,asyncio.Lock()):
-            entry=self.entries.get(key)
-            if entry and self.clock()-entry['time']<self.ttl:
-                client.robots_rules=entry['rules']
-                client.policy=Protego.parse(entry['rules'])
-                client.request_interval=entry['interval']
-                client.robots_info={**copy.deepcopy(entry['info']),'method':'run_cache',
-                                    'original_method':entry['info']['method'],
-                                    'cache_age_seconds':round(self.clock()-entry['time'],3)}
-                return
-            await client._load_robots()
-            if client.robots_info['state'] in ('rules_loaded','empty_2xx'):
-                self.entries[key]={'time':self.clock(),'rules':client.robots_rules,
-                                   'interval':client.request_interval,'info':copy.deepcopy(client.robots_info)}
-
-
 class PublicSource:
     def __init__(self,browser,url: str):
-        self.browser=browser;self.host=urlsplit(url).hostname;self.policy=None
+        self.browser=browser;self.host=urlsplit(url).hostname
         self.context=None;self.page=None;self.lock=asyncio.Lock();self.request_interval=0.25
 
     async def __aenter__(self):
+        # Shared pacing remains independent of any auxiliary source file.
+        locks=getattr(self.browser,'_loyalty_read_locks',None)
+        if locks is not None:self.lock=locks.setdefault(self.host,asyncio.Lock())
         self.context=await self.browser.new_context(locale='ru-RU')
         self.page=await self.context.new_page()
         return self
@@ -177,69 +122,10 @@ class PublicSource:
         finally:
             self.page.remove_listener('response', observe)
 
-    async def robots(self):
-        cache=getattr(self.browser,'_loyalty_robots_cache',None)
-        if isinstance(cache,RobotsCache):
-            return await cache.load(self)
-        return await self._load_robots()
-
-    async def _load_robots(self):
-        """RFC 9309: unavailable (4xx) is distinct from unreachable (5xx/network).
-
-        A missing robots file is not a target-page authorization failure. Keep
-        actual target responses, rate limits, and explicit rules independent.
-        """
-        url=f'https://{self.host}/robots.txt'
-        self.policy=None
-        self.robots_info={'state':'fetching','http_status':None,'method':'http'}
-        try:
-            res=await self.context.request.get(url,timeout=15000)
-        except Exception as exc:
-            self.robots_info['http_error_type']=type(exc).__name__
-            if re.search(r'CERT_|certificate|SSL',str(exc),re.I):
-                self.robots_info['state']='tls_verification_failed'
-                raise
-            status=None;body='';headers={}
-        else:
-            if not allowed_request(getattr(res,'url',url),self.host):
-                self.robots_info['state']='unexpected_redirect'
-                raise RuntimeError('robots_unexpected_redirect')
-            status=res.status;body=await res.text();headers=getattr(res,'headers',{})
-        self.robots_info['http_status']=status
-        # Retry-After and 429 are intentionally stricter than generic RFC 4xx:
-        # do not create another browser request when asked to slow down.
-        if headers.get('retry-after'):
-            self.robots_info['state']='retry_after'
-            raise RuntimeError('robots_retry_after')
-        if status==429:
-            self.robots_info['state']='rate_limited'
-            raise RuntimeError('robots_http_429')
-        if status is None or status>=500 or 300<=status<400:
-            self.robots_info['method']='browser_fallback'
-            try:
-                status,_=await self.navigate(url)
-                body=await self.page.locator('body').inner_text()
-            except Exception:
-                self.robots_info['state']='unreachable'
-                raise
-            self.robots_info['http_status']=status
-        try:
-            rules,state=robots_document(status,body)
-        except RuntimeError:
-            self.robots_info['state']='unreadable_or_unreachable'
-            raise
-        self.robots_rules=rules
-        self.policy=Protego.parse(rules)
-        self.robots_info['state']=state
-        delay=self.policy.crawl_delay('LoyaltyCatalogResearchBot') or 0
-        rate=self.policy.request_rate('LoyaltyCatalogResearchBot')
-        self.request_interval=max(0.25,delay,rate.seconds/rate.requests if rate else 0)
 
     def check_url(self,url):
         if not allowed_request(url,self.host):
             raise RuntimeError('request_outside_public_source')
-        if self.policy is None or not self.policy.can_fetch(url,'LoyaltyCatalogResearchBot'):
-            raise RuntimeError('robots_disallow')
 
     async def fetch_read(self,url,**kwargs):
         # Only GETs / the validated read-only catalog POST reach this helper.

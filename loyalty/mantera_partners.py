@@ -295,7 +295,6 @@ async def collect(browser, deadline, observed_at):
     for url in (ROSTER_URL, RESORT_URL):
         async with PublicSource(browser, url) as client:
             client.deadline = deadline
-            await within_source_budget(client, client.robots)
             pages.append(await within_source_budget(client, lambda:client.read(url)))
     return parse_pair(*pages, observed_at)
 

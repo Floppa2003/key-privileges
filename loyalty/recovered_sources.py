@@ -12,12 +12,11 @@ from urllib.parse import urlsplit, urljoin, parse_qs
 import certifi
 import requests
 from bs4 import BeautifulSoup
-from protego import Protego
 from recovered_contract import (API, SOURCES, CA_FILES, HTTP_PROFILE, HTTP_WARNING,
     collection_url, http_url, checked_config, transport_evidence, linked_pdf_url)
 from normalized import make_offer, text, number, content_hash
 from document_text import extract_pdf, document_records
-from public_transport import check_response, robots_document
+from public_transport import check_response
 from source_diagnostics import ReadError, error_record
 from known_rules import linked_documents
 
@@ -35,7 +34,6 @@ class ScopedReader:
         self.session.trust_env = False
         self.temp = None
         self.verify = True
-        self.policy = None
         self.interval = 1.0
         self.last_read = 0.0
         self.document_urls = set()
@@ -53,15 +51,6 @@ class ScopedReader:
                     data += raw + b'\n'
                 bundle.write_bytes(data)
                 self.verify = str(bundle)
-            root = urlsplit(self.spec['url'])
-            robots = f'{root.scheme}://{root.netloc}/robots.txt'
-            status, headers, raw = self._get(robots)
-            rules, state = robots_document(status, raw.decode('utf-8'))
-            self.policy = Protego.parse(rules)
-            delay = self.policy.crawl_delay('LoyaltyCatalogResearchBot') or 0
-            rate = self.policy.request_rate('LoyaltyCatalogResearchBot')
-            self.interval = max(1.0, delay, rate.seconds / rate.requests if rate else 0)
-            self.report['robots'] = {'state':state,'http_status':status,'method':'scoped_public_http'}
             return self
         except Exception:
             self.__exit__(None,None,None)
@@ -75,8 +64,7 @@ class ScopedReader:
     def allowed(self, url):
         if self.sid == 'loyals':
             return http_url(url)
-        base = urlsplit(self.spec['url'])
-        if url not in (self.spec['url'], f'https://{base.netloc}/robots.txt') and url not in self.document_urls:
+        if url != self.spec['url'] and url not in self.document_urls:
             raise ValueError('request_outside_exact_recovered_source')
         return url
 
@@ -91,13 +79,11 @@ class ScopedReader:
 
     def read_document(self,url):
         if url not in self.document_urls:raise ValueError('document_not_in_live_source_listing')
-        # Direct user-authorized file downloads, not a site-wide crawl. Record the
-        # robots rule separately; it is not proof of a target HTTP access refusal.
+        # Only direct public files discovered in the current source are read.
         status,headers,raw=self._get(url)
         if status!=200:raise RuntimeError('document_http_'+str(status))
         if not raw.startswith(b'%PDF-'):raise RuntimeError('linked_resource_not_pdf')
-        return raw,{'robots_allows_crawling':self.policy.can_fetch(url,'LoyaltyCatalogResearchBot'),
-            'mode':'direct_advertised_public_file_download','http_status':status}
+        return raw,{'mode':'direct_advertised_public_file_download','http_status':status}
 
 
     def _get(self, url, *, ca_download=False):
@@ -164,8 +150,6 @@ class ScopedReader:
 
     def read(self, url):
         self.allowed(url)
-        if self.policy is None or not self.policy.can_fetch(url,'LoyaltyCatalogResearchBot'):
-            raise RuntimeError('robots_disallow')
         status, headers, raw = self._get(url)
         body = raw[:350].decode('utf-8',errors='replace') if self.spec.get('format')=='pdf' else raw.decode('utf-8')
         check_response(status, body)

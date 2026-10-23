@@ -50,7 +50,7 @@ class SessionTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             r=Fake();b=run(r,tmp)
             self.assertEqual(len(b['records']),245);self.assertEqual(b['sources'][0]['status'],'ok')
-            self.assertEqual((r.calls,r.reserved),(2,150))
+            self.assertEqual((r.calls,r.reserved),(1,125))
             self.assertEqual(c.validate_session_bundle(tmp,run_id='fixture:1',commit='test',clock=datetime.now(timezone.utc)),b)
 
     def test_source_refusal_after_good_pages_preserves_partial(self):
@@ -101,10 +101,12 @@ class SessionTests(unittest.TestCase):
             with self.subTest(url=url),tempfile.TemporaryDirectory() as tmp:
                 self.assertFalse(run(Fake(obj),tmp)['records'])
 
-    def test_source_policy_disallow_or_new_pacing_rule_stops_browser(self):
+    def test_robots_content_is_never_requested_and_cannot_block_extraction(self):
         for policy in ('User-agent: *\nDisallow: /api/','User-agent: *\nCrawl-delay: 5'):
             with self.subTest(policy=policy),tempfile.TemporaryDirectory() as tmp:
-                r=Fake(policy=policy);b=run(r,tmp);self.assertEqual(r.calls,1);self.assertFalse(b['records'])
+                r=Fake(policy=policy);b=run(r,tmp)
+                self.assertEqual(r.calls,1);self.assertEqual(len(b['records']),245)
+                self.assertEqual(b['sources'][0]['status'],'ok')
 
     def test_artifact_script_and_completeness_tampering_rejected(self):
         for mutation in ('script_sha256','pagination_complete'):
@@ -121,27 +123,30 @@ class SessionTests(unittest.TestCase):
 
 
 class ReaderTests(unittest.TestCase):
-    def test_both_provider_requests_and_browser_script_are_bound(self):
+    def test_single_provider_request_and_browser_script_are_bound(self):
         from test_free_access_probe import Response,page,USAGE
-        get=Mock(side_effect=[Response(USAGE),page('User-agent: *\nAllow: /',cost='25'),page('public',cost='125')])
-        r=c.Reader('fixture-key',get=get,sleep=Mock());r.preflight();r.read(e.POLICY);r.read(e.ROOT)
-        self.assertEqual((r.calls,r.reserved,r.charged),(2,150,150))
+        get=Mock(side_effect=[Response(USAGE),page('public',cost='125')])
+        r=c.Reader('fixture-key',get=get,sleep=Mock());r.preflight();r.read(e.ROOT)
+        self.assertEqual((r.calls,r.reserved,r.charged),(1,125,125))
         call=get.call_args.kwargs
         self.assertEqual(call['params']['url'],e.ROOT);self.assertEqual(call['params']['browser'],'true')
         self.assertEqual(call['params']['proxy_type'],'residential');self.assertNotIn('cookies',call)
         with self.assertRaises(ProbeError):r.read(e.ROOT)
-        self.assertEqual(get.call_count,3)
+        self.assertEqual(get.call_count,2)
 
-    def test_policy_retry_and_single_browser_remain_under175(self):
+    def test_no_auxiliary_url_is_requested_or_allowed(self):
         from test_free_access_probe import Response,page,USAGE
-        get=Mock(side_effect=[Response(USAGE),Response('{}',status=404),page('User-agent: *\nAllow: /',cost='25'),page('public',cost='125')])
-        r=c.Reader('fixture-key',get=get,sleep=Mock());r.preflight();c.policy_document(r,{});r.read(e.ROOT)
-        self.assertEqual((r.calls,r.reserved,r.charged),(3,175,150));r.sleep.assert_any_call(10)
+        get=Mock(side_effect=[Response(USAGE),page('public',cost='125')])
+        r=c.Reader('fixture-key',get=get,sleep=Mock());r.preflight()
         with self.assertRaises(ProbeError):r.read(e.POLICY)
+        self.assertEqual(r.calls,0)
+        r.read(e.ROOT)
+        self.assertEqual((r.calls,r.reserved,r.charged),(1,125,125))
+        self.assertEqual(get.call_count,2)
 
     def test_paid_low_balance_quota_and_cost_are_terminal(self):
         from test_free_access_probe import Response,page,USAGE
-        for usage in ({**USAGE,'plan_name':'Paid'},{**USAGE,'remained_credits':174}):
+        for usage in ({**USAGE,'plan_name':'Paid'},{**USAGE,'remained_credits':124}):
             get=Mock(return_value=Response(usage));r=c.Reader('fixture-key',get=get)
             with self.assertRaises(ProbeError):r.preflight()
             self.assertEqual(get.call_count,1)

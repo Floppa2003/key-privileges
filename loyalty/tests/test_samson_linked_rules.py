@@ -59,7 +59,7 @@ class SamsonRules(unittest.TestCase):
                 result=project(row)
                 self.assertEqual(len(result['conditions']),1)
                 for key in ('benefits','codes','costs'):self.assertEqual(result[key],[])
-        self.assertEqual(net.calls,['https://samson-pharma.ru/robots.txt',SAMSON,SAMSON+'?page=2'])
+        self.assertEqual(net.calls,[SAMSON,SAMSON+'?page=2'])
     def test_changed_names_change_evidence_without_changing_identity(self):
         with tempfile.TemporaryDirectory() as a,tempfile.TemporaryDirectory() as b:
             old,_=collect(a);new,_=collect(b,PublicPages(names=('Delta','Epsilon')))

@@ -90,11 +90,9 @@ async def read_region_catalog(client,key):
     if key not in REGIONS:raise ValueError('unknown_t2_region')
     root=REGIONS[key]['source_url']
     if key=='msk':
-        await within_source_budget(client,client.robots)
         return await read_catalog_snapshot(client,root)
     async with PublicSource(client.browser,root) as regional:
         regional.deadline=getattr(client,'deadline',float('inf'))
-        await within_source_budget(regional,regional.robots)
         return await read_catalog_snapshot(regional,root)
 
 

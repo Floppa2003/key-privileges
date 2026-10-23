@@ -38,7 +38,6 @@ class ProductTransportTests(unittest.IsolatedAsyncioTestCase):
  async def test_actual_rules_collector_uses_reviewed_anonymous_http_read(self):
   from unittest.mock import patch
   import requests
-  from protego import Protego
   from public_transport import PublicSource
   from known_rules import collect_known_rules
   class Response:
@@ -47,7 +46,7 @@ class ProductTransportTests(unittest.IsolatedAsyncioTestCase):
    def __enter__(self):return self
    def __exit__(self,*args):pass
    def iter_content(self,size):yield sample().encode('utf8')
-  client=PublicSource(None,URL);client.policy=Protego.parse('');client.request_interval=0;client.context=self.old_refused_context()
+  client=PublicSource(None,URL);client.request_interval=0;client.context=self.old_refused_context()
   report={'errors':[]}
   with patch.object(requests,'get',return_value=Response()) as get:
    try:rows=await collect_known_rules(client,{'id':'af_gpb_rules','url':URL},report,NOW,100)
@@ -58,7 +57,6 @@ class ProductTransportTests(unittest.IsolatedAsyncioTestCase):
  async def test_http_refusal_is_not_retried_or_reported_as_a_product(self):
   from unittest.mock import patch
   import requests
-  from protego import Protego
   from public_transport import PublicSource
   from known_rules import collect_known_rules
   class Response:
@@ -68,17 +66,16 @@ class ProductTransportTests(unittest.IsolatedAsyncioTestCase):
    def __exit__(self,*args):pass
   for status in (302,403,429):
    with self.subTest(status=status):
-    client=PublicSource(None,URL);client.policy=Protego.parse('');client.request_interval=0;client.context=self.old_refused_context()
+    client=PublicSource(None,URL);client.request_interval=0;client.context=self.old_refused_context()
     with patch.object(requests,'get',return_value=Response(status)) as get:
      with self.assertRaises(RuntimeError):await collect_known_rules(client,{'id':'af_gpb_rules','url':URL},{'errors':[]},NOW,100)
      get.assert_called_once()
- async def test_reviewed_transport_still_obeys_source_policy(self):
+ async def test_reviewed_transport_still_rejects_foreign_source(self):
   from unittest.mock import patch
   import requests
-  from protego import Protego
   from public_transport import PublicSource
   from known_rules import collect_known_rules
-  client=PublicSource(None,URL);client.policy=Protego.parse('User-agent: *\nDisallow: /')
+  client=PublicSource(None,'https://other.example/catalog')
   with patch.object(requests,'get') as get:
    with self.assertRaises(RuntimeError):await collect_known_rules(client,{'id':'af_gpb_rules','url':URL},{'errors':[]},NOW,100)
    get.assert_not_called()

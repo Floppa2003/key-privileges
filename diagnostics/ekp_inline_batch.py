@@ -1,6 +1,6 @@
 """Test ordinary inline EKP details plus one source-observed public GET.
 
-175-credit/3-request ceiling. No schedule, publication, account, private cookies,
+150-credit/2-request ceiling. No schedule, publication, account, private cookies,
 guessed API request bodies or coupon action.
 """
 import base64
@@ -23,17 +23,6 @@ OUT=Path('ekp-inline-output')
 JS=Path(__file__).with_suffix('.js').read_text()
 
 
-def namespace_allowed(rules):
-    # Conservative diagnostic gate: every disallow in every group must be outside
-    # the namespace; fine-grained/wildcard overlap needs a reviewed policy adapter.
-    for line in rules.splitlines():
-        line=line.split('#',1)[0].strip()
-        if ':' not in line:continue
-        key,value=line.split(':',1);value=value.strip()
-        if key.lower()=='disallow' and value:
-            prefix=value.rstrip('$').split('*',1)[0]
-            if not prefix or PREFIX.startswith(prefix) or prefix.startswith(PREFIX):
-                raise ProbeError('namespace_policy_needs_review')
 
 
 class Reader(FreeReader):
@@ -52,7 +41,7 @@ class Reader(FreeReader):
         if not self.ready or self.halted or url not in self.allowed:
             raise ProbeError('unapproved_comparison_request')
         cost = 125 if browser else 25
-        if self.calls >= 3 or self.reserved + cost > 175:
+        if self.calls >= 2 or self.reserved + cost > 150:
             raise ProbeError('comparison_budget')
         self.calls += 1; self.reserved += cost
         params = {'url': url, 'browser': str(browser).lower(), 'proxy_type': 'residential',
@@ -69,14 +58,14 @@ class Reader(FreeReader):
         return int(status), raw, int(charged)
 
 
-def checked_details(result,policy):
+def checked_details(result):
     from public_transport import check_response
     allowed={card_url(x['url']):x for x in result['initialCards']}
     if len(allowed)!=len(result['initialCards']) or not 1<=len(allowed)<=120:raise ProbeError('initial_cards_invalid')
     rows=[];seen=set()
     for item in result.get('details',[]):
         url=card_url(item['url']);ident=url.split('?')[0].rstrip('/').split('/')[-1]
-        if url not in allowed or url in seen or item['finalUrl']!=url or not policy.can_fetch(url,'LoyaltyCatalogResearchBot'):
+        if url not in allowed or url in seen or item['finalUrl']!=url:
             raise ProbeError('detail_identity_invalid')
         if item['title']!=allowed[url]['title']:raise ProbeError('discovery_title_changed')
         soup=BeautifulSoup(item['html'],'html.parser');owners=soup.find_all(id='partner.'+ident)
@@ -98,23 +87,16 @@ def checked_details(result,policy):
 
 
 def main():
-    from public_transport import robots_document, check_response
-    from protego import Protego
+    from public_transport import check_response
     OUT.mkdir(exist_ok=True);reader=None
     report={'run_id':os.getenv('GITHUB_RUN_ID'),'run_attempt':os.getenv('GITHUB_RUN_ATTEMPT'),
         'commit':os.getenv('GITHUB_SHA'),'started_at':now(),'publication':False,'account_session':False,
-        'max_credits':175,'details':[]}
+        'max_credits':150,'details':[]}
     try:
-        reader=Reader(os.environ.get('SCRAPINGANT_API_KEY',''),[{'url':ROOT}],max_credits=175,max_requests=3)
+        reader=Reader(os.environ.get('SCRAPINGANT_API_KEY',''),[{'url':ROOT}],max_credits=150,max_requests=2)
         reader.preflight();report['opening_balance']=reader.balance
-        status,raw,_=reader.read('https://ekp.spb.ru/robots.txt',browser=False)
-        rules,state=robots_document(status,raw);policy=Protego.parse(rules);namespace_allowed(rules)
-        if not policy.can_fetch(ROOT,'LoyaltyCatalogResearchBot'):raise ProbeError('robots_disallow')
-        rate=policy.request_rate('LoyaltyCatalogResearchBot')
-        delay=max(1.1,policy.crawl_delay('LoyaltyCatalogResearchBot') or 0,rate.seconds/rate.requests if rate else 0)
-        if delay>1.1:raise ProbeError('policy_slower_than_ui_budget')
-        report['policy']={'status':status,'state':state,'sha256':hashlib.sha256(raw.encode()).hexdigest()}
-        (OUT/'robots.txt').write_text(rules);time.sleep(delay)
+        delay=1.1
+        time.sleep(delay)
         status,raw,_=reader.read(ROOT,browser=True)
         if status!=200:raise ProbeError('root_http_'+str(status))
         node=BeautifulSoup(raw,'html.parser').select_one('#loyalty-inline-evidence')
@@ -124,7 +106,7 @@ def main():
         rows=[];report['detail_errors']=[]
         # A malformed card must not discard other independently owned pages.
         for item in result.get('details',[]):
-            try: rows.extend(checked_details({**result,'details':[item]},policy))
+            try: rows.extend(checked_details({**result,'details':[item]}))
             except Exception as exc:
                 report['detail_errors'].append({'url':item.get('url'),'reason':type(exc).__name__})
         if len(rows)>9:raise ProbeError('batch_size_exceeded')
@@ -135,7 +117,7 @@ def main():
         resources=result.get('finalResources',[])
         target=next((x.get('url') for x in resources
             if x.get('url')=='https://ekp.spb.ru/api/portal/loyalty/partners'),None)
-        if target and not result.get('error') and not reader.halted and policy.can_fetch(target,'LoyaltyCatalogResearchBot'):
+        if target and not result.get('error') and not reader.halted:
             reader.allowed.add(target);time.sleep(delay)
             api={'url':target,'method':'GET','observed_at':now(),'publication':False}
             report['public_route_check']=api
@@ -176,21 +158,16 @@ def json_shape(obj, depth=0):
 
 def selfcheck():
     terms_selfcheck()
-    namespace_allowed('User-agent: *\nDisallow: /cabinet\nDisallow: /docs')
-    for rules in ('Disallow: /','Disallow: /capabilities','Disallow: /capabilities/loyalty/tiles/5','Disallow: /*'):
-        try:namespace_allowed(rules)
-        except ProbeError:pass
-        else:raise AssertionError('overlapping policy accepted')
-    r=Reader('fixture-key',[{'url':ROOT}],max_credits=175,max_requests=3);r.ready=True
+    r=Reader('fixture-key',[{'url':ROOT}],max_credits=150,max_requests=2);r.ready=True
     r.allowed.add('https://ekp.spb.ru/api/portal/loyalty/partners')
     r._request=lambda e,p:('fixture',{'Ant-credits-cost':'125' if p['browser']=='true' else '25','Ant-page-status-code':'200'})
-    r.read('https://ekp.spb.ru/robots.txt',browser=False);r.read(ROOT,browser=True)
+    r.read(ROOT,browser=True)
     r.read('https://ekp.spb.ru/api/portal/loyalty/partners',browser=False)
-    assert r.reserved==175 and r.calls==3
+    assert r.reserved==150 and r.calls==2
     try:r.read(ROOT,browser=False)
     except ProbeError:pass
     else:raise AssertionError('credit ceiling not enforced')
-    print('Conservative namespace and 175-credit/3-request checks passed')
+    print('150-credit/2-request checks passed')
 
 
 if __name__=='__main__':

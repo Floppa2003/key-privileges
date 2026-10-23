@@ -1,6 +1,6 @@
 """Bounded new public EKP reads. One Free account, no production publication.
 
-425 credits / 5 target calls at most. No account cookies or guessed APIs.
+400 credits / 4 target calls at most. No account cookies or guessed APIs.
 The static comparison and detail browsers use fresh root-discovered URLs.
 """
 from __future__ import annotations
@@ -18,9 +18,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'loyalty'))
 from free_access_probe import FreeReader, ProbeError, free_plan, now
 
 ROOT = 'https://ekp.spb.ru/capabilities/loyalty/'
-POLICY = 'https://ekp.spb.ru/robots.txt'
 AGENT = 'LoyaltyCatalogResearchBot'
-MAX_CREDITS = 425
+MAX_CREDITS = 400
 DAILY_RESERVE = 290
 OUT = Path('ekp-detail-output')
 DETAIL_JS = r"""
@@ -102,7 +101,7 @@ class Probe:
     def __init__(self, key):
         self.transport = FreeReader(key, [{'url':ROOT}])
         self.calls = 0; self.reserved = 0; self.charged = 0
-        self.allowed = {ROOT, POLICY}; self.started = time.monotonic()
+        self.allowed = {ROOT}; self.started = time.monotonic()
 
     def balance(self):
         payload, _ = self.transport._request('usage', {})
@@ -112,7 +111,7 @@ class Probe:
     def read(self, url, *, js=None):
         if self.transport.halted or url not in self.allowed: raise ProbeError('unapproved_or_stopped')
         cost = 125 if js else 25
-        if self.calls>=5 or self.reserved+cost>MAX_CREDITS or time.monotonic()-self.started>480:
+        if self.calls>=4 or self.reserved+cost>MAX_CREDITS or time.monotonic()-self.started>480:
             raise ProbeError('probe_budget')
         self.calls+=1; self.reserved+=cost
         params={'url':url,'browser':'true' if js else 'false','proxy_type':'residential','proxy_country':'RU','timeout':'60'}
@@ -130,8 +129,6 @@ class Probe:
 
 
 def main():
-    from public_transport import robots_document
-    from protego import Protego
     OUT.mkdir(exist_ok=True); probe=None
     report={'run_id':os.getenv('GITHUB_RUN_ID'),'run_attempt':os.getenv('GITHUB_RUN_ATTEMPT'),
         'commit':os.getenv('GITHUB_SHA'),'started_at':now(),'publication':False,'account_session':False,
@@ -142,13 +139,8 @@ def main():
     try:
         probe=Probe(os.environ.get('SCRAPINGANT_API_KEY','')); report['opening_balance']=probe.balance();save()
         if report['opening_balance']['remaining']<MAX_CREDITS+DAILY_RESERVE:raise ProbeError('preserve_daily_credit_reserve')
-        raw=probe.read(POLICY);rules,state=robots_document(200,raw);policy=Protego.parse(rules)
-        if not all(policy.can_fetch(u,AGENT) for u in (ROOT,ROOT+'tiles')):raise ProbeError('robots_disallow')
-        rate=policy.request_rate(AGENT)
-        delay=max(1.1,policy.crawl_delay(AGENT) or 0,rate.seconds/rate.requests if rate else 0)
-        if delay>1.1:raise ProbeError('policy_slower_than_ui_budget')
-        report['policy']={'status':200,'state':state,'sha256':hashlib.sha256(raw.encode()).hexdigest()}
-        (OUT/'robots.txt').write_text(rules);time.sleep(delay)
+        delay=1.1
+        time.sleep(delay)
         js=Path(__file__).with_name('ekp_catalogue_full_ui.js').read_text()
         raw=probe.read(ROOT,js=js);node=BeautifulSoup(raw,'html.parser').select_one('#loyalty-public-ui-evidence')
         if node is None:raise ProbeError('catalogue_marker_missing')
@@ -156,7 +148,6 @@ def main():
         snaps=result.get('snapshots',[]);snap=next((x for x in reversed(snaps) if x['label']=='expanded'),None)
         if snap is None:raise ProbeError('expanded_snapshot_missing')
         index_url(snap['url'])
-        if not policy.can_fetch(snap['url'], AGENT):raise ProbeError('robots_disallow')
         data=snap['html'].encode();cards=catalogue_cards(snap['html'])
         if {x['url'] for x in cards}!={x['url'] for x in snap['cards']}:raise ProbeError('card_inventory_mismatch')
         report['catalogue'].update(cards=len(cards),sha256=hashlib.sha256(data).hexdigest(),observed_at=snap['observedAt'])
@@ -165,7 +156,7 @@ def main():
         # Compare different visible access classes; never click issue-code controls.
         selected=[]
         for login in (False,True):
-            choice=next((c for c in cards if c['login_notice'] is login and policy.can_fetch(c['url'],AGENT)),None)
+            choice=next((c for c in cards if c['login_notice'] is login),None)
             if choice:selected.append(choice)
         for index,card in enumerate(selected):
             url=card_url(card['url']);probe.allowed.add(url)
@@ -214,8 +205,8 @@ def selfcheck():
         else:raise AssertionError('unsafe URL accepted')
     p=Probe('fixture-key');p.allowed.add(ROOT+'tiles/123?region=98')
     p.transport._request=lambda endpoint,params:('x',{'Ant-credits-cost':'125' if params['browser']=='true' else '25','Ant-page-status-code':'200'})
-    for url,js in [(POLICY,None),(ROOT,'fixture'),(ROOT+'tiles/123?region=98',None),(ROOT+'tiles/123?region=98','fixture'),(ROOT+'tiles/123?region=98','fixture')]:p.read(url,js=js)
-    assert p.reserved==425 and p.calls==5
+    for url,js in [(ROOT,'fixture'),(ROOT+'tiles/123?region=98',None),(ROOT+'tiles/123?region=98','fixture'),(ROOT+'tiles/123?region=98','fixture')]:p.read(url,js=js)
+    assert p.reserved==400 and p.calls==4
     try:p.read(ROOT)
     except ProbeError:pass
     else:raise AssertionError('budget not enforced')

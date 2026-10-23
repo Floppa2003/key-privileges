@@ -21,7 +21,7 @@ jobs:
         run: |
           mkdir -p pdf-check/deps
           tar -cf pdf-check/code.tar loyalty key .github/workflows
-          python -m pip download --no-deps --dest pdf-check/deps protego==0.6.2 pypdf==6.18.1
+          python -m pip download --no-deps --dest pdf-check/deps pypdf==6.18.1
       - name: Install PDF test dependency
         run: sudo apt-get update -qq && sudo apt-get install -y poppler-utils
       - name: Full regressions

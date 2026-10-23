@@ -1,3 +1,4 @@
+from contextlib import nullcontext
 """Scoped recovery, current discovery and evidence replay; no live credentials."""
 import copy,json,sys,tempfile,unittest
 from datetime import datetime
@@ -34,12 +35,12 @@ class RzdReader:
 class RecoveryTests(unittest.TestCase):
     def run_collect(self,reader=None,p=None):
         reader=reader or RzdReader()
-        with patch.object(f.rc,'policy_from',return_value=fixture.WalkTests.Policy()):
+        with nullcontext():
             return f.rzd_collect(p or parent(),reader,'123:1',NOW),reader
     def test_only_transient_target_is_read_no_whole_catalogue_or_login_retry(self):
         bundle,reader=self.run_collect()
         self.assertEqual(len(bundle['records']),1)
-        self.assertEqual([k for _,k in reader.calls],['robots','home','catalog_cards','detail'])
+        self.assertEqual([k for _,k in reader.calls],['home','catalog_cards','detail'])
         self.assertNotIn(f.rz.HOME+'promo/offer-72/',[u for u,_ in reader.calls])
         self.assertIn('31%',bundle['records'][0]['conditions_text'])
         self.assertNotEqual(bundle['records'][0]['id'],parent()['records'][0]['id'])
@@ -54,19 +55,12 @@ class RecoveryTests(unittest.TestCase):
     def test_no_failed_targets_means_no_source_reads(self):
         p=parent();p['records']=p['records'][1:];b,r=self.run_collect(p=p)
         self.assertFalse(r.calls);self.assertFalse(b['records']);self.assertEqual(b['sources'][0]['discovered'],0)
-    def test_policy_denial_prevents_read_and_is_not_relabelled_transient(self):
-        class Policy(fixture.WalkTests.Policy):
-            def can_fetch(self,url,bot):return '/promo/' not in url
-        reader=RzdReader()
-        with patch.object(f.rc,'policy_from',return_value=Policy()):b=f.rzd_collect(parent(),reader,'123:1',NOW)
-        self.assertFalse(b['records']);self.assertNotIn('detail',[k for _,k in reader.calls])
-        self.assertEqual(b['sources'][0]['errors'][0]['reason'],'rzd_policy_disallow')
     def test_replay_validates_same_output_and_rejects_forged_terms_or_run(self):
         reader=f.RecordingReader(RzdReader());p=parent()
-        with patch.object(f.rc,'policy_from',return_value=fixture.WalkTests.Policy()):b=f.rzd_collect(p,reader,'123:1',NOW)
+        with nullcontext():b=f.rzd_collect(p,reader,'123:1',NOW)
         audit={'run_id':'123:1','commit':'a'*40,'cleanup_verified':True,'source_account_used':False,'provider_credits':0,
             'started_at':NOW,'finished_at':NOW,'events':reader.events,'parent_sha256':f.rz.digest(p)}
-        with tempfile.TemporaryDirectory() as folder,patch.object(f,'parent_bundle',return_value=p),patch.object(f.rc,'policy_from',return_value=fixture.WalkTests.Policy()):
+        with tempfile.TemporaryDirectory() as folder,patch.object(f,'parent_bundle',return_value=p),nullcontext():
             f.save(Path(folder)/'evidence.json',audit);f.save(Path(folder)/'normalized.json',b)
             self.assertEqual(f.validate_rzd(folder,'123:1','a'*40,datetime.fromisoformat(NOW)),b)
             with self.assertRaises(ValueError):f.validate_rzd(folder,'999:1','a'*40,datetime.fromisoformat(NOW))
@@ -105,15 +99,15 @@ class InventoryTests(unittest.TestCase):
             with self.assertRaises(ValueError):f.cg.formula(url)
     def test_inventory_reads_every_category_but_no_detail_or_pdf(self):
         r=InventoryReader()
-        with patch.object(f.cg,'policy',return_value=fixture.WalkTests.Policy()):result=f.coral_inventory(r)
+        with nullcontext():result=f.coral_inventory(r)
         self.assertTrue(result['complete']);self.assertEqual(len(result['categories']),2)
-        self.assertEqual(len(r.calls),5)
+        self.assertEqual(len(r.calls),4)
         self.assertEqual(len(result['interactive_not_sitemap']),2)
         self.assertEqual(len(result['sitemap_candidate_urls']),2)
         self.assertEqual(sum(x['excluded_merchandise'] for x in result['categories']),2)
     def test_failed_category_is_partial_not_absence_or_deleted_offers(self):
         r=InventoryReader(fail=True)
-        with patch.object(f.cg,'policy',return_value=fixture.WalkTests.Policy()):result=f.coral_inventory(r)
+        with nullcontext():result=f.coral_inventory(r)
         self.assertFalse(result['complete']);self.assertEqual(len(result['categories']),1)
         self.assertEqual(len(result['errors']),1);self.assertTrue(result['sitemap_only_may_be_merchandise_or_unread_categories'])
 

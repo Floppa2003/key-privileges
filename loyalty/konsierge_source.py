@@ -180,8 +180,7 @@ async def capture(browser, directory, observed_at, limit):
 
 
 async def collect(browser, cfg, report, observed_at, limit):
-    require(cfg.get('id') == SOURCE and cfg.get('url') == ROOT and cfg.get('mode') == 'konsierge'
-            and cfg.get('robots_policy') == ROBOTS_POLICY, 'recurring_config')
+    require(cfg.get('id') == SOURCE and cfg.get('url') == ROOT and cfg.get('mode') == 'konsierge', 'recurring_config')
     require(type(limit) is int and 1 <= limit <= 500, 'item_limit')
     report['robots'] = {'state': 'not_requested', 'reason': ROBOTS_POLICY, 'http_status': None}
     run = os.environ.get('GITHUB_RUN_ID', str(time.time_ns())) + ':' + os.environ.get('GITHUB_RUN_ATTEMPT', '1')

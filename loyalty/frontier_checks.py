@@ -54,14 +54,10 @@ def parent_bundle(folder,clock):
 
 def rzd_collect(parent,reader,run_id,observed_at):
     selected=targets(parent);rows=[];errors=[];members={};pages={}
-    # No failed targets means no source traffic, including robots/home.
+    # No failed targets means no source traffic, including home.
     if selected:
-        rules=rc.policy_from(reader.read(rz.ROBOTS,'robots'))
-        rate=rules.request_rate(BOT)
-        reader.delay=max(20,rules.crawl_delay(BOT) or 0,rate.seconds/rate.requests if rate else 0)
-        if reader.delay>60:raise ValueError('rzd_source_delay_bound')
+        reader.delay=20
         def read(url,kind):
-            if not rules.can_fetch(url,BOT):raise ValueError('rzd_policy_disallow')
             return reader.read(url,kind)
         home=rz.checked_observation(read(rz.HOME,'home'))
         if not re.search('РЖД.*Бонус',home[0]['text'],re.I) or rz.ROOT not in {urljoin(rz.HOME,c['text'].strip()) for c in home[1:]}:
@@ -164,11 +160,8 @@ def rzd_main(args):
         if reader and not reader.cleanup_verified:reader.close()
 
 def coral_inventory(reader):
-    rules=cg.policy(cg.checked(reader._read_once(cg.ROBOTS)))
-    rate=rules.request_rate(BOT);reader.delay=max(5,rules.crawl_delay(BOT) or 0,rate.seconds/rate.requests if rate else 0)
-    if reader.delay>60:raise ValueError('cg_source_delay_bound')
+    reader.delay=5
     def read(url):
-        if not rules.can_fetch(url,BOT):raise ValueError('cg_robots_disallow')
         return reader._read_once(url)
     root=read(coral.CLUB);sitemap=read(cg.SITEMAP)
     categories=coral.listing(cg.checked(root),'coral');names={c['url']:c['title'] for c in categories}

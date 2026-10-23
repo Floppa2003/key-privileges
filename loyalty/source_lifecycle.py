@@ -194,17 +194,24 @@ def health_summary(bundle, *, expected_sources=None):
         else:state='not_established'
         healthy=(not probe and not errors and counts[sid]==count and
                  (complete if inventory else state=='complete_reported_scope'))
-        health.append({'source_id':sid,'healthy':bool(healthy),'status':r['status'],
+        # Optional probes and incomplete inventories are diagnostic, not a veto
+        # on usable extracted records. Count mismatches still mean corrupt data.
+        blocking=not probe and (counts[sid]!=count or (count==0 and not complete))
+        health.append({'blocking':bool(blocking),'source_id':sid,'healthy':bool(healthy),'status':r['status'],
                        'records':count,'errors':len(errors),'route_kind':'access_probe' if probe else 'collector',
                        'extraction_state':state,'inventory_complete':complete,'error_categories':categories})
     if expected_sources is not None:
         if not set(expected_sources)<=set(configs):raise ValueError('unsupported_expected_health_source')
         for sid in sorted(set(expected_sources)-set(report_ids)):
-            health.append({'source_id':sid,'healthy':False,'status':'missing_source_report',
+            health.append({'blocking':configs[sid]['mode']!='probe','source_id':sid,'healthy':False,'status':'missing_source_report',
                            'records':0,'errors':1,'route_kind':'access_probe' if configs[sid]['mode']=='probe' else 'collector',
                            'extraction_state':'not_established','inventory_complete':None,
                            'error_categories':['missing_report']})
     return health
+
+def health_passes(execution, health):
+    return execution['healthy'] and not any(r['blocking'] for r in health)
+
 
 if __name__ == '__main__':
     import argparse
@@ -225,8 +232,8 @@ if __name__ == '__main__':
     import os
     if os.getenv('GITHUB_STEP_SUMMARY'):
         lines=['## Collection execution and all registered source routes', '',
-               f"Execution complete: {execution['healthy']}; state: {execution['state']}; reports: {execution['reported_sources']}/{execution['expected_sources']}.", '', '| Source | Route | Healthy | Records | Errors | Extraction |', '|---|---|---|---:|---:|---|']
-        lines.extend(f"| {r['source_id']} | {r['route_kind']} | {r['healthy']} | {r['records']} | {r['errors']} | {r['extraction_state']} |" for r in health)
+               f"Execution complete: {execution['healthy']}; state: {execution['state']}; reports: {execution['reported_sources']}/{execution['expected_sources']}.", '', '| Source | Route | Healthy | Blocking | Records | Errors | Extraction |', '|---|---|---|---|---:|---:|---|']
+        lines.extend(f"| {r['source_id']} | {r['route_kind']} | {r['healthy']} | {r['blocking']} | {r['records']} | {r['errors']} | {r['extraction_state']} |" for r in health)
         with open(os.environ['GITHUB_STEP_SUMMARY'],'a') as f:
             f.write('\n'.join(lines)+'\n')
-    raise SystemExit(0 if execution['healthy'] and all(r['healthy'] for r in health) else 1)
+    raise SystemExit(0 if health_passes(execution, health) else 1)

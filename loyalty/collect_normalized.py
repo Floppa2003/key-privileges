@@ -15,7 +15,7 @@ from bs4 import BeautifulSoup
 from playwright.async_api import async_playwright
 from adapters import extract,next_state,s7_catalog,s7_detail,mir_detail,PROGRAMS,node_text,ural_catalog,key_catalog,mir_page_url
 from normalized import VERSION,make_offer,content_hash,validate_offer,text
-from public_transport import PublicSource, RobotsCache
+from public_transport import PublicSource
 from source_selection import select_sources
 from mir_regions import collect_mir
 from reviewed_pdf import extract_rgo_pdf
@@ -139,7 +139,6 @@ async def one(browser,cfg,now,limit):
         else:
             async with PublicSource(browser,cfg['url']) as client:
                 client.deadline=deadline
-                if cfg['mode'] not in ('t2','mir','selection'):await client.robots()
                 mode=cfg['mode']
                 if mode=='x5_public':records=await collect_x5(client,cfg,report,now,limit)
                 elif mode=='magnit_public':records=await collect_magnit(client,cfg,report,now,limit)
@@ -182,12 +181,10 @@ async def one(browser,cfg,now,limit):
         report['normalized']=len(records)
         report['status']=final_status(records,report['errors'])
     except Exception as exc:
-        phase='robots' if client is not None and client.policy is None else 'source'
+        phase='source'
         report['errors'].append(error_record(exc,phase,cfg['url']))
         report['status']=final_status(records,report['errors'])
         report['normalized']=len(records)
-    if client is not None and getattr(client,'robots_info',None):
-        report['robots']=client.robots_info
     report['failed']=len(report['errors'])
     print(json.dumps({k:report[k] for k in ('source_id','status','discovered','normalized','failed')},ensure_ascii=False),flush=True)
     return report,records
@@ -226,7 +223,7 @@ async def main():
     atomic_json(out/'code_hashes.json',manifest)
     async with async_playwright() as p:
         browser=await p.chromium.launch()
-        browser._loyalty_robots_cache=RobotsCache()
+        browser._loyalty_read_locks={}
         try:
             await collect_batch(cfgs,lambda cfg:one(browser,cfg,now,args.limit),
                                 source_budget,checkpoint,now)

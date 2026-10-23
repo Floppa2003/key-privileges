@@ -15,7 +15,6 @@ class LiveRgoPdfTests(unittest.TestCase):
 class PdfTransportTests(unittest.IsolatedAsyncioTestCase):
     def client(self,status,data):
         from public_transport import PublicSource
-        from protego import Protego
         class Response:
             url='https://rgo.ru/test.pdf'
             headers={'content-type':'application/pdf'}
@@ -25,7 +24,7 @@ class PdfTransportTests(unittest.IsolatedAsyncioTestCase):
             async def fetch(self,*args,**kwargs):return response
         c=PublicSource(None,response.url)
         c.context=type('Context',(),{'request':Requests()})()
-        c.policy=Protego.parse('')
+
         return c
     async def test_pdf_transport_checks_http_status(self):
         c=self.client(403,b'Forbidden')

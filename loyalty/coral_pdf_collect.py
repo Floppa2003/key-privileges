@@ -172,11 +172,9 @@ def validate_bundle(folder,run_id,commit,clock):
     if not isinstance(requests_,list) or len(requests_)>MAX_FILES*2 or sum(x['reserved'] for x in requests_)!=audit['reserved'] or not 0<=audit['reserved']<=MAX_CREDITS:
         raise ValueError('cp_budget_evidence')
     entries={e['url'] for e in discover(base['records'])};seen={};previous={};last=start
-    observations={o['url']:o for o in original['observations']}
-    policy=coral.policy(coral.checked(observations[coral.ROBOTS])) if entries else None
     for item in requests_:
         a,b=map(coral.instant,(item['requested_at'],item['finished_at']))
-        if not last<=a<=b<=end or item['url'] not in entries or not policy.can_fetch(item['url'],'LoyaltyCatalogResearchBot'):raise ValueError('cp_request_binding')
+        if not last<=a<=b<=end or item['url'] not in entries:raise ValueError('cp_request_binding')
         if item['proxy']=='residential':
             prior=previous.get(item['url'],{})
             if prior.get('error') not in RETRYABLE or 'result' in prior:
@@ -201,17 +199,12 @@ def collect(folder,key,run_id,commit,*,reader_factory=Reader):
             reader=reader_factory(key)
             audit['opening_balance']=reader.opening_balance
     except Exception:initial='cp_free_provider_unavailable' if key else 'cp_key_not_configured'
-    original=json.loads((folder/'evidence.json').read_text());obs={o['url']:o for o in original['observations']}
-    policy=coral.policy(coral.checked(obs[coral.ROBOTS])) if entries else None
-    rate=policy.request_rate('LoyaltyCatalogResearchBot') if policy else None
-    delay=max(5,policy.crawl_delay('LoyaltyCatalogResearchBot') or 0,rate.seconds/rate.requests if rate else 0) if policy else 5
-    if delay>60:initial='cp_source_delay_bound'
+    delay=5
     for index,entry in enumerate(entries):
         result={'url':entry['url']};audit['results'].append(result)
         try:
             if initial:raise ValueError(initial)
             if index>=MAX_FILES:raise ValueError('cp_file_limit')
-            if not policy.can_fetch(entry['url'],'LoyaltyCatalogResearchBot'):raise ValueError('cp_robots_disallow')
             data,receipt=reader.read(entry['url'],delay)
             # Extraction is required before recording a successful publication candidate.
             extract_pdf(data,allow_ocr=False)

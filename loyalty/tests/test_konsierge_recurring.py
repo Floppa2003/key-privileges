@@ -45,19 +45,21 @@ class RecurringTests(unittest.TestCase):
         self.assertEqual(self.fixture.common(2615)['benefits'][0]['value'],'10')
         self.assertEqual(self.fixture.common(2036)['validity']['status'],'source_date_conflict')
 
-    def test_recurring_requires_explicit_profile_and_no_robots_read(self):
+    def test_recurring_preserves_capture_mode_validation(self):
         self.recurring()
         base=copy.deepcopy(self.fixture.report)
-        for key,value in [('robots_policy','skip_everything'),('robots_requests',1),
-                          ('one_off_public_ui_inspection',True),('collection_mode','other')]:
+        for key,value in [('one_off_public_ui_inspection',True),('collection_mode','other')]:
             self.fixture.report=copy.deepcopy(base);self.fixture.report[key]=value
             with self.subTest(key=key),self.assertRaises(ValueError): self.fixture.bundle()
 
-    def test_profile_tampering_after_rehash_fails(self):
+    def test_optional_robots_metadata_does_not_invalidate_real_evidence(self):
         row=self.recurring()['records'][0]
-        row['details']['robots_policy']='unknown'
+        row['details'].pop('robots_policy')
         row['content_sha256']=content_hash(row)
-        with self.assertRaises(ValueError):validate_offer(row)
+        validate_offer(row)
+        self.fixture.report.pop('robots_policy')
+        self.fixture.report.pop('robots_requests')
+        self.assertEqual(len(self.fixture.bundle()['records']),len(self.recurring()['records']))
 
     def test_read_allowlist(self):
         for url in (ROOT,ROOT+'?rubric_id=24','https://konsierge.com/main.abc.js',
@@ -93,7 +95,7 @@ class RecurringTests(unittest.TestCase):
 class RoutingTests(unittest.IsolatedAsyncioTestCase):
     async def test_bad_configuration_fails_before_browser(self):
         browser=AsyncMock()
-        for key,value in [('id','alfa_only_partner_offers'),('url','https://elsewhere.example/'),('robots_policy','')]:
+        for key,value in [('id','alfa_only_partner_offers'),('url','https://elsewhere.example/'),('mode','other')]:
             with self.subTest(key=key),self.assertRaises(ValueError):
                 await collect(browser,{**CFG,key:value},{},NOW,500)
         browser.new_context.assert_not_awaited()
@@ -115,15 +117,17 @@ class RoutingTests(unittest.IsolatedAsyncioTestCase):
             await one(AsyncMock(),CFG,NOW,500)
         call.assert_awaited_once()
 
-    async def test_other_sources_still_call_robots(self):
+    async def test_other_sources_do_not_call_robots_either(self):
         from collect_normalized import one
         client=AsyncMock();client.policy=None;client.robots_info=None
-        client.robots.side_effect=RuntimeError('preflight-sentinel')
+        client.robots.side_effect=AssertionError('unused auxiliary preflight')
+        client.read.side_effect=RuntimeError('http_403')
         context=AsyncMock();context.__aenter__.return_value=client
         with patch('collect_normalized.PublicSource',return_value=context):
             report,rows=await one(AsyncMock(),{'id':'moskvich','name':'x','mode':'html','url':'https://moskvichmag.ru/programma-loyalnosti/'},NOW,500)
-        client.robots.assert_awaited_once()
-        self.assertEqual(report['errors'][0]['reason'],'preflight-sentinel')
+        client.robots.assert_not_awaited()
+        self.assertEqual(report['errors'][0]['reason'],'http_403')
+        client.read.assert_awaited_once()
         self.assertEqual(rows,[])
 
 if __name__=='__main__':unittest.main()

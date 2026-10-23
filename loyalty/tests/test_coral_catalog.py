@@ -105,20 +105,12 @@ class CoralMappingTests(unittest.TestCase):
 
     def test_separate_reader_bounds_retain_default_limits(self):
         a=FreeReader('fixture',[{'url':c.CLUB}]);b=FreeReader('fixture',[{'url':c.CLUB}],max_credits=175,max_requests=100)
-        self.assertEqual((a.max_credits,a.max_requests),(115,16))
+        self.assertEqual((a.max_credits,a.max_requests),(60,6))
         self.assertEqual((b.max_credits,b.max_requests),(175,100))
         for limit in (176,0,True):
             with self.assertRaises(ProbeError):FreeReader('fixture',[{'url':c.CLUB}],max_credits=limit)
 
 
-try:
-    import protego
-    HAS_PROTEGO=True
-except ImportError:
-    HAS_PROTEGO=False
-
-
-@unittest.skipUnless(HAS_PROTEGO,'Production dependency unavailable locally; required in Actions')
 class CoralCollectionTests(unittest.TestCase):
     def test_actual_traversal_preserves_successful_details_after_failure(self):
         roots={sid:root(sid) for sid in ('coral','coral_promo')}

@@ -28,7 +28,6 @@ jobs:
           git rev-parse HEAD > repair-output/commit.txt
           git archive --format=zip HEAD > repair-output/source.zip
           python -m pip install -r loyalty/requirements.txt
-          python -m pip download --no-deps protego==0.6.2 -d repair-output/dependencies
           sudo apt-get update -qq && sudo apt-get install -y poppler-utils tesseract-ocr tesseract-ocr-rus
       - name: Full regression
         run: |

@@ -30,7 +30,7 @@ class PageRecoveryTests(unittest.TestCase):
             b=c.collect(r,tmp,run_id='fixture:1',observed_at=NOW,commit='test')
             self.assertEqual(len(b['records']),245);self.assertEqual(b['sources'][0]['status'],'ok')
             self.assertEqual([q['pagination']['offset'] for q in r.queries],[0,120,120,240])
-            self.assertEqual(r.reserved,125);r.sleep.assert_called_once_with(10)
+            self.assertEqual(r.reserved,100);r.sleep.assert_called_once_with(10)
             a=json.loads(Path(tmp,'report.json').read_text());self.assertEqual(a['page_retries'],1)
 
     def test_missing_middle_page_does_not_erase_or_block_later_page(self):
@@ -63,7 +63,7 @@ class PageRecoveryTests(unittest.TestCase):
         r=FlakyReader({120:1,240:1},total=1046)
         with tempfile.TemporaryDirectory() as tmp:
             b=c.collect(r,tmp,run_id='fixture:1',observed_at=NOW,commit='test')
-            self.assertEqual(len(b['records']),1046);self.assertEqual(r.calls,12);self.assertEqual(r.reserved,300)
+            self.assertEqual(len(b['records']),1046);self.assertEqual(r.calls,11);self.assertEqual(r.reserved,275)
             self.assertEqual(b['sources'][0]['status'],'ok')
 
     def test_source_refusal_challenge_or_quota_cannot_retry_or_advance(self):
