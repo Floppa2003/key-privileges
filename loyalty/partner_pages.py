@@ -27,11 +27,13 @@ def content(nodes):
     return '\n'.join(output)
 
 
-def required(soup,selectors):
+def required(soup,selectors,*,unique=False):
     nodes=[]
     for selector in selectors:
         matches=soup.select(selector)
         if not matches:raise ParseError('partner_content_selector_missing',selector=selector,matches=0)
+        if unique and len(matches)!=1:raise ParseError('partner_content_selector_ambiguous',selector=selector,matches=len(matches))
+        if unique and not matches[0].get_text(strip=True):raise ParseError('partner_content_selector_empty',selector=selector,matches=1)
         nodes.extend(matches)
     return nodes
 
@@ -75,7 +77,9 @@ def extract_partner_page(source,soup,url,observed_at):
     if cfg.get('parser') == 'tsum_alfa':
         from tsum_alfa import extract_tsum
         return extract_tsum(source,soup,url,observed_at,cfg)
-    blocks=required(soup,cfg['selectors'])
+    def select(selectors):
+        return required(soup,selectors,unique=cfg.get('unique_selectors',False))
+    blocks=select(cfg['selectors'])
     if cfg.get('unique_content') and len(blocks)!=1:raise ParseError('partner_content_ambiguous',selector=' + '.join(cfg['selectors']),matches=len(blocks))
     terms=content(blocks)
     flat=re.sub(r'\s+',' ',terms)
@@ -86,7 +90,7 @@ def extract_partner_page(source,soup,url,observed_at):
     details={'source_scope':'reviewed_partner_page_not_program_catalog',
              'partner_identity_origin':'reviewed_exact_partner_owned_url'}
     if cfg.get('publication_selector'):
-        publication=text(content(required(soup,[cfg['publication_selector']])))
+        publication=text(content(select([cfg['publication_selector']])))
         details['article_published_at']=datetime.strptime(publication,'%d.%m.%Y').date().isoformat()
         details['publication_date_is_not_validity']=True
     date_from,date_until,date_evidence=explicit_period(terms,cfg.get('date_rule'))
@@ -95,7 +99,7 @@ def extract_partner_page(source,soup,url,observed_at):
         raise ValueError('Required published period missing')
     if cfg.get('link_selectors'):
         links=[]
-        for node in required(soup,cfg['link_selectors']):
+        for node in select(cfg['link_selectors']):
             item={'label':text(node.get_text(' ',strip=True)),'href':node.get('href','')}
             if item not in links:links.append(item)
         details['published_links']=links
@@ -137,8 +141,8 @@ def extract_partner_page(source,soup,url,observed_at):
         if not match:raise ValueError('Nordwind hotel earning card changed')
         return [make('offer',match[0],details={'earning_rule':{
             'value':match[2],'unit':'miles','basis_amount':match[1].replace(' ',''),'basis_unit':'RUB','evidence':match[0]}})]
-    benefit=content(required(soup,cfg['benefit_selectors'])) if cfg.get('benefit_selectors') else terms
-    redemption=content(required(soup,cfg['redemption_selectors'])) if cfg.get('redemption_selectors') else ''
+    benefit=content(select(cfg['benefit_selectors'])) if cfg.get('benefit_selectors') else terms
+    redemption=content(select(cfg['redemption_selectors'])) if cfg.get('redemption_selectors') else ''
     return [make('offer',benefit,redemption=redemption,valid_from=date_from,valid_until=date_until)]
 
 
