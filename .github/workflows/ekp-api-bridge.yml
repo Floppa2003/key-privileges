@@ -1,8 +1,6 @@
 name: EKP public API and UI binding
 on:
-  push:
-    branches: [main]
-    paths: [diagnostics/ekp_api_bridge.py, diagnostics/ekp_api_bridge.js, .github/workflows/ekp-api-bridge.yml]
+  workflow_dispatch:
 permissions:
   contents: read
 concurrency:

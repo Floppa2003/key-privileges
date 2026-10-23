@@ -1,8 +1,5 @@
 name: EKP client-side detail throughput
 on:
-  push:
-    branches: [main]
-    paths: [diagnostics/ekp_bulk_public.py, diagnostics/ekp_bulk_public.js, .github/workflows/ekp-bulk-public.yml]
   workflow_dispatch:
 permissions:
   contents: read

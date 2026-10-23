@@ -1,8 +1,5 @@
 name: Coral discovered public pages
 on:
-  push:
-    branches: [main]
-    paths: [diagnostics/coral_discovered_pages.py, .github/workflows/coral-discovered-pages.yml]
   workflow_dispatch:
 permissions:
   contents: read

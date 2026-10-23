@@ -1,8 +1,5 @@
 name: EKP source-owned UI pagination
 on:
-  push:
-    branches: [main]
-    paths: [diagnostics/ekp_pagination_ui.py, .github/workflows/ekp-pagination-ui.yml]
   workflow_dispatch:
 permissions:
   contents: read

@@ -1,8 +1,5 @@
 name: Coral rendered catalogue inventory
 on:
-  push:
-    branches: [main, 'loyalty/coral-browser-inventory-20260918']
-    paths: [loyalty/coral_browser_inventory.py, loyalty/tests/test_coral_browser_inventory.py, .github/workflows/coral-browser-inventory.yml]
   workflow_dispatch:
 permissions:
   contents: read

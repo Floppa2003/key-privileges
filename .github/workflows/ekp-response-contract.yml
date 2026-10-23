@@ -1,8 +1,6 @@
 name: EKP observed public response contract
 on:
-  push:
-    branches: [main]
-    paths: [diagnostics/ekp_response_contract.py, .github/workflows/ekp-response-contract.yml]
+  workflow_dispatch:
 permissions:
   contents: read
 concurrency:

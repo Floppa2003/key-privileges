@@ -1,8 +1,5 @@
 name: Check RZD public announcement alternatives
 on:
-  push:
-    branches: [main]
-    paths: [.github/workflows/rzd-public-announcement-check.yml]
   workflow_dispatch:
 permissions:
   contents: read

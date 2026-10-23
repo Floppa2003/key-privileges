@@ -1,8 +1,5 @@
 name: Practical source frontier
 on:
-  push:
-    branches: [main]
-    paths: [loyalty/frontier_checks.py, loyalty/tests/test_frontier_checks.py, loyalty/frontier_request.json, .github/workflows/practical-frontier.yml]
   workflow_dispatch:
 permissions:
   contents: read

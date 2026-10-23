@@ -1,8 +1,5 @@
 name: EKP public UI response evidence
 on:
-  push:
-    branches: [main]
-    paths: [diagnostics/ekp_public_ui.js, diagnostics/ekp_public_capture.py, .github/workflows/ekp-public-capture.yml]
   workflow_dispatch:
 permissions:
   contents: read
