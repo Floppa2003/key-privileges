@@ -1,0 +1,73 @@
+name: Utair document transport diagnostic
+on:
+  push:
+    branches: [diagnostic/utair-document-transport-20261023]
+    paths: [.github/workflows/utair-document-transport-check.yml]
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r loyalty/requirements.txt
+      - run: python -m playwright install --with-deps chromium
+      - name: Compare HTTP and ordinary browser without publishing or signed URLs
+        run: |
+          mkdir -p utair-output
+          PYTHONPATH=loyalty xvfb-run -a python - <<'PY'
+          import asyncio,json,hashlib
+          from pathlib import Path
+          from urllib.parse import urlsplit
+          import requests
+          from playwright.async_api import async_playwright
+          from public_transport import PublicSource
+          from utair_documents import discover_documents,HEADERS
+          from practical_scope import follow_document_link
+          from source_diagnostics import error_record
+          def safe_url(url):
+              u=urlsplit(url);return u.scheme+'://'+u.netloc+u.path
+          def direct(url):
+              try:
+                  r=requests.get(url,headers=HEADERS,timeout=(5,12),allow_redirects=False)
+                  row={'status':r.status_code,'content_type':r.headers.get('Content-Type'),'retry_after':bool(r.headers.get('Retry-After')),'body_sha256':hashlib.sha256(r.content).hexdigest(),'body_bytes':len(r.content)}
+                  if r.headers.get('Location'):row['redirect_origin']=urlsplit(r.headers['Location']).hostname
+                  return row
+              except Exception as exc:return error_record(exc,'direct',url)
+          async def main():
+              out=Path('utair-output');rows=[]
+              async with async_playwright() as p:
+                  browser=await p.chromium.launch(headless=False)
+                  async with PublicSource(browser,'https://media.utair.ru/status') as client:
+                      await client.robots();raw=await client.read('https://media.utair.ru/status',render=True)
+                  items=[e for e in discover_documents(raw) if e['kind']=='shortlink' and follow_document_link(e['url'],'; '.join(e['labels']+e['contexts']))][:3]
+                  for item in items:
+                      url=item['url'];row={'key':item['key'],'url':url,'direct':await asyncio.to_thread(direct,url)}
+                      if row['direct'].get('retry_after') or row['direct'].get('status')==429:
+                          row['browser']='not_attempted_retry_after_or_rate_limit'
+                      else:
+                          context=await browser.new_context(locale='ru-RU');page=await context.new_page();seen=[]
+                          page.on('response',lambda r: seen.append(r) if r.request.is_navigation_request() else None)
+                          try:await page.goto(url,wait_until='domcontentloaded',timeout=20000)
+                          except Exception as exc:row['navigation_error_type']=type(exc).__name__
+                          await page.wait_for_timeout(1500)
+                          row['browser_responses']=[{'url':safe_url(r.url),'status':r.status,'content_type':r.headers.get('content-type'),'retry_after':bool(r.headers.get('retry-after'))} for r in seen]
+                          row['browser_final_url']=safe_url(page.url)
+                          await context.close()
+                      rows.append(row);(out/'results.json').write_text(json.dumps(rows,ensure_ascii=False,indent=2))
+                      await asyncio.sleep(1)
+                  await browser.close()
+          asyncio.run(main())
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: utair-document-transport-${{ github.run_id }}
+          path: utair-output/
+          retention-days: 7
