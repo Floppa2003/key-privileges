@@ -1,0 +1,50 @@
+name: Litres layout acceptance
+on:
+  push:
+    branches: [fix/litres-readiness-20261023]
+    paths: [.github/workflows/litres-layout-check.yml, loyalty/**]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: litres-layout-acceptance
+  cancel-in-progress: false
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - name: Preserve exact code and install test dependencies
+        run: |
+          set -euo pipefail
+          mkdir -p litres-output
+          git rev-parse HEAD > litres-output/commit.txt
+          git archive --format=zip HEAD > litres-output/source.zip
+          python -m pip install -r loyalty/requirements.txt
+          sudo apt-get update -qq && sudo apt-get install -y poppler-utils
+      - name: Full regression without skipped PDF tests
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s loyalty/tests -v > litres-output/tests.log 2>&1
+          node --test key/refresh.test.mjs > litres-output/key-tests.log 2>&1
+          git diff --exit-code
+      - name: Install ordinary browser
+        run: python -m playwright install --with-deps chromium
+      - name: Read the real page and validate without publication
+        run: |
+          set -euo pipefail
+          python loyalty/collect_normalized.py --sources ekp_litres --limit 500 --out litres-output/collection 2>&1 | tee litres-output/collection.log
+          python loyalty/sheets_normalized.py --input litres-output/collection/normalized.json > litres-output/publication-validation.log
+          python loyalty/source_lifecycle.py --input litres-output/collection/normalized.json --sources ekp_litres > litres-output/source-health.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: litres-layout-${{ github.run_id }}-${{ github.run_attempt }}
+          path: litres-output/
+          retention-days: 14
