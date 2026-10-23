@@ -131,7 +131,7 @@ class PaginationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             r=FakeReader(total=2000);b=c.collect(r,tmp,run_id='fixture:1',observed_at=NOW,commit='test')
             self.assertEqual(r.calls,12);self.assertEqual(r.reserved,300)
-            self.assertEqual(len(b['records']),1320);self.assertEqual(b['sources'][0]['status'],'partial')
+            self.assertEqual(len(b['records']),1440);self.assertEqual(b['sources'][0]['status'],'partial')
 
     def test_protected_text_not_written_anywhere(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -149,7 +149,7 @@ class PaginationTests(unittest.TestCase):
             p=Path(tmp)/'page-0000.json';p.write_text(p.read_text()+' ')
             with self.assertRaises(ValueError):e.validate_bundle(tmp,run_id='fixture:1',commit='test',clock=clock)
 
-    def test_policy_disallow_never_requests_api(self):
+    def test_policy_content_cannot_block_direct_api_query(self):
         r=FakeReader(total=1);original=r.read
         def read(url,body=None):
             if url==e.POLICY:r.calls+=1;return 'User-agent: *\nDisallow: /api/'
@@ -157,7 +157,7 @@ class PaginationTests(unittest.TestCase):
         r.read=read
         with tempfile.TemporaryDirectory() as tmp:
             b=c.collect(r,tmp,run_id='fixture:1',observed_at=NOW,commit='test')
-            self.assertEqual(len(r.queries),0);self.assertFalse(b['records'])
+            self.assertEqual(r.calls,1);self.assertEqual(len(r.queries),1);self.assertEqual(len(b['records']),1)
 
 
 class TransportTests(unittest.TestCase):
@@ -196,9 +196,9 @@ class BudgetRoutingTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             r=p.run(ROOTS,KEY,tmp,get=get,sleep=lambda _:None,separate_ekp=True)
             self.assertEqual(r['source_ids'],[s for s in p.SOURCE_IDS if s!='ekp'])
-            self.assertEqual(r['maximum_estimated_credits'],94)
+            self.assertEqual(r['maximum_estimated_credits'],50)
             self.assertFalse(any('ekp.spb.ru' in q.kwargs.get('params',{}).get('url','') for q in get.call_args_list))
-        self.assertLessEqual((94+175)*31+300*5,10000)
+        self.assertLessEqual((50+175)*31+300*5,10000)
 
     def test_five_source_report_requires_explicit_trusted_mode(self):
         from test_nordwind_catalog import document,report,CLOCK

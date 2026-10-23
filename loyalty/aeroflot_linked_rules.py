@@ -11,7 +11,6 @@ from pathlib import Path
 from urllib.parse import urljoin, urlsplit, urlunsplit, parse_qsl
 import requests
 from bs4 import BeautifulSoup
-from protego import Protego
 from normalized import make_offer, text, content_hash
 from sheets_normalized import prepare
 from document_text import extract_pdf, document_records
@@ -131,7 +130,7 @@ class Reader:
     def __init__(self,folder,*,get=requests.get,sleep=time.sleep,wall=now):
         self.folder=Path(folder);(self.folder/'objects').mkdir(exist_ok=True,parents=True)
         self.get=get;self.sleep=sleep;self.wall=wall;self.started=time.monotonic()
-        self.receipts=[];self.policies={};self.next_at={};self.delay={};self.stopped=set()
+        self.receipts=[];self.next_at={};self.delay={};self.stopped=set()
     def raw(self,url):
         checked_url(url);host=urlsplit(url).netloc
         wait=max(0,self.next_at.get(host,0)-time.monotonic())
@@ -167,24 +166,11 @@ class Reader:
             raise ValueError(item['error']) from None
         finally:
             item['finished_at']=self.wall();self.next_at[host]=time.monotonic()+self.delay.get(host,3)
-    def policy(self,host):
-        if host in self.policies:return self.policies[host][0]
-        current='https://'+host+'/robots.txt';chain=[];seen=set()
-        for _ in range(5):
-            if current in seen:raise ValueError('al_policy_loop')
-            seen.add(current);idx=self.raw(current);chain.append(idx);item=self.receipts[idx]
-            if item.get('redirect'):current=item['redirect'];continue
-            rules=policy_from_receipt(item,self.folder)
-            delay=source_delay(rules)
-            self.delay[host]=delay;self.next_at[host]=time.monotonic()+delay
-            self.policies[host]=(rules,chain);return rules
-        raise ValueError('al_policy_redirect_bound')
     def fetch(self,url):
         current=checked_url(url);chain=[];seen=set()
         for _ in range(5):
             if current in seen:raise ValueError('al_redirect_loop')
-            seen.add(current);rules=self.policy(urlsplit(current).netloc)
-            if not rules.can_fetch(current,BOT):raise ValueError('al_source_policy')
+            seen.add(current)
             idx=self.raw(current);chain.append(idx);item=self.receipts[idx]
             if item.get('redirect'):current=item['redirect'];continue
             return {'chain':chain,'final_url':current,'file':item['file']}
@@ -197,17 +183,6 @@ def object_bytes(receipt,folder):
     if len(data)>MAX_BYTES or len(data)!=receipt['saved_bytes'] or sha(data)!=receipt['saved_sha256']:raise ValueError('al_object_digest')
     return data
 
-def policy_from_receipt(item,folder):
-    if item.get('status') in (404,410):return Protego.parse('User-agent: *\nAllow: /')
-    raw=object_bytes(item,folder).decode('utf8')
-    if '<html' in raw.lower() or not re.search(r'^\s*User-agent:',raw,re.I|re.M):raise ValueError('al_policy_unreadable')
-    return Protego.parse(raw)
-
-def source_delay(rules):
-    rate=rules.request_rate(BOT)
-    delay=max(3,rules.crawl_delay(BOT) or 0,rate.seconds/rate.requests if rate else 0)
-    if delay>30:raise ValueError('al_policy_delay_bound')
-    return delay
 
 def checked_fetch(start,fetch,audit,folder):
     current=start;seen=set();requests_=audit['requests']
@@ -216,16 +191,6 @@ def checked_fetch(start,fetch,audit,folder):
         if type(idx) is not int or not 0<=idx<len(requests_) or current in seen:raise ValueError('al_chain')
         seen.add(current);item=requests_[idx]
         if item['url']!=current or item.get('error'):raise ValueError('al_chain')
-        chain=audit['policies'].get(urlsplit(current).netloc)
-        if not chain:raise ValueError('al_missing_policy')
-        policy_url='https://'+urlsplit(current).netloc+'/robots.txt'
-        for pi in chain:
-            if type(pi) is not int or not 0<=pi<idx:raise ValueError('al_policy_order')
-            p=requests_[pi]
-            if p['url']!=policy_url or p.get('error'):raise ValueError('al_policy_chain')
-            if p.get('redirect'):policy_url=redirect_allowed(policy_url,p['redirect'],True)
-        rules=policy_from_receipt(p,folder);source_delay(rules)
-        if not rules.can_fetch(current,BOT):raise ValueError('al_source_policy')
         if item.get('redirect'):current=redirect_allowed(current,item['redirect']);continue
         if step!=len(fetch['chain'])-1 or item['status']!=200 or current!=fetch['final_url'] or item['file']!=fetch['file']:raise ValueError('al_final_response')
         data=object_bytes(item,folder)
@@ -367,7 +332,7 @@ def collect(base,folder,run_id,commit,*,get=requests.get,sleep=time.sleep,observ
             result['unique_products']=len(products)
             result['catalogue_complete']=len(totals)==1 and len(products)==next(iter(totals)) and not pending and not result['errors']
     for entry in entries[MAX_FILES:]:audit['results'].append({'url':entry['url'],'pages':[],'errors':[{'url':entry['url'],'reason':'al_file_bound'}]})
-    audit['policies']={k:v[1] for k,v in reader.policies.items()};audit['finished_at']=wall()
+    audit['finished_at']=wall()
     bundle=assemble(base,audit,folder)
     for name,value in [('audit.json',audit),('parents.json',base),('normalized.json',bundle)]:
         (folder/name).write_text(json.dumps(value,ensure_ascii=False,indent=2))

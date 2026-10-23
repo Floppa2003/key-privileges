@@ -38,10 +38,10 @@ jobs:
           url=cfg['url']; out=Path('reader-output'); out.mkdir()
           report={'source_id':sid,'target_url':url,'observed_at':datetime.now(timezone.utc).isoformat(),
                   'run_id':os.environ['GITHUB_RUN_ID'],'commit':os.environ['GITHUB_SHA'],
-                  'provider':'r.jina.ai','cache_bypass_requested':True,'robots_check_requested':True,
+                  'provider':'r.jina.ai','cache_bypass_requested':True,
                   'paid_key_used':False,'publication':False,'classification':'no_response'}
           headers={'Accept':'application/json','X-Respond-With':'html','X-No-Cache':'true',
-                   'X-Cache-Tolerance':'0','X-Timeout':'25','X-Robots-Txt':'LoyaltyCatalogResearchBot'}
+                   'X-Cache-Tolerance':'0','X-Timeout':'25'}
           started=time.monotonic()
           try:
               with requests.get('https://r.jina.ai/'+url,headers=headers,timeout=(10,65),stream=True,allow_redirects=False) as r:

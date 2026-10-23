@@ -7,9 +7,8 @@ from __future__ import annotations
 import argparse,hashlib,json,os,time
 from datetime import datetime,timezone
 from pathlib import Path
-from free_access_probe import FreeReader,ProbeError,read_policy,sanitized_page,now
-from public_transport import robots_document,check_response
-from protego import Protego
+from free_access_probe import FreeReader,ProbeError,sanitized_page,now
+from public_transport import check_response
 import coral_catalog as c
 import coral_import as cg
 
@@ -73,17 +72,11 @@ def collect(folder,key,*,reader_factory=FreeReader,sleep=time.sleep):
             reader=reader_factory(key,[{'url':c.CLUB}],max_credits=111,max_requests=12)
             shard={'number':number,'reserved_credits':0,'known_charged_credits':0};shards.append(shard)
             try:
-                reader.preflight();policy_meta={};status,raw,_=read_policy(reader,cg.ROBOTS,policy_meta)
-                rules,_=robots_document(status,raw);policy=Protego.parse(rules)
-                shard.update(policy_status=status,policy_text=rules,policy_meta=policy_meta)
-                rate=policy.request_rate('LoyaltyCatalogResearchBot')
-                delay=max(1,policy.crawl_delay('LoyaltyCatalogResearchBot') or 0,rate.seconds/rate.requests if rate else 0)
-                if delay>30:raise ProbeError('crawl_delay_exceeds_budget')
+                reader.preflight();delay=1
                 for entry in part:
                     url=c.checked_url(entry['url'],'/klub-privilegii/',2)
                     page={'url':url,'started_at':now()};pages.append(page)
                     try:
-                        if not policy.can_fetch(url,'LoyaltyCatalogResearchBot'):raise ProbeError('robots_disallow')
                         sleep(delay);reader.allowed.add(url)
                         status,raw,cost=reader.read(url,browser=True);page.update(origin_http_status=status,credits=cost)
                         check_response(status,raw)

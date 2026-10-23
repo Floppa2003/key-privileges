@@ -9,6 +9,27 @@ The current pipeline is v2: `collect_normalized.py` -> `normalized.json` / `offe
 
 Each record keeps a stable ID, program/partner, benefit, conditions, redemption text, lexical rates and promo codes, source dates/status, actual detail URL or shared-page locator, source-specific tables/fields, observation time and integrity hash. Normalization is **not** automatic confirmation of eligibility, current availability or a combinable final price. Unknown dates remain unknown; inspect conditions text too.
 
+## Extraction blockers versus diagnostics
+
+Owner decision, 2026-10-23: public reads do not request, parse or enforce
+`robots.txt`, including auxiliary importers and workflow-inline diagnostics.
+A missing/unreadable auxiliary file is not evidence that the target page cannot
+be read. Historical robots observations may still be decoded for compatibility;
+they are not required to accept newly extracted data.
+
+Access-only probes and incomplete inventories remain visible in source health
+but do not veto usable extracted records. Partial results keep their errors and
+coverage limits; they are not relabelled complete. The health exit status fails
+for an actual collector with no usable result, inconsistent record counts, or an
+incomplete execution. Probe-only failures do not fail it. The publisher retains
+its independent schema, identity and readback checks; a partial/failed inventory
+must never retire unrelated or previously successful records.
+
+Actual target HTTP refusals, authentication challenges, TLS verification,
+read-only URL/method constraints, request/credit budgets, pacing and data
+provenance validation remain in effect. Removing an auxiliary prerequisite does
+not promise that a previously unavailable target will respond successfully.
+
 ## Running
 
 ```sh

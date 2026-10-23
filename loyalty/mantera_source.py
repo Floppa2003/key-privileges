@@ -167,7 +167,6 @@ async def collect(client, cfg, report, observed_at, limit):
     try:
         async with PublicSource(client.browser,mantera_hotel.URL) as hotel:
             hotel.deadline=getattr(client,'deadline',float('inf'))
-            await within_source_budget(hotel,hotel.robots)
             record=mantera_hotel.parse(await within_source_budget(hotel,lambda:hotel.read(mantera_hotel.URL)),observed_at)
             records.append(record)
     except Exception as exc:

@@ -8,7 +8,7 @@ from datetime import date
 from pathlib import Path
 from urllib.parse import urlsplit
 from bs4 import BeautifulSoup
-from free_access_probe import FreeReader, ProbeError, sanitized_page, read_policy, now
+from free_access_probe import FreeReader, ProbeError, sanitized_page, now
 from normalized import make_offer, text
 
 CLUB = 'https://coralbonus.ru/klub-privilegii/'
@@ -209,8 +209,7 @@ def collect(root_report, folder, key, observed_at, *, get=None, sleep=time.sleep
     """Full promo index + alternating category halves; failed pages remain explicit."""
     if type(other_half) is not bool:
         raise ValueError('invalid_coral_half_selection')
-    from public_transport import robots_document, check_response
-    from protego import Protego
+    from public_transport import check_response
     path = Path(folder); out = path / 'coral-details'; out.mkdir(exist_ok=True)
     day = date.fromisoformat(observed_at[:10]).toordinal()
     shard = (day + int(other_half)) % 2
@@ -226,15 +225,10 @@ def collect(root_report, folder, key, observed_at, *, get=None, sleep=time.sleep
         (out / 'report.json').write_text(json.dumps(diagnostics, ensure_ascii=False, indent=2))
     try:
         reader.preflight()
-        info = {}; status, raw, _ = read_policy(reader, 'https://coralbonus.ru/robots.txt', info)
-        rules, _ = robots_document(status, raw); policy = Protego.parse(rules)
-        rate = policy.request_rate('LoyaltyCatalogResearchBot')
-        interval = max(1, policy.crawl_delay('LoyaltyCatalogResearchBot') or 0, rate.seconds/rate.requests if rate else 0)
-        if interval > 30: raise ProbeError('crawl_delay_exceeds_budget')
+        interval = 1
         last = time.monotonic()
         def read(url, browser):
             nonlocal last
-            if not policy.can_fetch(url, 'LoyaltyCatalogResearchBot'): raise ProbeError('robots_disallow')
             reader.allowed.add(url)
             sleep(max(0, interval - (time.monotonic()-last)))
             p = {'url': url, 'browser': browser, 'started_at': now()}; pages.append(p)

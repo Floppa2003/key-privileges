@@ -18,10 +18,10 @@ from urllib.parse import urlsplit,parse_qsl
 import requests
 from bs4 import BeautifulSoup
 from free_access_probe import FreeReader,ProbeError,free_plan,now
-from ekp_catalog import ROOT,API,POLICY,query,page,public_row,make_record,validate_bundle
+from ekp_catalog import ROOT,API,query,page,public_row,make_record,validate_bundle
 
-MAX_CREDITS=175  # Policy25, optional policy retry25, one browser125.
-MAX_REQUESTS=3
+MAX_CREDITS=125  # One anonymous browser request.
+MAX_REQUESTS=1
 MAX_PAGES=11
 SCRIPT=Path(__file__).with_name('ekp_session_ui.js')
 
@@ -52,7 +52,7 @@ class Reader:
         self.ready=True
 
     def read(self,url):
-        if not self.ready or self.http.halted or url not in (POLICY,ROOT):raise ProbeError('ekp_reader_not_ready')
+        if not self.ready or self.http.halted or url != ROOT:raise ProbeError('ekp_reader_not_ready')
         browser=url==ROOT;cost=125 if browser else 25
         if browser and self.browser_used:raise ProbeError('ekp_browser_already_requested')
         if self.calls>=MAX_REQUESTS or self.reserved+cost>MAX_CREDITS:raise ProbeError('ekp_session_budget_bound')
@@ -77,19 +77,6 @@ class Reader:
         if self.http.halted:return None
         try:usage,_=self.http._request('usage',{});return free_plan(usage)
         except ProbeError:return None
-
-
-def policy_document(reader,audit):
-    for number in range(2):
-        item={'number':number+1,'started_at':now()};audit.setdefault('policy_attempts',[]).append(item)
-        try:
-            raw=reader.read(POLICY);item.update(result='source_document_received',finished_at=now());return raw
-        except ProbeError as exc:
-            item.update(error=str(exc),finished_at=now())
-            if number or str(exc)!='provider_http_404' or getattr(reader.http,'halted',False):raise
-            item['retry_delay_seconds']=10;reader.sleep(10)
-    raise ProbeError('ekp_policy_retry_exhausted')
-
 
 
 def checked_timings(items,start,end):
@@ -163,23 +150,12 @@ def accept_session(obj,out,audit,records,seen,errors):
 
 
 def collect(reader,out,*,run_id,observed_at,commit):
-    from public_transport import robots_document
-    from protego import Protego
     from sheets_normalized import prepare
     out=Path(out);out.mkdir(parents=True,exist_ok=True);records=[];seen=set();errors=[];complete=False
     audit={'run_id':run_id,'commit':commit,'started_at':observed_at,'source_account_used':False,'publication':False,
         'mode':'one_anonymous_browser_public_api','script_sha256':hashlib.sha256(SCRIPT.read_bytes()).hexdigest(),'pages':[],'errors':errors}
-    robots={}
     try:
         reader.preflight();audit['opening_balance']=reader.balance
-        raw=policy_document(reader,audit);rules,state=robots_document(200,raw);policy=Protego.parse(rules)
-        if not all(policy.can_fetch(u,'LoyaltyCatalogResearchBot') for u in (ROOT,API)):raise ProbeError('robots_disallow')
-        # Current source publishes no pacing rule. A future rule requires a
-        # separately tested script interval, not silently violating it.
-        if policy.crawl_delay('LoyaltyCatalogResearchBot') or policy.request_rate('LoyaltyCatalogResearchBot'):
-            raise ProbeError('ekp_source_pacing_requires_review')
-        (out/'robots.txt').write_text(rules)
-        robots={'state':state,'http_status':200,'sha256':hashlib.sha256(raw.encode()).hexdigest()}
         raw=reader.read(ROOT);soup=BeautifulSoup(raw,'html.parser');nodes=soup.select('#loyalty-session-api')
         if len(nodes)!=1:raise ProbeError('ekp_session_marker_missing')
         obj=json.loads(nodes[0].get_text())
@@ -200,7 +176,7 @@ def collect(reader,out,*,run_id,observed_at,commit):
         'full_program_terms_verified':False,'private_terms_collected':False,'linked_terms_read':False}
     report={'source_id':'ekp','name':'ЕКП — публичный каталог','root':ROOT,'status':'ok' if complete and not errors else 'partial' if records else 'failed',
         'discovered':len(seen),'normalized':len(records),'failed':len(errors),'coverage':json.dumps(meta,ensure_ascii=False),
-        'region':None,'errors':errors,'observed_at':observed_at,'robots':robots}
+        'region':None,'errors':errors,'observed_at':observed_at}
     bundle={'schema_version':2,'run_id':run_id,'observed_at':observed_at,'records':records,'sources':[report]}
     prepare(bundle);(out/'normalized.json').write_text(json.dumps(bundle,ensure_ascii=False,indent=2))
     return bundle

@@ -44,12 +44,10 @@ async def read_region(client,cfg,key,now,limit):
     report={'errors':[]}
     region_cfg={**cfg,'listing_region':key}
     if key=='msk':
-        await within_source_budget(client,client.robots)
         rows=await within_source_budget(client,lambda:collect_region(client,region_cfg,report,now,limit))
     else:
         async with PublicSource(client.browser,cfg['url']) as regional:
             regional.deadline=getattr(client,'deadline',float('inf'))
-            await within_source_budget(regional,regional.robots)
             rows=await within_source_budget(regional,lambda:collect_region(regional,region_cfg,report,now,limit))
     return rows,report
 

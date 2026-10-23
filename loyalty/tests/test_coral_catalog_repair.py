@@ -12,7 +12,7 @@ import coral_catalog as c
 import free_catalog_bundle as bundle
 from free_access_probe import sanitized_page
 from normalized import validate_offer, content_hash
-from test_coral_catalog import doc, NOW, product, HAS_PROTEGO
+from test_coral_catalog import doc, NOW, product
 
 
 def ticket(title='Новая экскурсия', price='4321', months='7'):
@@ -96,7 +96,6 @@ class GlobalStopTests(unittest.TestCase):
 if __name__ == '__main__':unittest.main()
 
 
-@unittest.skipUnless(HAS_PROTEGO, 'Production dependency required in Actions')
 class DuplicateTraversalTests(unittest.TestCase):
     def test_discovered_cross_category_card_is_fetched_once(self):
         import hashlib

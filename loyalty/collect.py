@@ -8,9 +8,7 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urljoin, urlsplit
-from urllib.robotparser import RobotFileParser
 
-import requests
 from playwright.sync_api import sync_playwright
 from model import clean_url, is_offer, make_record, BLOCKED
 
@@ -18,17 +16,6 @@ AGENT = 'LoyaltyCatalogResearchBot/0.1'
 MORE = re.compile(r'^(?:показать|загрузить)\s+(?:ещё|еще|больше)(?:\s+\d+)?$|^(?:ещё|еще|load more)$', re.I)
 
 
-def robots(cfg: dict) -> RobotFileParser:
-    url = f"https://{cfg['host']}/robots.txt"
-    r = requests.get(url, headers={'User-Agent': AGENT}, timeout=20, allow_redirects=False)
-    p = RobotFileParser(url)
-    if r.status_code == 404:
-        p.parse([])
-    elif r.status_code == 200:
-        p.parse(r.text.splitlines())
-    else:
-        raise RuntimeError(f'robots_unavailable_http_{r.status_code}')
-    return p
 
 
 def relevant_links(page, cfg: dict) -> tuple[set[str], set[str]]:
@@ -48,9 +35,7 @@ def relevant_links(page, cfg: dict) -> tuple[set[str], set[str]]:
     return offers, catalogs
 
 
-def read_page(page, url: str, cfg: dict, policy: RobotFileParser) -> None:
-    if not policy.can_fetch(AGENT, url):
-        raise RuntimeError('robots_disallow')
+def read_page(page, url: str, cfg: dict) -> None:
     time.sleep(1)
     response = page.goto(url, wait_until='domcontentloaded', timeout=30000)
     page.wait_for_timeout(1800)
@@ -82,7 +67,6 @@ def probe(browser, cfg: dict, out: Path, limit: int, started: str) -> tuple[dict
             report['network'].append({'path': parts.path, 'status': resp.status})
     page.on('response', observe)
     try:
-        policy = robots(cfg)
         queue = list(cfg['roots'])
         while queue and len(seen) < 4:
             url = queue.pop(0)
@@ -90,7 +74,7 @@ def probe(browser, cfg: dict, out: Path, limit: int, started: str) -> tuple[dict
                 continue
             seen.add(url)
             try:
-                read_page(page, url, cfg, policy)
+                read_page(page, url, cfg)
                 for _ in range(6):
                     offers, categories = relevant_links(page, cfg)
                     candidates.update(offers)
@@ -111,7 +95,7 @@ def probe(browser, cfg: dict, out: Path, limit: int, started: str) -> tuple[dict
         report['candidate_urls'] = sorted(candidates)
         for url in sorted(candidates)[:limit]:
             try:
-                read_page(page, url, cfg, policy)
+                read_page(page, url, cfg)
                 if not is_offer(page.url, cfg):
                     raise RuntimeError('redirect_not_an_offer')
                 title = page.locator('h1').first.inner_text() if page.locator('h1').count() else page.title()

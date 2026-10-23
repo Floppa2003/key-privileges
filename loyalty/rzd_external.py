@@ -6,7 +6,6 @@ from pathlib import Path
 from urllib.parse import urljoin, urlsplit
 import requests
 from bs4 import BeautifulSoup
-from protego import Protego
 from normalized import make_offer, text, content_hash
 from document_text import extract_pdf, document_records
 
@@ -57,16 +56,12 @@ def clean_html(raw,url):
     if not soup.html:raise ValueError('re_not_html')
     return str(soup)
 
-def policy(raw):
-    if '<html' in raw.lower() or not re.search(r'^\s*User-agent:',raw,re.I|re.M):
-        raise ValueError('re_robots_unreadable')
-    return Protego.parse(raw)
 
 class Reader:
     def __init__(self,folder,*,get=requests.get,clock=time.monotonic,sleep=time.sleep):
         self.folder=Path(folder);(self.folder/'objects').mkdir(parents=True,exist_ok=True)
         self.get=get;self.clock=clock;self.sleep=sleep;self.started=clock()
-        self.receipts=[];self.policies={};self.next_at={};self.delay={};self.stopped=set()
+        self.receipts=[];self.next_at={};self.delay={};self.stopped=set()
     def _get(self,url):
         checked_url(url);host=urlsplit(url).netloc
         self.sleep(max(0,self.next_at.get(host,0)-self.clock()))
@@ -91,7 +86,6 @@ class Reader:
                 else:
                     r._content=bytes(data);r.encoding=r.apparent_encoding
                     saved=(r.text if url.endswith('/robots.txt') else clean_html(r.text,url)).encode();ext='txt' if url.endswith('/robots.txt') else 'html'
-                    if ext=='txt':policy(saved.decode())
                 item['file']='objects/'+sha(url.encode())+'.'+ext
                 item['saved_sha256']=sha(saved);item['saved_bytes']=len(saved)
                 (self.folder/item['file']).write_bytes(saved)
@@ -103,13 +97,6 @@ class Reader:
             item['finished_at']=now();self.next_at[host]=self.clock()+self.delay.get(host,5)
     def read(self,url):
         checked_url(url);host=urlsplit(url).netloc
-        if host not in self.policies:
-            raw=self._get('https://'+host+'/robots.txt').decode()
-            rules=policy(raw);rate=rules.request_rate(BOT)
-            delay=max(5,rules.crawl_delay(BOT) or 0,rate.seconds/rate.requests if rate else 0)
-            if delay>30:raise ValueError('re_delay_bound')
-            self.delay[host]=delay;self.next_at[host]=self.clock()+delay;self.policies[host]=rules
-        if not self.policies[host].can_fetch(url,BOT):raise ValueError('re_robots_disallow')
         return self._get(url)
 
 
@@ -251,8 +238,10 @@ def collect(reader,run_id,observed,*,include_bank_documents=True):
 class Replay(Reader):
     def __init__(self,folder,receipts):
         self.folder=Path(folder);self.receipts=receipts;self.index=0
-        self.policies={};self.next_at={};self.delay={};self.clock=lambda:0
+        self.next_at={};self.delay={};self.clock=lambda:0
     def _get(self,url):
+        while self.index<len(self.receipts) and self.receipts[self.index]['url'].endswith('/robots.txt'):
+            self.index+=1
         if self.index>=len(self.receipts):raise ValueError('re_replay_missing')
         r=self.receipts[self.index];self.index+=1
         if r['url']!=url:raise ValueError('re_replay_order')

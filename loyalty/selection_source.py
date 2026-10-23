@@ -107,7 +107,6 @@ def merge_previews(regional_snapshots, observed_at):
 
 async def _read_previews(client, region, limit):
     root=REGIONS[region]['source_url']
-    await within_source_budget(client,client.robots)
     await within_source_budget(client,lambda:client.read(root,render=True))
     cards=client.page.locator(CARD)
     await cards.first.wait_for(state='visible',timeout=8000)

@@ -140,6 +140,11 @@ def execution_health(bundle, expected_sources):
                  and meta.get('completed_sources')==len(reports)-len(unfinished))
     healthy = (coherent and len(ids)==len(set(ids)) and not missing and not unexpected
                and not unfinished and not exceptions and state in ('complete','legacy_payload'))
-    return {'healthy':bool(healthy), 'state':state, 'expected_sources':len(expected),
+    # A stopped run may still contain complete collector output when only an
+    # optional probe remains. Keep that distinct from malformed bookkeeping.
+    integrity_valid = (coherent and len(ids)==len(set(ids)) and not unexpected
+                       and state in ('complete','legacy_payload','deadline','cancelled'))
+    return {'healthy':bool(healthy), 'integrity_valid':bool(integrity_valid),
+            'state':state, 'expected_sources':len(expected),
             'reported_sources':len(ids), 'missing_sources':missing, 'unexpected_sources':unexpected,
             'unfinished_sources':unfinished, 'worker_exceptions':exceptions}

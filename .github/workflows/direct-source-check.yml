@@ -1,0 +1,58 @@
+name: Direct source reads acceptance
+on:
+  push:
+    branches: [fix/direct-source-reads-20261023]
+    paths: [.github/workflows/direct-source-check.yml, loyalty/**]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: direct-source-reads-acceptance
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      SOURCE_IDS: nordwind,aeroflot,ekp,smartavia_rules,af_parkfly,mantera_moments,ekp_litres,hse_alumni
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - name: Preserve exact code and prepare test dependencies
+        run: |
+          set -euo pipefail
+          mkdir -p direct-output
+          git rev-parse HEAD > direct-output/commit.txt
+          git archive --format=zip HEAD > direct-output/source.zip
+          python -m pip install -r loyalty/requirements.txt
+          sudo apt-get update -qq && sudo apt-get install -y poppler-utils
+      - name: Full regression and diagnostic checks
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s loyalty/tests -v > direct-output/tests.log 2>&1
+          node --test key/refresh.test.mjs > direct-output/key-tests.log 2>&1
+          python -m unittest discover -s diagnostics/tests -p 'test_*.py' -v > direct-output/diagnostic-tests.log 2>&1
+          git diff --exit-code
+      - name: Install browser
+        run: python -m playwright install --with-deps chromium
+      - name: Read target pages and extract available records without publication
+        run: |
+          set -euo pipefail
+          xvfb-run -a python loyalty/collect_normalized.py --sources "$SOURCE_IDS" --limit 500 --out direct-output/collection 2>&1 | tee direct-output/collection.log
+      - name: Validate rows and distinguish blockers from diagnostics
+        if: always()
+        run: |
+          set -euo pipefail
+          test -f direct-output/collection/normalized.json
+          python loyalty/sheets_normalized.py --input direct-output/collection/normalized.json > direct-output/publication-dry-run.json
+          python loyalty/source_lifecycle.py --input direct-output/collection/normalized.json --sources "$SOURCE_IDS" > direct-output/source-health.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: direct-source-reads-${{ github.run_id }}-${{ github.run_attempt }}
+          path: direct-output/
+          retention-days: 14

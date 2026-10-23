@@ -6,7 +6,6 @@ from pathlib import Path
 from urllib.parse import urlsplit, urlunsplit, urljoin
 import requests
 from bs4 import BeautifulSoup
-from protego import Protego
 from normalized import make_offer, text, content_hash
 from document_text import extract_pdf, document_records
 from free_access_probe import FreeReader, free_plan, LOCATION_JS
@@ -106,7 +105,7 @@ class Reader:
     def __init__(self,key='',*,session=None,sleep=time.sleep):
         self.session=session or requests.Session();self.session.trust_env=False
         self.key=key;self.sleep=sleep;self.started=time.monotonic();self.reserved=0;self.charged=0
-        self.receipts=[];self.policies={};self.next_at={};self.stopped=set();self.free_checked=False;self.provider_halted=False;self.delays={}
+        self.receipts=[];self.next_at={};self.stopped=set();self.free_checked=False;self.provider_halted=False;self.delays={}
     def limit(self,host):
         delay=max(0,self.next_at.get(host,0)-time.monotonic())
         if host in self.stopped or len(self.receipts)>=40 or time.monotonic()+delay-self.started>MAX_SECONDS-80:
@@ -167,35 +166,7 @@ class Reader:
                 self.provider_halted=True
             item['error']=code;raise ValueError(code) from None
         finally:item['finished_at']=now();self.next_at[host]=time.monotonic()+self.delays.get(host,3)
-    def read_policy(self,url):
-        host=urlsplit(url).hostname
-        if host in self.policies:return self.policies[host]
-        policy_url='https://'+host+'/robots.txt'
-        last='el_policy_unavailable'
-        for mode in (None,'datacenter','residential'):
-            try:
-                raw,receipt=self.raw(policy_url,provider=mode)
-                if receipt.get('redirect'):raise ValueError('el_policy_redirect')
-                from public_transport import robots_document
-                try:body,_=robots_document(200,raw.decode('utf8'))
-                except (RuntimeError,UnicodeError):raise ValueError('el_policy_unreadable') from None
-                if not re.search(r'^\s*User-agent:',body,re.M|re.I):raise ValueError('el_policy_unreadable')
-                rules=Protego.parse(body);self.policies[host]=rules;return rules
-            except ValueError as exc:
-                last=str(exc)
-                if last in ('el_http_404','el_http_410'):
-                    self.policies[host]=Protego.parse('User-agent: *\nAllow: /');return self.policies[host]
-                if last not in ('el_transport_error','el_provider_unavailable'):break
-        raise ValueError(last)
     def read(self,url):
-        rules=self.read_policy(url)
-        delay=max(3,rules.crawl_delay(BOT) or 0)
-        rate=rules.request_rate(BOT)
-        if rate:delay=max(delay,rate.seconds/rate.requests)
-        if delay>30:raise ValueError('el_policy_delay_bound')
-        host=urlsplit(url).hostname;self.delays[host]=delay
-        self.next_at[host]=max(self.next_at.get(host,0),time.monotonic()+delay)
-        if not rules.can_fetch(url,BOT):raise ValueError('el_source_policy')
         last='el_unread'
         for mode in (None,'datacenter','residential'):
             try:
@@ -204,7 +175,6 @@ class Reader:
                     raw,receipt=self.raw(current,provider=mode,browser=bool(mode and not url.lower().endswith('.pdf')))
                     if receipt.get('redirect'):
                         current=receipt['redirect']
-                        if not rules.can_fetch(current,BOT):raise ValueError('el_source_policy')
                         continue
                     break
                 else:raise ValueError('el_redirect_limit')

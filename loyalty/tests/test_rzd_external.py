@@ -135,11 +135,11 @@ class PipelineTests(unittest.TestCase):
             reader=r.Reader(d,get=lambda u,**k:Response(b'<html>fake</html>'),sleep=lambda _:None)
             with self.assertRaisesRegex(ValueError,'re_not_pdf'):reader._get(PDF)
             self.assertFalse(any(Path(d).rglob('*.pdf')))
-    def test_failed_policy_does_not_request_target(self):
+    def test_unavailable_robots_does_not_block_target(self):
         with tempfile.TemporaryDirectory() as d:
             net=Network(fail='https://rzdtour.com/robots.txt');reader=r.Reader(d,get=net,sleep=lambda _:None)
-            with self.assertRaises(ValueError):reader.read(r.TOUR)
-            self.assertEqual(len(net.calls),1)
+            reader.read(r.TOUR)
+            self.assertEqual([url for url,_ in net.calls],[r.TOUR])
     def test_changed_run_and_stale_evidence_rejected(self):
         with tempfile.TemporaryDirectory() as d:
             p=Path(d);self.bundle(p,Network())

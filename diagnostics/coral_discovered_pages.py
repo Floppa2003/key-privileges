@@ -10,7 +10,7 @@ from pathlib import Path
 from urllib.parse import urlsplit
 from bs4 import BeautifulSoup
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'loyalty'))
-from free_access_probe import FreeReader, ProbeError, configured_roots, read_policy, sanitized_page, now
+from free_access_probe import FreeReader, ProbeError, configured_roots, sanitized_page, now
 
 OUT = Path('coral-discovery-output')
 
@@ -37,8 +37,7 @@ def selfcheck():
 
 
 def main():
-    from public_transport import robots_document, check_response
-    from protego import Protego
+    from public_transport import check_response
     OUT.mkdir(exist_ok=True)
     report = {'run_id': os.getenv('GITHUB_RUN_ID'), 'commit': os.getenv('GITHUB_SHA'),
               'started_at': now(), 'publication': False, 'account_sessions': False, 'pages': []}
@@ -48,14 +47,8 @@ def main():
     try:
         reader = FreeReader(os.environ.get('SCRAPINGANT_API_KEY', ''), configured_roots(Path('loyalty/sources_normalized.json')))
         reader.preflight(); report['free_plan_confirmed'] = True
-        info = {}; status, raw, _ = read_policy(reader, 'https://coralbonus.ru/robots.txt', info)
-        rules, state = robots_document(status, raw); policy = Protego.parse(rules)
-        rate = policy.request_rate('LoyaltyCatalogResearchBot')
-        interval = max(1, policy.crawl_delay('LoyaltyCatalogResearchBot') or 0, rate.seconds / rate.requests if rate else 0)
-        if interval > 30: raise ProbeError('crawl_delay_exceeds_budget')
-        report['policy'] = {**info, 'state': state, 'origin_status': status}
+        interval = 1
         def read(url, label, browser=True):
-            if not policy.can_fetch(url, 'LoyaltyCatalogResearchBot'): raise ProbeError('robots_disallow')
             item = {'url': url, 'browser': browser, 'started_at': now()}; report['pages'].append(item); save()
             try:
                 time.sleep(interval)

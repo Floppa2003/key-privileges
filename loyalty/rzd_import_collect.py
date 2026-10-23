@@ -15,7 +15,7 @@ from pathlib import Path
 from urllib.parse import urljoin,urlsplit
 from sheets_sync import Sheets
 from sheets_normalized import prepare
-from rzd_import_catalog import (HOME,ROOT,ROBOTS,ORIGINAL,METHOD,formula,digest,
+from rzd_import_catalog import (HOME,ROOT,ORIGINAL,METHOD,formula,digest,
     instant,cell_atom,checked_observation,catalog,detail,RESTRICTION)
 
 STAGING_ID='1nIH7seMlDR_3Hw1iOMQ0bnrD-iWspj73zvqCVT4dxW8'
@@ -40,14 +40,6 @@ def save(path,obj):
     tmp=path.with_suffix('.tmp');tmp.write_text(json.dumps(obj,ensure_ascii=False,indent=2));tmp.replace(path)
 
 
-def policy_from(obs):
-    from protego import Protego
-    checked_observation(obs)
-    if obs['kind']!='robots' or any(c['kind']!='string' for c in obs['cells']):raise ValueError('rzd_policy_representation')
-    rules='\n'.join(c['text'] for c in obs['cells'])
-    if not re.search(r'^User-agent\s*:',rules,re.I|re.M) or '<html' in rules.lower() or RESTRICTION.search(rules):
-        raise ValueError('rzd_policy_not_readable')
-    return Protego.parse(rules)
 
 
 class ImportReader:
@@ -143,13 +135,9 @@ def walk(reader,run_id,commit,observed_at,*,checkpoint=lambda:None,include_previ
     from rzd_catalogue_cards import previews,merge_previews,make_preview
     preview_index={};preview_count=0
     records=[];errors=[];details=[];pages=[];pending=[];external=0;combined=0
-    rules=None;catalogue_complete=False
+    catalogue_complete=False
     try:
-        rules=policy_from(reader.read(ROBOTS,'robots'));checkpoint()
-        rate=rules.request_rate('LoyaltyCatalogResearchBot')
-        reader.delay=max(20,rules.crawl_delay('LoyaltyCatalogResearchBot') or 0,rate.seconds/rate.requests if rate else 0)
-        if reader.delay>60:raise ValueError('rzd_source_delay_bound')
-        if not rules.can_fetch(HOME,'LoyaltyCatalogResearchBot'):raise ValueError('rzd_policy_disallow')
+        reader.delay=20
         home=reader.read(HOME,'home');checkpoint();cells=checked_observation(home)
         if (not re.search('РЖД.*Бонус',cells[0]['text'],re.I) or ROOT not in {urljoin(HOME,c['text'].strip()) for c in cells[1:]}):
             raise ValueError('rzd_home_catalogue_link_missing')
@@ -157,7 +145,6 @@ def walk(reader,run_id,commit,observed_at,*,checkpoint=lambda:None,include_previ
         while pending and len(pages)<MAX_PAGES:
             url=pending.pop(0);pages.append(url)
             try:
-                if not rules.can_fetch(url,'LoyaltyCatalogResearchBot'):raise ValueError('rzd_policy_disallow')
                 observation=reader.read(url,'catalog_cards' if include_previews else 'catalog');checkpoint()
                 parsed=catalog(observation)
                 if include_previews:merge_previews(preview_index,previews(observation))
@@ -176,12 +163,11 @@ def walk(reader,run_id,commit,observed_at,*,checkpoint=lambda:None,include_previ
             errors.append({'phase':'detail','reason':'rzd_rotating_detail_bound'})
         for url in selected:
             try:
-                if not rules.can_fetch(url,'LoyaltyCatalogResearchBot'):raise ValueError('rzd_policy_disallow')
                 obs=reader.read(url,'detail');checkpoint()
                 records.append(detail(obs,observed_at))
             except Exception as exc:
                 failure=reason(exc);errors.append({'phase':'detail','url':url,'reason':failure})
-                if include_previews and url in preview_index and failure!='rzd_policy_disallow':
+                if include_previews and url in preview_index:
                     records.append(make_preview(preview_index[url],observed_at,failure));preview_count+=1
                 if failure=='rzd_collection_bound':break
     except Exception as exc:errors.append({'phase':'setup','reason':reason(exc)})
@@ -216,14 +202,13 @@ def validate_bundle(folder,*,run_id,commit,clock):
     include_previews=audit.get('include_previews',False)
     if type(include_previews) is not bool:raise ValueError('rzd_preview_mode')
     preview_index={};discovery_order=[]
-    expected=[];discovered=set();known_pages={ROOT};seen=set();rules=None;last=start;home_verified=False
+    expected=[];discovered=set();known_pages={ROOT};seen=set();last=start;home_verified=False
     for obs in observations:
         checked_observation(obs)
         a,b=instant(obs['requested_at']),instant(obs['calculated_at'])
         if not last<=a<=b<=end or (obs['kind'],obs['url']) in seen:raise ValueError('rzd_bundle_observation_order')
         last=b;seen.add((obs['kind'],obs['url']))
-        if obs['kind']=='robots':rules=policy_from(obs);continue
-        if rules is None or not rules.can_fetch(obs['url'],'LoyaltyCatalogResearchBot'):raise ValueError('rzd_bundle_source_policy')
+        if obs['kind']=='robots':continue  # Legacy observation only.
         if obs['kind']=='home':
             cells=checked_observation(obs)
             if not re.search('РЖД.*Бонус',cells[0]['text'],re.I) or ROOT not in {urljoin(HOME,c['text'].strip()) for c in cells[1:]}:

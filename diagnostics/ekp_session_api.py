@@ -1,18 +1,17 @@
-"""One-context API comparison, max150 Free credits, no Google publication."""
+"""One-context API comparison, max125 Free credits, no Google publication."""
 from __future__ import annotations
 import base64,hashlib,json,os,re,sys,time
 from pathlib import Path
 from bs4 import BeautifulSoup
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'loyalty'))
 from free_access_probe import FreeReader,ProbeError,free_plan,now
-from ekp_catalog import ROOT,API,POLICY,query,page,public_row,make_record
+from ekp_catalog import ROOT,API,query,page,public_row,make_record
 from ekp_detail_probe import index_url
 OUT=Path('ekp-session-output')
 
 
 def main():
-    from public_transport import robots_document,check_response
-    from protego import Protego
+    from public_transport import check_response
     OUT.mkdir(exist_ok=True);r=None;rows=[];seen=set()
     report={'run_id':os.environ['GITHUB_RUN_ID']+':'+os.environ['GITHUB_RUN_ATTEMPT'],'commit':os.environ['GITHUB_SHA'],
         'started_at':now(),'publication':False,'source_account_used':False,'pages':[],'errors':[]}
@@ -21,12 +20,12 @@ def main():
         report['accepted_records']=len(rows)
         (OUT/'report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2))
     try:
-        r=FreeReader(os.environ.get('SCRAPINGANT_API_KEY',''),[{'url':ROOT}],max_credits=150,max_requests=2)
+        r=FreeReader(os.environ.get('SCRAPINGANT_API_KEY',''),[{'url':ROOT}],max_credits=125,max_requests=1)
         usage,_=r._request('usage',{});report['opening_balance']=free_plan(usage)
         if report['opening_balance']<1000:raise ProbeError('preserve_free_reserve')
         def read(url,browser=False):
             cost=125 if browser else 25
-            if r.halted or r.calls>=2 or r.reserved+cost>150 or url not in (ROOT,POLICY):raise ProbeError('request_limit')
+            if r.halted or r.calls>=1 or r.reserved+cost>125 or url!=ROOT:raise ProbeError('request_limit')
             r.calls+=1;r.reserved+=cost;save()
             params={'url':url,'browser':str(browser).lower(),'proxy_country':'RU','proxy_type':'residential','timeout':'60'}
             if browser:params.update(js_snippet=base64.b64encode(Path(__file__).with_suffix('.js').read_bytes()).decode(),block_resource=['image','media','font'])
@@ -36,10 +35,7 @@ def main():
             r.known_charged_credits+=int(c)
             if s!='200' or meta.get('ant-original-header-retry-after'):raise ProbeError('origin_refusal')
             check_response(200,raw);return raw
-        raw=read(POLICY);rules,_=robots_document(200,raw);policy=Protego.parse(rules)
-        if not all(policy.can_fetch(u,'LoyaltyCatalogResearchBot') for u in (ROOT,API)):raise ProbeError('robots_disallow')
-        if policy.crawl_delay('LoyaltyCatalogResearchBot') or policy.request_rate('LoyaltyCatalogResearchBot'):raise ProbeError('pacing_rule_requires_review')
-        (OUT/'robots.txt').write_text(rules);time.sleep(1.1)
+        time.sleep(1.1)
         raw=read(ROOT,True);node=BeautifulSoup(raw,'html.parser').select_one('#loyalty-session-api')
         if node is None:raise ProbeError('session_marker_missing')
         obj=json.loads(node.get_text());index_url(obj['initialUrl']);index_url(obj['finalUrl'])

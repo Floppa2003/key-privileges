@@ -9,11 +9,9 @@ import requests
 from bs4 import BeautifulSoup
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'loyalty'))
 from free_access_probe import FreeReader,ProbeError,free_plan,now
-from ekp_inline_batch import namespace_allowed
 from ekp_detail_probe import card_url,index_url
 from ekp_owned_terms import extract,plain
 ROOT='https://ekp.spb.ru/capabilities/loyalty/'
-POLICY='https://ekp.spb.ru/robots.txt'
 API='https://ekp.spb.ru/api/portal/loyalty/partners'
 OUT=Path('ekp-api-bridge-output')
 
@@ -64,8 +62,7 @@ def projection(payload):
 def normal(x):return ' '.join(plain(BeautifulSoup(x,'html.parser')).split())
 
 def main():
-    from public_transport import robots_document,check_response
-    from protego import Protego
+    from public_transport import check_response
     OUT.mkdir(exist_ok=True);reader=None;post_body=None
     report={'run_id':os.getenv('GITHUB_RUN_ID'),'commit':os.getenv('GITHUB_SHA'),'started_at':now(),'publication':False,'source_login':False,'checks':[]}
     def get(url,**kwargs):
@@ -77,12 +74,12 @@ def main():
         if reader:report.update(requests=reader.calls,reserved=reader.reserved,charged=reader.known_charged_credits)
         (OUT/'report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2))
     try:
-        reader=FreeReader(os.environ.get('SCRAPINGANT_API_KEY',''),[{'url':ROOT}],get=get,max_credits=175,max_requests=3)
+        reader=FreeReader(os.environ.get('SCRAPINGANT_API_KEY',''),[{'url':ROOT}],get=get,max_credits=150,max_requests=2)
         usage,_=reader._request('usage',{});report['opening_balance']=free_plan(usage)
         if report['opening_balance']<465:raise ProbeError('preserve_daily_reserve')
         def read(url,*,extended=False):
             cost=125 if extended else 25
-            if reader.halted or url not in (ROOT,POLICY,API) or reader.calls>=3 or reader.reserved+cost>175:raise ProbeError('request_limit')
+            if reader.halted or url not in (ROOT,API) or reader.calls>=2 or reader.reserved+cost>150:raise ProbeError('request_limit')
             reader.calls+=1;reader.reserved+=cost;save()
             params={'url':url,'browser':'true' if extended else 'false','proxy_country':'RU','proxy_type':'residential','timeout':'60'}
             if extended:params.update(js_snippet=base64.b64encode(Path(__file__).with_suffix('.js').read_bytes()).decode(),block_resource=['image','media','font'])
@@ -93,9 +90,7 @@ def main():
             status=json.loads(raw).get('status_code') if extended else int(meta.get('Ant-page-status-code') or 0)
             if status!=200 or meta.get('ant-original-header-retry-after'):raise ProbeError('source_http_refusal')
             return raw
-        raw=read(POLICY);rules,_=robots_document(200,raw);namespace_allowed(rules);policy=Protego.parse(rules)
-        if not all(policy.can_fetch(u,'LoyaltyCatalogResearchBot') for u in (ROOT,API)):raise ProbeError('robots_disallow')
-        (OUT/'robots.txt').write_text(rules);time.sleep(1.1)
+        time.sleep(1.1)
         envelope=json.loads(read(ROOT,extended=True));html=envelope.get('html',envelope.get('content'));check_response(200,html)
         node=BeautifulSoup(html,'html.parser').select_one('#loyalty-api-bridge')
         if node is None:raise ProbeError('marker_missing')

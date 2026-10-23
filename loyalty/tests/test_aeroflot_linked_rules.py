@@ -98,12 +98,13 @@ class Contracts(unittest.TestCase):
             self.assertTrue(bundle['records']);self.assertEqual(bundle['records'][0]['details']['page_count'],2)
             self.assertEqual(bundle['records'][0]['details']['download_url'],DOC)
             self.assertFalse(project(bundle['records'][0])['benefits'])
-    def test_redirect_destination_policy_checked_before_target_request(self):
+    def test_owned_redirect_fetches_document_without_robots_dependency(self):
         net=Network(denied=True)
         with tempfile.TemporaryDirectory() as tmp:
             bundle,audit=r.collect(base(PARK,'Правила'),tmp,'456:1','a'*40,get=net,sleep=lambda _:None,observed_at=CLOCK.isoformat())
-            self.assertEqual(bundle['sources'][0]['status'],'failed')
-            self.assertNotIn(DOC,net.calls)
+            self.assertEqual(bundle['sources'][0]['status'],'ok')
+            self.assertIn(DOC,net.calls)
+            self.assertFalse(any(url.endswith('/robots.txt') for url in net.calls))
     def test_publisher_reconstructs_and_rejects_changed_object_and_run(self):
         with tempfile.TemporaryDirectory() as tmp:
             bundle,audit=r.collect(base(),tmp,'456:1','a'*40,get=Network(),sleep=lambda _:None,observed_at=CLOCK.isoformat())

@@ -4,11 +4,9 @@ from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'loyalty'))
 from bs4 import BeautifulSoup
 from free_access_probe import FreeReader,ProbeError,free_plan,now
-from ekp_inline_batch import namespace_allowed
 from ekp_detail_probe import card_url,index_url
 from ekp_owned_terms import extract
 ROOT='https://ekp.spb.ru/capabilities/loyalty/'
-POLICY='https://ekp.spb.ru/robots.txt'
 PUBLIC_API='https://ekp.spb.ru/api/portal/loyalty/partners'
 OUT=Path('ekp-response-output')
 
@@ -49,16 +47,15 @@ def inspect_response(x):
     return out
 
 def main():
-    from public_transport import robots_document,check_response
-    from protego import Protego
+    from public_transport import check_response
     OUT.mkdir(exist_ok=True);r=None;report={'run_id':os.getenv('GITHUB_RUN_ID'),'commit':os.getenv('GITHUB_SHA'),'started_at':now(),'publication':False,'source_login':False,'observed_responses':[],'details':[]}
     try:
-        r=FreeReader(os.environ.get('SCRAPINGANT_API_KEY',''),[{'url':ROOT}],max_credits=150,max_requests=2)
+        r=FreeReader(os.environ.get('SCRAPINGANT_API_KEY',''),[{'url':ROOT}],max_credits=125,max_requests=1)
         payload,_=r._request('usage',{});left=free_plan(payload);report['opening_balance']=left
         if left<440:raise ProbeError('preserve_daily_reserve')
         def read(url,js=None):
             cost=125 if js else 25
-            if r.halted or url not in r.allowed or r.calls>=2 or r.reserved+cost>150:raise ProbeError('request_not_allowed')
+            if r.halted or url not in r.allowed or r.calls>=1 or r.reserved+cost>125:raise ProbeError('request_not_allowed')
             r.calls+=1;r.reserved+=cost
             params={'url':url,'browser':'true' if js else 'false','proxy_country':'RU','proxy_type':'residential','timeout':'60'}
             if js:params.update(js_snippet=base64.b64encode(js.encode()).decode(),block_resource=['image','media','font'])
@@ -67,9 +64,7 @@ def main():
             report.setdefault('safe_response_metadata',[]).append({'extended':bool(js),'cost':c,'origin_status':s,'retry_after_present':bool(meta.get('ant-original-header-retry-after'))})
             if not c.isdigit() or int(c)>cost or s!='200' or meta.get('ant-original-header-retry-after'):raise ProbeError('status_or_cost_invalid')
             r.known_charged_credits+=int(c);return data
-        raw=read(POLICY);rules,state=robots_document(200,raw);namespace_allowed(rules);policy=Protego.parse(rules)
-        if not all(policy.can_fetch(x,'LoyaltyCatalogResearchBot') for x in (ROOT,PUBLIC_API)):raise ProbeError('robots_disallow')
-        (OUT/'robots.txt').write_text(rules);time.sleep(1.1)
+        time.sleep(1.1)
         js=Path(__file__).with_name('ekp_inline_batch.js').read_text()
         blob=read(ROOT,js);payload=json.loads(blob)
         # Never persist extended envelope, cookies, headers, iframe or other XHR.

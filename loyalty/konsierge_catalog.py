@@ -84,8 +84,6 @@ def code_words(description):
 def record_mode(details):
     mode = details.get('collection_mode', 'manual')
     require(mode in ('manual', RECURRING_MODE), 'collection_mode')
-    if mode == RECURRING_MODE:
-        require(details.get('robots_policy') == ROBOTS_POLICY, 'recurring_robots_policy')
     return mode
 
 
@@ -145,7 +143,6 @@ def validate_record(row):
 def parse_capture(report, directory, source_run):
     mode = record_mode(report)
     require(report.get('one_off_public_ui_inspection') is (mode == 'manual')
-            and (mode == 'manual' or report.get('robots_requests') == 0)
             and report.get('source_account_login') is False
             and report.get('direct_api_requests') == 0 and report.get('credential_values_read_or_replayed') is False
             and report.get('published') is False and not report.get('errors'),'capture_not_accepted')

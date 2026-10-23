@@ -15,7 +15,7 @@ import time
 from pathlib import Path
 import requests
 from free_access_probe import FreeReader,ProbeError,free_plan,now
-from ekp_catalog import ROOT,API,POLICY,PAGE_SIZE,query,page,public_row,make_record
+from ekp_catalog import ROOT,API,PAGE_SIZE,query,page,public_row,make_record
 
 MAX_CREDITS=300
 MAX_REQUESTS=12
@@ -38,7 +38,7 @@ class Reader:
         self.ready=True
 
     def read(self,url,body=None):
-        if not self.ready or self.http.halted or url not in (API,POLICY):raise ProbeError('ekp_reader_not_ready')
+        if not self.ready or self.http.halted or url != API:raise ProbeError('ekp_reader_not_ready')
         if url==API and body!=query(body.get('pagination',{}).get('offset')):raise ProbeError('ekp_unreviewed_query')
         if self.calls>=MAX_REQUESTS or self.reserved+25>MAX_CREDITS:raise ProbeError('ekp_weekly_budget_bound')
         delay=max(0,self.interval-(time.monotonic()-self.last))
@@ -60,30 +60,6 @@ class Reader:
         if self.http.halted:return None
         try:payload,_=self.http._request('usage',{});return free_plan(payload)
         except ProbeError:return None
-
-
-
-def read_policy(reader, audit):
-    """One paced retry only for the provider's documented unreachable-route404.
-
-    No target refusal, authentication, quota, challenge or malformed source
-    response is retried. Both attempts consume the same original per-run budget.
-    """
-    attempts=audit.setdefault('policy_attempts',[])
-    for number in range(2):
-        entry={'number':number+1,'started_at':now()};attempts.append(entry)
-        try:
-            raw=reader.read(POLICY)
-            entry.update(result='source_document_received',finished_at=now())
-            return raw
-        except ProbeError as exc:
-            entry.update(error=str(exc),finished_at=now())
-            if number or str(exc)!='provider_http_404' or getattr(getattr(reader,'http',None),'halted',False):
-                raise
-            entry['retry_delay_seconds']=10
-            reader.sleep(10)
-    raise ProbeError('ekp_policy_retry_exhausted')
-
 
 
 def read_page(reader, request, audit):
@@ -112,8 +88,6 @@ def read_page(reader, request, audit):
 
 
 def collect(reader,out,*,run_id,observed_at,commit):
-    from public_transport import robots_document
-    from protego import Protego
     from sheets_normalized import prepare
     out=Path(out);out.mkdir(parents=True,exist_ok=True)
     records=[];seen=set();total=None;offset=0;pages=[];errors=[];completed=False
@@ -126,13 +100,6 @@ def collect(reader,out,*,run_id,observed_at,commit):
         (out/'report.json').write_text(json.dumps(audit,ensure_ascii=False,indent=2))
     try:
         reader.preflight();audit['opening_balance']=reader.balance;save()
-        raw=read_policy(reader,audit);rules,state=robots_document(200,raw);policy=Protego.parse(rules)
-        if not policy.can_fetch(API,'LoyaltyCatalogResearchBot') or not policy.can_fetch(ROOT,'LoyaltyCatalogResearchBot'):
-            raise ProbeError('robots_disallow')
-        rate=policy.request_rate('LoyaltyCatalogResearchBot')
-        reader.interval=max(1.1,policy.crawl_delay('LoyaltyCatalogResearchBot') or 0,rate.seconds/rate.requests if rate else 0)
-        (out/'robots.txt').write_text(rules)
-        report['robots']={'state':state,'http_status':200,'sha256':hashlib.sha256(raw.encode()).hexdigest()}
         while reader.calls<MAX_REQUESTS:
             request=query(offset)
             try:

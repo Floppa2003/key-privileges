@@ -49,7 +49,7 @@ class FreeCalendarTests(unittest.TestCase):
         start=date(2026,9,17);end=date(2026,10,15)
         days=[start+timedelta(days=i) for i in range((end-start).days+1)]
         n=sum(d.weekday() in source_days for d in days);m=sum(d.weekday() in ekp_days for d in days)
-        self.assertEqual((n,m),(17,4));self.assertEqual(n*269+m*EKP_CREDITS,5273)
+        self.assertEqual((n,m),(17,4));self.assertEqual(n*269+m*EKP_CREDITS,5073)
         self.assertGreaterEqual(6346-300-269,n*269+m*EKP_CREDITS)
 
 if __name__=='__main__':unittest.main()

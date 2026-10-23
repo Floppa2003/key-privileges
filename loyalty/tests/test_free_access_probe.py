@@ -42,7 +42,7 @@ def response_for(url, **kwargs):
     params=kwargs['params']; target=params['url']
     if target.endswith('/robots.txt'):
         return page('User-agent: *\nAllow: /',cost='1')
-    return page(document(target),headers={'ant-original-header-set-cookie':'PRIVATE_SESSION',
+    return page(document(target),cost='10' if params.get('browser')=='true' else '1',headers={'ant-original-header-set-cookie':'PRIVATE_SESSION',
                                                'private-header':'PRIVATE_XHR'})
 
 
@@ -86,7 +86,7 @@ class FreeAccessTests(unittest.TestCase):
         self.assertNotIn('cookies',kw['params']);self.assertNotIn('verify',kw)
         self.assertFalse(kw['allow_redirects']);self.assertEqual(kw['timeout'],(10,75))
 
-    def test_only_exact_roots_and_robots(self):
+    def test_only_exact_roots(self):
         r=self.reader()
         for url in ('https://foreign.example','http://ekp.spb.ru/',ROOTS[0]['url']+'?account=1',
                     'https://coralbonus.ru/login','https://coralbonus.ru/klub-privilegii/new'):
@@ -130,8 +130,8 @@ class FreeAccessTests(unittest.TestCase):
         with self.assertRaisesRegex(p.ProbeError,'per_run_limit'):r.read(ROOTS[0]['url'],browser=True)
         self.assertEqual(r.reserved,(p.MAX_CREDITS//10)*10)
         r=self.reader()
-        for _ in range(p.MAX_REQUESTS):r.read('https://ekp.spb.ru/robots.txt',browser=False)
-        with self.assertRaisesRegex(p.ProbeError,'per_run_limit'):r.read('https://ekp.spb.ru/robots.txt',browser=False)
+        for _ in range(p.MAX_REQUESTS):r.read(ROOTS[0]['url'],browser=False)
+        with self.assertRaisesRegex(p.ProbeError,'per_run_limit'):r.read(ROOTS[0]['url'],browser=False)
 
     def test_time_budget(self):
         r=self.reader();r.deadline=0
@@ -156,22 +156,18 @@ class FreeAccessTests(unittest.TestCase):
             self.assertEqual(p.configured_roots(path),ROOTS)
             path.write_text(json.dumps(ROOTS[:-1]+[ROOTS[0]]))
             with self.assertRaises(p.ProbeError):p.configured_roots(path)
-
-    @unittest.skipUnless(importlib.util.find_spec('protego'), 'production dependency installed in Actions')
-    def test_end_to_end_probe_uses_eleven_reads_and_no_account_material(self):
+    def test_end_to_end_probe_uses_six_reads_and_no_account_material(self):
         get=Mock(side_effect=response_for)
         with tempfile.TemporaryDirectory() as tmp:
             report=p.run(ROOTS,KEY,tmp,get=get,sleep=lambda _:None)
-            self.assertEqual(report['status'],'checked');self.assertEqual(report['target_requests'],11)
-            self.assertEqual(report['reserved_credits'],65);self.assertEqual(report['published_records'],0)
+            self.assertEqual(report['status'],'checked');self.assertEqual(report['target_requests'],6)
+            self.assertEqual(report['reserved_credits'],60);self.assertEqual(report['published_records'],0)
             self.assertEqual(len(list(Path(tmp).glob('*.html'))),6)
             self.assertTrue(all(s['status']=='candidate_requires_review' for s in report['sources']))
             text=''.join(x.read_text() for x in Path(tmp).iterdir())
             for forbidden in (KEY,'PRIVATE_SESSION','PRIVATE_XHR'):self.assertNotIn(forbidden,text)
-        self.assertEqual(get.call_count,12)
-
-    @unittest.skipUnless(importlib.util.find_spec('protego'), 'production dependency installed in Actions')
-    def test_real_robots_disallow_and_root_refusal_are_not_success(self):
+        self.assertEqual(get.call_count,7)
+    def test_unrequested_robots_does_not_block_but_target_refusal_does(self):
         def get(url,**kw):
             target=kw['params'].get('url','')
             if target.endswith('ekp.spb.ru/robots.txt'):
@@ -181,8 +177,8 @@ class FreeAccessTests(unittest.TestCase):
             return response_for(url,**kw)
         with tempfile.TemporaryDirectory() as tmp:
             report=p.run(ROOTS,KEY,tmp,get=get,sleep=lambda _:None)
-            self.assertEqual(report['sources'][0]['error'],'robots_disallow')
+            self.assertEqual(report['sources'][0]['status'],'candidate_requires_review')
             self.assertEqual(report['sources'][1]['error'],'access_challenge')
-            self.assertFalse((Path(tmp)/'ekp.html').exists());self.assertFalse((Path(tmp)/'nordwind.html').exists())
+            self.assertTrue((Path(tmp)/'ekp.html').exists());self.assertFalse((Path(tmp)/'nordwind.html').exists())
 
 if __name__=='__main__':unittest.main()

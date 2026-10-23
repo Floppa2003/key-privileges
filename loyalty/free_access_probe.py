@@ -1,7 +1,7 @@
 """Free-plan-only access probe; no Google credentials, accounts or publication.
 
 The provider's documented response/credit contract is checked before collecting the
-six configured public roots. This is a retrieval experiment, not an offer adapter.
+configured public roots. This is a retrieval experiment, not an offer adapter.
 """
 from __future__ import annotations
 import argparse
@@ -20,8 +20,8 @@ from bs4 import BeautifulSoup
 SOURCE_IDS = ('ekp', 'nordwind', 'coral', 'coral_promo', 'rzd', 'aeroflot')
 API = 'https://api.scrapingant.com/v2/'
 MAX_BYTES = 6_000_000
-MAX_CREDITS = 115  # Five plain policies + up to five browser policies + six roots.
-MAX_REQUESTS = 16
+MAX_CREDITS = 60  # Six browser reads, no auxiliary source requests.
+MAX_REQUESTS = 6
 LOCATION_JS = base64.b64encode(b"document.documentElement.setAttribute('data-loyalty-probe-location', location.href);").decode()
 
 
@@ -79,7 +79,7 @@ class FreeReader:
             raise ProbeError('invalid_key_format')
         self.key = key
         self.roots = {s['url'] for s in roots}
-        self.allowed = self.roots | {f'https://{urlsplit(u).netloc}/robots.txt' for u in self.roots}
+        self.allowed = set(self.roots)
         self.get = get
         self.ready = False
         self.reserved = 0
@@ -210,32 +210,12 @@ def sanitized_page(raw, requested_url, *, canonical_identity=False):
                        'detail_pages_read': 0, 'catalogue_complete': False}
 
 
-
-def read_policy(reader, url, info):
-    """Try the browser once only when the provider reports HTTP-route unreachable.
-
-    Provider404 is not an origin404 or permission to ignore robots. The fallback
-    must return a real identified document, then normal robots parsing still runs.
-    Provider auth/quota/challenge errors are never retried by this helper.
-    """
-    info['method'] = 'http'
-    try:
-        return reader.read(url, browser=False)
-    except ProbeError as exc:
-        if str(exc) != 'provider_http_404' or reader.halted:
-            raise
-    info.update(method='browser_after_unreachable_http', initial_error='provider_http_404')
-    status, raw, credits = reader.read(url, browser=True)
-    sanitized_page(raw, url)  # Require the current browser's exact policy URL.
-    return status, raw, credits
-
-
 def run(roots, key, out, *, get=requests.get, sleep=time.sleep, separate_ekp=False):
     if type(separate_ekp) is not bool:raise ProbeError("invalid_separate_ekp_mode")
     if separate_ekp:roots=[r for r in roots if r["id"]!="ekp"]
     ids=[sid for sid in SOURCE_IDS if not separate_ekp or sid!="ekp"]
-    budget=94 if separate_ekp else MAX_CREDITS
-    request_bound=13 if separate_ekp else MAX_REQUESTS
+    budget=50 if separate_ekp else MAX_CREDITS
+    request_bound=5 if separate_ekp else MAX_REQUESTS
     out = Path(out)
     out.mkdir(parents=True, exist_ok=True)
     # Remove only this probe's known prior page outputs, never unrelated files.
@@ -258,41 +238,19 @@ def run(roots, key, out, *, get=requests.get, sleep=time.sleep, separate_ekp=Fal
         return report
     reader = None
     try:
-        # Reuse the same crawl-rule and refusal semantics as the production reader.
-        from public_transport import robots_document, check_response
-        from protego import Protego
+        # Check actual target responses; auxiliary files do not authorize reads.
+        from public_transport import check_response
         reader = FreeReader(key, roots, get=get, max_credits=budget, max_requests=request_bound)
         reader.preflight()
         report['status'] = 'checked'; report['free_plan_confirmed'] = True
-        policies = {}; intervals = {}; last = {}
+        last = {}
         for cfg in roots:
             sid, url = cfg['id'], cfg['url']; host = urlsplit(url).netloc
             item = {'source_id': sid, 'requested_url': public_url(url),
                     'status': 'not_read', 'started_at': now()}
             report['sources'].append(item); save()
             try:
-                if host not in policies:
-                    policies[host] = None
-                    item['phase'] = 'robots'
-                    item['robots'] = {'state': 'fetching'}
-                    status, raw, _ = read_policy(reader, f'https://{host}/robots.txt', item['robots'])
-                    last[host] = time.monotonic()
-                    rules, state = robots_document(status, raw)
-                    policy = Protego.parse(rules)
-                    policies[host] = policy
-                    rate = policy.request_rate('LoyaltyCatalogResearchBot')
-                    intervals[host] = max(1.0, policy.crawl_delay('LoyaltyCatalogResearchBot') or 0,
-                                          rate.seconds / rate.requests if rate else 0)
-                    item['robots'].update(state=state, origin_http_status=status)
-                policy = policies[host]
-                if policy is None:
-                    raise ProbeError('robots_unavailable')
-                if not policy.can_fetch(url, 'LoyaltyCatalogResearchBot'):
-                    raise ProbeError('robots_disallow')
-                delay = max(0, intervals[host] - (time.monotonic() - last[host]))
-                if delay > 60:
-                    raise ProbeError('crawl_delay_exceeds_probe_budget')
-                sleep(delay)
+                sleep(max(0, 1.0 - (time.monotonic() - last.get(host, 0))))
                 item['phase'] = 'root'
                 status, raw, credits = reader.read(url, browser=True)
                 last[host] = time.monotonic()
@@ -309,7 +267,7 @@ def run(roots, key, out, *, get=requests.get, sleep=time.sleep, separate_ekp=Fal
                 # Existing transport helpers emit these bounded status codes.
                 reason = str(exc)
                 item['status'] = 'failed'
-                item['error'] = reason if re.fullmatch(r'(?:http_\d{3}|robots_[a-z_0-9]+|access_challenge)', reason) else 'source_check_failed'
+                item['error'] = reason if re.fullmatch(r'(?:http_\d{3}|access_challenge)', reason) else 'source_check_failed'
             except Exception:
                 item['status'] = 'failed'; item['error'] = 'source_check_failed'
             item['finished_at'] = now(); save()

@@ -150,13 +150,6 @@ class ImportReader:
     def close(self):self.clear('idle:'+self.run_id)
 
 
-def policy(obs):
-    cells=m.checked_observation(obs)
-    if obs['kind']!='robots' or any(c['type']!='string' for c in cells):raise ValueError('af_policy_representation')
-    text='\n'.join(c['value'] for c in cells)
-    if not re.search('^User-agent:',text,re.I|re.M) or '<html' in text.lower() or m.BLOCKED.search(text):raise ValueError('af_policy_unreadable')
-    return {'method':'google_import_policy_projection','sha256':m.digest(cells),'default_rules_not_overridden_globally':True,
-            'catalogue_read_basis':m.PERMISSION}
 
 
 def discovery(obs,scope='companies'):
@@ -197,14 +190,13 @@ def report(observed_at,rows,partners,errors,pol=None,*,scope='companies',air_par
       'status':('partial' if errors or len(rows)!=count else 'ok') if rows else 'failed',
       'discovered':count,'normalized':len(rows),'failed':len(errors),'errors':errors,
       'coverage':json.dumps(coverage,ensure_ascii=False),'region':'Источник: lang=ru; география применимости не проверена',
-      'observed_at':observed_at,'robots':pol}
+      'observed_at':observed_at}
 
 
 def walk(reader,run_id,observed_at,*,checkpoint=lambda:None,scope='companies'):
     if scope not in ('companies','airlines','all'):raise ValueError('af_scope_invalid')
     records=[];errors=[];partners={};pol=None;root_seen=False;air_partners={};air_roots=set()
     try:
-        pol=policy(reader.read(m.ROBOTS,'robots'));checkpoint()
         root_seen=discovery(reader.read(m.ROOT,'discovery'),scope);checkpoint()
         if scope in ('companies','all'):
             partners=m.catalog(reader.read(m.CATALOG,'catalog'));checkpoint()
@@ -298,8 +290,7 @@ def validate_bundle(folder,*,run_id,commit,clock):
         a,b=m.instant(obs['requested_at']),m.instant(obs['calculated_at'])
         if not last<=a<=b<=end or obs['url'] in seen:raise ValueError('af_bundle_observation_order')
         last=b;seen.add(obs['url']);kind=obs['kind']
-        if kind=='robots':pol=policy(obs);continue
-        if pol is None:raise ValueError('af_bundle_policy_not_recorded')
+        if kind=='robots':continue  # Legacy evidence; not required or enforced.
         if kind=='discovery':root_seen=discovery(obs,scope)
         elif kind=='catalog':
             if not root_seen or scope=='airlines':raise ValueError('af_bundle_catalogue_not_discovered')
@@ -322,7 +313,7 @@ def validate_bundle(folder,*,run_id,commit,clock):
                 airlines.add_children(air_partners,row['details']['public_airline']);expected.append(row)
             except ValueError:continue
     if expected!=bundle['records'] or len(bundle.get('sources',[]))!=1:raise ValueError('af_bundle_reconstruction')
-    supplied=bundle['sources'][0]
+    supplied={k:v for k,v in bundle['sources'][0].items() if k!='robots'}
     if supplied!=report(bundle['observed_at'],expected,partners,supplied['errors'],pol,scope=scope,air_partners=air_partners,air_roots=air_roots):raise ValueError('af_bundle_coverage')
     if sum(r['native_id'].startswith('partner:') for r in expected)>MAX_DETAILS or sum(r['native_id'].startswith('airline:') for r in expected)>airlines.MAX_AIRLINES:raise ValueError('af_bundle_detail_bound')
     validate_retries(audit,observations,partners,air_partners,start,end)
