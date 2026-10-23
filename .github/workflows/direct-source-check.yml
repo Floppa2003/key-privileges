@@ -35,7 +35,7 @@ jobs:
           set -euo pipefail
           python -m unittest discover -s loyalty/tests -v > direct-output/tests.log 2>&1
           node --test key/refresh.test.mjs > direct-output/key-tests.log 2>&1
-          python -m unittest discover -s diagnostics -p 'test_*.py' -v > direct-output/diagnostic-tests.log 2>&1
+          python -m unittest discover -s diagnostics/tests -p 'test_*.py' -v > direct-output/diagnostic-tests.log 2>&1
           git diff --exit-code
       - name: Install browser
         run: python -m playwright install --with-deps chromium
