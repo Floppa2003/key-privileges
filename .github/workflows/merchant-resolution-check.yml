@@ -1,0 +1,82 @@
+name: Qwen image resolution - nine paired CPU trials
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: merchant-resolution-check
+  cancel-in-progress: false
+jobs:
+  compare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 115
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          ref: ${{ github.sha }}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - name: Preserve execution and exact prepared scripts
+        run: |
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          mkdir -p resolution-result/code
+          git rev-parse HEAD > resolution-result/commit.txt
+          lscpu > resolution-result/cpu.txt
+          free -b > resolution-result/memory-before.txt
+          cp loyalty/experiments/local_visual/run_cpu.py loyalty/experiments/local_visual/test_cpu.py loyalty/experiments/resolution/
+          cp loyalty/experiments/resolution/*.py loyalty/experiments/resolution/*.json loyalty/experiments/resolution/*.sh loyalty/experiments/resolution/requirements.txt resolution-result/code/
+          cp .github/workflows/merchant-resolution-check.yml resolution-result/workflow.yml
+          echo '21847717487a5f9e528ad4b6be2aeb64991562c549b585298f8bad8bbf4c3ce6  loyalty/experiments/resolution/benchmark.py' | sha256sum -c -
+          echo '9be979aa260fa64dea9a3069caca52a0f8a2f79092516d7ab9a936eb7f99859a  loyalty/experiments/resolution/run_cpu.py' | sha256sum -c -
+      - name: Obtain exact previously accepted public page captures
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          repository: Floppa2003/key-privileges
+          run-id: '36288278400'
+          artifact-ids: '10921671754'
+          github-token: ${{ github.token }}
+          path: source-capture
+          merge-multiple: true
+      - name: Reconstruct identical inputs and run offline regressions
+        run: |
+          python -m pip install -r loyalty/requirements.txt -r loyalty/experiments/resolution/requirements.txt
+          PYTHONPATH=loyalty/experiments/resolution python - <<'PY'
+          from pathlib import Path
+          import run_cpu as old
+          import benchmark as b
+          source=Path('source-capture')
+          for case in b.CASES:
+              out=b.ROOT/'inputs'/case
+              out.mkdir(parents=True)
+              request=old.prepare(source,case,out)
+              request['messages'][-1].pop('images')
+              old.save(out/'request-without-image-bytes.json',request)
+          b.verify_inputs()
+          print('All 17 input hashes match the supplied benchmark package')
+          PY
+          python -m unittest discover -s loyalty/tests -v > resolution-result/tests-existing.log 2>&1
+          python -m unittest discover -s loyalty/experiments/resolution -p 'test_*.py' -v > resolution-result/tests-resolution.log 2>&1
+          node --test key/refresh.test.mjs > resolution-result/tests-key.log 2>&1
+          python loyalty/experiments/resolution/benchmark.py > resolution-result/plan.json
+      - name: Install verified local Ollama and verify model digest
+        timeout-minutes: 20
+        run: bash loyalty/experiments/resolution/setup.sh > resolution-result/setup.log 2>&1
+      - name: Compare original 1024 and 768 on this same runner
+        timeout-minutes: 95
+        run: |
+          loyalty/experiments/resolution/.venv/bin/python -u loyalty/experiments/resolution/benchmark.py --execute --sizes original 1024 768 --repeats 1 --out resolution-result/results > resolution-result/benchmark.log 2>&1
+      - name: Preserve inputs and setup diagnostics without weights
+        if: always()
+        run: |
+          test ! -d loyalty/experiments/resolution/inputs || cp -r loyalty/experiments/resolution/inputs resolution-result/
+          test ! -d loyalty/experiments/resolution/setup-logs || cp -r loyalty/experiments/resolution/setup-logs resolution-result/
+          find resolution-result -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > resolution-result/SHA256SUMS
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: qwen-resolution-${{ github.run_id }}
+          path: resolution-result/
+          retention-days: 3

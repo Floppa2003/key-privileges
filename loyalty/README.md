@@ -9,6 +9,10 @@ The current pipeline is v2: `collect_normalized.py` -> `normalized.json` / `offe
 
 Each record keeps a stable ID, program/partner, benefit, conditions, redemption text, lexical rates and promo codes, source dates/status, actual detail URL or shared-page locator, source-specific tables/fields, observation time and integrity hash. Normalization is **not** automatic confirmation of eligibility, current availability or a combinable final price. Unknown dates remain unknown; inspect conditions text too.
 
+## Model-based merchant extraction
+
+The selected model-based entrypoint is `merchant_extract.py` with `qwen/qwen3.8-27b:free` through Kilo, full prepared PNG/text input and bounded transient HTTP retries. See [Qwen execution and input contract](MERCHANT_QWEN.md). An unauthenticated catalog preflight checks the exact free multimodal/structured route before generation; there is no paid or alternate-model fallback. This review-only stage remains separate from the deterministic daily pipeline below and does not publish to Sheets. Previous Gemini/Qwen experiments and their raw results remain historical evidence.
+
 ## Running
 
 ```sh

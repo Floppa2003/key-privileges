@@ -1,0 +1,60 @@
+{
+  "version": "merchant-heldout-observed-v1",
+  "corpus_blob_sha": "15a41c408bc1947ad99a9493ee78895c4665af72",
+  "extractor_commit": "207eec7513185c4935bec8b9c345466ef1cdfb73",
+  "labels_frozen_before_predictions": true,
+  "expected_labels_sent_to_model": false,
+  "publication_allowed": false,
+  "trials": [
+    {
+      "id": "rostelecom-ekp-segments",
+      "raw_answer": "```json\n{\"source_sha256\": \"df96719956580acbdefa1ae80f29f9f4bea387f228ad1f8a11702a4249f47af4\", \"state\": \"candidates\", \"offers\": [{\"program\": [\"b0001\"], \"audience\": [], \"benefit\": [\"b0002\"], \"conditions\": [\"b0002\"], \"redemption\": [\"b0002\"], \"code\": {\"state\": \"not_stated\", \"value\": \"\", \"refs\": []}, \"dates\": [], \"uncertainties\": []}], \"notes\": \"\"}\n```",
+      "metadata": {
+        "scrapeId": "01a0d750-e9a5-72dd-bb48-cf8dff6433ee",
+        "statusCode": 200,
+        "sourceURL": "https://www.company.rt.ru/projects/innovations/news/d476187/",
+        "creditsUsed": 5
+      }
+    },
+    {
+      "id": "domknigi-ekp",
+      "raw_answer": "```json\n{\"source_sha256\": \"06797195a8e1ec9d31267edeb6065c2b5170b2fa9b5a296670c6b65d1301a3df\", \"state\": \"candidates\", \"offers\": [{\"program\": [\"b0001\"], \"audience\": [\"b0002\"], \"benefit\": [\"b0002\"], \"conditions\": [\"b0005\"], \"redemption\": [\"b0003\"], \"code\": {\"state\": \"required_not_published\", \"value\": \"\", \"refs\": []}, \"dates\": [{\"role\": \"publication\", \"refs\": [\"b0001\"]}, {\"role\": \"offer\", \"refs\": [\"b0006\"]}], \"uncertainties\": []}], \"notes\": \"\"}\n```",
+      "metadata": {
+        "scrapeId": "01a0d750-fc8f-752f-9b78-98e36b1544f9",
+        "statusCode": 200,
+        "sourceURL": "https://dk-spb.ru/news/news-company/dom-knigi-i-edinaya-karta-peterburzhtsa-zaklyuchili-partnerstvo/",
+        "creditsUsed": 5
+      }
+    },
+    {
+      "id": "itc-ekp-list-scope",
+      "raw_answer": "```json\n{\"source_sha256\": \"e87f373636cde6d3a66cd96a566440eb63caec86abbcd720bda10fdcde881ec4\", \"state\": \"candidates\", \"offers\": [{\"program\": [\"b0001\"], \"audience\": [], \"benefit\": [\"b0001\"], \"conditions\": [], \"redemption\": [], \"code\": {\"state\": \"not_stated\", \"value\": \"\", \"refs\": []}, \"dates\": [], \"uncertainties\": []}], \"notes\": \"\"}\n```",
+      "metadata": {
+        "scrapeId": "01a0d751-0c96-777c-80f0-6e8ef5539c3b",
+        "statusCode": 200,
+        "sourceURL": "https://itctraining.ru/about/",
+        "creditsUsed": 5
+      }
+    },
+    {
+      "id": "grandkarat-rzd-booking-window",
+      "raw_answer": "```json\n{\"source_sha256\": \"2eed1d01f4f7fa82046560c35a0538885645a91290761b6eb12af4fe405eeef2\", \"state\": \"candidates\", \"offers\": [{\"program\": [\"b0001\"], \"audience\": [], \"benefit\": [\"b0000\"], \"conditions\": [\"b0002\"], \"redemption\": [], \"code\": {\"state\": \"not_stated\", \"value\": \"\", \"refs\": []}, \"dates\": [{\"role\": \"offer\", \"refs\": [\"b0002\"]}]}], \"notes\": \"\"}\n```",
+      "metadata": {
+        "scrapeId": "01a0d751-26e9-7727-80c7-8f4c54a53476",
+        "statusCode": 200,
+        "sourceURL": "https://grandkarat.com/special-offer/",
+        "creditsUsed": 5
+      }
+    },
+    {
+      "id": "losevo-ekp-partnership-only",
+      "raw_answer": "```json\n{\"source_sha256\": \"0e0b3940c1225762d4dbc4fc5d399c83cec9c52d5b6b08b9950297238cbfb87e\", \"state\": \"candidates\", \"offers\": [], \"notes\": \"This page mentions \\\"Единая карта петеребуржца\\\" (Unified Petersburg Card) and states that \\\"Лосево Парк\\\" received an award for participating in this project. However, it does not describe any specific offers or benefits for cardholders. Therefore, no offers can be extracted.\"}\n```",
+      "metadata": {
+        "scrapeId": "01a0d751-4072-75d9-9ab7-73ef59128fd3",
+        "statusCode": 200,
+        "sourceURL": "https://ct-group.ru/novosti/60-baza-otdykha-losevo-park",
+        "creditsUsed": 5
+      }
+    }
+  ]
+}

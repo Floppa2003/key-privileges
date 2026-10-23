@@ -1,0 +1,14 @@
+{
+  "version": "merchant-json-prompt-trial-20260926",
+  "parent": "schema-trial-20260926.json",
+  "role": "development_comparison_not_new_holdout",
+  "reason": "Connector argument validator rejects every property in jsonOptions.schema (additionalProperties=false) before source/model execution. No response was obtained from that request.",
+  "schema_delivery": "JSON Schema serialized in jsonOptions.prompt, not provider-enforced schema",
+  "formats": ["json"],
+  "changes": "Move schema argument verbatim into prompt; retain source, as_of, instructions and local validator.",
+  "requests_sha256": "191282901d51267adc571e5589b67f6590a7723db655de9f64406eb631e487f3",
+  "attempts_per_case": 1,
+  "request_budget": 6,
+  "stop_on_rate_limit": true,
+  "publication_allowed": false
+}

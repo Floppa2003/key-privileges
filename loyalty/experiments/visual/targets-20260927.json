@@ -1,0 +1,20 @@
+[
+  {"id":"rzd_museum","merchant":"Музей железных дорог России","program":"ЕКП","url":"https://rzd-museum.ru/museum/news/v-muzej-zeleznyh-dorog-rossii-s-edinoj-kartoj-peterburzca"},
+  {"id":"golden_triangle","merchant":"Золотой Треугольник","program":"РЖД Бонус","url":"https://gthotel.ru/offers/"},
+  {"id":"iskusnica","merchant":"Искусница","program":"ЕКП","url":"https://iskusnica.spb.ru/loyalty-program/ekp/"},
+  {"id":"academia","merchant":"ACADEMIA","program":"ЕКП","url":"https://academia-suites.ru/about-news/programma-loyalnosti-ekp"},
+  {"id":"ladoga","merchant":"Ладожские Дюны","program":"ЕКП","url":"https://ladogabaza.ru/"},
+  {"id":"brawl","merchant":"iLocked BRAWL STARS","program":"ЕКП","url":"https://ilocked.ru/quest/brawl-stars"},
+  {"id":"lavka","merchant":"Книжная лавка писателей","program":"ЕКП","url":"https://lavkapisateley.spb.ru/stati/novosti/nash-novyj-partnjor--ekp"},
+  {"id":"elagin","merchant":"ЦПКиО им. С. М. Кирова","program":"ЕКП","url":"https://elaginpark.org/visitors/proekt-edinaya-karta-peterburzhtsa/"},
+  {"id":"station","merchant":"Station Hotels","program":"РЖД Бонус","url":"https://station-hotels.ru/blog/skidki-v-oteljah-peterburga-uchastnikam-programmy-rzhd-bonus/"},
+  {"id":"atrium","merchant":"Атриум Палас Отель","program":"РЖД Бонус","url":"https://atriumhotel.ru/offer/programma-loyalnosti-rzhd-bonus/"},
+  {"id":"nevsky","merchant":"Невский берег","program":"РЖД Бонус","url":"https://nevskybereg.ru/vokzaly-sankt-peterburga/"},
+  {"id":"fclm","merchant":"ФК Локомотив","program":"РЖД Бонус","url":"https://www.fclm.ru/news/n/sostav-x-rzd-bonus/"},
+  {"id":"get","merchant":"Экспозиционно-выставочный комплекс ГЭТ","program":"ЕКП","url":"https://xn--c1a4a6a.xn--p1acf/novosti/2024/3186_evk_get_teper_mozhno_poseschat_so_skidkoy_po_edinoy_karte_peterburzhca"},
+  {"id":"muzcomedy","merchant":"Театр музыкальной комедии","program":"ЕКП","url":"https://www.muzcomedy.ru/info/programmy_loyalnosti"},
+  {"id":"pushkin","merchant":"Всероссийский музей А. С. Пушкина","program":"ЕКП","url":"https://www.museumpushkin.ru/novosti/vse_edino.html"},
+  {"id":"grandkarat","merchant":"Grand Karat","program":"РЖД Бонус","url":"https://grandkarat.com/special-offer/"},
+  {"id":"diplomat","merchant":"Отель Дипломат","program":"РЖД Бонус","url":"https://diplomat-hotel.spb.ru/predlozhenija/rzhd-bonus/"},
+  {"id":"taivas","merchant":"Taivas","program":"РЖД Бонус","url":"https://taivashotel.ru/akcii_rzdbonus"}
+]
