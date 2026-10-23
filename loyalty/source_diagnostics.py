@@ -53,11 +53,11 @@ def category(reason):
         return 'not_found'
     if reason.startswith('robots_'):
         return 'robots_unavailable'
-    if 'Timeout' in reason or 'timeout' in reason.lower() or 'time_budget' in reason:
+    if 'Timeout' in reason or 'timeout' in reason.lower() or 'timed_out' in reason.lower() or 'time_budget' in reason:
         return 'timeout'
     if re.search(r'http_5\d\d\b', reason):
         return 'upstream_unavailable'
-    if any(v in reason.lower() for v in ('transport','connection','name_not_resolved','empty_response')):
+    if any(v in reason.lower() for v in ('transport','connection','name_not_resolved','empty_response','network_changed')):
         return 'transport'
     return 'extraction'
 
