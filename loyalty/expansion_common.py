@@ -89,4 +89,5 @@ def hold_reason(row,details,snap):
     return snap['excluded'].get(native) if native in snap['ids'] else 'not_in_complete_inventory'
 
 def add_error(report,exc,native):
-    report['errors'].append({'phase':'detail','native':native,'reason':str(exc)[:160] if isinstance(exc,(ValueError,RuntimeError)) else type(exc).__name__})
+    from source_diagnostics import error_record
+    report['errors'].append({**error_record(exc,'detail'),'native':native})

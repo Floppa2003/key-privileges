@@ -1,7 +1,7 @@
 name: Source recovery acceptance
 on:
   push:
-    branches: [fix/source-errors-20261022]
+    branches: [fix/source-errors-20261022, fix/remaining-source-errors-20261023]
     paths: [.github/workflows/source-recovery-check.yml, loyalty/**]
   workflow_dispatch:
 permissions:
@@ -41,7 +41,7 @@ jobs:
       - name: Check repaired sources before the complete collection
         id: smoke
         env:
-          SOURCE_IDS: hse_alumni,smartavia_rules,mantera_moments,af_parkfly,af_primbank_rules,t2_mixx,t2_selection,t2_mixx_s,t2_powerbank,t2_mixx_rules
+          SOURCE_IDS: hse_alumni,smartavia_rules,mantera_moments,af_parkfly,af_primbank_rules,t2_mixx,t2_selection,t2_mixx_s,t2_powerbank,t2_mixx_rules,t2_registration_rules,x5_partners_public
         run: |
           set -euo pipefail
           xvfb-run -a python loyalty/collect_normalized.py --limit 500 --sources "$SOURCE_IDS" --out repair-output/smoke 2>&1 | tee repair-output/smoke.log
