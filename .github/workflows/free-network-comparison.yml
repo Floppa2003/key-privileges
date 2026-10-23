@@ -1,8 +1,5 @@
 name: Free alternate-network comparison
 on:
-  push:
-    branches: [main]
-    paths: [diagnostics/free_residential_comparison.py, .github/workflows/free-network-comparison.yml]
   workflow_dispatch:
 permissions:
   contents: read

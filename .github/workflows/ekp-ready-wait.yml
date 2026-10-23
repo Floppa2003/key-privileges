@@ -1,8 +1,5 @@
 name: EKP bounded application readiness
 on:
-  push:
-    branches: [main]
-    paths: [diagnostics/ekp_ready_wait.py, .github/workflows/ekp-ready-wait.yml]
   workflow_dispatch:
 permissions:
   contents: read

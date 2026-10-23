@@ -1,8 +1,5 @@
 name: Check Alfa partner-offers public access
 on:
-  push:
-    branches: [main]
-    paths: [.github/workflows/public-detail-recheck.yml]
   workflow_dispatch:
 permissions:
   contents: read

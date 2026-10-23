@@ -1,8 +1,5 @@
 name: Remaining policy source-mode comparison
 on:
-  push:
-    branches: [main]
-    paths: [diagnostics/plain_browser_policy.py, .github/workflows/plain-browser-policy.yml]
   workflow_dispatch:
 permissions:
   contents: read

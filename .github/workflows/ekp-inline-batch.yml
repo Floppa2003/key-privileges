@@ -1,8 +1,5 @@
 name: EKP inline public detail batch
 on:
-  push:
-    branches: [main]
-    paths: [diagnostics/ekp_inline_batch.py, diagnostics/ekp_inline_batch.js, .github/workflows/ekp-inline-batch.yml]
   workflow_dispatch:
 permissions:
   contents: read

@@ -1,8 +1,5 @@
 name: EKP bounded catalogue and detail comparison
 on:
-  push:
-    branches: [main]
-    paths: [diagnostics/ekp_detail_probe.py, diagnostics/ekp_catalogue_full_ui.js, .github/workflows/ekp-detail-probe.yml]
   workflow_dispatch:
 permissions:
   contents: read

@@ -1,8 +1,6 @@
 name: EKP one-browser API pagination
 on:
-  push:
-    branches: [main]
-    paths: [diagnostics/ekp_session_api.py, diagnostics/ekp_session_api.js, .github/workflows/ekp-session-api.yml]
+  workflow_dispatch:
 permissions:
   contents: read
 concurrency:
