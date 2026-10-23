@@ -1,0 +1,59 @@
+name: Stage manual diagnostic workflow patch
+on:
+  push:
+    branches: [fix/diagnostics-manual-20261024]
+    paths: [.github/workflows/stage-manual-diagnostics.yml]
+permissions:
+  contents: write
+jobs:
+  stage:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - run: python -m pip install PyYAML==6.0.3
+      - name: Validate event-only patch and stage blobs without moving refs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import hashlib, json, os, re, urllib.request
+          from pathlib import Path
+          import yaml
+          names=['coral-browser-inventory.yml','coral-discovered-pages.yml','ekp-api-bridge.yml','ekp-bulk-public.yml','ekp-detail-probe.yml','ekp-inline-batch.yml','ekp-linked-conditions.yml','ekp-pagination-ui.yml','ekp-public-capture.yml','ekp-ready-wait.yml','ekp-response-contract.yml','ekp-session-api.yml','free-network-comparison.yml','plain-browser-policy.yml','practical-frontier.yml','public-detail-recheck.yml','rzd-public-announcement-check.yml']
+          # A scheduled collector is never converted to a diagnostic-only workflow.
+          names.remove('ekp-linked-conditions.yml')
+          out=Path('staged-workflows');out.mkdir()
+          rows=[]
+          for name in names:
+              path=Path('.github/workflows')/name
+              old=path.read_text();before=yaml.load(old,Loader=yaml.BaseLoader)
+              assert 'schedule' not in before['on'], name
+              assert 'main' in before['on']['push']['branches'], name
+              new=re.sub(r'(?ms)^  push:\n.*?(?=^  [^ \n]|^[^ \n]|\Z)','',old,count=1)
+              if not re.search(r'^  workflow_dispatch:',new,re.M):
+                  new=new.replace('on:\n','on:\n  workflow_dispatch:\n',1)
+              after=yaml.load(new,Loader=yaml.BaseLoader)
+              expected=before['on'].copy();expected.pop('push');expected.setdefault('workflow_dispatch','')
+              assert after['on']==expected, name
+              before['on']=after['on'];assert before==after, name
+              assert 'push' not in after['on'] and 'workflow_dispatch' in after['on'], name
+              raw=new.encode();sha=hashlib.sha1(b'blob '+str(len(raw)).encode()+b'\x00'+raw).hexdigest()
+              request=urllib.request.Request('https://api.github.com/repos/Floppa2003/key-privileges/git/blobs',
+                  data=json.dumps({'content':new,'encoding':'utf-8'}).encode(),method='POST',
+                  headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Content-Type':'application/json','Accept':'application/vnd.github+json'})
+              with urllib.request.urlopen(request,timeout=20) as response:stored=json.load(response)
+              assert stored['sha']==sha
+              (out/name).write_text(new)
+              rows.append({'path':str(path),'sha':sha,'bytes':len(raw),'only_event_changed':True})
+          (out/'manifest.json').write_text(json.dumps(rows,indent=2))
+          print(json.dumps(rows,indent=2))
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: staged-manual-diagnostics-${{ github.run_id }}
+          path: staged-workflows/
+          retention-days: 14
