@@ -113,4 +113,55 @@ class NonblockingDiagnosticsTests(unittest.TestCase):
         self.assertFalse(health['nordwind']['blocking'])
         self.assertTrue(health['smartavia_rules']['blocking'])
 
+
+class OptionalProbeExecutionTests(unittest.TestCase):
+    """A failed optional worker must not negate completed collector output."""
+    def make_bundle(self, probe_state=None, *, corrupt=False):
+        stamp='2026-10-23T12:00:00+00:00'
+        reports=[{'source_id':'smartavia_rules','normalized':1,'status':'ok',
+                  'errors':[],'observed_at':stamp,'collection_state':'finished'}]
+        if probe_state is not None:
+            reports.append({'source_id':'nordwind','normalized':0,'status':'failed',
+                            'errors':[{'reason':'collection_incomplete'}],
+                            'observed_at':stamp,'collection_state':probe_state})
+        return {'observed_at':stamp,'sources':reports,
+                'records':[{'source_id':'smartavia_rules'}],
+                'collection_runtime':{'version':1,'state':'deadline',
+                    'selected_sources':2,'completed_sources':99 if corrupt else 1}}
+
+    def passes(self,bundle):
+        from collection_runtime import execution_health
+        expected=['smartavia_rules','nordwind']
+        return health_passes(execution_health(bundle,expected),
+                             health_summary(bundle,expected_sources=expected))
+
+    def test_missing_access_probe_does_not_block_collector_output(self):
+        self.assertTrue(self.passes(self.make_bundle()))
+
+    def test_unfinished_access_probe_does_not_block_collector_output(self):
+        for state in ('not_started','interrupted'):
+            with self.subTest(state=state):
+                self.assertTrue(self.passes(self.make_bundle(state)))
+
+    def test_probe_worker_exception_remains_diagnostic(self):
+        b=self.make_bundle('finished')
+        b['sources'][1]['coverage']='collection_worker_exception'
+        b['collection_runtime'].update(state='complete',completed_sources=2)
+        self.assertTrue(self.passes(b))
+
+    def test_unfinished_real_collector_still_blocks(self):
+        b=self.make_bundle('finished')
+        b['sources'][0]['collection_state']='interrupted'
+        self.assertFalse(self.passes(b))
+
+    def test_probe_failure_cannot_hide_corrupt_execution_counts(self):
+        self.assertFalse(self.passes(self.make_bundle('interrupted',corrupt=True)))
+
+    def test_probe_failure_cannot_hide_unexpected_source_report(self):
+        b=self.make_bundle('interrupted')
+        b['sources'].append({'source_id':'af_parkfly','normalized':0,'status':'failed',
+                             'errors':[],'collection_state':'finished'})
+        b['collection_runtime']['completed_sources']=2
+        self.assertFalse(self.passes(b))
+
 if __name__ == '__main__': unittest.main()

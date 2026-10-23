@@ -2,13 +2,13 @@ name: Direct source reads acceptance
 on:
   push:
     branches: [fix/direct-source-reads-20261023]
-    paths: [.github/workflows/direct-source-check.yml]
+    paths: [.github/workflows/direct-source-check.yml, loyalty/**]
   workflow_dispatch:
 permissions:
   contents: read
 concurrency:
   group: direct-source-reads-acceptance
-  cancel-in-progress: false
+  cancel-in-progress: true
 jobs:
   verify:
     runs-on: ubuntu-24.04

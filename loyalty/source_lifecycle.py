@@ -210,7 +210,13 @@ def health_summary(bundle, *, expected_sources=None):
     return health
 
 def health_passes(execution, health):
-    return execution['healthy'] and not any(r['blocking'] for r in health)
+    problems = set(execution.get('missing_sources', [])) | set(execution.get('unfinished_sources', [])) | set(execution.get('worker_exceptions', []))
+    probes = {r['source_id'] for r in health if r['route_kind'] == 'access_probe'}
+    # Preserve the raw execution status. Only known optional probe problems can
+    # be nonblocking; corrupt counts, unknown states and real workers cannot.
+    execution_ok = execution['healthy'] or (
+        execution.get('integrity_valid', False) and bool(problems) and problems <= probes)
+    return bool(execution_ok) and not any(r['blocking'] for r in health)
 
 
 if __name__ == '__main__':
