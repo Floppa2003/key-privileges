@@ -1,4 +1,4 @@
-"""Daily public-page LLM queue. Persistent progress; no publishing or paid fallback."""
+"""Daily public-page LLM queue. Persistent progress; independent free quotas, no publishing or paid fallback."""
 from __future__ import annotations
 
 import argparse
@@ -18,6 +18,28 @@ from model import clean_url
 HERE = Path(__file__).resolve().parent
 DAILY_REQUESTS = 50
 REQUEST_INTERVAL = 7
+# Harbor's 200/day is OUR workload ceiling, not a claim about its weekly allowance.
+PROVIDER_DAILY_LIMITS = {'orcarouter': DAILY_REQUESTS, 'tokenharbor': 200}
+PROVIDER_INTERVALS = {'orcarouter': REQUEST_INTERVAL, 'tokenharbor': 2}
+POOL_REQUESTS = sum(PROVIDER_DAILY_LIMITS.values())
+MAX_CAPTURE_PAGES = 300
+
+
+def provider_state(state: dict, provider: str) -> dict:
+    extractor.provider_config(provider)
+    # Keep the original Orca ledger in place: no quota reset when upgrading v1.
+    if provider == 'orcarouter':
+        return state
+    return state.setdefault('providers', {}).setdefault(provider, {
+        'usage': {'date': '', 'attempts': 0}, 'provider_not_before': 0, 'last_request_at': 0})
+
+
+def provider_eligible(state: dict, provider: str, timestamp: float) -> bool:
+    ledger = provider_state(state, provider)
+    day = datetime.fromtimestamp(timestamp, timezone.utc).date().isoformat()
+    return ledger.get('provider_not_before', 0) <= timestamp and not (
+        ledger['usage']['date'] == day and ledger['usage']['attempts'] >= PROVIDER_DAILY_LIMITS[provider])
+
 
 
 def new_state() -> dict:
@@ -88,8 +110,11 @@ def fingerprint(document: dict, schema: dict, system: str) -> str:
 
 def process_documents(documents: list[dict], state: dict, state_path: Path, out: Path,
                       key: str, schema: dict, system: str, *, session=None,
-                      now=time.time, sleep=time.sleep, max_requests=DAILY_REQUESTS, time_budget=1500) -> dict:
-    if not 1 <= max_requests <= DAILY_REQUESTS:
+                      now=time.time, sleep=time.sleep, max_requests=DAILY_REQUESTS, time_budget=1500,
+                      provider='orcarouter') -> dict:
+    ledger = provider_state(state, provider)
+    daily_limit = PROVIDER_DAILY_LIMITS[provider]
+    if not 1 <= max_requests <= daily_limit:
         raise ValueError('daily_request_budget')
     out.mkdir(parents=True, exist_ok=False)
     deadline = now() + time_budget
@@ -107,35 +132,36 @@ def process_documents(documents: list[dict], state: dict, state_path: Path, out:
             write_state(state_path, state)
             continue
         day = datetime.fromtimestamp(now(), timezone.utc).date().isoformat()
-        if state['usage']['date'] != day:
-            state['usage'] = {'date': day, 'attempts': 0}
-        remaining = min(DAILY_REQUESTS - state['usage']['attempts'],
+        if ledger['usage']['date'] != day:
+            ledger['usage'] = {'date': day, 'attempts': 0}
+        remaining = min(daily_limit - ledger['usage']['attempts'],
                         max_requests - summary['http_attempts'])
-        if state.get('provider_not_before', 0) > now() or remaining <= 0 or now() >= deadline:
+        if ledger.get('provider_not_before', 0) > now() or remaining <= 0 or now() >= deadline:
             summary.update(status='deferred', not_attempted=[d['id'] for d in documents[index:]])
             break
-        wait = state.get('last_request_at', 0) + REQUEST_INTERVAL - now()
+        wait = ledger.get('last_request_at', 0) + PROVIDER_INTERVALS[provider] - now()
         if wait > 0:
             sleep(wait)
         folder = out / ident
-        payload = extractor.prepare_document(document, folder, schema, system)
+        payload = extractor.prepare_document(document, folder, schema, system, provider=provider)
         # Reserve before IO. An interrupted request must not silently restore its quota.
         reserved = min(extractor.MAX_ATTEMPTS, remaining)
-        state['usage']['attempts'] += reserved
-        state['last_request_at'] = now()
+        ledger['usage']['attempts'] += reserved
+        ledger['last_request_at'] = now()
         item['status'] = 'in_flight'
         write_state(state_path, state)
         result = extractor.infer(payload, schema, folder / 'direct', key,
-                                 session=session, sleep=sleep, max_attempts=reserved)
+                                 session=session, sleep=sleep, max_attempts=reserved, provider=provider)
         attempts = result['http_attempts']
-        state['usage']['attempts'] -= reserved - attempts
-        state['last_request_at'] = now()
+        ledger['usage']['attempts'] -= reserved - attempts
+        ledger['last_request_at'] = now()
         summary['http_attempts'] += attempts
         item.update(status=result['status'], last_checked=now(), last_result=result)
         if result['status'] == 'completed':
             item.update(fingerprint=digest,
                         extracted=extractor.strict_json((folder / 'direct/extracted.json').read_text()),
                         inferred_as_of=document['target']['as_of'], inferred_at=now(),
+                        inferred_provider=provider, returned_model=result.get('returned_model'),
                         publication_allowed=False)
             summary['completed'] += 1
         else:
@@ -144,7 +170,7 @@ def process_documents(documents: list[dict], state: dict, state_path: Path, out:
         stop = result.get('stop_batch_reason')
         if stop == 'provider_rate_limited':
             # No server reset hint means temporary saturation, not an invented daily reset.
-            state['provider_not_before'] = now() + max(60, result.get('retry_after_seconds', 0))
+            ledger['provider_not_before'] = now() + max(60, result.get('retry_after_seconds', 0))
         write_state(state_path, state)
         extractor.save(out / 'summary.json', summary)
         if stop or result['status'] == 'credential_echo':
@@ -152,10 +178,74 @@ def process_documents(documents: list[dict], state: dict, state_path: Path, out:
                            status='deferred' if stop == 'provider_rate_limited' else 'incomplete',
                            not_attempted=[d['id'] for d in documents[index+1:]])
             break
-    summary.update(daily_usage=state['usage'], provider_not_before=state.get('provider_not_before', 0),
+    summary.update(provider=provider, daily_usage=ledger['usage'], provider_not_before=ledger.get('provider_not_before', 0),
                    queue_size=len(state['items']))
     write_state(state_path, state)
     extractor.save(out / 'summary.json', summary)
+    return summary
+
+
+def process_pool(documents: list[dict], state: dict, state_path: Path, out: Path,
+                 keys: dict, schema: dict, system: str, *, sessions=None,
+                 now=time.time, sleep=time.sleep, max_requests=POOL_REQUESTS,
+                 time_budget=4500, providers=('orcarouter', 'tokenharbor')) -> dict:
+    """Try independent free accounts in order, never regenerate a model answer.
+
+    Both routes share the evidence/contract fingerprint, not serving credentials.
+    Exact serving route and returned snapshot remain attached to each accepted result.
+    """
+    if not 1 <= max_requests <= POOL_REQUESTS:
+        raise ValueError('pool_request_budget')
+    if not providers or len(set(providers)) != len(providers):
+        raise ValueError('invalid_provider_order')
+    for provider in providers:
+        extractor.provider_config(provider)
+    out.mkdir(parents=True, exist_ok=False)
+    deadline = now() + time_budget
+    def cached(document):
+        item = state['items'].get(document['id'], {})
+        return 'extracted' in item and item.get('fingerprint') == fingerprint(document, schema, system)
+    initially_cached = {d['id'] for d in documents if cached(d)}
+    for ident in initially_cached:
+        state['items'][ident].update(last_checked=now(), status='cached')
+    summary = {'status': 'completed', 'completed': 0, 'cached': len(initially_cached),
+               'http_attempts': 0, 'providers': [], 'pending': [], 'publication_allowed': False}
+    no_retry = set()
+    for provider in providers:
+        pending = [d for d in documents if not cached(d) and d['id'] not in no_retry]
+        if not pending or summary['http_attempts'] >= max_requests or now() >= deadline:
+            break
+        key = keys.get(provider, '')
+        if not isinstance(key, str) or not key.strip():
+            summary['providers'].append({'provider': provider, 'status': 'missing_key', 'http_attempts': 0})
+            continue
+        result = process_documents(pending, state, state_path, out / provider, key, schema, system,
+            provider=provider, session=(sessions or {}).get(provider), now=now, sleep=sleep,
+            max_requests=min(PROVIDER_DAILY_LIMITS[provider], max_requests-summary['http_attempts']),
+            time_budget=max(0, deadline-now()))
+        summary['providers'].append(result)
+        summary['completed'] += result['completed']
+        summary['http_attempts'] += result['http_attempts']
+        # Validation failures are model answers, not quota failures. Unknown network
+        # outcomes are also not retried via a second account in this run.
+        no_retry.update(row['id'] for row in result['results']
+                        if row['status'] in ('failed_validation', 'transport_error'))
+        stop = result.get('stop_reason')
+        if stop in ('credential_echo', 'nonzero_reported_cost', 'invalid_reported_cost'):
+            summary['stop_reason'] = stop
+            break
+        extractor.save(out/'summary.json', summary)
+    summary['pending'] = [d['id'] for d in documents if not cached(d)]
+    summary['queue_size'] = len(state['items'])
+    if summary.get('stop_reason') or no_retry:
+        summary['status'] = 'incomplete'
+    elif not documents:
+        summary['status'] = 'no_input'
+    elif summary['pending']:
+        usable = any(isinstance(keys.get(p), str) and keys[p].strip() for p in providers)
+        summary['status'] = 'deferred' if usable else 'unavailable'
+    write_state(state_path, state)
+    extractor.save(out/'summary.json', summary)
     return summary
 
 
@@ -206,9 +296,10 @@ async def capture_page(browser, target: dict, out: Path) -> dict:
                      text, images, source_url=url)
 
 
-async def prepare_queue(state_path: Path, catalog_path: Path, out: Path, max_pages: int) -> dict:
+async def prepare_queue(state_path: Path, catalog_path: Path, out: Path, max_pages: int,
+                        providers=('orcarouter',)) -> dict:
     from playwright.async_api import async_playwright
-    if not 1 <= max_pages <= 100: raise ValueError('capture_budget')
+    if not 1 <= max_pages <= MAX_CAPTURE_PAGES: raise ValueError('capture_budget')
     state = read_state(state_path)
     catalog = extractor.strict_json(catalog_path.read_text()) if catalog_path.exists() else None
     targets = discover_targets(catalog, json.loads((HERE/'partner_pages.json').read_text()),
@@ -217,8 +308,7 @@ async def prepare_queue(state_path: Path, catalog_path: Path, out: Path, max_pag
     out.mkdir(parents=True, exist_ok=False)
     documents, observations = [], []
     day = datetime.now(timezone.utc).date().isoformat()
-    eligible = state.get('provider_not_before', 0) <= time.time()
-    eligible = eligible and not (state['usage']['date'] == day and state['usage']['attempts'] >= DAILY_REQUESTS)
+    eligible = any(provider_eligible(state, provider, time.time()) for provider in providers)
     if eligible:
         async with async_playwright() as pw:
             browser = await pw.chromium.launch(headless=True)
@@ -265,12 +355,19 @@ def main(argv=None) -> int:
     extract.add_argument('--manifest', type=Path, required=True)
     extract.add_argument('--max-requests', type=int, default=DAILY_REQUESTS)
     extract.add_argument('--execute', action='store_true')
-    for command in (prepare, extract):
+    pool = sub.add_parser('pool')
+    pool.add_argument('--manifest', type=Path, required=True)
+    pool.add_argument('--max-requests', type=int, default=POOL_REQUESTS)
+    pool.add_argument('--execute', action='store_true')
+    pool.add_argument('--providers', default='orcarouter,tokenharbor')
+    prepare.add_argument('--providers', default='orcarouter')
+    for command in (prepare, extract, pool):
         command.add_argument('--state', type=Path, required=True)
         command.add_argument('--out', type=Path, required=True)
     args = parser.parse_args(argv)
     if args.command == 'prepare':
-        result = asyncio.run(prepare_queue(args.state, args.catalog, args.out, args.max_pages))
+        result = asyncio.run(prepare_queue(args.state, args.catalog, args.out, args.max_pages,
+                                          providers=tuple(args.providers.split(','))))
     elif not args.execute:
         args.out.mkdir(parents=True, exist_ok=False)
         result = {'status': 'prepared_not_inferred', 'http_attempts': 0, 'publication_allowed': False}
@@ -279,13 +376,19 @@ def main(argv=None) -> int:
         import os
         state = read_state(args.state)
         manifest = extractor.strict_json(args.manifest.read_text())
-        documents = extractor.load_manifest(args.manifest, max_documents=100) if manifest['documents'] else []
-        result = process_documents(documents, state, args.state, args.out,
-            os.environ.get('ORCAROUTER_API_KEY', ''),
-            extractor.strict_json((HERE/'merchant_offer.schema.json').read_text()),
-            (HERE/'merchant_prompt.txt').read_text(), max_requests=args.max_requests)
+        documents = extractor.load_manifest(args.manifest, max_documents=MAX_CAPTURE_PAGES) if manifest['documents'] else []
+        schema = extractor.strict_json((HERE/'merchant_offer.schema.json').read_text())
+        system = (HERE/'merchant_prompt.txt').read_text()
+        if args.command == 'pool':
+            providers = tuple(args.providers.split(','))
+            keys = {p: os.environ.get(extractor.provider_config(p)['secret'], '') for p in providers}
+            result = process_pool(documents, state, args.state, args.out, keys, schema, system,
+                                  max_requests=args.max_requests, providers=providers)
+        else:
+            result = process_documents(documents, state, args.state, args.out,
+                os.environ.get('ORCAROUTER_API_KEY', ''), schema, system, max_requests=args.max_requests)
         # Quota deferral is a normal queue outcome, not a fictitious parser failure.
-        if not documents:
+        if not documents and args.command == 'extract':
             today = datetime.now(timezone.utc).date().isoformat()
             limited = state.get('provider_not_before', 0) > time.time() or (
                 state['usage']['date'] == today and state['usage']['attempts'] >= DAILY_REQUESTS)

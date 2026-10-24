@@ -7,7 +7,7 @@ User selection: 2026-10-24. This is the prepared-page model entrypoint, not a re
 - Credential: `ORCAROUTER_API_KEY` (GitHub Actions secret; never a CLI argument).
 - One stage: full text + all ordered PNG bytes + TARGET + unchanged prompt/schema -> one final JSON.
 - `temperature=1`, `max_tokens=8192`, `reasoning={enabled:true,effort:high}`.
-- No search tools, plugins, URL retrieval, agent loop, server-side response_format requirement, catalog/capability preflight, paid route or automatic fallback. Source collection occurs separately without the model key.
+- No search tools, plugins, URL retrieval, agent loop, server-side response_format requirement, catalog/capability preflight, paid route or model fallback. The daily queue can use the separately budgeted Token Harbor free route of the same model; see DAILY_LLM.md. Source collection occurs separately without the model key.
 
 ## Use
 
@@ -33,7 +33,7 @@ Every document keeps original text/PNGs, a request manifest, exact payload hash,
 
 One outer Markdown JSON fence is accepted without rewriting the JSON. Multiple competing objects, duplicate keys, nonfinite numbers, truncated generations and tool calls remain explicit failures. A failed answer does not suppress independent later documents. No second model, answer repair, merchant-specific edits or hidden regeneration is used.
 
-An exhausted 429 limit stops the entire batch and retains the pending document IDs. Retry-After and OrcaRouter JSON retry_after_seconds are lower bounds; the larger valid hint wins. No sleeping for hours in a runner and no switching keys/providers to bypass the limit.
+An exhausted 429 limit stops the entire batch and retains the pending document IDs. Retry-After and OrcaRouter JSON retry_after_seconds are lower bounds; the larger valid hint wins. No sleeping for hours in a runner and no rotating keys to multiply a provider quota. The daily pool can continue using a different provider's legitimately separate free allowance.
 
 At most three identical attempts are allowed for explicit transient HTTP errors, respecting Retry-After and a bounded retry budget. Network timeouts have an unknown execution outcome and are not silently retried. Explicit nonretryable errors and authorization/payment refusals stop further batch requests. An unexpected nonzero/invalid reported cost also stops further calls but does not discard an otherwise valid answer. Missing cost metadata does not prove zero spending; balances are not audited here.
 
