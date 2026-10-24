@@ -1,0 +1,73 @@
+name: Free provider final offline replay 20261024
+on:
+  push:
+    branches: [loyalty/free-provider-eval-20261024]
+    paths: [.github/workflows/free-provider-replay-20261024.yml]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  replay:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - name: Validate final code without model credentials
+        run: |
+          python -m pip install -r loyalty/requirements.txt Pillow==12.3.0 jsonschema==4.26.0 psutil==7.0.0
+          mkdir -p output
+          git rev-parse HEAD > output/commit.txt
+          git archive HEAD -o output/source.zip
+          python -m unittest discover -s loyalty/experiments/free_providers_20261024 -v > output/provider-tests.log 2>&1
+          export PYTHONPATH="$GITHUB_WORKSPACE/loyalty/experiments/local_visual:$GITHUB_WORKSPACE/loyalty/experiments/simple_thinking"
+          python -m unittest discover -s loyalty/experiments/cloud_json -v > output/cloud-tests.log 2>&1
+          node --test key/refresh.test.mjs > output/key-tests.log 2>&1
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          repository: Floppa2003/key-privileges
+          run-id: '40077128489'
+          artifact-ids: '12553509193,12553633280,12553174505'
+          github-token: ${{ github.token }}
+          path: saved/
+      - name: Replay every completed final answer; preserve HTTP failures; no content repair
+        run: |
+          python - <<'PY'
+          import hashlib,json,sys
+          from pathlib import Path
+          sys.path.insert(0,'loyalty/experiments/free_providers_20261024')
+          import routes
+          rows=[];shared={}
+          for path in sorted(Path('saved').rglob('measurement.json')):
+              row=json.loads(path.read_text());folder=path.parent
+              manifest=json.loads((folder/'input-manifest.json').read_text())
+              common={k:manifest[k]for k in ('system','text','schema','images')}
+              if row['case']in shared:assert shared[row['case']]==common,'unequal_inputs'
+              shared[row['case']]=common
+              if (folder/'answer.txt').exists():
+                  raw=(folder/'answer.txt').read_text()
+                  value=routes.validate(raw,manifest['schema'])
+                  out=Path('output/replayed')/row['requested_model'].replace('/','__').replace(':','_')/row['case'];out.mkdir(parents=True)
+                  (out/'extracted.json').write_text(json.dumps(value,ensure_ascii=False,indent=2))
+                  row['original_transport_status']=row['status']
+                  row['status']='completed';row['schema_valid']=True
+                  row['output_wrapper']='markdown_fence'if raw.strip().startswith('```')else'none'
+                  row['raw_answer_sha256']=hashlib.sha256((folder/'answer.txt').read_bytes()).hexdigest()
+              rows.append(row)
+          assert len(rows)==16
+          assert sum(x['status']=='completed'for x in rows)==9
+          assert sum(x.get('output_wrapper')=='markdown_fence'for x in rows)==4
+          summary={'new_inference_calls':0,'same_inputs_across_models':True,'records':rows}
+          Path('output/replay-summary.json').write_text(json.dumps(summary,ensure_ascii=False,indent=2))
+          print(json.dumps({'cases':len(shared),'attempts':len(rows),'valid_answers':9,'lossless_fences':4,'new_inference_calls':0}))
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: free-provider-final-replay-${{ github.run_id }}
+          path: output/
+          retention-days: 30
