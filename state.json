@@ -45,7 +45,106 @@
         "partner": "VIP-ROOMS.RU",
         "program": "Аэрофлот Бонус",
         "source_id": "af_viprooms"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1792879262.968378,
+      "last_result": {
+        "provider": "tokenharbor",
+        "requested_model": "deepseek-v4.1-flash:free",
+        "endpoint": "https://tokenharbor.ai/v1/chat/completions",
+        "request_body_sha256": "9e670d538a55f57acdd31a2bac767630c9396abbccf67e4c02339ee83af9ac51",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "9e670d538a55f57acdd31a2bac767630c9396abbccf67e4c02339ee83af9ac51",
+            "seconds": 93.18146843400001,
+            "http_status": 200,
+            "returned_model": "deepseek-v4.1-flash",
+            "usage": {
+              "prompt_tokens": 2146,
+              "completion_tokens": 14639,
+              "total_tokens": 16785,
+              "prompt_tokens_details": {
+                "cached_tokens": 2048
+              },
+              "cache_creation_input_tokens": 0,
+              "cache_read_input_tokens": 2048
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4.1-flash",
+        "usage": {
+          "prompt_tokens": 2146,
+          "completion_tokens": 14639,
+          "total_tokens": 16785,
+          "prompt_tokens_details": {
+            "cached_tokens": 2048
+          },
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 2048
+        },
+        "seconds": 93.19377160099998,
+        "http_attempts": 1
+      },
+      "fingerprint": "e39227612baf66f01d6eb0be75f31ffcf9e5ce04a6fb6b8282941a2ff207744a",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "points",
+            "value": 1,
+            "unit": "миля",
+            "basis": "за каждые потраченные 60 рублей при бронировании услуг VIP и бизнес-залов",
+            "audience": "участники программы «Аэрофлот Бонус»",
+            "restrictions": [],
+            "how_to_get": [
+              "Для начисления миль введите номер карты участника программы «Аэрофлот Бонус» в специальное поле при оформлении заказа на сайте и нажмите кнопку «Начислить»."
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": "в течение 14 дней после оказания услуги",
+            "evidence": [
+              "Бронируйте услуги VIP и бизнес-залов и получайте 1 милю за каждые потраченные 60 рублей или используйте мили на сайте.",
+              "1 миля начисляется за каждые потраченные 60 рублей.",
+              "Для начисления миль введите номер карты участника программы «Аэрофлот Бонуc» в специальное поле при оформлении заказа на сайте и нажмите кнопку «Начислить».",
+              "Мили начисляются в течение 14 дней после оказания услуги."
+            ],
+            "practical_advice": []
+          },
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": "оплата услуг VIP и бизнес-залов милями",
+            "audience": "участники программы «Аэрофлот Бонус»",
+            "restrictions": [
+              "Ограничение по использованию миль - не более 50% от стоимости услуги к оплате."
+            ],
+            "how_to_get": [
+              "Для использования миль введите номер участника программы «Аэрофлот Бонус» в специальное поле на сайте и нажмите кнопку «Списать» при оформлении заказа за мили."
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "или используйте мили на сайте",
+              "Для использования миль введите номер участника программы «Аэрофлот Бонус» в специальное поле на сайте и нажмите кнопку «Списать» при оформлении заказа за мили.",
+              "Ограничение по использованию миль - не более 50% от стоимости услуги к оплате."
+            ],
+            "practical_advice": []
+          }
+        ],
+        "unknowns": []
+      },
+      "inferred_as_of": "2026-10-24",
+      "inferred_at": 1792879262.9685009,
+      "inferred_provider": "tokenharbor",
+      "returned_model": "deepseek-v4.1-flash",
+      "publication_allowed": false
     },
     "94cec61ceb29320a253f4d05f4809b86": {
       "target": {
@@ -54,7 +153,105 @@
         "partner": "Доктор Столетов",
         "program": "Аэрофлот Бонус",
         "source_id": "af_stoletov"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1792879290.958419,
+      "last_result": {
+        "provider": "tokenharbor",
+        "requested_model": "deepseek-v4.1-flash:free",
+        "endpoint": "https://tokenharbor.ai/v1/chat/completions",
+        "request_body_sha256": "0504d6f181067368a6acce0619c6ec349de67f14eef4039c924670dc72f866f2",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "0504d6f181067368a6acce0619c6ec349de67f14eef4039c924670dc72f866f2",
+            "seconds": 25.960748840999997,
+            "http_status": 200,
+            "returned_model": "deepseek-v4.1-flash",
+            "usage": {
+              "prompt_tokens": 3705,
+              "completion_tokens": 4041,
+              "total_tokens": 7746,
+              "prompt_tokens_details": {
+                "cached_tokens": 2048
+              },
+              "cache_creation_input_tokens": 0,
+              "cache_read_input_tokens": 2048
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4.1-flash",
+        "usage": {
+          "prompt_tokens": 3705,
+          "completion_tokens": 4041,
+          "total_tokens": 7746,
+          "prompt_tokens_details": {
+            "cached_tokens": 2048
+          },
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 2048
+        },
+        "seconds": 25.972162982000043,
+        "http_attempts": 1
+      },
+      "fingerprint": "8748f1231d0093673388e5b8f1bb5762bb46c4bfd13a7862338b231f3fc94f14",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "points",
+            "value": 1,
+            "unit": "миля",
+            "basis": "за каждые потраченные 55 рублей",
+            "audience": "участники программы «Аэрофлот Бонус»",
+            "restrictions": [
+              "Мили не начисляются в интернет-аптеке «Доктор Столетов» и на товары-исключения.",
+              "Для использования миль программы «Аэрофлот Бонус» при посещении аптеки необходимо заранее получить ПИН-код в личном кабинете участника программы, предъявить карту «Аэрофлот Бонус» или сообщить номер карты кассиру с последующим использованием ранее полученного ПИН-кода.",
+              "Списание миль не производится в интернет-аптеке «Доктор Столетов».",
+              "Списание миль не производится при приобретении товаров-исключений."
+            ],
+            "promo_code": null,
+            "valid_until": "2026-12-30",
+            "accrual_timing": "в течение 14 дней после оплаты покупки",
+            "evidence": [
+              "1 миля начисляется за каждые потраченные 55 рублей.",
+              "Для начисления миль предъявите Вашу карту участника программы «Аэрофлот Бонуc» кассиру или сообщите номер карты.",
+              "Мили начисляются в течение 14 дней после оплаты покупки.",
+              "Мили не начисляются в интернет-аптеке «Доктор Столетов» и на товары-исключения.",
+              "Списание миль не производится в интернет-аптеке «Доктор Столетов».",
+              "Списание миль не производится при приобретении товаров-исключений.",
+              "Срок действия 31 декабря - 30 декабря 2026 г."
+            ],
+            "practical_advice": [
+              {
+                "text": "Для начисления миль убедитесь, что покупка совершается в аптеке, а не в интернет-аптеке, и товар не входит в исключения.",
+                "basis": "inference"
+              },
+              {
+                "text": "Для списания миль заранее получите ПИН-код в личном кабинете программы «Аэрофлот Бонус».",
+                "basis": "inference"
+              }
+            ],
+            "how_to_get": [
+              "Вступите в программу «Аэрофлот Бонус».",
+              "Для начисления миль предъявите карту участника программы «Аэрофлот Бонус» кассиру или сообщите номер карты.",
+              "Для использования миль при посещении аптеки заранее получите ПИН-код в личном кабинете участника программы, предъявите карту «Аэрофлот Бонус» или сообщите номер карты кассиру с последующим использованием ранее полученного ПИН-кода."
+            ]
+          }
+        ],
+        "unknowns": [
+          "Перечень товаров-исключений не указан."
+        ]
+      },
+      "inferred_as_of": "2026-10-24",
+      "inferred_at": 1792879290.9586515,
+      "inferred_provider": "tokenharbor",
+      "returned_model": "deepseek-v4.1-flash",
+      "publication_allowed": false
     },
     "31f9679e5e123c92293010ad7efe94f3": {
       "target": {
@@ -63,7 +260,124 @@
         "partner": "LA VIVION",
         "program": "Аэрофлот Бонус",
         "source_id": "af_lavivion"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1792879329.1284835,
+      "last_result": {
+        "provider": "tokenharbor",
+        "requested_model": "deepseek-v4.1-flash:free",
+        "endpoint": "https://tokenharbor.ai/v1/chat/completions",
+        "request_body_sha256": "8feda1130cf184703a99bc42da2d4fd5a38fc2c137e3cd323dbffb4402c3051e",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "8feda1130cf184703a99bc42da2d4fd5a38fc2c137e3cd323dbffb4402c3051e",
+            "seconds": 36.13626188699999,
+            "http_status": 200,
+            "returned_model": "deepseek-v4.1-flash",
+            "usage": {
+              "prompt_tokens": 4690,
+              "completion_tokens": 5471,
+              "total_tokens": 10161
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4.1-flash",
+        "usage": {
+          "prompt_tokens": 4690,
+          "completion_tokens": 5471,
+          "total_tokens": 10161
+        },
+        "seconds": 36.14901402300001,
+        "http_attempts": 1
+      },
+      "fingerprint": "3a3859ea1abe98ba63de7ac1e8bf504a178b9c1295a8f84af898e9efd959ebc8",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "points",
+            "value": 1,
+            "unit": "миля за каждые потраченные 60 рублей",
+            "basis": "покупки украшений LA VIVION в бутике LA VIVION",
+            "audience": "Участники программы «Аэрофлот Бонус», совершающие покупки в бутике LA VIVION",
+            "restrictions": [
+              "Мили начисляются только при покупке в бутике LA VIVION.",
+              "Мили начисляются за покупки любых украшений LA VIVION за исключением украшений, участвующих в промо-акциях и/или на которые действует спецпредложение."
+            ],
+            "how_to_get": [
+              "Предъявить карту участника программы «Аэрофлот Бонус» или назвать её номер при покупке в бутике LA VIVION.",
+              "Вступить в программу «Аэрофлот Бонус», если вы ещё не являетесь её участником."
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": "Мили начисляются в течение 21 дня после оплаты покупки.",
+            "evidence": [
+              "1 миля начисляется за каждые потраченные 60 рублей.",
+              "Для начисления миль предъявите вашу карту участника программы «Аэрофлот Бонус» или назовите её номер при покупке в бутике LA VIVION.",
+              "Мили начисляются в течение 21 дня после оплаты покупки.",
+              "Мили начисляются только при покупке в бутике LA VIVION.",
+              "Мили начисляются за покупки любых украшений LA VIVION за исключением украшений, участвующих в промо-акциях и/или на которые действует спецпредложение."
+            ],
+            "practical_advice": [
+              {
+                "text": "Карту или её номер нужно предъявить в момент покупки, поэтому стоит иметь их при себе при посещении бутика.",
+                "basis": "inference"
+              },
+              {
+                "text": "Перед покупкой имеет смысл уточнить, не участвует ли конкретное украшение в промо-акции или спецпредложении, поскольку за такие покупки мили не начисляются.",
+                "basis": "inference"
+              }
+            ]
+          },
+          {
+            "benefit_kind": "other",
+            "value": 90,
+            "unit": "процентов стоимости товара, которые можно оплатить милями",
+            "basis": "оплата стоимости товара милями программы «Аэрофлот Бонус» в бутике LA VIVION",
+            "audience": "Участники программы «Аэрофлот Бонус», совершающие покупки в бутике LA VIVION",
+            "restrictions": [],
+            "how_to_get": [
+              "Заранее получить ПИН-код в Личном кабинете участника программы «Аэрофлот Бонус».",
+              "При посещении бутика предъявить карту «Аэрофлот Бонус» или сообщить номер карты с последующим использованием ранее полученного ПИН-кода."
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Используйте мили для оплаты до 90% стоимости товара.",
+              "Мили можно списывать на оплату до 90% стоимости товара.",
+              "Для использования миль программы «Аэрофлот Бонус» необходимо заранее получить ПИН-код в Личном кабинете участника программы, а при посещении бутика предъявить карту «Аэрофлот Бонус» или сообщить номер карты с последующим использованием ранее полученного ПИН-кода.",
+              "С 1 июня по 31 июля 2026 г. мили списываются по более выгодному курсу!"
+            ],
+            "practical_advice": [
+              {
+                "text": "ПИН-код нужно получить заранее в Личном кабинете, иначе списать мили непосредственно в бутике не получится.",
+                "basis": "inference"
+              },
+              {
+                "text": "Акция с более выгодным курсом списания ограничена периодом с 1 июня по 31 июля 2026 г. и на дату 2026-10-24 уже завершена.",
+                "basis": "inference"
+              }
+            ]
+          }
+        ],
+        "unknowns": [
+          "Курс списания миль (сколько миль требуется для оплаты товара) не указан.",
+          "Величина «более выгодного курса» списания миль в период с 1 июня по 31 июля 2026 г. не указана.",
+          "Перечень украшений, участвующих в промо-акциях и/или на которые действует спецпредложение, не приведён.",
+          "Минимальная или максимальная сумма покупки для начисления миль не указана."
+        ]
+      },
+      "inferred_as_of": "2026-10-24",
+      "inferred_at": 1792879329.1286263,
+      "inferred_provider": "tokenharbor",
+      "returned_model": "deepseek-v4.1-flash",
+      "publication_allowed": false
     },
     "f6f24796e3cee419715692b1cd4c0188": {
       "target": {
@@ -11294,5 +11608,15 @@
     "attempts": 1
   },
   "provider_not_before": 1792886400.4816973,
-  "last_request_at": 1792870086.4816918
+  "last_request_at": 1792870086.4816918,
+  "providers": {
+    "tokenharbor": {
+      "usage": {
+        "date": "2026-10-24",
+        "attempts": 3
+      },
+      "provider_not_before": 0,
+      "last_request_at": 1792879329.1284826
+    }
+  }
 }
