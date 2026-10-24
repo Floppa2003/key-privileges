@@ -60,6 +60,11 @@ def final_text(provider,data):
     return content
 
 def validate(text,schema):
+    # A single Markdown envelope is transport formatting, not a content error.
+    # Preserve raw responses; never repair JSON or select a block from prose.
+    text=text.strip()
+    envelope=re.fullmatch(r"```(?:json)?[ \t]*\r?\n(.*?)\r?\n```",text,flags=re.DOTALL|re.IGNORECASE)
+    if envelope:text=envelope.group(1)
     try:
         value=json.loads(text);jsonschema.validate(value,schema)
     except (json.JSONDecodeError,jsonschema.ValidationError)as exc:raise ValueError('invalid_final_json')from exc
@@ -136,7 +141,7 @@ def main():
                 try:
                     text=final_text(a.provider,data);(folder/'answer.txt').write_text(scrub(text,keys))
                     obj=validate(text,doc['schema']);save(folder/'extracted.json',obj,keys)
-                    row.update(status='completed',schema_valid=True,returned_model=data.get('model',data.get('modelVersion')),
+                    row.update(status='completed',schema_valid=True,output_wrapper='markdown_fence'if text.strip().startswith('```')else'none',returned_model=data.get('model',data.get('modelVersion')),
                                usage=data.get('usage',data.get('usageMetadata')))
                     if not a.inputs:row['vision_correct']=obj=={'code':'7429'}
                 except ValueError as exc:row['error']=str(exc)
