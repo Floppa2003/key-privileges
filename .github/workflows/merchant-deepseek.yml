@@ -1,0 +1,109 @@
+name: DeepSeek OrcaRouter selected extractor acceptance
+on:
+  push:
+    branches: [loyalty/deepseek-orca-20261024]
+    paths:
+      - .github/workflows/merchant-deepseek.yml
+      - loyalty/merchant_extract.py
+      - loyalty/merchant_prompt.txt
+      - loyalty/merchant_offer.schema.json
+      - loyalty/tests/test_merchant_extract.py
+      - loyalty/tests/test_merchant_rate_limit.py
+      - diagnostics/deepseek_acceptance.py
+      - diagnostics/tests/test_deepseek_acceptance.py
+      - loyalty/requirements.txt
+  workflow_dispatch:
+    inputs:
+      live:
+        description: Make real free-model requests (false runs regression only)
+        type: boolean
+        default: false
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: merchant-deepseek-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  regression:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - name: Install dependencies before complete suites
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y poppler-utils
+          python -m pip install -r loyalty/requirements.txt
+      - name: Full main-based regression, without model keys
+        run: |
+          mkdir -p output
+          git rev-parse HEAD > output/commit.txt
+          git archive HEAD -o output/source.zip
+          status=0
+          python -m unittest discover -s loyalty/tests -v > output/python-tests.log 2>&1 || status=1
+          python -m unittest discover -s diagnostics/tests -v > output/diagnostic-tests.log 2>&1 || status=1
+          node --test key/refresh.test.mjs > output/key-tests.log 2>&1 || status=1
+          exit "$status"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: deepseek-regression-${{ github.run_id }}-${{ github.run_attempt }}
+          path: output/
+          retention-days: 30
+  acceptance:
+    if: github.event_name == 'workflow_dispatch' && inputs.live
+    needs: regression
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - name: Install public capture dependencies without credentials
+        run: |
+          mkdir -p output
+          git rev-parse HEAD > output/commit.txt
+          git archive HEAD -o output/source.zip
+          python -m pip install -r loyalty/requirements.txt
+          python -m playwright install --with-deps chromium
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          repository: Floppa2003/key-privileges
+          run-id: '40077128489'
+          artifact-ids: '12554050020'
+          github-token: ${{ github.token }}
+          path: frozen
+          merge-multiple: true
+      - name: Four frozen controls plus four new public sources, no model key
+        run: |
+          echo '890f6e09b759b8d8367fe00f39b0023124eb32ff96fa7e3a1172d5b9f7670d72  frozen/captures/inputs.json' | sha256sum -c -
+          python diagnostics/deepseek_acceptance.py --frozen-inputs frozen/captures/inputs.json --out output/inputs > output/capture.log 2>&1
+      - name: Selected CLI, full evidence, no search or paid fallback
+        env:
+          ORCAROUTER_API_KEY: ${{ secrets.ORCAROUTER_API_KEY }}
+        run: python loyalty/merchant_extract.py --manifest output/inputs/manifest.json --out output/results --execute > output/inference.log 2>&1
+      - name: Preserve all results and hashes, including partial runs
+        if: always()
+        run: |
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          root=Path('output');root.mkdir(exist_ok=True)
+          hashes={str(p.relative_to(root)):hashlib.sha256(p.read_bytes()).hexdigest() for p in root.rglob('*') if p.is_file() and p.name!='SHA256SUMS.json'}
+          (root/'SHA256SUMS.json').write_text(json.dumps(hashes,indent=2))
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: deepseek-acceptance-${{ github.run_id }}-${{ github.run_attempt }}
+          path: output/
+          retention-days: 30
