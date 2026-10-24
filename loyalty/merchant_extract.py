@@ -145,12 +145,14 @@ def retry_delay(headers: dict, data: dict, *, now: float | None = None) -> float
 
 
 def infer(payload: dict, schema: dict, out: Path, key: str, *, session=None,
-          sleep=time.sleep, monotonic=time.monotonic, jitter=None) -> dict:
+          sleep=time.sleep, monotonic=time.monotonic, jitter=None, max_attempts=MAX_ATTEMPTS) -> dict:
     """At most 3 HTTP attempts on explicit transient responses; no model-answer retries.
 
 Network timeouts have an unknown execution outcome and are not retried here.
 The retry budget bounds admission of new attempts/waits; socket timeouts bound IO.
 """
+    if not 1 <= max_attempts <= MAX_ATTEMPTS:
+        raise ValueError('invalid_attempt_budget')
     if not key.strip() or any(ord(c) < 33 for c in key):
         raise ValueError('missing_or_invalid_actions_secret')
     if payload.get('model') != MODEL: raise ValueError('unapproved_request_model')
@@ -174,7 +176,7 @@ The retry budget bounds admission of new attempts/waits; socket timeouts bound I
               'schema_valid': False, 'publication_allowed': False, 'semantic_review': 'pending',
               'attempts': []}
     try:
-        for number in range(1, MAX_ATTEMPTS + 1):
+        for number in range(1, max_attempts + 1):
             remaining = RETRY_BUDGET_SECONDS - (monotonic() - started)
             if remaining <= 10:
                 result.update(status='deferred', error='retry_budget_exhausted')
@@ -225,11 +227,14 @@ The retry budget bounds admission of new attempts/waits; socket timeouts bound I
             code = error.get('code')
             if isinstance(code, (str, int)):
                 result['api_error_code'] = str(code)[:160]
-            if error.get('retryable') is False:
+            metadata = error.get('metadata', {})
+            metadata = metadata if isinstance(metadata, dict) else {}
+            nonretryable = error.get('retryable') is False or metadata.get('retryable') is False
+            if nonretryable and metadata.get('reason') != 'err_free_prompt_cap':
                 result['stop_batch_reason'] = 'provider_nonretryable_error'
             if response.status_code in (401, 402, 403):
                 result['stop_batch_reason'] = 'provider_access_error'
-            if response.status_code not in TRANSIENT or error.get('retryable') is False:
+            if response.status_code not in TRANSIENT or nonretryable:
                 result.update(status='failed', error='nonretryable_http_status')
                 save(folder / 'measurement.json', row)
                 break
@@ -239,7 +244,7 @@ The retry budget bounds admission of new attempts/waits; socket timeouts bound I
             result['retry_after_seconds'] = server_delay
             delay = max(15 * 2 ** (number - 1) + jitter(), server_delay)
             remaining = RETRY_BUDGET_SECONDS - (monotonic() - started)
-            if number == MAX_ATTEMPTS or delay > 60 or delay + 10 >= remaining:
+            if number == max_attempts or delay > 60 or delay + 10 >= remaining:
                 row['retry_not_admitted'] = True
                 if response.status_code == 429:
                     result['stop_batch_reason'] = 'provider_rate_limited'
@@ -258,14 +263,16 @@ The retry budget bounds admission of new attempts/waits; socket timeouts bound I
 
 
 
-def load_manifest(path: Path) -> list[dict]:
+
+
+def load_manifest(path: Path, *, max_documents: int = 30) -> list[dict]:
     """Validate the entire batch before any network call; all source files need hashes."""
     from PIL import Image
     import io
     root = path.resolve().parent
     manifest = strict_json(path.read_text(encoding='utf-8'))
     specs = manifest.get('documents')
-    if not isinstance(specs, list) or not 1 <= len(specs) <= 30:
+    if not isinstance(specs, list) or not 1 <= len(specs) <= max_documents:
         raise ValueError('document_count_budget')
     documents = []; seen = set()
     for spec in specs:

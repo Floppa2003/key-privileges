@@ -1,0 +1,149 @@
+name: Daily DeepSeek merchant processing
+on:
+  schedule:
+    # OrcaRouter's UTC-day quota resets at midnight; 03:05 Europe/Moscow.
+    - cron: '5 0 * * *'
+  workflow_dispatch:
+    inputs:
+      max_requests:
+        description: Maximum real API attempts in this run (1-50; persistent daily cap also applies)
+        type: string
+        default: '50'
+      max_pages:
+        description: Maximum current public pages to capture (1-100)
+        type: string
+        default: '100'
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: merchant-daily-orcarouter
+  cancel-in-progress: false
+jobs:
+  process:
+    if: github.repository == 'Floppa2003/key-privileges' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Restore durable queue and accepted JSON outputs
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: loyalty/llm-state
+          path: llm-state
+          sparse-checkout: state.json
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - name: Install public capture runtime without model credentials
+        run: |
+          set -euo pipefail
+          mkdir -p llm-output incoming
+          git rev-parse HEAD > llm-output/commit.txt
+          python -m pip install -r loyalty/requirements.txt
+          sudo apt-get update -qq && sudo apt-get install -y poppler-utils
+          python -m playwright install --with-deps chromium
+      - name: Read latest main collector artifact, regardless of auxiliary source-health status
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          # A missing/expired catalogue is diagnostic; registries and the existing queue still work.
+          python - <<'PY'
+          import json, os, subprocess, zipfile
+          from pathlib import Path
+          repo=os.environ['GITHUB_REPOSITORY']
+          def api(path):
+              return subprocess.check_output(['gh','api',f'repos/{repo}/{path}'], timeout=60)
+          try:
+              runs=json.loads(api('actions/workflows/loyalty.yml/runs?branch=main&status=completed&per_page=15'))['workflow_runs']
+              found=False
+              for run in runs:
+                  if run.get('path') != '.github/workflows/loyalty.yml': continue
+                  rid=int(run['id'])
+                  artifacts=json.loads(api(f'actions/runs/{rid}/artifacts'))['artifacts']
+                  matches=[a for a in artifacts if not a['expired'] and a['name'].startswith(f'loyalty-public-{rid}-')]
+                  if not matches: continue
+                  artifact=matches[-1]
+                  raw=api(f"actions/artifacts/{int(artifact['id'])}/zip")
+                  import io
+                  with zipfile.ZipFile(io.BytesIO(raw)) as archive:
+                      content=archive.read('normalized.json')
+                  data=json.loads(content)
+                  if not isinstance(data.get('records'),list): continue
+                  Path('incoming/normalized.json').write_bytes(content)
+                  Path('llm-output/catalog-provenance.json').write_text(json.dumps({'run_id':rid,'artifact_id':artifact['id'],'observed_at':data.get('observed_at'),'records':len(data['records'])}))
+                  found=True
+                  break
+              if not found: print('::warning::No current catalogue artifact; continuing registered sources and saved queue')
+          except (subprocess.SubprocessError, ValueError, KeyError, OSError, zipfile.BadZipFile) as exc:
+              print(f'::warning::Catalogue unavailable ({type(exc).__name__}); continuing saved queue and registries')
+          PY
+      - name: Capture current full pages and rendered PDFs, without API or Google credentials
+        env:
+          MAX_PAGES: ${{ inputs.max_pages || '100' }}
+        run: |
+          python loyalty/merchant_queue.py prepare --catalog incoming/normalized.json \
+            --state llm-state/state.json --out llm-output/captures --max-pages "$MAX_PAGES" \
+            > llm-output/capture.log 2>&1
+      - name: Process changed documents with DeepSeek, persist quota and progress
+        env:
+          ORCAROUTER_API_KEY: ${{ secrets.ORCAROUTER_API_KEY }}
+          MAX_REQUESTS: ${{ inputs.max_requests || '50' }}
+        run: |
+          python loyalty/merchant_queue.py extract --manifest llm-output/captures/manifest.json \
+            --state llm-state/state.json --out llm-output/results --max-requests "$MAX_REQUESTS" --execute \
+            > llm-output/inference.log 2>&1
+      - name: Persist progress even after partial processing, then verify remote state
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test -f llm-state/state.json || exit 0
+          python -m json.tool llm-state/state.json >/dev/null
+          cd llm-state
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- state.json
+          if ! git diff --cached --quiet; then
+            git commit -m "LLM queue progress: run $GITHUB_RUN_ID/$GITHUB_RUN_ATTEMPT"
+            auth=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)
+            echo "::add-mask::$auth"
+            git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $auth" push origin HEAD:refs/heads/loyalty/llm-state
+            expected=$(git rev-parse HEAD)
+            git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $auth" fetch origin refs/heads/loyalty/llm-state
+            test "$(git rev-parse FETCH_HEAD)" = "$expected"
+            test "$(git show FETCH_HEAD:state.json | sha256sum | cut -d' ' -f1)" = "$(sha256sum state.json | cut -d' ' -f1)"
+            echo "Remote LLM state verified: $expected"
+          fi
+      - name: Summarize extraction, not just workflow exit status
+        if: always()
+        run: |
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          lines=['## Daily LLM processing','DeepSeek V4.1 Flash / OrcaRouter; free route only; no Sheets publication.']
+          for label,path in [('Capture','llm-output/captures/capture-summary.json'),('Extraction','llm-output/results/summary.json')]:
+              p=Path(path)
+              if p.exists():
+                  d=json.loads(p.read_text())
+                  shown={k:v for k,v in d.items() if k not in ('observations','results')}
+                  lines += [f'### {label}', '```json',json.dumps(shown,ensure_ascii=False,indent=2),'```']
+              else: lines.append(f'{label}: no report produced; inspect failed step.')
+          with open(os.environ['GITHUB_STEP_SUMMARY'],'a') as f:f.write('\n'.join(lines)+'\n')
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: merchant-llm-daily-${{ github.run_id }}-${{ github.run_attempt }}
+          path: llm-output/
+          retention-days: 14
+          if-no-files-found: warn
