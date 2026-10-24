@@ -1,6 +1,6 @@
-"""Selected merchant extractor: full prepared pages -> OrcaRouter DeepSeek JSON, review only.
+"""Selected merchant extractor: full prepared pages -> free DeepSeek JSON, review only.
 
-No publisher, model fallback, output repair or partner-specific extraction rules.
+No publisher, paid/model fallback, output repair or partner-specific extraction rules.
 The source collector stays separate. See MERCHANT_DEEPSEEK.md for the manifest.
 """
 from __future__ import annotations
@@ -27,6 +27,21 @@ HERE = Path(__file__).resolve().parent
 MODEL = 'deepseek/deepseek-v4.1-flash-free'
 BASE_URL = 'https://api.orcarouter.ai/v1'
 ENDPOINT = BASE_URL + '/chat/completions'
+# Explicit free routes for the same selected model; never accept arbitrary paid IDs.
+PROVIDERS = {
+    'orcarouter': {'model': MODEL, 'endpoint': ENDPOINT, 'secret': 'ORCAROUTER_API_KEY'},
+    'tokenharbor': {'model': 'deepseek-v4.1-flash:free',
+                    'endpoint': 'https://tokenharbor.ai/v1/chat/completions',
+                    'secret': 'TOKENHARBOR_API_KEY'},
+}
+
+
+def provider_config(provider: str) -> dict:
+    try:
+        return PROVIDERS[provider]
+    except KeyError:
+        raise ValueError('unknown_free_provider') from None
+
 TRANSIENT = {408, 429, 500, 502, 503, 504}
 MAX_ATTEMPTS = 3
 RETRY_BUDGET_SECONDS = 300
@@ -53,34 +68,45 @@ def strict_json(text):
     return json.loads(text, object_pairs_hook=pairs, parse_constant=nonfinite, parse_float=finite_float)
 
 
-def build_request(target: dict, text: str, images: list[bytes], schema: dict, system: str) -> dict:
-    """Same tested OrcaRouter payload: one fixed model, complete evidence and visible schema."""
+def build_request(target: dict, text: str, images: list[bytes], schema: dict, system: str, *, provider='orcarouter') -> dict:
+    """Same tested provider payload: one fixed model, complete evidence and visible schema."""
     user = ('TARGET: ' + json.dumps(target, ensure_ascii=False)
             + '\nSCHEMA: ' + json.dumps(schema, ensure_ascii=False)
             + '\nВсе изображения идут по порядку страниц. Полный текст:\n' + text)
-    return {
-        'model': MODEL, 'stream': False, 'temperature': 1.0, 'max_tokens': 8192,
+    result = {
+        'model': provider_config(provider)['model'], 'stream': False, 'temperature': 1.0, 'max_tokens': 8192,
         'reasoning': {'enabled': True, 'effort': 'high'},
         'messages': [{'role': 'system', 'content': system},
             {'role': 'user', 'content': [{'type': 'text', 'text': user}, *[
                 {'type': 'image_url', 'image_url': {
                     'url': 'data:image/png;base64,' + base64.b64encode(b).decode('ascii')}}
                 for b in images]]}]}
+    if provider == 'tokenharbor':
+        # Exactly the previously successful Harbor payload: native default thinking,
+        # not OrcaRouter's provider-specific reasoning extension.
+        result.pop('reasoning')
+        result['max_tokens'] = 16384
+    return result
 
 
 
 def reported_cost_warning(data: dict) -> str | None:
     """A billing anomaly stops further spending, not preservation of a valid answer."""
     usage = data.get('usage') if isinstance(data, dict) else None
-    if not isinstance(usage, dict) or usage.get('cost') is None:
+    if not isinstance(usage, dict):
         return None
-    try:
-        cost = Decimal(str(usage['cost']))
-    except InvalidOperation:
-        return 'invalid_reported_cost'
-    if not cost.is_finite():
-        return 'invalid_reported_cost'
-    return 'nonzero_reported_cost' if cost != 0 else None
+    for field in ('cost', 'cost_usd'):
+        if usage.get(field) is None:
+            continue
+        try:
+            cost = Decimal(str(usage[field]))
+        except InvalidOperation:
+            return 'invalid_reported_cost'
+        if not cost.is_finite():
+            return 'invalid_reported_cost'
+        if cost != 0:
+            return 'nonzero_reported_cost'
+    return None
 
 
 def parse_final(data: dict, schema: dict) -> dict:
@@ -89,8 +115,8 @@ def parse_final(data: dict, schema: dict) -> dict:
     if not isinstance(returned, str):
         raise ValueError('returned_model_missing')
     # Providers may report the native family and a dated snapshot, not the route ID.
-    normalized = re.sub(r'[-_.]', '', returned.rsplit('/', 1)[-1].lower())
-    if not re.fullmatch(r'deepseekv41flash(?:free|[0-9]{6,8})?', normalized):
+    normalized = re.sub(r'[-_.]', '', returned.rsplit('/', 1)[-1].lower().removesuffix(':free'))
+    if not re.fullmatch(r'deepseekv41flash(?:free|[0-9]{4,8})?', normalized):
         raise ValueError('returned_model_mismatch')
     choices = data.get('choices')
     if not isinstance(choices, list) or len(choices) != 1 or not isinstance(choices[0], dict) or choices[0].get('finish_reason') != 'stop':
@@ -145,7 +171,7 @@ def retry_delay(headers: dict, data: dict, *, now: float | None = None) -> float
 
 
 def infer(payload: dict, schema: dict, out: Path, key: str, *, session=None,
-          sleep=time.sleep, monotonic=time.monotonic, jitter=None, max_attempts=MAX_ATTEMPTS) -> dict:
+          sleep=time.sleep, monotonic=time.monotonic, jitter=None, max_attempts=MAX_ATTEMPTS, provider='orcarouter') -> dict:
     """At most 3 HTTP attempts on explicit transient responses; no model-answer retries.
 
 Network timeouts have an unknown execution outcome and are not retried here.
@@ -155,7 +181,8 @@ The retry budget bounds admission of new attempts/waits; socket timeouts bound I
         raise ValueError('invalid_attempt_budget')
     if not key.strip() or any(ord(c) < 33 for c in key):
         raise ValueError('missing_or_invalid_actions_secret')
-    if payload.get('model') != MODEL: raise ValueError('unapproved_request_model')
+    route = provider_config(provider)
+    if payload.get('model') != route['model']: raise ValueError('unapproved_request_model')
     allowed = {'model', 'stream', 'temperature', 'max_tokens', 'reasoning', 'messages'}
     if set(payload) - allowed:
         raise ValueError('unexpected_request_options')
@@ -171,7 +198,7 @@ The retry budget bounds admission of new attempts/waits; socket timeouts bound I
         session.trust_env = False
     jitter = jitter or (lambda: random.uniform(0, 3))
     started = monotonic()
-    result = {'provider': 'orcarouter', 'requested_model': MODEL, 'endpoint': ENDPOINT,
+    result = {'provider': provider, 'requested_model': route['model'], 'endpoint': route['endpoint'],
               'request_body_sha256': hashlib.sha256(body).hexdigest(), 'status': 'failed',
               'schema_valid': False, 'publication_allowed': False, 'semantic_review': 'pending',
               'attempts': []}
@@ -185,8 +212,8 @@ The retry budget bounds admission of new attempts/waits; socket timeouts bound I
             row = {'attempt': number, 'request_body_sha256': result['request_body_sha256']}
             call_start = monotonic()
             try:
-                response = session.post(ENDPOINT, headers={'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key},
-                    data=body, timeout=(min(10, remaining / 2), min(90, remaining / 2)), allow_redirects=False)
+                response = session.post(route['endpoint'], headers={'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key},
+                    data=body, timeout=(min(10, remaining / 2), min(180 if provider == 'tokenharbor' else 90, remaining / 2)), allow_redirects=False)
             except requests.RequestException as exc:
                 row.update(seconds=monotonic() - call_start, error_type=type(exc).__name__)
                 result.update(status='transport_error', error='unknown_execution_outcome_not_retried')
@@ -321,14 +348,14 @@ def load_manifest(path: Path, *, max_documents: int = 30) -> list[dict]:
     return documents
 
 
-def prepare_document(document: dict, out: Path, schema: dict, system: str) -> dict:
+def prepare_document(document: dict, out: Path, schema: dict, system: str, *, provider='orcarouter') -> dict:
     out.mkdir()
     (out / 'visible-text.txt').write_text(document['text'], encoding='utf-8')
     image_manifest = []
     for n, raw in enumerate(document['images'], 1):
         name = f'page-{n}.png'; (out / name).write_bytes(raw)
         image_manifest.append({'file': name, 'sha256': hashlib.sha256(raw).hexdigest(), 'bytes': len(raw)})
-    payload = build_request(document['target'], document['text'], document['images'], schema, system)
+    payload = build_request(document['target'], document['text'], document['images'], schema, system, provider=provider)
     brief = copy.deepcopy(payload)
     for part in brief['messages'][1]['content']:
         if part.get('type') == 'image_url':
