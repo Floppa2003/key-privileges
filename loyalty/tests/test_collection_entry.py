@@ -57,7 +57,18 @@ class EntryTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue((self.output/'code_hashes.json').exists())
     async def test_main_soft_deadline_produces_publishable_partial_data_and_red_health(self):
         original=runtime.collect_batch
-        async def short(*args,**kwargs):return await original(*args,**kwargs,run_timeout=.03)
+        async def short(configs, run_source, budget_for, save, observed_at, **kwargs):
+            # Expire only after the successful source is checkpointed. Real fsync
+            # or runner scheduling can consume a 30ms budget before either worker
+            # starts; that tests a different (zero-results) scenario.
+            clock = [0.0]
+            def checkpoint(results, meta):
+                save(results, meta)
+                if meta['completed_sources']:
+                    clock[0] = 1.0
+            with patch.object(runtime, 'time', SimpleNamespace(monotonic=lambda: clock[0])):
+                return await original(configs, run_source, budget_for, checkpoint,
+                                      observed_at, run_timeout=.03, **kwargs)
         async def one(browser,cfg,now,limit):
             if cfg['id']=='s7':return record(cfg,now)
             await asyncio.Event().wait()
