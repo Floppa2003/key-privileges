@@ -1,0 +1,47 @@
+name: Vercel free-credit eligibility read 20261024
+on:
+  push:
+    branches: [loyalty/free-provider-eval-20261024]
+    paths: [.github/workflows/free-vercel-credit-check-20261024.yml]
+permissions: {}
+jobs:
+  read:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Read credit balance, no generation and no billing changes
+        env:
+          AI_GATEWAY_API_KEY: ${{ secrets.AI_GATEWAY_API_KEY }}
+        run: |
+          mkdir -p output
+          python - <<'PY'
+          import json,os,urllib.request,urllib.error
+          from pathlib import Path
+          key=os.environ.get('AI_GATEWAY_API_KEY','')
+          result={'credential_present':bool(key),'inference_calls':0,'billing_changes':False}
+          request=urllib.request.Request('https://ai-gateway.vercel.sh/v1/credits',headers={'Authorization':'Bearer '+key,'Accept':'application/json'})
+          class NoRedirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self,*args,**kwargs):return None
+          opener=urllib.request.build_opener(NoRedirect())
+          try:
+              with opener.open(request,timeout=30)as response:
+                  result['http_status']=response.status
+                  data=json.loads(response.read())
+                  result['response_fields']=list(data)
+                  for field in ('balance','total_used','total_credits','remaining_credits','free_credits','paid_credits','tier','plan','is_free_tier','data','error'):
+                      if field in data:result[field]=data[field]
+          except urllib.error.HTTPError as exc:
+              result['http_status']=exc.code
+              result['error']=exc.read().decode(errors='replace')[:800]
+          except Exception as exc:result['error_type']=type(exc).__name__
+          raw=json.dumps(result,ensure_ascii=False,indent=2)
+          if key:raw=raw.replace(key,'[REDACTED]')
+          Path('output/credit-check.json').write_text(raw)
+          print(raw)
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: vercel-credit-check-${{ github.run_id }}
+          path: output/
+          retention-days: 30
