@@ -34,7 +34,7 @@ second provider does not repeat the first provider's completed work and a Harbor
 is reused on later Orca runs. This deliberately treats the selected model family as the
 same extraction contract; the exact provider and returned model snapshot remain in
 `inferred_provider`, `returned_model`, and `last_result`. Orca uses the tested high-reasoning
-extension; Harbor uses its previously tested native-default payload. The original Orca
+extension; Harbor uses native-default reasoning with a 16384-token output cap (Orca remains 8192). The first live Harbor run completed one document but hit the 8192 output limit on two others; those truncations remain recorded, not accepted as valid JSON. The original Orca
 fingerprint remains the canonical contract fingerprint, retaining previous cache entries.
 
 Fallback is for work not processed or rejected by provider capacity/input limits, not

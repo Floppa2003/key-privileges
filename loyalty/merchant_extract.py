@@ -85,6 +85,7 @@ def build_request(target: dict, text: str, images: list[bytes], schema: dict, sy
         # Exactly the previously successful Harbor payload: native default thinking,
         # not OrcaRouter's provider-specific reasoning extension.
         result.pop('reasoning')
+        result['max_tokens'] = 16384
     return result
 
 
@@ -212,7 +213,7 @@ The retry budget bounds admission of new attempts/waits; socket timeouts bound I
             call_start = monotonic()
             try:
                 response = session.post(route['endpoint'], headers={'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key},
-                    data=body, timeout=(min(10, remaining / 2), min(90, remaining / 2)), allow_redirects=False)
+                    data=body, timeout=(min(10, remaining / 2), min(180 if provider == 'tokenharbor' else 90, remaining / 2)), allow_redirects=False)
             except requests.RequestException as exc:
                 row.update(seconds=monotonic() - call_start, error_type=type(exc).__name__)
                 result.update(status='transport_error', error='unknown_execution_outcome_not_retried')

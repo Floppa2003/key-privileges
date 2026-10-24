@@ -60,6 +60,7 @@ class CapacityTests(unittest.TestCase):
         d=self.doc()
         p=m.build_request(d['target'],d['text'],d['images'],SCHEMA,'prompt',provider='tokenharbor')
         self.assertEqual(p['model'],'deepseek-v4.1-flash:free')
+        self.assertEqual(p['max_tokens'], 16384)
         self.assertNotIn('reasoning',p) # Mirror the previously live-tested Harbor request.
         self.assertNotIn('tools',p); self.assertNotIn('web_search_options',p)
         self.assertIn('10%',p['messages'][1]['content'][0]['text'])
@@ -67,6 +68,7 @@ class CapacityTests(unittest.TestCase):
         http=HTTP([Response()])
         r=m.infer(p,SCHEMA,self.root/'harbor','HARBOR_TEST_KEY',provider='tokenharbor',session=http)
         self.assertEqual(r['status'],'completed')
+        self.assertGreater(http.calls[0][1]['timeout'][1], 90)
         self.assertEqual(http.calls[0][0],'https://tokenharbor.ai/v1/chat/completions')
         self.assertEqual(http.calls[0][1]['headers']['Authorization'],'Bearer HARBOR_TEST_KEY')
 
