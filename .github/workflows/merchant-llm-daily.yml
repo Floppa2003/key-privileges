@@ -6,13 +6,13 @@ on:
   workflow_dispatch:
     inputs:
       max_requests:
-        description: Maximum real API attempts in this run (1-50; persistent daily cap also applies)
+        description: Maximum total attempts (1-250); Orca 50/day, Harbor local ceiling 200/day
         type: string
-        default: '50'
+        default: '250'
       max_pages:
-        description: Maximum current public pages to capture (1-100)
+        description: Maximum current public pages to capture (1-300)
         type: string
-        default: '100'
+        default: '300'
 permissions:
   contents: read
   actions: read
@@ -23,7 +23,7 @@ jobs:
   process:
     if: github.repository == 'Floppa2003/key-privileges' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
-    timeout-minutes: 60
+    timeout-minutes: 120
     permissions:
       contents: write
       actions: read
@@ -88,17 +88,18 @@ jobs:
           PY
       - name: Capture current full pages and rendered PDFs, without API or Google credentials
         env:
-          MAX_PAGES: ${{ inputs.max_pages || '100' }}
+          MAX_PAGES: ${{ inputs.max_pages || '300' }}
         run: |
           python loyalty/merchant_queue.py prepare --catalog incoming/normalized.json \
-            --state llm-state/state.json --out llm-output/captures --max-pages "$MAX_PAGES" \
+            --state llm-state/state.json --out llm-output/captures --max-pages "$MAX_PAGES" --providers orcarouter,tokenharbor \
             > llm-output/capture.log 2>&1
-      - name: Process changed documents with DeepSeek, persist quota and progress
+      - name: Process changed documents through independent free DeepSeek routes
         env:
           ORCAROUTER_API_KEY: ${{ secrets.ORCAROUTER_API_KEY }}
-          MAX_REQUESTS: ${{ inputs.max_requests || '50' }}
+          TOKENHARBOR_API_KEY: ${{ secrets.TOKENHARBOR_API_KEY }}
+          MAX_REQUESTS: ${{ inputs.max_requests || '250' }}
         run: |
-          python loyalty/merchant_queue.py extract --manifest llm-output/captures/manifest.json \
+          python loyalty/merchant_queue.py pool --manifest llm-output/captures/manifest.json \
             --state llm-state/state.json --out llm-output/results --max-requests "$MAX_REQUESTS" --execute \
             > llm-output/inference.log 2>&1
       - name: Persist progress even after partial processing, then verify remote state
@@ -130,7 +131,7 @@ jobs:
           python - <<'PY'
           import json,os
           from pathlib import Path
-          lines=['## Daily LLM processing','DeepSeek V4.1 Flash / OrcaRouter; free route only; no Sheets publication.']
+          lines=['## Daily LLM processing','DeepSeek V4.1 Flash / OrcaRouter + Token Harbor; free routes only; no Sheets publication.']
           for label,path in [('Capture','llm-output/captures/capture-summary.json'),('Extraction','llm-output/results/summary.json')]:
               p=Path(path)
               if p.exists():
