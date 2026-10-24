@@ -33,11 +33,13 @@ Every document keeps original text/PNGs, a request manifest, exact payload hash,
 
 One outer Markdown JSON fence is accepted without rewriting the JSON. Multiple competing objects, duplicate keys, nonfinite numbers, truncated generations and tool calls remain explicit failures. A failed answer does not suppress independent later documents. No second model, answer repair, merchant-specific edits or hidden regeneration is used.
 
+An exhausted 429 limit stops the entire batch and retains the pending document IDs. Retry-After and OrcaRouter JSON retry_after_seconds are lower bounds; the larger valid hint wins. No sleeping for hours in a runner and no switching keys/providers to bypass the limit.
+
 At most three identical attempts are allowed for explicit transient HTTP errors, respecting Retry-After and a bounded retry budget. Network timeouts have an unknown execution outcome and are not silently retried. Explicit nonretryable errors and authorization/payment refusals stop further batch requests. An unexpected nonzero/invalid reported cost also stops further calls but does not discard an otherwise valid answer. Missing cost metadata does not prove zero spending; balances are not audited here.
 
 ## Acceptance workflow
 
-`merchant-deepseek.yml` runs full main-based Python/diagnostic/KEY suites, prepares four frozen controls and four new-to-DeepSeek public sources, and calls this same CLI. Only the inference step receives ORCAROUTER_API_KEY. It has no schedule and no write/publication permissions. Its branch-limited push trigger is for the migration branch; later runs are manual. Acceptance artifacts include source code, page captures, inputs and raw results.
+`merchant-deepseek.yml` runs full main-based Python/diagnostic/KEY suites, prepares four frozen controls and four new-to-DeepSeek public sources, and calls this same CLI. Only the inference step receives ORCAROUTER_API_KEY. It has no schedule and no write/publication permissions. Its branch-limited push trigger runs regression only. Real API calls require a manual workflow_dispatch with live=true; the default is false. Acceptance artifacts include source code, page captures, inputs and raw results.
 
 The four selected new sources are test data, not parser rules. Capture refusals are reported separately; remaining captured pages can still be extracted. Expired control artifacts require supplying retained evidence or explicitly taking a new comparison snapshot, never pretending new inputs are identical.
 

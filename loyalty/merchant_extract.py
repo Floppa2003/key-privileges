@@ -128,6 +128,10 @@ def retry_delay(headers: dict, data: dict, *, now: float | None = None) -> float
             except (ValueError, TypeError, OverflowError):
                 pass
     if isinstance(data, dict) and isinstance(data.get('error'), dict):
+        metadata = data['error'].get('metadata', {})
+        if isinstance(metadata, dict):
+            try: values.append(float(metadata.get('retry_after_seconds')))
+            except (ValueError, TypeError): pass
         details = data['error'].get('details', [])
         for detail in details if isinstance(details, list) else []:
             if isinstance(detail, dict) and detail.get('@type') == 'type.googleapis.com/google.rpc.RetryInfo':
@@ -230,10 +234,15 @@ The retry budget bounds admission of new attempts/waits; socket timeouts bound I
                 save(folder / 'measurement.json', row)
                 break
             result.update(status='deferred', error='transient_http_exhausted')
-            delay = max(15 * 2 ** (number - 1) + jitter(), retry_delay(response.headers, data))
+            server_delay = retry_delay(response.headers, data)
+            row['retry_after_seconds'] = server_delay
+            result['retry_after_seconds'] = server_delay
+            delay = max(15 * 2 ** (number - 1) + jitter(), server_delay)
             remaining = RETRY_BUDGET_SECONDS - (monotonic() - started)
             if number == MAX_ATTEMPTS or delay > 60 or delay + 10 >= remaining:
                 row['retry_not_admitted'] = True
+                if response.status_code == 429:
+                    result['stop_batch_reason'] = 'provider_rate_limited'
                 save(folder / 'measurement.json', row)
                 break
             row['wait_seconds'] = delay

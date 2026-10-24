@@ -8,10 +8,16 @@ on:
       - loyalty/merchant_prompt.txt
       - loyalty/merchant_offer.schema.json
       - loyalty/tests/test_merchant_extract.py
+      - loyalty/tests/test_merchant_rate_limit.py
       - diagnostics/deepseek_acceptance.py
       - diagnostics/tests/test_deepseek_acceptance.py
       - loyalty/requirements.txt
   workflow_dispatch:
+    inputs:
+      live:
+        description: Make real free-model requests (false runs regression only)
+        type: boolean
+        default: false
 permissions:
   contents: read
   actions: read
@@ -51,6 +57,7 @@ jobs:
           path: output/
           retention-days: 30
   acceptance:
+    if: github.event_name == 'workflow_dispatch' && inputs.live
     needs: regression
     runs-on: ubuntu-24.04
     timeout-minutes: 30
