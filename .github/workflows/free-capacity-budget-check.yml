@@ -1,0 +1,101 @@
+name: Verify free DeepSeek output budget
+on:
+  push:
+    branches: [loyalty/free-capacity-20261025]
+    paths: [.github/workflows/free-capacity-budget-check.yml]
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: free-capacity-once
+  cancel-in-progress: false
+jobs:
+  verify:
+    if: github.repository == 'Floppa2003/key-privileges' && github.ref == 'refs/heads/loyalty/free-capacity-20261025'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - name: Apply locally tested output-budget change
+        run: |
+          set -euo pipefail
+          mkdir -p output
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib
+          p=Path('loyalty/merchant_extract.py');s=p.read_text().replace("        result.pop('reasoning')", "        result.pop('reasoning')\n        result['max_tokens'] = 16384")
+          s=s.replace('min(90, remaining / 2)), allow_redirects=False)', "min(180 if provider == 'tokenharbor' else 90, remaining / 2)), allow_redirects=False)")
+          p.write_text(s)
+          p=Path('loyalty/tests/test_merchant_capacity.py');s=p.read_text().replace("self.assertEqual(p['model'],'deepseek-v4.1-flash:free')", "self.assertEqual(p['model'],'deepseek-v4.1-flash:free')\n        self.assertEqual(p['max_tokens'], 16384)").replace("self.assertEqual(r['status'],'completed')", "self.assertEqual(r['status'],'completed')\n        self.assertGreater(http.calls[0][1]['timeout'][1], 90)")
+          p.write_text(s)
+          p=Path('loyalty/DAILY_LLM.md');s=p.read_text().replace('extension; Harbor uses its previously tested native-default payload.', 'extension; Harbor uses native-default reasoning with a 16384-token output cap (Orca remains 8192). The first live Harbor run completed one document but hit the 8192 output limit on two others; those truncations remain recorded, not accepted as valid JSON.')
+          p.write_text(s)
+          expected={'loyalty/merchant_extract.py':'07d396fb9651860b95a681636ca515a4ef08c1377883f8688451b2a59b129567','loyalty/tests/test_merchant_capacity.py':'8371bb342b5c0df5b2fe5c0e1c91fddff2d2ae37602e0a993ee25c69f4144092','loyalty/DAILY_LLM.md':'643345102de7158bf7b5205689c84f2df74074bd7b7bf3b113b9b4c5612773f0'}
+          for name,digest in expected.items(): assert hashlib.sha256(Path(name).read_bytes()).hexdigest()==digest,name
+          PY
+          python -m pip install -r loyalty/requirements.txt
+          sudo apt-get update -qq && sudo apt-get install -y poppler-utils
+      - name: Full regression without provider credentials
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s loyalty/tests -v > output/python-tests.log 2>&1
+          python -m unittest discover -s diagnostics/tests -v > output/diagnostic-tests.log 2>&1
+          node --test key/refresh.test.mjs > output/key-tests.log 2>&1
+      - name: Commit verified code only
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- loyalty/merchant_extract.py loyalty/tests/test_merchant_capacity.py loyalty/DAILY_LLM.md
+          git commit -m 'fix: leave sufficient final JSON room after DeepSeek reasoning'
+          auth=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)
+          echo "::add-mask::$auth"
+          git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $auth" push origin HEAD:refs/heads/loyalty/free-capacity-20261025
+          git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $auth" fetch origin refs/heads/loyalty/free-capacity-20261025
+          test "$(git rev-parse HEAD)" = "$(git rev-parse FETCH_HEAD)"
+          git rev-parse HEAD > output/commit.txt
+          git archive HEAD -o output/source.zip
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          run-id: '40125342550'
+          artifact-ids: '12573380423'
+          github-token: ${{ github.token }}
+          path: frozen
+          merge-multiple: true
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          run-id: '40135260912'
+          artifact-ids: '12576593295'
+          github-token: ${{ github.token }}
+          path: previous
+          merge-multiple: true
+      - name: Reuse completed MEDSI and evaluate only two unfinished documents
+        env:
+          ORCAROUTER_API_KEY: ${{ secrets.ORCAROUTER_API_KEY }}
+          TOKENHARBOR_API_KEY: ${{ secrets.TOKENHARBOR_API_KEY }}
+        run: |
+          set -euo pipefail
+          cp previous/state.json output/state.json
+          python loyalty/merchant_queue.py pool --manifest frozen/captures/manifest.json --state output/state.json --out output/live --max-requests 2 --execute > output/live.log 2>&1
+      - name: Preserve hashes
+        if: always()
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json,hashlib
+          root=Path('output');root.mkdir(exist_ok=True)
+          (root/'SHA256SUMS.json').write_text(json.dumps({str(p.relative_to(root)):hashlib.sha256(p.read_bytes()).hexdigest() for p in root.rglob('*') if p.is_file() and p.name!='SHA256SUMS.json'},indent=2))
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: free-capacity-budget-${{ github.run_id }}-${{ github.run_attempt }}
+          path: output/
+          retention-days: 14
