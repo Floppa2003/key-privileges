@@ -1,0 +1,20 @@
+name: One-shot daily LLM scheduling verification
+on:
+  push:
+    branches: [loyalty/llm-schedule-verification-20261024]
+    paths: [.github/workflows/dispatch-llm-verification.yml]
+permissions:
+  actions: write
+  contents: read
+jobs:
+  dispatch:
+    if: github.repository == 'Floppa2003/key-privileges'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Dispatch existing main workflow with one-request budget
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh workflow run merchant-llm-daily.yml --ref main -f max_requests=1 -f max_pages=3
