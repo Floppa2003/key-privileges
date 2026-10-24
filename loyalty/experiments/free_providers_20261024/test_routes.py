@@ -32,12 +32,24 @@ class Routes(unittest.TestCase):
         self.assertFalse(m.is_zero_priced({'pricing':{'input':'0','output':'0.2'}}))
         self.assertTrue(m.is_zero_priced({'pricing':{'input':'0','output':'0'}}))
     def test_invalid_json_not_repaired(self):
-        with self.assertRaises(ValueError):m.validate('```json\n{"code":"7429"}\n```',m.SMOKE_SCHEMA)
+        with self.assertRaises(ValueError):m.validate('{"code":"7429",}',m.SMOKE_SCHEMA)
     def test_json_schema_not_just_json(self):
         with self.assertRaises(ValueError):m.validate('{"other":1}',m.SMOKE_SCHEMA)
     def test_redirects_disabled(self):
         session=Mock();response=Mock(status_code=302,content=b'');session.request.return_value=response
         m.http(session,'GET','https://example.com',{},None,[])
         self.assertFalse(session.request.call_args.kwargs['allow_redirects'])
+
+class Envelope(unittest.TestCase):
+    def test_single_markdown_envelope_is_lossless(self):
+        self.assertEqual(m.validate('```json\n{"code":"7429"}\n```',m.SMOKE_SCHEMA),{'code':'7429'})
+    def test_unlabelled_envelope(self):
+        self.assertEqual(m.validate('```\n{"code":"7429"}\n```',m.SMOKE_SCHEMA),{'code':'7429'})
+    def test_prose_not_silently_discarded(self):
+        with self.assertRaises(ValueError):m.validate('Answer: ```json\n{"code":"7429"}\n```',m.SMOKE_SCHEMA)
+    def test_multiple_blocks_not_cherry_picked(self):
+        with self.assertRaises(ValueError):m.validate('```json\n{}\n```\n```json\n{"code":"7429"}\n```',m.SMOKE_SCHEMA)
+    def test_fence_does_not_weaken_schema(self):
+        with self.assertRaises(ValueError):m.validate('```json\n{"wrong":true}\n```',m.SMOKE_SCHEMA)
 
 if __name__=='__main__':unittest.main()
