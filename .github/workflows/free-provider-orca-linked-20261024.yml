@@ -1,0 +1,78 @@
+name: OrcaRouter linked-account document recheck 20261024
+on:
+  push:
+    branches: [loyalty/free-provider-eval-20261024]
+    paths: [.github/workflows/free-provider-orca-linked-20261024.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: free-provider-orca-linked-20261024
+  cancel-in-progress: false
+jobs:
+  compare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          ref: ${{ github.sha }}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - name: Verify unchanged transports without credentials
+        run: |
+          set -euo pipefail
+          mkdir -p output
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          git rev-parse HEAD > output/commit.txt
+          git archive HEAD -o output/source.zip
+          python -m pip install -r loyalty/requirements.txt Pillow==12.3.0 jsonschema==4.26.0 psutil==7.0.0
+          python -m unittest discover -s loyalty/experiments/free_providers_20261024 -v > output/provider-tests.log 2>&1
+          export PYTHONPATH="$GITHUB_WORKSPACE/loyalty/experiments/local_visual:$GITHUB_WORKSPACE/loyalty/experiments/simple_thinking"
+          python -m unittest discover -s loyalty/experiments/cloud_json -v > output/cloud-tests.log 2>&1
+          node --test key/refresh.test.mjs > output/key-tests.log 2>&1
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          repository: Floppa2003/key-privileges
+          run-id: '40077128489'
+          artifact-ids: '12554050020'
+          github-token: ${{ github.token }}
+          path: saved-inputs
+          merge-multiple: true
+      - name: Verify exact previous four documents, no recapture
+        run: |
+          python - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+          path = Path('saved-inputs/captures/inputs.json')
+          digest = hashlib.sha256(path.read_bytes()).hexdigest()
+          assert digest == '890f6e09b759b8d8367fe00f39b0023124eb32ff96fa7e3a1172d5b9f7670d72'
+          docs = json.loads(path.read_text())
+          assert len(docs) == 4 and {d['id'] for d in docs} == {'rzd_museum','lavka','nevsky','muzcomedy'}
+          assert sum(len(d['images']) for d in docs) == 13
+          Path('output/input-provenance.json').write_text(json.dumps({'source_run':40077128489,'artifact_id':12554050020,'inputs_sha256':digest,'cases':[d['id'] for d in docs],'images':13,'recaptured':False,'publication_allowed':False},indent=2))
+          PY
+      - name: Recheck OrcaRouter GLM and DeepSeek on identical evidence
+        env:
+          LLM_PROVIDER_KEY: ${{ secrets.ORCAROUTER_API_KEY }}
+        run: |
+          python loyalty/experiments/free_providers_20261024/routes.py --provider orca --inputs saved-inputs/captures/inputs.json --out output/results
+      - name: Preserve all attempts and hashes without credentials
+        if: always()
+        run: |
+          python - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+          root=Path('output');root.mkdir(exist_ok=True)
+          hashes={str(p.relative_to(root)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(root.rglob('*')) if p.is_file() and p.name!='SHA256SUMS.json'}
+          (root/'SHA256SUMS.json').write_text(json.dumps(hashes,indent=2))
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: orca-linked-documents-${{ github.run_id }}-${{ github.run_attempt }}
+          path: output/
+          retention-days: 30
