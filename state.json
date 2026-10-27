@@ -19458,6 +19458,41 @@
         "partner": "СПУТНИК",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
+      },
+      "status": "failed_validation",
+      "last_checked": 1793077547.3079288,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "44c2fb2a870d73b61adf487b0c1cf536bf4e0f24b7daf308779d83b94dbbc57f",
+        "status": "failed_validation",
+        "schema_valid": false,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "44c2fb2a870d73b61adf487b0c1cf536bf4e0f24b7daf308779d83b94dbbc57f",
+            "seconds": 6.013290210999912,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 466,
+              "prompt_tokens": 2657,
+              "total_tokens": 3123,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 411
+              }
+            }
+          }
+        ],
+        "error": "returned_model_mismatch",
+        "seconds": 6.014164915000038,
+        "http_attempts": 1
       }
     },
     "1a015a32a203a132002adf6af5afad5d": {
@@ -19467,6 +19502,41 @@
         "partner": "Wink Amediateka",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
+      },
+      "status": "failed_validation",
+      "last_checked": 1793077557.0950365,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "5128a3e773009fd5ecc2261ac959b15c9df1c91de8a78a77e0c663f484f10a04",
+        "status": "failed_validation",
+        "schema_valid": false,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "5128a3e773009fd5ecc2261ac959b15c9df1c91de8a78a77e0c663f484f10a04",
+            "seconds": 2.754273724999848,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 226,
+              "prompt_tokens": 2825,
+              "total_tokens": 3051,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 184
+              }
+            }
+          }
+        ],
+        "error": "returned_model_mismatch",
+        "seconds": 2.755016620999868,
+        "http_attempts": 1
       }
     },
     "2b730c05e8d78bb8613414226bf3b9fc": {
@@ -19476,6 +19546,41 @@
         "partner": "Островок",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
+      },
+      "status": "failed_validation",
+      "last_checked": 1793077567.9255784,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "7925716398eefbec6a51c2ba572e7473e81bfb0741a3ee990238d29aa55390aa",
+        "status": "failed_validation",
+        "schema_valid": false,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "7925716398eefbec6a51c2ba572e7473e81bfb0741a3ee990238d29aa55390aa",
+            "seconds": 3.795628530000158,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 667,
+              "prompt_tokens": 2655,
+              "total_tokens": 3322,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 614
+              }
+            }
+          }
+        ],
+        "error": "returned_model_mismatch",
+        "seconds": 3.7962924570001633,
+        "http_attempts": 1
       }
     },
     "4d1d5a3c9175b59cdc0c460f3ca84631": {
@@ -19485,7 +19590,10 @@
         "partner": "Wink Оптимальный",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
-      }
+      },
+      "last_checked": 1793076367.302927,
+      "capture_status": "failed",
+      "capture_error": "ReadError"
     },
     "0d929752b653f06c154e5562958cf833": {
       "target": {
@@ -19494,6 +19602,41 @@
         "partner": "Литрес",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
+      },
+      "status": "failed_validation",
+      "last_checked": 1793077578.1747499,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "4cd8797b54589666bd4590d68bc267a277211fc3ddb1a71531658480bc5def49",
+        "status": "failed_validation",
+        "schema_valid": false,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "4cd8797b54589666bd4590d68bc267a277211fc3ddb1a71531658480bc5def49",
+            "seconds": 3.217146434000142,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 342,
+              "prompt_tokens": 2823,
+              "total_tokens": 3165,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 298
+              }
+            }
+          }
+        ],
+        "error": "returned_model_mismatch",
+        "seconds": 3.2178853630000503,
+        "http_attempts": 1
       }
     },
     "0ada2803d0b9144609e7bec7d2ed90e3": {
@@ -19503,6 +19646,41 @@
         "partner": "Московский Театр мюзикла",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
+      },
+      "status": "failed_validation",
+      "last_checked": 1793077588.536565,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "e5f54dbceb45ec20981ccd768df399a6006819fcedaf47cd9555b14085b1f1fc",
+        "status": "failed_validation",
+        "schema_valid": false,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "e5f54dbceb45ec20981ccd768df399a6006819fcedaf47cd9555b14085b1f1fc",
+            "seconds": 3.3299099050000223,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 401,
+              "prompt_tokens": 2831,
+              "total_tokens": 3232,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 346
+              }
+            }
+          }
+        ],
+        "error": "returned_model_mismatch",
+        "seconds": 3.3305754049999905,
+        "http_attempts": 1
       }
     },
     "c04409412b62431fc51f315c1f28ba2b": {
@@ -19512,6 +19690,41 @@
         "partner": "Счастливый взгляд",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
+      },
+      "status": "failed_validation",
+      "last_checked": 1793077598.796638,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "96573ff38cb85355bd581a99f93c3bae994a1f7875379e701e12da3fef513ec8",
+        "status": "failed_validation",
+        "schema_valid": false,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "96573ff38cb85355bd581a99f93c3bae994a1f7875379e701e12da3fef513ec8",
+            "seconds": 3.22852187400008,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 411,
+              "prompt_tokens": 2657,
+              "total_tokens": 3068,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 360
+              }
+            }
+          }
+        ],
+        "error": "returned_model_mismatch",
+        "seconds": 3.229227040000069,
+        "http_attempts": 1
       }
     },
     "cf2954f5a9ddf00b9fbca393f6736ab3": {
@@ -19521,6 +19734,41 @@
         "partner": "Улыбка Радуги",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
+      },
+      "status": "failed_validation",
+      "last_checked": 1793077608.932407,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "7f2ab3b415dfc0fc24fea358783f7a3afb631eb273b35c0b543c46be49a6fb60",
+        "status": "failed_validation",
+        "schema_valid": false,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "7f2ab3b415dfc0fc24fea358783f7a3afb631eb273b35c0b543c46be49a6fb60",
+            "seconds": 3.1038591540000198,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 203,
+              "prompt_tokens": 2827,
+              "total_tokens": 3030,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 152
+              }
+            }
+          }
+        ],
+        "error": "returned_model_mismatch",
+        "seconds": 3.1045391420000215,
+        "http_attempts": 1
       }
     },
     "8aaa5d09c815cf48cb11bb070a45fa7c": {
@@ -19530,7 +19778,10 @@
         "partner": "Мир Квестов",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
-      }
+      },
+      "last_checked": 1793076405.3794677,
+      "capture_status": "failed",
+      "capture_error": "ReadError"
     },
     "f294db8d886072c170b8597f5b59b88b": {
       "target": {
@@ -19539,6 +19790,41 @@
         "partner": "Lamoda Sport",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
+      },
+      "status": "failed_validation",
+      "last_checked": 1793077618.9540856,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "6b6c0911a51ecba1860dc1f9db9ac51f080927eddfcc8c2b7e74ebc9732cf37e",
+        "status": "failed_validation",
+        "schema_valid": false,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "6b6c0911a51ecba1860dc1f9db9ac51f080927eddfcc8c2b7e74ebc9732cf37e",
+            "seconds": 2.988974316999929,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 371,
+              "prompt_tokens": 2654,
+              "total_tokens": 3025,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 326
+              }
+            }
+          }
+        ],
+        "error": "returned_model_mismatch",
+        "seconds": 2.9896912059998613,
+        "http_attempts": 1
       }
     },
     "1e38f8809ca86575a1e33b3382ad6a33": {
@@ -19548,6 +19834,41 @@
         "partner": "Улыбка радуги",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
+      },
+      "status": "failed_validation",
+      "last_checked": 1793077628.9761827,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "a3eb5fe989711a3c53c2e2b9478a0a17c0318fc11ec34b656e254157879d11ea",
+        "status": "failed_validation",
+        "schema_valid": false,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "a3eb5fe989711a3c53c2e2b9478a0a17c0318fc11ec34b656e254157879d11ea",
+            "seconds": 2.990562998999849,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 362,
+              "prompt_tokens": 2827,
+              "total_tokens": 3189,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 310
+              }
+            }
+          }
+        ],
+        "error": "returned_model_mismatch",
+        "seconds": 2.9912326179999127,
+        "http_attempts": 1
       }
     },
     "fc388b29417b261c69525d8fa8cc7fd2": {
@@ -19557,6 +19878,41 @@
         "partner": "Культурный центр им. И.М. Астахова",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
+      },
+      "status": "failed_validation",
+      "last_checked": 1793077639.4526641,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "f19d9c520d31389972f882414b6c010604434f93a2c567a16431ee2590e06562",
+        "status": "failed_validation",
+        "schema_valid": false,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "f19d9c520d31389972f882414b6c010604434f93a2c567a16431ee2590e06562",
+            "seconds": 3.4438456339998993,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 492,
+              "prompt_tokens": 2666,
+              "total_tokens": 3158,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 439
+              }
+            }
+          }
+        ],
+        "error": "returned_model_mismatch",
+        "seconds": 3.4445349600000554,
+        "http_attempts": 1
       }
     },
     "9fafb7acc815148e2e9e898c61de97e5": {
@@ -19566,6 +19922,41 @@
         "partner": "Магнит Доставка",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
+      },
+      "status": "failed_validation",
+      "last_checked": 1793077649.8103385,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "4c14f3ab22fa776f31038ac282797749c3ca98bf429cd54d480d475716c190fb",
+        "status": "failed_validation",
+        "schema_valid": false,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "4c14f3ab22fa776f31038ac282797749c3ca98bf429cd54d480d475716c190fb",
+            "seconds": 3.3254005860001143,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 479,
+              "prompt_tokens": 2826,
+              "total_tokens": 3305,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 420
+              }
+            }
+          }
+        ],
+        "error": "returned_model_mismatch",
+        "seconds": 3.326086395999937,
+        "http_attempts": 1
       }
     },
     "a71eba0196f8a549771e76d62543518d": {
@@ -19575,6 +19966,41 @@
         "partner": "Солнце Москвы",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
+      },
+      "status": "failed_validation",
+      "last_checked": 1793077660.4619143,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "781f1753613908d2e854447c16c833c356d49f0677feb3dcec6baba8c7392cbd",
+        "status": "failed_validation",
+        "schema_valid": false,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "781f1753613908d2e854447c16c833c356d49f0677feb3dcec6baba8c7392cbd",
+            "seconds": 3.6197951170001943,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 238,
+              "prompt_tokens": 2825,
+              "total_tokens": 3063,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 188
+              }
+            }
+          }
+        ],
+        "error": "returned_model_mismatch",
+        "seconds": 3.620472110000037,
+        "http_attempts": 1
       }
     },
     "f5b9ce70297504ae2a8657de9499c7a1": {
@@ -19596,6 +20022,41 @@
         "partner": "Мюзикл «Первое свидание»",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
+      },
+      "status": "failed_validation",
+      "last_checked": 1793077670.477357,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "bdfc52fb146a0193bb4a90f346c7f27f4a15ccbb73e8e723291391f38206b040",
+        "status": "failed_validation",
+        "schema_valid": false,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "bdfc52fb146a0193bb4a90f346c7f27f4a15ccbb73e8e723291391f38206b040",
+            "seconds": 2.983471234000035,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 321,
+              "prompt_tokens": 2870,
+              "total_tokens": 3191,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 265
+              }
+            }
+          }
+        ],
+        "error": "returned_model_mismatch",
+        "seconds": 2.984189113999946,
+        "http_attempts": 1
       }
     },
     "0f846b9471184245e2c352407cf38a4e": {
@@ -19605,6 +20066,41 @@
         "partner": "Театр комедии",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
+      },
+      "status": "failed_validation",
+      "last_checked": 1793077680.5048232,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "d99af3547846e29e927a7fe666a90d5cfa0dc8a9291f4a39bad284096d1ea9e4",
+        "status": "failed_validation",
+        "schema_valid": false,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "d99af3547846e29e927a7fe666a90d5cfa0dc8a9291f4a39bad284096d1ea9e4",
+            "seconds": 2.9952563959998315,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 360,
+              "prompt_tokens": 2826,
+              "total_tokens": 3186,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 310
+              }
+            }
+          }
+        ],
+        "error": "returned_model_mismatch",
+        "seconds": 2.9959304040000916,
+        "http_attempts": 1
       }
     },
     "94c89e3f51729203aab22bab1c2f3518": {
@@ -19614,6 +20110,41 @@
         "partner": "AliExpress",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
+      },
+      "status": "failed_validation",
+      "last_checked": 1793077690.2010844,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "13947843f4978b5937fd4f021973210a10e1f4c8b921a47f17eb9da9b1e5e55e",
+        "status": "failed_validation",
+        "schema_valid": false,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "13947843f4978b5937fd4f021973210a10e1f4c8b921a47f17eb9da9b1e5e55e",
+            "seconds": 2.664720225999872,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 264,
+              "prompt_tokens": 2653,
+              "total_tokens": 2917,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 219
+              }
+            }
+          }
+        ],
+        "error": "returned_model_mismatch",
+        "seconds": 2.6654115149999598,
+        "http_attempts": 1
       }
     },
     "0e86c67a1719d207da240e19dbd8d263": {
@@ -19623,6 +20154,41 @@
         "partner": "Делимобиль",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
+      },
+      "status": "failed_validation",
+      "last_checked": 1793077700.1328046,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "1786379a82ca727e41ec87a94fb2b20581a501ad4974cd05003b2c74fc9095b3",
+        "status": "failed_validation",
+        "schema_valid": false,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "1786379a82ca727e41ec87a94fb2b20581a501ad4974cd05003b2c74fc9095b3",
+            "seconds": 2.899769670999831,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 329,
+              "prompt_tokens": 2656,
+              "total_tokens": 2985,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 259
+              }
+            }
+          }
+        ],
+        "error": "returned_model_mismatch",
+        "seconds": 2.900473074000047,
+        "http_attempts": 1
       }
     },
     "4bbe2b23582911013f1d15abaa148d5b": {
@@ -19632,6 +20198,41 @@
         "partner": "Магнит Косметик",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
+      },
+      "status": "failed_validation",
+      "last_checked": 1793077710.019313,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "0c6aa1c936b57abfe7003d4b6e4282acaf681ad028482b7080f5b33bfef8b17a",
+        "status": "failed_validation",
+        "schema_valid": false,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "0c6aa1c936b57abfe7003d4b6e4282acaf681ad028482b7080f5b33bfef8b17a",
+            "seconds": 2.8542989069999294,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 349,
+              "prompt_tokens": 2866,
+              "total_tokens": 3215,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 298
+              }
+            }
+          }
+        ],
+        "error": "returned_model_mismatch",
+        "seconds": 2.8549774430000525,
+        "http_attempts": 1
       }
     },
     "fcaa718a47e1ea6b947145279dd29db1": {
@@ -19641,7 +20242,10 @@
         "partner": "Чиббис",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
-      }
+      },
+      "last_checked": 1793076481.6609426,
+      "capture_status": "failed",
+      "capture_error": "ReadError"
     },
     "6a1f138167341a82f534d287759bbf74": {
       "target": {
@@ -19650,6 +20254,41 @@
         "partner": "Додо Пицца",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
+      },
+      "status": "failed_validation",
+      "last_checked": 1793077720.6006424,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "4dcc8f389074b703910a3f51bd446a19d5eb89dcfb7d0892fb5f579d190ed374",
+        "status": "failed_validation",
+        "schema_valid": false,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "4dcc8f389074b703910a3f51bd446a19d5eb89dcfb7d0892fb5f579d190ed374",
+            "seconds": 3.5492537790000824,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 542,
+              "prompt_tokens": 2826,
+              "total_tokens": 3368,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 496
+              }
+            }
+          }
+        ],
+        "error": "returned_model_mismatch",
+        "seconds": 3.5499600880000344,
+        "http_attempts": 1
       }
     },
     "e2ce6ac7c7d9ead834bc85964269afd9": {
@@ -19659,6 +20298,41 @@
         "partner": "СУШИШОП",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
+      },
+      "status": "failed_validation",
+      "last_checked": 1793077730.640297,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "ae09850b8cbc200f46ee6e68ae76db54f49223467badfc7b47509ed1c9959ab5",
+        "status": "failed_validation",
+        "schema_valid": false,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "ae09850b8cbc200f46ee6e68ae76db54f49223467badfc7b47509ed1c9959ab5",
+            "seconds": 3.008014954999908,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 341,
+              "prompt_tokens": 2658,
+              "total_tokens": 2999,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 291
+              }
+            }
+          }
+        ],
+        "error": "returned_model_mismatch",
+        "seconds": 3.0087169250000443,
+        "http_attempts": 1
       }
     },
     "28ab12d97d904724c3cb131771a0df42": {
@@ -19668,6 +20342,41 @@
         "partner": "ТАЙРАЙ",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
+      },
+      "status": "failed_validation",
+      "last_checked": 1793077740.909383,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "e7ed05b60c1d210853eefa5e024b7bb21cb36c3178df223d6d5edad6d7682c54",
+        "status": "failed_validation",
+        "schema_valid": false,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "e7ed05b60c1d210853eefa5e024b7bb21cb36c3178df223d6d5edad6d7682c54",
+            "seconds": 3.237025532999951,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 458,
+              "prompt_tokens": 2656,
+              "total_tokens": 3114,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 417
+              }
+            }
+          }
+        ],
+        "error": "returned_model_mismatch",
+        "seconds": 3.2377740000001722,
+        "http_attempts": 1
       }
     },
     "a2ef00177355ec1cabda7ab481f8bca3": {
@@ -19677,6 +20386,41 @@
         "partner": "Фильм «Живая книга» 6+",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
+      },
+      "status": "failed_validation",
+      "last_checked": 1793077750.7385342,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "3a5e78bc73b7d9d02a5ebfe14d48ef102db56baf973454a1530f11c0576abb0c",
+        "status": "failed_validation",
+        "schema_valid": false,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "3a5e78bc73b7d9d02a5ebfe14d48ef102db56baf973454a1530f11c0576abb0c",
+            "seconds": 2.7966598079999585,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 360,
+              "prompt_tokens": 2663,
+              "total_tokens": 3023,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 301
+              }
+            }
+          }
+        ],
+        "error": "returned_model_mismatch",
+        "seconds": 2.797357088999888,
+        "http_attempts": 1
       }
     },
     "89c17b1043f251927e1c5ce24c8c1ea8": {
@@ -19686,6 +20430,41 @@
         "partner": "UP SUSHI",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
+      },
+      "status": "failed_validation",
+      "last_checked": 1793077760.287083,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "1ac18f52dbbbc6eb8b73ab3d2d007c77311aefebd0787ad1cb7bd9ec90efaa6c",
+        "status": "failed_validation",
+        "schema_valid": false,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "1ac18f52dbbbc6eb8b73ab3d2d007c77311aefebd0787ad1cb7bd9ec90efaa6c",
+            "seconds": 2.516136012000061,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 200,
+              "prompt_tokens": 2823,
+              "total_tokens": 3023,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 88
+              }
+            }
+          }
+        ],
+        "error": "returned_model_mismatch",
+        "seconds": 2.5168715759998577,
+        "http_attempts": 1
       }
     },
     "3fa51a75c459d01e6bef607dce276e33": {
@@ -19695,6 +20474,41 @@
         "partner": "alloptik",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
+      },
+      "status": "failed_validation",
+      "last_checked": 1793077769.9902923,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "2094838fb27c47bbec1c0350d2429f4075db005c893c72599643548ca63dce66",
+        "status": "failed_validation",
+        "schema_valid": false,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "2094838fb27c47bbec1c0350d2429f4075db005c893c72599643548ca63dce66",
+            "seconds": 2.669420686999956,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 258,
+              "prompt_tokens": 2823,
+              "total_tokens": 3081,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 213
+              }
+            }
+          }
+        ],
+        "error": "returned_model_mismatch",
+        "seconds": 2.670333403000086,
+        "http_attempts": 1
       }
     },
     "42fc969cef5db479b142bb436aecd11a": {
@@ -19704,6 +20518,41 @@
         "partner": "Харли",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
+      },
+      "status": "failed_validation",
+      "last_checked": 1793077781.0069447,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "34bf8284c5ade86799df96fce94045e63b5919cce10723ecfe0318e0ee1e053f",
+        "status": "failed_validation",
+        "schema_valid": false,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "34bf8284c5ade86799df96fce94045e63b5919cce10723ecfe0318e0ee1e053f",
+            "seconds": 3.9841206689998216,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 338,
+              "prompt_tokens": 2654,
+              "total_tokens": 2992,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 294
+              }
+            }
+          }
+        ],
+        "error": "returned_model_mismatch",
+        "seconds": 3.984764149000057,
+        "http_attempts": 1
       }
     },
     "f9ebcc51f03493faf70ef691c013c022": {
@@ -19713,6 +20562,41 @@
         "partner": "Банк ПСБ",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
+      },
+      "status": "failed_validation",
+      "last_checked": 1793077792.1943047,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "e204c7fd998763106023ee65cbfb23bd744d989cad7916b6d39187b0b2a1405d",
+        "status": "failed_validation",
+        "schema_valid": false,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "e204c7fd998763106023ee65cbfb23bd744d989cad7916b6d39187b0b2a1405d",
+            "seconds": 4.154636810000056,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 639,
+              "prompt_tokens": 2657,
+              "total_tokens": 3296,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 590
+              }
+            }
+          }
+        ],
+        "error": "returned_model_mismatch",
+        "seconds": 4.155358267999873,
+        "http_attempts": 1
       }
     },
     "e30c0771b88d573fb8ce4d701cfef25d": {
@@ -19722,6 +20606,41 @@
         "partner": "Imperialis Orchestra",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
+      },
+      "status": "failed_validation",
+      "last_checked": 1793077801.8560617,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "47def242b735e48abaa75ff9c462a26208855a9aea9f7f57ceb315ce18c0ff4f",
+        "status": "failed_validation",
+        "schema_valid": false,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "47def242b735e48abaa75ff9c462a26208855a9aea9f7f57ceb315ce18c0ff4f",
+            "seconds": 2.629172381999979,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 246,
+              "prompt_tokens": 2862,
+              "total_tokens": 3108,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 195
+              }
+            }
+          }
+        ],
+        "error": "returned_model_mismatch",
+        "seconds": 2.6298823570000422,
+        "http_attempts": 1
       }
     },
     "47cb2d036b0999c780fae3fd060cf570": {
@@ -19731,6 +20650,41 @@
         "partner": "Фильм «Барашек Шон и Чудище Лохматое» 6+",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
+      },
+      "status": "failed_validation",
+      "last_checked": 1793077811.9635727,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "5b781b121a0d43febf00275a7d1dd86c1225455b5700b5aa282b80ad0d250cea",
+        "status": "failed_validation",
+        "schema_valid": false,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "5b781b121a0d43febf00275a7d1dd86c1225455b5700b5aa282b80ad0d250cea",
+            "seconds": 3.0752422089999527,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 372,
+              "prompt_tokens": 2673,
+              "total_tokens": 3045,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 301
+              }
+            }
+          }
+        ],
+        "error": "returned_model_mismatch",
+        "seconds": 3.075897540999904,
+        "http_attempts": 1
       }
     },
     "21e97ad0d67621894d3546a6f6408100": {
@@ -19740,6 +20694,41 @@
         "partner": "Театр Дениса Матросова",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
+      },
+      "status": "failed_validation",
+      "last_checked": 1793077822.1167982,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "d80c3a3927490e648c0a7ac38dd4100f9d0c9766be0c5ae4e650bd87760d5454",
+        "status": "failed_validation",
+        "schema_valid": false,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "d80c3a3927490e648c0a7ac38dd4100f9d0c9766be0c5ae4e650bd87760d5454",
+            "seconds": 3.1206442119998883,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 434,
+              "prompt_tokens": 2830,
+              "total_tokens": 3264,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 368
+              }
+            }
+          }
+        ],
+        "error": "returned_model_mismatch",
+        "seconds": 3.121414669999922,
+        "http_attempts": 1
       }
     },
     "f7ea8e86f597b8b2fc664637ec3b29f9": {
@@ -19749,6 +20738,41 @@
         "partner": "Москвариум",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
+      },
+      "status": "failed_validation",
+      "last_checked": 1793077832.6989944,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "aa347eb5f545a09de0ad8efccf0c0ff7cfd038592a5c472dbddbb247c8878747",
+        "status": "failed_validation",
+        "schema_valid": false,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "aa347eb5f545a09de0ad8efccf0c0ff7cfd038592a5c472dbddbb247c8878747",
+            "seconds": 3.5497038390001308,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 320,
+              "prompt_tokens": 2656,
+              "total_tokens": 2976,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 268
+              }
+            }
+          }
+        ],
+        "error": "returned_model_mismatch",
+        "seconds": 3.5504271289998997,
+        "http_attempts": 1
       }
     },
     "466f9fd855c86cf5426ab443e144d337": {
@@ -19758,6 +20782,41 @@
         "partner": "EventyOn",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
+      },
+      "status": "failed_validation",
+      "last_checked": 1793077843.557214,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "057f0f63e96c0855fb1a2cc664240833e090ef9c1f03f478cbc2d5ee4f82af55",
+        "status": "failed_validation",
+        "schema_valid": false,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "057f0f63e96c0855fb1a2cc664240833e090ef9c1f03f478cbc2d5ee4f82af55",
+            "seconds": 3.825875202999896,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 611,
+              "prompt_tokens": 2862,
+              "total_tokens": 3473,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 566
+              }
+            }
+          }
+        ],
+        "error": "returned_model_mismatch",
+        "seconds": 3.8265802890000487,
+        "http_attempts": 1
       }
     },
     "44829389ef2d6ab011c21c8bc1cfe272": {
@@ -19767,6 +20826,41 @@
         "partner": "ROSTIC’S",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
+      },
+      "status": "failed_validation",
+      "last_checked": 1793077853.3682792,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "8e42b42cb2d65348ddd854a8a089712efd3b21d7cd62a0079709c03efeb17112",
+        "status": "failed_validation",
+        "schema_valid": false,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "8e42b42cb2d65348ddd854a8a089712efd3b21d7cd62a0079709c03efeb17112",
+            "seconds": 2.77782154800002,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 300,
+              "prompt_tokens": 2656,
+              "total_tokens": 2956,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 256
+              }
+            }
+          }
+        ],
+        "error": "returned_model_mismatch",
+        "seconds": 2.77846260299998,
+        "http_attempts": 1
       }
     },
     "fc4e75f44feeeae2753b0edc57fcdfbf": {
@@ -19776,6 +20870,41 @@
         "partner": "Подружка",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
+      },
+      "status": "failed_validation",
+      "last_checked": 1793077864.4651623,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "3af41668771b25a9efbb61359133f1556d7c249646209698b6a7d3269d719d16",
+        "status": "failed_validation",
+        "schema_valid": false,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "3af41668771b25a9efbb61359133f1556d7c249646209698b6a7d3269d719d16",
+            "seconds": 4.0640266109999175,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 719,
+              "prompt_tokens": 2654,
+              "total_tokens": 3373,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 701
+              }
+            }
+          }
+        ],
+        "error": "returned_model_mismatch",
+        "seconds": 4.0647236410000005,
+        "http_attempts": 1
       }
     },
     "021715dc7e5ecd57c82ccc577c0d71dd": {
@@ -19785,6 +20914,41 @@
         "partner": "Кредит Европа Банк",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
+      },
+      "status": "failed_validation",
+      "last_checked": 1793077875.216525,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "d3e51660b6dd25d1f0c5d9ac08c6b00d6a38207265f226704eb70168c2728a48",
+        "status": "failed_validation",
+        "schema_valid": false,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "d3e51660b6dd25d1f0c5d9ac08c6b00d6a38207265f226704eb70168c2728a48",
+            "seconds": 3.7184944190000806,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 630,
+              "prompt_tokens": 2659,
+              "total_tokens": 3289,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 574
+              }
+            }
+          }
+        ],
+        "error": "returned_model_mismatch",
+        "seconds": 3.719198874000085,
+        "http_attempts": 1
       }
     },
     "64c6857111c9e74b01f46dffbea84301": {
@@ -19794,6 +20958,41 @@
         "partner": "MYBOX",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
+      },
+      "status": "failed_validation",
+      "last_checked": 1793077885.519915,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "980765d0a611ae40b8b9a0e9fcfd904a278f63d1a898715528093c5e4cdf77cb",
+        "status": "failed_validation",
+        "schema_valid": false,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "980765d0a611ae40b8b9a0e9fcfd904a278f63d1a898715528093c5e4cdf77cb",
+            "seconds": 3.2700318170000173,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 420,
+              "prompt_tokens": 2653,
+              "total_tokens": 3073,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 381
+              }
+            }
+          }
+        ],
+        "error": "returned_model_mismatch",
+        "seconds": 3.270737052999948,
+        "http_attempts": 1
       }
     },
     "968ce55dc493c99a0737e44fbebd5418": {
@@ -19803,6 +21002,41 @@
         "partner": "T2",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
+      },
+      "status": "failed_validation",
+      "last_checked": 1793077905.189982,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "e5c0ccf37156922d4f46041da1d2efc4cf14bb14f9f905491a1441a9b9c06cee",
+        "status": "failed_validation",
+        "schema_valid": false,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "e5c0ccf37156922d4f46041da1d2efc4cf14bb14f9f905491a1441a9b9c06cee",
+            "seconds": 12.637059179000062,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 4067,
+              "prompt_tokens": 2653,
+              "total_tokens": 6720,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 3447
+              }
+            }
+          }
+        ],
+        "error": "returned_model_mismatch",
+        "seconds": 12.637887255999885,
+        "http_attempts": 1
       }
     },
     "81bcf334d4aa1e3904df78aa20a9235d": {
@@ -19812,6 +21046,41 @@
         "partner": "Wink Всё в одном",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
+      },
+      "status": "failed_validation",
+      "last_checked": 1793077915.2541392,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "74f37f2fc68e9296b4b9096ec4765b0956be92b8b206f21b2aa6ab2cba398f7e",
+        "status": "failed_validation",
+        "schema_valid": false,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "74f37f2fc68e9296b4b9096ec4765b0956be92b8b206f21b2aa6ab2cba398f7e",
+            "seconds": 3.0312168290001864,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 414,
+              "prompt_tokens": 2658,
+              "total_tokens": 3072,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 365
+              }
+            }
+          }
+        ],
+        "error": "returned_model_mismatch",
+        "seconds": 3.0319425239999873,
+        "http_attempts": 1
       }
     },
     "e072dcf22c61130a0b471420fee57b3a": {
@@ -19821,6 +21090,41 @@
         "partner": "Onlinetours",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
+      },
+      "status": "failed_validation",
+      "last_checked": 1793077925.4514349,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "42c225986ff0982d172bc00a03098a791815b16493af06a4a8dc3cf608aef79d",
+        "status": "failed_validation",
+        "schema_valid": false,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "42c225986ff0982d172bc00a03098a791815b16493af06a4a8dc3cf608aef79d",
+            "seconds": 3.163725726999928,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 447,
+              "prompt_tokens": 2824,
+              "total_tokens": 3271,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 405
+              }
+            }
+          }
+        ],
+        "error": "returned_model_mismatch",
+        "seconds": 3.1644070580000516,
+        "http_attempts": 1
       }
     },
     "8f504663463136e2eec8778cf4a48f14": {
@@ -19830,6 +21134,41 @@
         "partner": "Золотое яблоко",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
+      },
+      "status": "failed_validation",
+      "last_checked": 1793077936.8876572,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "50e8f210c9e9fc75962415a92eae32c0245f5fa034b39e61c72cb0733fef652f",
+        "status": "failed_validation",
+        "schema_valid": false,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "50e8f210c9e9fc75962415a92eae32c0245f5fa034b39e61c72cb0733fef652f",
+            "seconds": 4.4032862659998955,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 513,
+              "prompt_tokens": 2659,
+              "total_tokens": 3172,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 461
+              }
+            }
+          }
+        ],
+        "error": "returned_model_mismatch",
+        "seconds": 4.403975071000104,
+        "http_attempts": 1
       }
     },
     "f478f1aa4c63f4fc5ab9518bae489538": {
@@ -19839,6 +21178,41 @@
         "partner": "Учи.ру",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
+      },
+      "status": "failed_validation",
+      "last_checked": 1793077947.9533443,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "4588d77ba9d61864f31e0645519561326b76e5b2fa1d1af9b98c5b7faa822d0f",
+        "status": "failed_validation",
+        "schema_valid": false,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "4588d77ba9d61864f31e0645519561326b76e5b2fa1d1af9b98c5b7faa822d0f",
+            "seconds": 4.03244552000001,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 245,
+              "prompt_tokens": 2863,
+              "total_tokens": 3108,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 201
+              }
+            }
+          }
+        ],
+        "error": "returned_model_mismatch",
+        "seconds": 4.033629486000109,
+        "http_attempts": 1
       }
     },
     "afa79470660d100f888d9df27d6ec369": {
@@ -19848,6 +21222,41 @@
         "partner": "Доктор Слон",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
+      },
+      "status": "failed_validation",
+      "last_checked": 1793077958.8308132,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "b972445309ca55d6f6318b597166b9116237a67572ebd143483d546c6b3ad6da",
+        "status": "failed_validation",
+        "schema_valid": false,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "b972445309ca55d6f6318b597166b9116237a67572ebd143483d546c6b3ad6da",
+            "seconds": 3.8440195310001855,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 323,
+              "prompt_tokens": 2656,
+              "total_tokens": 2979,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 273
+              }
+            }
+          }
+        ],
+        "error": "returned_model_mismatch",
+        "seconds": 3.8447064029999183,
+        "http_attempts": 1
       }
     },
     "70e98e10c84934e705e8cb9ed496091a": {
@@ -19857,6 +21266,41 @@
         "partner": "i'way",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
+      },
+      "status": "failed_validation",
+      "last_checked": 1793077970.5163078,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "9e7a2809336b49c4431182a8cfae1495edf6b9a95e114b77dc8fc4155e4db396",
+        "status": "failed_validation",
+        "schema_valid": false,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "9e7a2809336b49c4431182a8cfae1495edf6b9a95e114b77dc8fc4155e4db396",
+            "seconds": 4.652352503999964,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 488,
+              "prompt_tokens": 2654,
+              "total_tokens": 3142,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 438
+              }
+            }
+          }
+        ],
+        "error": "returned_model_mismatch",
+        "seconds": 4.65305959300008,
+        "http_attempts": 1
       }
     },
     "addc9b27fedce306942f62878312eb33": {
@@ -19866,6 +21310,41 @@
         "partner": "Мультифото",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
+      },
+      "status": "failed_validation",
+      "last_checked": 1793077982.750207,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "2b75f2080d807c461f650d4959b496b3b1f3cf2c7761bfd6658d1d893fa89e1b",
+        "status": "failed_validation",
+        "schema_valid": false,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "2b75f2080d807c461f650d4959b496b3b1f3cf2c7761bfd6658d1d893fa89e1b",
+            "seconds": 5.200257181000097,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 515,
+              "prompt_tokens": 2864,
+              "total_tokens": 3379,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 465
+              }
+            }
+          }
+        ],
+        "error": "returned_model_mismatch",
+        "seconds": 5.201239900000019,
+        "http_attempts": 1
       }
     },
     "e02eed8f4848fab339e56e6f1d3810cd": {
@@ -19875,6 +21354,41 @@
         "partner": "ACOOLA",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
+      },
+      "status": "failed_validation",
+      "last_checked": 1793077994.9170265,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "04a2e609b78b32611441cb4c747dc753d61126dac7d55f917c4ef288728b9c60",
+        "status": "failed_validation",
+        "schema_valid": false,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "04a2e609b78b32611441cb4c747dc753d61126dac7d55f917c4ef288728b9c60",
+            "seconds": 5.133142758000076,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 310,
+              "prompt_tokens": 2654,
+              "total_tokens": 2964,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 262
+              }
+            }
+          }
+        ],
+        "error": "returned_model_mismatch",
+        "seconds": 5.133821924999893,
+        "http_attempts": 1
       }
     },
     "756f918a1e590b41f58f0284b4587b68": {
@@ -19884,6 +21398,41 @@
         "partner": "Wink START",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
+      },
+      "status": "failed_validation",
+      "last_checked": 1793078006.2996764,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "69573929daec35843574c1c1b0774c922ba4fc438b0a70677adf9f5702407c54",
+        "status": "failed_validation",
+        "schema_valid": false,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "69573929daec35843574c1c1b0774c922ba4fc438b0a70677adf9f5702407c54",
+            "seconds": 4.348899112000026,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 403,
+              "prompt_tokens": 2823,
+              "total_tokens": 3226,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 356
+              }
+            }
+          }
+        ],
+        "error": "returned_model_mismatch",
+        "seconds": 4.349561246999883,
+        "http_attempts": 1
       }
     },
     "626d1cdc7a2357acec912c340a08b6f8": {
@@ -19893,6 +21442,41 @@
         "partner": "Интроверт",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
+      },
+      "status": "failed_validation",
+      "last_checked": 1793078018.2855887,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "e1a4a6398da9dda37502e7a017f50f73f0c484ceeb0045c828fb9c1c2cb1efaf",
+        "status": "failed_validation",
+        "schema_valid": false,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "e1a4a6398da9dda37502e7a017f50f73f0c484ceeb0045c828fb9c1c2cb1efaf",
+            "seconds": 4.95298385000001,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 586,
+              "prompt_tokens": 2655,
+              "total_tokens": 3241,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 544
+              }
+            }
+          }
+        ],
+        "error": "returned_model_mismatch",
+        "seconds": 4.9536519870000575,
+        "http_attempts": 1
       }
     },
     "24098c280f72ece04bec1fe12ef7a164": {
@@ -19902,6 +21486,41 @@
         "partner": "Ситилинк",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
+      },
+      "status": "failed_validation",
+      "last_checked": 1793078028.1544685,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "e6b61191717b11569bf597066007cf93ac7804c44a3dc520b1f5c6022efa40c9",
+        "status": "failed_validation",
+        "schema_valid": false,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "e6b61191717b11569bf597066007cf93ac7804c44a3dc520b1f5c6022efa40c9",
+            "seconds": 2.834846279999965,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 342,
+              "prompt_tokens": 2863,
+              "total_tokens": 3205,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 296
+              }
+            }
+          }
+        ],
+        "error": "returned_model_mismatch",
+        "seconds": 2.8355016529999375,
+        "http_attempts": 1
       }
     },
     "447bf90ef59b054dd5be33184f879c6f": {
@@ -19911,6 +21530,41 @@
         "partner": "Travelata",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
+      },
+      "status": "failed_validation",
+      "last_checked": 1793078038.3389757,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "0877353dce6d9406d57de3f1132af3cbae20b31a3c0f73020b94b80e74aca15d",
+        "status": "failed_validation",
+        "schema_valid": false,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "0877353dce6d9406d57de3f1132af3cbae20b31a3c0f73020b94b80e74aca15d",
+            "seconds": 3.1510680989999855,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 425,
+              "prompt_tokens": 2653,
+              "total_tokens": 3078,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 385
+              }
+            }
+          }
+        ],
+        "error": "returned_model_mismatch",
+        "seconds": 3.1517534889999297,
+        "http_attempts": 1
       }
     },
     "787e1a8ca4c362112783b45b38615722": {
@@ -19920,6 +21574,41 @@
         "partner": "Хеликс",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
+      },
+      "status": "failed_validation",
+      "last_checked": 1793078048.3187203,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "2ec64919b3f42b3bc407316fc639b7e21d119280f2b2f72bdee3e9831b478517",
+        "status": "failed_validation",
+        "schema_valid": false,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "2ec64919b3f42b3bc407316fc639b7e21d119280f2b2f72bdee3e9831b478517",
+            "seconds": 2.9466824679998354,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 355,
+              "prompt_tokens": 2654,
+              "total_tokens": 3009,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 315
+              }
+            }
+          }
+        ],
+        "error": "returned_model_mismatch",
+        "seconds": 2.9473812720000296,
+        "http_attempts": 1
       }
     },
     "75e0a898ce8c9d82aa3675aa4940ef56": {
@@ -19929,6 +21618,41 @@
         "partner": "Tom Tailor",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
+      },
+      "status": "failed_validation",
+      "last_checked": 1793078057.8938043,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "2cfef08364cfc686514280ae214cfc1c20ba1cdf31a49349ba86a9cf44326daf",
+        "status": "failed_validation",
+        "schema_valid": false,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "2cfef08364cfc686514280ae214cfc1c20ba1cdf31a49349ba86a9cf44326daf",
+            "seconds": 2.5414339910000763,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 250,
+              "prompt_tokens": 2654,
+              "total_tokens": 2904,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 208
+              }
+            }
+          }
+        ],
+        "error": "returned_model_mismatch",
+        "seconds": 2.5421309020000535,
+        "http_attempts": 1
       }
     },
     "d049ed01711ce3a52c6d8e2604687c08": {
@@ -19938,6 +21662,41 @@
         "partner": "Стиле Ди Вита",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
+      },
+      "status": "failed_validation",
+      "last_checked": 1793078068.4537706,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "7195475c8509b0075e13230620ccfc102e31cfb5c7f883b8767308170104bc08",
+        "status": "failed_validation",
+        "schema_valid": false,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "7195475c8509b0075e13230620ccfc102e31cfb5c7f883b8767308170104bc08",
+            "seconds": 3.526799364999988,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 512,
+              "prompt_tokens": 2657,
+              "total_tokens": 3169,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 461
+              }
+            }
+          }
+        ],
+        "error": "returned_model_mismatch",
+        "seconds": 3.5274806460001855,
+        "http_attempts": 1
       }
     },
     "1777925f766ad477d1abaaa5e6ff988a": {
@@ -19947,7 +21706,54 @@
         "partner": "Цифровая Машка",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793078075.7015564,
+      "last_result": {
+        "provider": "tokenharbor",
+        "requested_model": "deepseek-v4.1-flash:free",
+        "endpoint": "https://tokenharbor.ai/v1/chat/completions",
+        "request_body_sha256": "d35f3fd5efa7b80240c17a5ca68ed785fc044397d6f0d1df0d9f7a551b1bfa37",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "d35f3fd5efa7b80240c17a5ca68ed785fc044397d6f0d1df0d9f7a551b1bfa37",
+            "seconds": 7.145334479999974,
+            "http_status": 200,
+            "returned_model": "deepseek-v4.1-flash",
+            "usage": {
+              "prompt_tokens": 2625,
+              "completion_tokens": 740,
+              "total_tokens": 3365
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4.1-flash",
+        "usage": {
+          "prompt_tokens": 2625,
+          "completion_tokens": 740,
+          "total_tokens": 3365
+        },
+        "seconds": 7.1562245499999335,
+        "http_attempts": 1
+      },
+      "fingerprint": "6dffa044e38c180b54761b2d745b1928ba2689f53209afa181657de00d95230f",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В предоставленном блоке TARGET нет предложения партнёра «Цифровая Машка»."
+        ]
+      },
+      "inferred_as_of": "2026-10-27",
+      "inferred_at": 1793078075.7016592,
+      "inferred_provider": "tokenharbor",
+      "returned_model": "deepseek-v4.1-flash",
+      "publication_allowed": false
     },
     "f6bb32d3f45bf7f9aa475d6ddd2c6fed": {
       "target": {
@@ -19956,7 +21762,54 @@
         "partner": "Trip.com",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793078082.350956,
+      "last_result": {
+        "provider": "tokenharbor",
+        "requested_model": "deepseek-v4.1-flash:free",
+        "endpoint": "https://tokenharbor.ai/v1/chat/completions",
+        "request_body_sha256": "8a803be13856c405019db8098e3aa7d48bc8e60dc3b85a7ec13691e8ffc13a92",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "8a803be13856c405019db8098e3aa7d48bc8e60dc3b85a7ec13691e8ffc13a92",
+            "seconds": 4.605328616999941,
+            "http_status": 200,
+            "returned_model": "deepseek-v4.1-flash",
+            "usage": {
+              "prompt_tokens": 2620,
+              "completion_tokens": 345,
+              "total_tokens": 2965
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4.1-flash",
+        "usage": {
+          "prompt_tokens": 2620,
+          "completion_tokens": 345,
+          "total_tokens": 2965
+        },
+        "seconds": 4.615583372999936,
+        "http_attempts": 1
+      },
+      "fingerprint": "0826a2f072dc1b69f8157ea5796400e632605fb0d8703fed46986ab943414b6a",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В предоставленном тексте и изображениях отсутствует предложение партнёра Trip.com в программе T2 «Больше»."
+        ]
+      },
+      "inferred_as_of": "2026-10-27",
+      "inferred_at": 1793078082.351056,
+      "inferred_provider": "tokenharbor",
+      "returned_model": "deepseek-v4.1-flash",
+      "publication_allowed": false
     },
     "c3fc3f8363d960162905ee4d7491fab2": {
       "target": {
@@ -19965,7 +21818,54 @@
         "partner": "Авито Путешествия",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793078089.6581824,
+      "last_result": {
+        "provider": "tokenharbor",
+        "requested_model": "deepseek-v4.1-flash:free",
+        "endpoint": "https://tokenharbor.ai/v1/chat/completions",
+        "request_body_sha256": "ea395e5b71d92f626db2b56edf56327129f69498f9cf58af8ce1d53c310a3c16",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "ea395e5b71d92f626db2b56edf56327129f69498f9cf58af8ce1d53c310a3c16",
+            "seconds": 5.2639006899999,
+            "http_status": 200,
+            "returned_model": "deepseek-v4.1-flash",
+            "usage": {
+              "prompt_tokens": 2624,
+              "completion_tokens": 367,
+              "total_tokens": 2991
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4.1-flash",
+        "usage": {
+          "prompt_tokens": 2624,
+          "completion_tokens": 367,
+          "total_tokens": 2991
+        },
+        "seconds": 5.274648413000023,
+        "http_attempts": 1
+      },
+      "fingerprint": "6c438e1411a3324dcfea1ba5ffbd9ee9234984ac981fec04ad41e278f952acc7",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В предоставленном тексте нет информации о предложении партнёра «Авито Путешествия» в программе T2 «Больше»."
+        ]
+      },
+      "inferred_as_of": "2026-10-27",
+      "inferred_at": 1793078089.6582813,
+      "inferred_provider": "tokenharbor",
+      "returned_model": "deepseek-v4.1-flash",
+      "publication_allowed": false
     },
     "cc19dca3c9052f508dc1e2300adfc502": {
       "target": {
@@ -19974,7 +21874,54 @@
         "partner": "Яндекс 360",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793078098.4957948,
+      "last_result": {
+        "provider": "tokenharbor",
+        "requested_model": "deepseek-v4.1-flash:free",
+        "endpoint": "https://tokenharbor.ai/v1/chat/completions",
+        "request_body_sha256": "b2a44f00143a3d9e468e2cb8ee48ae97843f75f21003125d54b511e2387b708a",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "b2a44f00143a3d9e468e2cb8ee48ae97843f75f21003125d54b511e2387b708a",
+            "seconds": 6.7941233999999895,
+            "http_status": 200,
+            "returned_model": "deepseek-v4.1-flash",
+            "usage": {
+              "prompt_tokens": 2623,
+              "completion_tokens": 601,
+              "total_tokens": 3224
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4.1-flash",
+        "usage": {
+          "prompt_tokens": 2623,
+          "completion_tokens": 601,
+          "total_tokens": 3224
+        },
+        "seconds": 6.804676961000041,
+        "http_attempts": 1
+      },
+      "fingerprint": "00d8b4cfdf6c95fc979b64d50028d33a868d0cc4868dc8ebfa7bd7ba0cf44ac3",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В предоставленном блоке TARGET отсутствует предложение партнёра Яндекс 360."
+        ]
+      },
+      "inferred_as_of": "2026-10-27",
+      "inferred_at": 1793078098.4959056,
+      "inferred_provider": "tokenharbor",
+      "returned_model": "deepseek-v4.1-flash",
+      "publication_allowed": false
     },
     "bc820554da5e4ace92d641bbed3e8371": {
       "target": {
@@ -19983,7 +21930,10 @@
         "partner": "Ясно",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
-      }
+      },
+      "last_checked": 1793076723.9494061,
+      "capture_status": "failed",
+      "capture_error": "ReadError"
     },
     "4ab42a1779434818c538ed96ed646564": {
       "target": {
@@ -19992,7 +21942,54 @@
         "partner": "Издательство «МИФ»",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793078110.1464884,
+      "last_result": {
+        "provider": "tokenharbor",
+        "requested_model": "deepseek-v4.1-flash:free",
+        "endpoint": "https://tokenharbor.ai/v1/chat/completions",
+        "request_body_sha256": "faeaeb717fc59f61d50dfd287d43540e6dea66f554052c9f2ed0c3b99d9128cd",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "faeaeb717fc59f61d50dfd287d43540e6dea66f554052c9f2ed0c3b99d9128cd",
+            "seconds": 9.607975950999844,
+            "http_status": 200,
+            "returned_model": "deepseek-v4.1-flash",
+            "usage": {
+              "prompt_tokens": 2625,
+              "completion_tokens": 983,
+              "total_tokens": 3608
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4.1-flash",
+        "usage": {
+          "prompt_tokens": 2625,
+          "completion_tokens": 983,
+          "total_tokens": 3608
+        },
+        "seconds": 9.618187449000061,
+        "http_attempts": 1
+      },
+      "fingerprint": "6a8002a208b1211d54fe622a7acd9b5032271ce428dcbbc4d877419d4bedec8c",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В предоставленном тексте и изображениях нет предложения партнёра «Издательство «МИФ»» в программе T2 «Больше»."
+        ]
+      },
+      "inferred_as_of": "2026-10-27",
+      "inferred_at": 1793078110.1465845,
+      "inferred_provider": "tokenharbor",
+      "returned_model": "deepseek-v4.1-flash",
+      "publication_allowed": false
     },
     "1d840baf67ca3d61c04bdea87706f825": {
       "target": {
@@ -20001,7 +21998,54 @@
         "partner": "CyberHero",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793078126.574549,
+      "last_result": {
+        "provider": "tokenharbor",
+        "requested_model": "deepseek-v4.1-flash:free",
+        "endpoint": "https://tokenharbor.ai/v1/chat/completions",
+        "request_body_sha256": "9a2c803ea4a973c3b22d590f03e6e33a7deaeea3c33a6bd293bee96eea7c33f6",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "9a2c803ea4a973c3b22d590f03e6e33a7deaeea3c33a6bd293bee96eea7c33f6",
+            "seconds": 14.38411152399999,
+            "http_status": 200,
+            "returned_model": "deepseek-v4.1-flash",
+            "usage": {
+              "prompt_tokens": 2620,
+              "completion_tokens": 1734,
+              "total_tokens": 4354
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4.1-flash",
+        "usage": {
+          "prompt_tokens": 2620,
+          "completion_tokens": 1734,
+          "total_tokens": 4354
+        },
+        "seconds": 14.394466961000035,
+        "http_attempts": 1
+      },
+      "fingerprint": "894cf660ff30c5845cbdd7b09c103f6f0446814ce422bcdcff00ed18635b6dae",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В предоставленном тексте не найдено предложения партнёра CyberHero в программе T2 «Больше»."
+        ]
+      },
+      "inferred_as_of": "2026-10-27",
+      "inferred_at": 1793078126.5746455,
+      "inferred_provider": "tokenharbor",
+      "returned_model": "deepseek-v4.1-flash",
+      "publication_allowed": false
     },
     "8320f65e09bfb4fe5fa86dc17d9659b5": {
       "target": {
@@ -20010,7 +22054,54 @@
         "partner": "KARI",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793078133.1792102,
+      "last_result": {
+        "provider": "tokenharbor",
+        "requested_model": "deepseek-v4.1-flash:free",
+        "endpoint": "https://tokenharbor.ai/v1/chat/completions",
+        "request_body_sha256": "fc2569f61eaca399fd331a3faca50008967d9e6771545e3c48c2a043a1d19f57",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "fc2569f61eaca399fd331a3faca50008967d9e6771545e3c48c2a043a1d19f57",
+            "seconds": 4.5620122929999525,
+            "http_status": 200,
+            "returned_model": "deepseek-v4.1-flash",
+            "usage": {
+              "prompt_tokens": 2620,
+              "completion_tokens": 342,
+              "total_tokens": 2962
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4.1-flash",
+        "usage": {
+          "prompt_tokens": 2620,
+          "completion_tokens": 342,
+          "total_tokens": 2962
+        },
+        "seconds": 4.572271197999953,
+        "http_attempts": 1
+      },
+      "fingerprint": "8656075eb75ce8a1e1fea71ad31efa696d3958fd8a2e4ec405380b4690ce9a47",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "Информация о предложениях партнёра KARI в программе T2 «Больше» в предоставленном тексте отсутствует."
+        ]
+      },
+      "inferred_as_of": "2026-10-27",
+      "inferred_at": 1793078133.179312,
+      "inferred_provider": "tokenharbor",
+      "returned_model": "deepseek-v4.1-flash",
+      "publication_allowed": false
     },
     "8ec86eabb5ab068f09fbc3bd697a047b": {
       "target": {
@@ -20019,7 +22110,54 @@
         "partner": "Kari KIDS",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793078145.0509017,
+      "last_result": {
+        "provider": "tokenharbor",
+        "requested_model": "deepseek-v4.1-flash:free",
+        "endpoint": "https://tokenharbor.ai/v1/chat/completions",
+        "request_body_sha256": "939ce7c50ae377106e9a56927a3d5e62f471fe5c514a76ed5c6ee752f544f542",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "939ce7c50ae377106e9a56927a3d5e62f471fe5c514a76ed5c6ee752f544f542",
+            "seconds": 9.828479876000074,
+            "http_status": 200,
+            "returned_model": "deepseek-v4.1-flash",
+            "usage": {
+              "prompt_tokens": 2622,
+              "completion_tokens": 1159,
+              "total_tokens": 3781
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4.1-flash",
+        "usage": {
+          "prompt_tokens": 2622,
+          "completion_tokens": 1159,
+          "total_tokens": 3781
+        },
+        "seconds": 9.838864587999979,
+        "http_attempts": 1
+      },
+      "fingerprint": "7cd2f480f782f12ab4454e4f2a749c3d92907d9d5abcc0fbf3f2ff8ee60beb87",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В предоставленных данных нет блока или предложения партнёра Kari KIDS в программе T2 «Больше»."
+        ]
+      },
+      "inferred_as_of": "2026-10-27",
+      "inferred_at": 1793078145.0510037,
+      "inferred_provider": "tokenharbor",
+      "returned_model": "deepseek-v4.1-flash",
+      "publication_allowed": false
     },
     "6c3171d7dafda896430c96b5e6ac0bbc": {
       "target": {
@@ -20028,7 +22166,54 @@
         "partner": "USmall",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793078161.5569303,
+      "last_result": {
+        "provider": "tokenharbor",
+        "requested_model": "deepseek-v4.1-flash:free",
+        "endpoint": "https://tokenharbor.ai/v1/chat/completions",
+        "request_body_sha256": "487681f16354d3e63934b6dcc1d284684326d899865b2156b7047fc145fb95e4",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "487681f16354d3e63934b6dcc1d284684326d899865b2156b7047fc145fb95e4",
+            "seconds": 14.46288777399991,
+            "http_status": 200,
+            "returned_model": "deepseek-v4.1-flash",
+            "usage": {
+              "prompt_tokens": 2620,
+              "completion_tokens": 1766,
+              "total_tokens": 4386
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4.1-flash",
+        "usage": {
+          "prompt_tokens": 2620,
+          "completion_tokens": 1766,
+          "total_tokens": 4386
+        },
+        "seconds": 14.473313998000094,
+        "http_attempts": 1
+      },
+      "fingerprint": "7b3e57a6175d56b9301b0494c75800bf06eb8595d8ed8c8c4e94c4cfc23a9589",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В предоставленном блоке TARGET нет упоминания партнёра USmall или его предложения."
+        ]
+      },
+      "inferred_as_of": "2026-10-27",
+      "inferred_at": 1793078161.557034,
+      "inferred_provider": "tokenharbor",
+      "returned_model": "deepseek-v4.1-flash",
+      "publication_allowed": false
     },
     "2aa3e09b233fe64f74c9e1858a78e638": {
       "target": {
@@ -20037,7 +22222,55 @@
         "partner": "KANRY",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793078167.8186378,
+      "last_result": {
+        "provider": "tokenharbor",
+        "requested_model": "deepseek-v4.1-flash:free",
+        "endpoint": "https://tokenharbor.ai/v1/chat/completions",
+        "request_body_sha256": "a3c3cf8020b5ee392fd7d57a294ee874dd0ed0b95c80f574d9156bb881d640c7",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "a3c3cf8020b5ee392fd7d57a294ee874dd0ed0b95c80f574d9156bb881d640c7",
+            "seconds": 4.218477052000026,
+            "http_status": 200,
+            "returned_model": "deepseek-v4.1-flash",
+            "usage": {
+              "prompt_tokens": 2621,
+              "completion_tokens": 300,
+              "total_tokens": 2921
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4.1-flash",
+        "usage": {
+          "prompt_tokens": 2621,
+          "completion_tokens": 300,
+          "total_tokens": 2921
+        },
+        "seconds": 4.228834351999922,
+        "http_attempts": 1
+      },
+      "fingerprint": "4214317c5113dbf2322e4f069cac27018de464ee6649cec7861e589351f38288",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В предоставленных данных отсутствует предложение партнёра KANRY в программе T2 «Больше».",
+          "Не указаны выгода, область действия, способ получения и ограничения для партнёра KANRY."
+        ]
+      },
+      "inferred_as_of": "2026-10-27",
+      "inferred_at": 1793078167.8187623,
+      "inferred_provider": "tokenharbor",
+      "returned_model": "deepseek-v4.1-flash",
+      "publication_allowed": false
     },
     "74232ad7bc05aaf3aec0101e401dee16": {
       "target": {
@@ -20046,7 +22279,54 @@
         "partner": "Государственная Академическая капелла",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793078184.6675692,
+      "last_result": {
+        "provider": "tokenharbor",
+        "requested_model": "deepseek-v4.1-flash:free",
+        "endpoint": "https://tokenharbor.ai/v1/chat/completions",
+        "request_body_sha256": "17ba0eeff23281271d275322849a3cc481eed8faf1da6ad2eb7c351994670ff8",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "17ba0eeff23281271d275322849a3cc481eed8faf1da6ad2eb7c351994670ff8",
+            "seconds": 14.805604310999797,
+            "http_status": 200,
+            "returned_model": "deepseek-v4.1-flash",
+            "usage": {
+              "prompt_tokens": 2635,
+              "completion_tokens": 1978,
+              "total_tokens": 4613
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4.1-flash",
+        "usage": {
+          "prompt_tokens": 2635,
+          "completion_tokens": 1978,
+          "total_tokens": 4613
+        },
+        "seconds": 14.81588094000017,
+        "http_attempts": 1
+      },
+      "fingerprint": "ede5cff321d3795abd9f57ffef65c0d8b335fe201dac42d2cb89729a0dced86f",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В предоставленных данных нет сведений о предложении программы T2 «Больше» у партнёра «Государственная Академическая капелла»."
+        ]
+      },
+      "inferred_as_of": "2026-10-27",
+      "inferred_at": 1793078184.6676683,
+      "inferred_provider": "tokenharbor",
+      "returned_model": "deepseek-v4.1-flash",
+      "publication_allowed": false
     },
     "1639ba1e6ca85bd1c8b8603d19b5e0f7": {
       "target": {
@@ -20055,7 +22335,10 @@
         "partner": "СПУТНИК",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
-      }
+      },
+      "last_checked": 1793076781.767431,
+      "capture_status": "failed",
+      "capture_error": "ReadError"
     },
     "d0538ca07c7d8be867b6a387e6aadada": {
       "target": {
@@ -20064,7 +22347,54 @@
         "partner": "Петербург глазами инженера",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793078195.0604172,
+      "last_result": {
+        "provider": "tokenharbor",
+        "requested_model": "deepseek-v4.1-flash:free",
+        "endpoint": "https://tokenharbor.ai/v1/chat/completions",
+        "request_body_sha256": "0a2a25c22cbb03f57f2c21596c8cf2fbdf7de7300142ef27b87bb38fced13986",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "0a2a25c22cbb03f57f2c21596c8cf2fbdf7de7300142ef27b87bb38fced13986",
+            "seconds": 8.349619097999948,
+            "http_status": 200,
+            "returned_model": "deepseek-v4.1-flash",
+            "usage": {
+              "prompt_tokens": 2634,
+              "completion_tokens": 880,
+              "total_tokens": 3514
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4.1-flash",
+        "usage": {
+          "prompt_tokens": 2634,
+          "completion_tokens": 880,
+          "total_tokens": 3514
+        },
+        "seconds": 8.360433359000126,
+        "http_attempts": 1
+      },
+      "fingerprint": "a0953e5f0de431f3d3d6b03b9d7b4119690f58b92c8630ff73661bc5aba0be15",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В предоставленном тексте нет предложения партнёра «Петербург глазами инженера» в программе T2 «Больше»."
+        ]
+      },
+      "inferred_as_of": "2026-10-27",
+      "inferred_at": 1793078195.06052,
+      "inferred_provider": "tokenharbor",
+      "returned_model": "deepseek-v4.1-flash",
+      "publication_allowed": false
     },
     "79c9b24e86da6559484cfb002706c306": {
       "target": {
@@ -20073,7 +22403,54 @@
         "partner": "Кофе Бон",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793078205.7134073,
+      "last_result": {
+        "provider": "tokenharbor",
+        "requested_model": "deepseek-v4.1-flash:free",
+        "endpoint": "https://tokenharbor.ai/v1/chat/completions",
+        "request_body_sha256": "a2b73c4fb3b0730e6bbe1ab5f9c7097808c2e7a470f04f95ad55bfb57957c396",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "a2b73c4fb3b0730e6bbe1ab5f9c7097808c2e7a470f04f95ad55bfb57957c396",
+            "seconds": 8.60932589999993,
+            "http_status": 200,
+            "returned_model": "deepseek-v4.1-flash",
+            "usage": {
+              "prompt_tokens": 2630,
+              "completion_tokens": 942,
+              "total_tokens": 3572
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4.1-flash",
+        "usage": {
+          "prompt_tokens": 2630,
+          "completion_tokens": 942,
+          "total_tokens": 3572
+        },
+        "seconds": 8.619601625999849,
+        "http_attempts": 1
+      },
+      "fingerprint": "e2225540d8e4e6f19e4be50632873e8edf2af5645fdb1545ed7fd84b09325792",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В предоставленных данных отсутствует предложение программы T2 «Больше» у партнёра «Кофе Бон»."
+        ]
+      },
+      "inferred_as_of": "2026-10-27",
+      "inferred_at": 1793078205.7135067,
+      "inferred_provider": "tokenharbor",
+      "returned_model": "deepseek-v4.1-flash",
+      "publication_allowed": false
     },
     "ec78d5ad9cc9be0d7517b1dd8dbec060": {
       "target": {
@@ -20082,7 +22459,55 @@
         "partner": "Школа мозаики «Сад Гранат»",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793078214.25301,
+      "last_result": {
+        "provider": "tokenharbor",
+        "requested_model": "deepseek-v4.1-flash:free",
+        "endpoint": "https://tokenharbor.ai/v1/chat/completions",
+        "request_body_sha256": "c173cc575dae418684a37849c79f70049ed51f1775128152ff74d5f96b0636ec",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "c173cc575dae418684a37849c79f70049ed51f1775128152ff74d5f96b0636ec",
+            "seconds": 6.49558274900005,
+            "http_status": 200,
+            "returned_model": "deepseek-v4.1-flash",
+            "usage": {
+              "prompt_tokens": 2848,
+              "completion_tokens": 586,
+              "total_tokens": 3434
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4.1-flash",
+        "usage": {
+          "prompt_tokens": 2848,
+          "completion_tokens": 586,
+          "total_tokens": 3434
+        },
+        "seconds": 6.506316839999954,
+        "http_attempts": 1
+      },
+      "fingerprint": "84533a4c3b0f8e85fe1831d43dbbdfcab8108fd347819913c15eee18da07e142",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В предоставленном тексте и изображениях нет предложения партнёра «Школа мозаики «Сад Гранат»».",
+          "Выгода, область действия, способ получения и ограничения для указанного партнёра не указаны."
+        ]
+      },
+      "inferred_as_of": "2026-10-27",
+      "inferred_at": 1793078214.253113,
+      "inferred_provider": "tokenharbor",
+      "returned_model": "deepseek-v4.1-flash",
+      "publication_allowed": false
     },
     "d91277c54e480f8654e4f18a696d1e1f": {
       "target": {
@@ -20091,7 +22516,55 @@
         "partner": "ТОКИО-CITY",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793078225.6300228,
+      "last_result": {
+        "provider": "tokenharbor",
+        "requested_model": "deepseek-v4.1-flash:free",
+        "endpoint": "https://tokenharbor.ai/v1/chat/completions",
+        "request_body_sha256": "36280144e47d01d6834f0c33671282559aee8b1124a0b6d3cb09934df55d14aa",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "36280144e47d01d6834f0c33671282559aee8b1124a0b6d3cb09934df55d14aa",
+            "seconds": 9.333086497000068,
+            "http_status": 200,
+            "returned_model": "deepseek-v4.1-flash",
+            "usage": {
+              "prompt_tokens": 2842,
+              "completion_tokens": 938,
+              "total_tokens": 3780
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4.1-flash",
+        "usage": {
+          "prompt_tokens": 2842,
+          "completion_tokens": 938,
+          "total_tokens": 3780
+        },
+        "seconds": 9.343442567000011,
+        "http_attempts": 1
+      },
+      "fingerprint": "88de28a9e375f988f3bd55a12f1ec5f6ec8b702b62786ae14fc6ac86524ca27c",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В предоставленном тексте нет блока с предложением партнёра «ТОКИО-CITY» в программе T2 «Больше».",
+          "Не указаны выгода, область действия, способ получения и ограничения для предложения «ТОКИО-CITY» в программе T2 «Больше»."
+        ]
+      },
+      "inferred_as_of": "2026-10-27",
+      "inferred_at": 1793078225.6301274,
+      "inferred_provider": "tokenharbor",
+      "returned_model": "deepseek-v4.1-flash",
+      "publication_allowed": false
     },
     "9b1a90a8b8f0a4d852c467a582e6e4f9": {
       "target": {
@@ -20100,7 +22573,71 @@
         "partner": "СПб ГБУК «Санкт-Петербургский театр им. В.Ф. Комиссаржевской»",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793078232.3272398,
+      "last_result": {
+        "provider": "tokenharbor",
+        "requested_model": "deepseek-v4.1-flash:free",
+        "endpoint": "https://tokenharbor.ai/v1/chat/completions",
+        "request_body_sha256": "655ee9c310ba6106f0dcb0d00ca18ca850a78015b57c9bf72f63f2f7676d9859",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "655ee9c310ba6106f0dcb0d00ca18ca850a78015b57c9bf72f63f2f7676d9859",
+            "seconds": 4.653418525000006,
+            "http_status": 200,
+            "returned_model": "deepseek-v4.1-flash",
+            "usage": {
+              "prompt_tokens": 2822,
+              "completion_tokens": 388,
+              "total_tokens": 3210,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "cache_creation_input_tokens": 0,
+              "cache_read_input_tokens": 256
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4.1-flash",
+        "usage": {
+          "prompt_tokens": 2822,
+          "completion_tokens": 388,
+          "total_tokens": 3210,
+          "prompt_tokens_details": {
+            "cached_tokens": 256
+          },
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 256
+        },
+        "seconds": 4.663799481999831,
+        "http_attempts": 1
+      },
+      "fingerprint": "38effb6097694dd0be0bc46e197afc3e975e73417540828bc60fc4f72599bf15",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "Предложение программы T2 «Больше» для партнёра СПб ГБУК «Санкт-Петербургский театр им. В.Ф. Комиссаржевской» в предоставленном тексте не описано",
+          "Выгода (размер скидки, кэшбэка, баллов или подарка) для указанного партнёра не указана",
+          "Область действия выгоды у указанного партнёра не указана",
+          "Способ получения выгоды у указанного партнёра не указан",
+          "Ограничения выгоды у указанного партнёра не указаны",
+          "Срок действия предложения (valid_until) для указанного партнёра не указан",
+          "Условия начисления и срок будущего начисления (accrual_timing) для указанного партнёра не указаны",
+          "Промокод для указанного партнёра не указан"
+        ]
+      },
+      "inferred_as_of": "2026-10-27",
+      "inferred_at": 1793078232.327346,
+      "inferred_provider": "tokenharbor",
+      "returned_model": "deepseek-v4.1-flash",
+      "publication_allowed": false
     },
     "2a5c546803bded66f063c4f446930dbd": {
       "target": {
@@ -20109,7 +22646,54 @@
         "partner": "Музыкальный театр им. Ф.И. Шаляпина",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793078238.8632832,
+      "last_result": {
+        "provider": "tokenharbor",
+        "requested_model": "deepseek-v4.1-flash:free",
+        "endpoint": "https://tokenharbor.ai/v1/chat/completions",
+        "request_body_sha256": "7ea7f328a2f8452a4e94cda1a7c4741e3326a74df796c8a4857c2f00f1dd4a65",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "7ea7f328a2f8452a4e94cda1a7c4741e3326a74df796c8a4857c2f00f1dd4a65",
+            "seconds": 4.492950855999879,
+            "http_status": 200,
+            "returned_model": "deepseek-v4.1-flash",
+            "usage": {
+              "prompt_tokens": 2644,
+              "completion_tokens": 300,
+              "total_tokens": 2944
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4.1-flash",
+        "usage": {
+          "prompt_tokens": 2644,
+          "completion_tokens": 300,
+          "total_tokens": 2944
+        },
+        "seconds": 4.503317376000041,
+        "http_attempts": 1
+      },
+      "fingerprint": "917296cd77efdecac7745e7614acf81bfc97248e96b3ad729cb4403a1df00767",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В предоставленном тексте нет предложения программы T2 «Больше» для партнёра «Музыкальный театр им. Ф.И. Шаляпина»."
+        ]
+      },
+      "inferred_as_of": "2026-10-27",
+      "inferred_at": 1793078238.8633902,
+      "inferred_provider": "tokenharbor",
+      "returned_model": "deepseek-v4.1-flash",
+      "publication_allowed": false
     },
     "3d92ddeea4ea35b80fefe0cf3862edc4": {
       "target": {
@@ -20118,7 +22702,72 @@
         "partner": "EnerGO",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793078304.744159,
+      "last_result": {
+        "provider": "tokenharbor",
+        "requested_model": "deepseek-v4.1-flash:free",
+        "endpoint": "https://tokenharbor.ai/v1/chat/completions",
+        "request_body_sha256": "15cb15228932de5791c5569f49d48d1cd1f1b6fcfb2fd2b8a2f9d8f725d29b43",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "15cb15228932de5791c5569f49d48d1cd1f1b6fcfb2fd2b8a2f9d8f725d29b43",
+            "seconds": 63.83720160000007,
+            "http_status": 200,
+            "returned_model": "deepseek-v4.1-flash",
+            "usage": {
+              "prompt_tokens": 2629,
+              "completion_tokens": 9748,
+              "total_tokens": 12377
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4.1-flash",
+        "usage": {
+          "prompt_tokens": 2629,
+          "completion_tokens": 9748,
+          "total_tokens": 12377
+        },
+        "seconds": 63.84778492700002,
+        "http_attempts": 1
+      },
+      "fingerprint": "1d81831507d3e92a86a9d4d5ab4478efb42049c825cf73ef3dfedf04144f2d13",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": null,
+            "audience": "не указана",
+            "restrictions": [],
+            "how_to_get": [],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Спецпредложение",
+              "EnerGO"
+            ],
+            "practical_advice": []
+          }
+        ],
+        "unknowns": [
+          "Размер выгоды, условия, срок действия и способ получения не указаны в блоке TARGET."
+        ]
+      },
+      "inferred_as_of": "2026-10-27",
+      "inferred_at": 1793078304.744263,
+      "inferred_provider": "tokenharbor",
+      "returned_model": "deepseek-v4.1-flash",
+      "publication_allowed": false
     },
     "53762b28c92e5d416e32c266a714e5d2": {
       "target": {
@@ -20127,7 +22776,55 @@
         "partner": "Прогулки по рекам и каналам",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793078312.0442247,
+      "last_result": {
+        "provider": "tokenharbor",
+        "requested_model": "deepseek-v4.1-flash:free",
+        "endpoint": "https://tokenharbor.ai/v1/chat/completions",
+        "request_body_sha256": "8c350c7e1b200b196e01007c44c796e4b12b9d280ed9e4c64dc5462785ce7c16",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "8c350c7e1b200b196e01007c44c796e4b12b9d280ed9e4c64dc5462785ce7c16",
+            "seconds": 5.256345495000005,
+            "http_status": 200,
+            "returned_model": "deepseek-v4.1-flash",
+            "usage": {
+              "prompt_tokens": 2636,
+              "completion_tokens": 170,
+              "total_tokens": 2806
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4.1-flash",
+        "usage": {
+          "prompt_tokens": 2636,
+          "completion_tokens": 170,
+          "total_tokens": 2806
+        },
+        "seconds": 5.266619509999828,
+        "http_attempts": 1
+      },
+      "fingerprint": "2bad63432773ea097d485468198c2aadb4096ff94b5c4435952175e07d76c721",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "На предоставленных страницах отсутствует предложение партнёра «Прогулки по рекам и каналам» в рамках программы T2 «Больше»",
+          "Не указаны выгода, область действия, способ получения и ограничения для партнёра «Прогулки по рекам и каналам»"
+        ]
+      },
+      "inferred_as_of": "2026-10-27",
+      "inferred_at": 1793078312.0443275,
+      "inferred_provider": "tokenharbor",
+      "returned_model": "deepseek-v4.1-flash",
+      "publication_allowed": false
     },
     "bfd3823f67e2b3ce081e7ed67e4f6c9f": {
       "target": {
@@ -20136,7 +22833,54 @@
         "partner": "BAHROMA",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793078322.6970196,
+      "last_result": {
+        "provider": "tokenharbor",
+        "requested_model": "deepseek-v4.1-flash:free",
+        "endpoint": "https://tokenharbor.ai/v1/chat/completions",
+        "request_body_sha256": "ccfc7846aa22701715d6afe0407bb944cf182131ed35124b3ab1ea91ead05319",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "ccfc7846aa22701715d6afe0407bb944cf182131ed35124b3ab1ea91ead05319",
+            "seconds": 8.609087974999738,
+            "http_status": 200,
+            "returned_model": "deepseek-v4.1-flash",
+            "usage": {
+              "prompt_tokens": 2630,
+              "completion_tokens": 870,
+              "total_tokens": 3500
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4.1-flash",
+        "usage": {
+          "prompt_tokens": 2630,
+          "completion_tokens": 870,
+          "total_tokens": 3500
+        },
+        "seconds": 8.619690719000118,
+        "http_attempts": 1
+      },
+      "fingerprint": "6c89ac61f951a087db972d7e8bbc6915869868657fc14efac9b6ac7fcd2b27a2",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В предоставленном тексте нет информации о партнёре BAHROMA или его предложении."
+        ]
+      },
+      "inferred_as_of": "2026-10-27",
+      "inferred_at": 1793078322.6971166,
+      "inferred_provider": "tokenharbor",
+      "returned_model": "deepseek-v4.1-flash",
+      "publication_allowed": false
     },
     "0d782ae5ef3fba92d0250ab7a0a1c6e5": {
       "target": {
@@ -20145,7 +22889,54 @@
         "partner": "СПб ГБУК «Петербург-концерт»",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793078342.6786134,
+      "last_result": {
+        "provider": "tokenharbor",
+        "requested_model": "deepseek-v4.1-flash:free",
+        "endpoint": "https://tokenharbor.ai/v1/chat/completions",
+        "request_body_sha256": "e766a9641b1a45d0da51d3f234de439fd07558e71553d490c59abebbb0ed8c0d",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "e766a9641b1a45d0da51d3f234de439fd07558e71553d490c59abebbb0ed8c0d",
+            "seconds": 17.93760763099999,
+            "http_status": 200,
+            "returned_model": "deepseek-v4.1-flash",
+            "usage": {
+              "prompt_tokens": 2642,
+              "completion_tokens": 2430,
+              "total_tokens": 5072
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4.1-flash",
+        "usage": {
+          "prompt_tokens": 2642,
+          "completion_tokens": 2430,
+          "total_tokens": 5072
+        },
+        "seconds": 17.94806087799998,
+        "http_attempts": 1
+      },
+      "fingerprint": "b2627607c5a7c332c93dc3cc107967771a4587ec7db5adb45881ee196d58f743",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В предоставленных данных нет предложения партнёра СПб ГБУК «Петербург-концерт» в программе T2 «Больше»."
+        ]
+      },
+      "inferred_as_of": "2026-10-27",
+      "inferred_at": 1793078342.6787393,
+      "inferred_provider": "tokenharbor",
+      "returned_model": "deepseek-v4.1-flash",
+      "publication_allowed": false
     },
     "1fb2504ab1758f4f653a96619a468134": {
       "target": {
@@ -20154,7 +22945,54 @@
         "partner": "Додо Пицца",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793078352.6736007,
+      "last_result": {
+        "provider": "tokenharbor",
+        "requested_model": "deepseek-v4.1-flash:free",
+        "endpoint": "https://tokenharbor.ai/v1/chat/completions",
+        "request_body_sha256": "26d515fb1091b06a4d8e62eb4c7f17ea289a1ed2569e9834cf79688491686b3f",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "26d515fb1091b06a4d8e62eb4c7f17ea289a1ed2569e9834cf79688491686b3f",
+            "seconds": 7.95088925600021,
+            "http_status": 200,
+            "returned_model": "deepseek-v4.1-flash",
+            "usage": {
+              "prompt_tokens": 2632,
+              "completion_tokens": 773,
+              "total_tokens": 3405
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4.1-flash",
+        "usage": {
+          "prompt_tokens": 2632,
+          "completion_tokens": 773,
+          "total_tokens": 3405
+        },
+        "seconds": 7.9617081500000495,
+        "http_attempts": 1
+      },
+      "fingerprint": "5fb65481b7337c07a2d69ae655b9accec3d379292ab59a6817ebe5aaa8c60cca",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В предоставленном тексте и изображениях нет предложения партнёра «Додо Пицца» в программе T2 «Больше»."
+        ]
+      },
+      "inferred_as_of": "2026-10-27",
+      "inferred_at": 1793078352.6737309,
+      "inferred_provider": "tokenharbor",
+      "returned_model": "deepseek-v4.1-flash",
+      "publication_allowed": false
     },
     "e365ed9e14de1a7a963d5f1a2a700866": {
       "target": {
@@ -20163,7 +23001,59 @@
         "partner": "Александринский театр",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793078360.109892,
+      "last_result": {
+        "provider": "tokenharbor",
+        "requested_model": "deepseek-v4.1-flash:free",
+        "endpoint": "https://tokenharbor.ai/v1/chat/completions",
+        "request_body_sha256": "cca99947f07728b2960e74afb89fc52266145f7c2acb659142c2d58e8243acd0",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "cca99947f07728b2960e74afb89fc52266145f7c2acb659142c2d58e8243acd0",
+            "seconds": 5.392321701999663,
+            "http_status": 200,
+            "returned_model": "deepseek-v4.1-flash",
+            "usage": {
+              "prompt_tokens": 2634,
+              "completion_tokens": 264,
+              "total_tokens": 2898
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4.1-flash",
+        "usage": {
+          "prompt_tokens": 2634,
+          "completion_tokens": 264,
+          "total_tokens": 2898
+        },
+        "seconds": 5.402735959999973,
+        "http_attempts": 1
+      },
+      "fingerprint": "4cf78347cc23372b60b918f92029741bda2889bac3fd9c601215afcd64353e79",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "Предложение программы T2 «Больше» у партнёра «Александринский театр» на предоставленных страницах не найдено",
+          "Выгода (размер скидки, кэшбэка, баллов или подарка) для Александринского театра не указана",
+          "Область действия выгоды для Александринского театра не указана",
+          "Способ получения выгоды для Александринского театра не указан",
+          "Ограничения выгоды для Александринского театра не указаны",
+          "Срок действия и промокод для предложения Александринского театра не указаны"
+        ]
+      },
+      "inferred_as_of": "2026-10-27",
+      "inferred_at": 1793078360.1099927,
+      "inferred_provider": "tokenharbor",
+      "returned_model": "deepseek-v4.1-flash",
+      "publication_allowed": false
     },
     "490fba1cff65ecbb3fac573dcc2dc771": {
       "target": {
@@ -20172,7 +23062,54 @@
         "partner": "Жизньмарт",
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793078366.935503,
+      "last_result": {
+        "provider": "tokenharbor",
+        "requested_model": "deepseek-v4.1-flash:free",
+        "endpoint": "https://tokenharbor.ai/v1/chat/completions",
+        "request_body_sha256": "dfd9cc73a1fb5deed11b4bf6a5121b89f91ae532e7dcbb119ca41c32591d45b4",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "dfd9cc73a1fb5deed11b4bf6a5121b89f91ae532e7dcbb119ca41c32591d45b4",
+            "seconds": 4.781917655999678,
+            "http_status": 200,
+            "returned_model": "deepseek-v4.1-flash",
+            "usage": {
+              "prompt_tokens": 2631,
+              "completion_tokens": 358,
+              "total_tokens": 2989
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4.1-flash",
+        "usage": {
+          "prompt_tokens": 2631,
+          "completion_tokens": 358,
+          "total_tokens": 2989
+        },
+        "seconds": 4.792243427000358,
+        "http_attempts": 1
+      },
+      "fingerprint": "82bd059375fc8795aa158a48afb2310d7c0d2372d6c840324180055eb862f2e0",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "Информация о предложении партнёра Жизньмарт в программе T2 «Больше» в предоставленном тексте отсутствует."
+        ]
+      },
+      "inferred_as_of": "2026-10-27",
+      "inferred_at": 1793078366.9356003,
+      "inferred_provider": "tokenharbor",
+      "returned_model": "deepseek-v4.1-flash",
+      "publication_allowed": false
     },
     "71b0f6fa956e57500e5457dc4501118f": {
       "target": {
@@ -20181,7 +23118,10 @@
         "partner": "Трафик 50 ГБ",
         "program": "MiXX M",
         "source_id": "t2_mixx"
-      }
+      },
+      "last_checked": 1793076875.5963385,
+      "capture_status": "failed",
+      "capture_error": "ReadError"
     },
     "cd56b40cbe38af5ad64e37e6356e4aa8": {
       "target": {
@@ -20190,7 +23130,75 @@
         "partner": "Яндекс Плюс",
         "program": "MiXX M",
         "source_id": "t2_mixx"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793078416.4457796,
+      "last_result": {
+        "provider": "tokenharbor",
+        "requested_model": "deepseek-v4.1-flash:free",
+        "endpoint": "https://tokenharbor.ai/v1/chat/completions",
+        "request_body_sha256": "505e5266e37952bd998e4bfa1464cb44d1c8fa18c3e3fb3d0ef93806059cceca",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "505e5266e37952bd998e4bfa1464cb44d1c8fa18c3e3fb3d0ef93806059cceca",
+            "seconds": 47.46504148799977,
+            "http_status": 200,
+            "returned_model": "deepseek-v4.1-flash",
+            "usage": {
+              "prompt_tokens": 2969,
+              "completion_tokens": 7245,
+              "total_tokens": 10214
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4.1-flash",
+        "usage": {
+          "prompt_tokens": 2969,
+          "completion_tokens": 7245,
+          "total_tokens": 10214
+        },
+        "seconds": 47.47556110000005,
+        "http_attempts": 1
+      },
+      "fingerprint": "cfa67cf8a41722aca32b0ebce4d6dbc208bf8f45a1d3595a232fe2fce25035e4",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": "доступ к Яндекс Музыке, Кинопоиску и Яндекс Книгам",
+            "audience": "1 человек",
+            "restrictions": [],
+            "how_to_get": [
+              "Выбрать готовую подписку MiXX M"
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Яндекс Плюс для 1 человека с доступом к Яндекс Музыке, Кинопоиску и Яндекс Книгам",
+              "Вы можете выбрать готовую подписку, состоящую из:"
+            ],
+            "practical_advice": []
+          }
+        ],
+        "unknowns": [
+          "promo_code",
+          "valid_until"
+        ]
+      },
+      "inferred_as_of": "2026-10-27",
+      "inferred_at": 1793078416.4458983,
+      "inferred_provider": "tokenharbor",
+      "returned_model": "deepseek-v4.1-flash",
+      "publication_allowed": false
     },
     "57bc7aec90f3a2bc906b68efc41575e3": {
       "target": {
@@ -20199,6 +23207,30 @@
         "partner": "X5 «Пакет»",
         "program": "MiXX M",
         "source_id": "t2_mixx"
+      },
+      "status": "failed",
+      "last_checked": 1793078418.7151053,
+      "last_result": {
+        "provider": "tokenharbor",
+        "requested_model": "deepseek-v4.1-flash:free",
+        "endpoint": "https://tokenharbor.ai/v1/chat/completions",
+        "request_body_sha256": "ebf9badeefb06193e678523204c267fd5b1d4bf65910db01bd93a654aabc88dd",
+        "status": "failed",
+        "schema_valid": false,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "ebf9badeefb06193e678523204c267fd5b1d4bf65910db01bd93a654aabc88dd",
+            "seconds": 0.23483659500016074,
+            "http_status": 404
+          }
+        ],
+        "api_error_code": "free_route_inactive",
+        "error": "nonretryable_http_status",
+        "seconds": 0.23546122900006594,
+        "http_attempts": 1
       }
     },
     "5ecb68555a6fde7232838dc10cef77d5": {
@@ -20208,7 +23240,77 @@
         "partner": "Wink",
         "program": "MiXX M",
         "source_id": "t2_mixx"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793078459.2038794,
+      "last_result": {
+        "provider": "tokenharbor",
+        "requested_model": "deepseek-v4.1-flash:free",
+        "endpoint": "https://tokenharbor.ai/v1/chat/completions",
+        "request_body_sha256": "1d37f81f11acd33a191a257b14324cdb801470a2b48db606f957cdfa0009bab8",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "1d37f81f11acd33a191a257b14324cdb801470a2b48db606f957cdfa0009bab8",
+            "seconds": 38.44487028399999,
+            "http_status": 200,
+            "returned_model": "deepseek-v4.1-flash",
+            "usage": {
+              "prompt_tokens": 2965,
+              "completion_tokens": 5594,
+              "total_tokens": 8559
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4.1-flash",
+        "usage": {
+          "prompt_tokens": 2965,
+          "completion_tokens": 5594,
+          "total_tokens": 8559
+        },
+        "seconds": 38.45547687199996,
+        "http_attempts": 1
+      },
+      "fingerprint": "1b37642937dcc52ba7b41d6933d411dc9ec4174a8623607bbb99a9e833050a8f",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": "предоставляется вместе с подпиской MiXX",
+            "audience": "подписчикам MiXX M",
+            "restrictions": [],
+            "how_to_get": [
+              "Оформить подписку MiXX M"
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Онлайн-кинотеатр Wink предоставляется вместе с подпиской MiXX",
+              "он подключится автоматически либо уже доступен в рамках вашего тарифа"
+            ],
+            "practical_advice": [
+              {
+                "text": "Проверить, доступен ли Wink автоматически после оформления подписки MiXX M или уже в рамках тарифа.",
+                "basis": "inference"
+              }
+            ]
+          }
+        ],
+        "unknowns": []
+      },
+      "inferred_as_of": "2026-10-27",
+      "inferred_at": 1793078459.2039864,
+      "inferred_provider": "tokenharbor",
+      "returned_model": "deepseek-v4.1-flash",
+      "publication_allowed": false
     },
     "6b31a510a1a574f8dc885887d1f9e654": {
       "target": {
@@ -20217,7 +23319,77 @@
         "partner": "PREMIER",
         "program": "MiXX M",
         "source_id": "t2_mixx"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793078497.3199842,
+      "last_result": {
+        "provider": "tokenharbor",
+        "requested_model": "deepseek-v4.1-flash:free",
+        "endpoint": "https://tokenharbor.ai/v1/chat/completions",
+        "request_body_sha256": "35c17374e23d7e6a82fc4f96c0da732a1985ac14b30b2c91640c205624e4f5fa",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "35c17374e23d7e6a82fc4f96c0da732a1985ac14b30b2c91640c205624e4f5fa",
+            "seconds": 36.07088237400012,
+            "http_status": 200,
+            "returned_model": "deepseek-v4.1-flash",
+            "usage": {
+              "prompt_tokens": 2971,
+              "completion_tokens": 5509,
+              "total_tokens": 8480
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4.1-flash",
+        "usage": {
+          "prompt_tokens": 2971,
+          "completion_tokens": 5509,
+          "total_tokens": 8480
+        },
+        "seconds": 36.08152835300007,
+        "http_attempts": 1
+      },
+      "fingerprint": "4047ec3ee9426d0f582829f9512dc533a0732b2863a319ad10bdf086ac2571bb",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": "подписка MiXX M",
+            "audience": "частные лица",
+            "restrictions": [],
+            "how_to_get": [
+              "Выбрать готовую подписку MiXX M"
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Онлайн-кинотеатр PREMIER",
+              "В подписку MiXX M входят 6 настраиваемых сервисов и 6 постоянных.",
+              "Вы можете выбрать готовую подписку, состоящую из:"
+            ],
+            "practical_advice": []
+          }
+        ],
+        "unknowns": [
+          "Стоимость подписки MiXX M",
+          "Срок действия предложения",
+          "Условия отключения"
+        ]
+      },
+      "inferred_as_of": "2026-10-27",
+      "inferred_at": 1793078497.3200932,
+      "inferred_provider": "tokenharbor",
+      "returned_model": "deepseek-v4.1-flash",
+      "publication_allowed": false
     },
     "cbd43879251608afc29a851619ba70d6": {
       "target": {
@@ -20226,7 +23398,82 @@
         "partner": "VK Музыка",
         "program": "MiXX M",
         "source_id": "t2_mixx"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793078527.278589,
+      "last_result": {
+        "provider": "tokenharbor",
+        "requested_model": "deepseek-v4.1-flash:free",
+        "endpoint": "https://tokenharbor.ai/v1/chat/completions",
+        "request_body_sha256": "899449c2d4c08d01a16c70f0c544f39015774f8230124951c3358eea438af4c7",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "899449c2d4c08d01a16c70f0c544f39015774f8230124951c3358eea438af4c7",
+            "seconds": 27.913972504999947,
+            "http_status": 200,
+            "returned_model": "deepseek-v4.1-flash",
+            "usage": {
+              "prompt_tokens": 2942,
+              "completion_tokens": 4270,
+              "total_tokens": 7212
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4.1-flash",
+        "usage": {
+          "prompt_tokens": 2942,
+          "completion_tokens": 4270,
+          "total_tokens": 7212
+        },
+        "seconds": 27.92451920199983,
+        "http_attempts": 1
+      },
+      "fingerprint": "7035334121166c9fc8a92ada1dfda2f63c5657bcd544a25bf186846833f0f459",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": "подписка MiXX M",
+            "audience": "частным лицам",
+            "restrictions": [],
+            "how_to_get": [
+              "Выбрать готовую подписку MiXX M, в составе которой есть VK Музыка."
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "В подписку MiXX M входят 6 настраиваемых сервисов и 6 постоянных.",
+              "Вы можете выбрать готовую подписку, состоящую из:",
+              "VK Музыка"
+            ],
+            "practical_advice": [
+              {
+                "text": "Чтобы получить VK Музыку, выбирайте готовую подписку MiXX M с VK Музыкой в составе.",
+                "basis": "inference"
+              }
+            ]
+          }
+        ],
+        "unknowns": [
+          "Не указано, входит ли VK Музыка в число 6 настраиваемых или 6 постоянных сервисов.",
+          "Не указаны срок и условия доступа к VK Музыке в подписке MiXX M.",
+          "Стоимость подписки MiXX M не указана."
+        ]
+      },
+      "inferred_as_of": "2026-10-27",
+      "inferred_at": 1793078527.2787263,
+      "inferred_provider": "tokenharbor",
+      "returned_model": "deepseek-v4.1-flash",
+      "publication_allowed": false
     },
     "171b46d0c2fb771f6076aafd6a711675": {
       "target": {
@@ -20235,6 +23482,34 @@
         "partner": "Выгодно вместе",
         "program": "MiXX M",
         "source_id": "t2_mixx"
+      },
+      "status": "deferred",
+      "last_checked": 1793078529.8143868,
+      "last_result": {
+        "provider": "tokenharbor",
+        "requested_model": "deepseek-v4.1-flash:free",
+        "endpoint": "https://tokenharbor.ai/v1/chat/completions",
+        "request_body_sha256": "a93ad39485b28290c38fe9463d94ae97c2e16de6defd13214e52e7ad49c775de",
+        "status": "deferred",
+        "schema_valid": false,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "a93ad39485b28290c38fe9463d94ae97c2e16de6defd13214e52e7ad49c775de",
+            "seconds": 0.5011656159999802,
+            "http_status": 429,
+            "retry_after_seconds": 3600.0,
+            "retry_not_admitted": true
+          }
+        ],
+        "api_error_code": "free_tier_limit_reached",
+        "error": "transient_http_exhausted",
+        "retry_after_seconds": 3600.0,
+        "stop_batch_reason": "provider_rate_limited",
+        "seconds": 0.5018274610001754,
+        "http_attempts": 1
       }
     },
     "3e850b3d90a3a65a5b95f8340b48bc8b": {
@@ -20442,7 +23717,10 @@
         "partner": "T2 Selection",
         "program": "T2 Selection",
         "source_id": "t2_selection_public"
-      }
+      },
+      "last_checked": 1793077072.7077496,
+      "capture_status": "failed",
+      "capture_error": "ReadError"
     },
     "ffcfa484b38e549846b7b9fb118954f5": {
       "target": {
@@ -20514,7 +23792,10 @@
         "partner": "Utair",
         "program": "Utair Status",
         "source_id": "utair_rule_documents"
-      }
+      },
+      "last_checked": 1793077117.637888,
+      "capture_status": "failed",
+      "capture_error": "Error"
     },
     "b8fd3c79cb78a020d577a8f0fc51c444": {
       "target": {
@@ -20523,7 +23804,10 @@
         "partner": "Utair",
         "program": "Utair Status",
         "source_id": "utair_rule_documents"
-      }
+      },
+      "last_checked": 1793077119.833288,
+      "capture_status": "failed",
+      "capture_error": "Error"
     },
     "dd5b6eb1edda4bf86d69e6727b43df12": {
       "target": {
@@ -20532,7 +23816,10 @@
         "partner": "Utair",
         "program": "Utair Status",
         "source_id": "utair_rule_documents"
-      }
+      },
+      "last_checked": 1793077122.2243125,
+      "capture_status": "failed",
+      "capture_error": "Error"
     },
     "5e7c49569e83d1ba83cf4eb6a5e89853": {
       "target": {
@@ -20541,7 +23828,10 @@
         "partner": "Utair",
         "program": "Utair Status",
         "source_id": "utair_rule_documents"
-      }
+      },
+      "last_checked": 1793077123.3968632,
+      "capture_status": "failed",
+      "capture_error": "Error"
     },
     "20ae7970f1e332cd5def9a3ed995e09f": {
       "target": {
@@ -20550,7 +23840,10 @@
         "partner": "Utair",
         "program": "Utair Status",
         "source_id": "utair_rule_documents"
-      }
+      },
+      "last_checked": 1793077124.1894598,
+      "capture_status": "failed",
+      "capture_error": "Error"
     },
     "b69f97086a7e6ea1cae0ef65ffb383e2": {
       "target": {
@@ -20559,7 +23852,10 @@
         "partner": "Utair",
         "program": "Utair Status",
         "source_id": "utair_rule_documents"
-      }
+      },
+      "last_checked": 1793077127.2109542,
+      "capture_status": "failed",
+      "capture_error": "Error"
     },
     "51fc0589e3249304e2d59669730c319d": {
       "target": {
@@ -20568,7 +23864,10 @@
         "partner": "Utair",
         "program": "Utair Status",
         "source_id": "utair_rule_documents"
-      }
+      },
+      "last_checked": 1793077128.2693985,
+      "capture_status": "failed",
+      "capture_error": "Error"
     },
     "96751a3ec1dcf0b4db7606a43a12784f": {
       "target": {
@@ -20577,7 +23876,10 @@
         "partner": "Utair",
         "program": "Utair Status",
         "source_id": "utair_rule_documents"
-      }
+      },
+      "last_checked": 1793077129.7089849,
+      "capture_status": "failed",
+      "capture_error": "Error"
     },
     "77e982217b89f94ffb934b20ba875527": {
       "target": {
@@ -20586,7 +23888,10 @@
         "partner": "Utair",
         "program": "Utair Status",
         "source_id": "utair_rule_documents"
-      }
+      },
+      "last_checked": 1793077132.4753907,
+      "capture_status": "failed",
+      "capture_error": "Error"
     },
     "ce3d55c0f8abb3ccd495e2ca4c45804d": {
       "target": {
@@ -20595,7 +23900,10 @@
         "partner": "Utair",
         "program": "Utair Status",
         "source_id": "utair_rule_documents"
-      }
+      },
+      "last_checked": 1793077134.0930612,
+      "capture_status": "failed",
+      "capture_error": "Error"
     },
     "e85446e6f88139fe4fb889466a90e99d": {
       "target": {
@@ -20604,7 +23912,10 @@
         "partner": "Utair",
         "program": "Utair Status",
         "source_id": "utair_rule_documents"
-      }
+      },
+      "last_checked": 1793077137.5359435,
+      "capture_status": "failed",
+      "capture_error": "Error"
     },
     "b0ea526542f0e69c8484818458131e70": {
       "target": {
@@ -20613,7 +23924,10 @@
         "partner": "Utair",
         "program": "Utair Status",
         "source_id": "utair_rule_documents"
-      }
+      },
+      "last_checked": 1793077138.4775255,
+      "capture_status": "failed",
+      "capture_error": "Error"
     },
     "ef67101c3b54ff68ffd0a93307897c5d": {
       "target": {
@@ -20622,7 +23936,10 @@
         "partner": "Utair",
         "program": "Utair Status",
         "source_id": "utair_rule_documents"
-      }
+      },
+      "last_checked": 1793077139.4222696,
+      "capture_status": "failed",
+      "capture_error": "Error"
     },
     "d47de3cf68c8be5d6840f946e9841bfa": {
       "target": {
@@ -20631,7 +23948,10 @@
         "partner": "Utair",
         "program": "Utair Status",
         "source_id": "utair_rule_documents"
-      }
+      },
+      "last_checked": 1793077143.0390625,
+      "capture_status": "failed",
+      "capture_error": "Error"
     },
     "a6c59c9c459e9c030e345463280a08c9": {
       "target": {
@@ -20640,7 +23960,10 @@
         "partner": "Utair",
         "program": "Utair Status",
         "source_id": "utair_rule_documents"
-      }
+      },
+      "last_checked": 1793077144.2978368,
+      "capture_status": "failed",
+      "capture_error": "Error"
     },
     "9adf352dade04013e9fc479e4155e023": {
       "target": {
@@ -20649,7 +23972,10 @@
         "partner": "Utair",
         "program": "Utair Status",
         "source_id": "utair_rule_documents"
-      }
+      },
+      "last_checked": 1793077145.0922008,
+      "capture_status": "failed",
+      "capture_error": "Error"
     },
     "39681404d25ed81e71599f8b97bd3d38": {
       "target": {
@@ -20658,7 +23984,10 @@
         "partner": "Utair",
         "program": "Utair Status",
         "source_id": "utair_rule_documents"
-      }
+      },
+      "last_checked": 1793077150.7613072,
+      "capture_status": "failed",
+      "capture_error": "Error"
     },
     "be66e68594076d74d5ef9f95ebdc69ff": {
       "target": {
@@ -20667,7 +23996,10 @@
         "partner": "Utair",
         "program": "Utair Status",
         "source_id": "utair_rule_documents"
-      }
+      },
+      "last_checked": 1793077152.812781,
+      "capture_status": "failed",
+      "capture_error": "Error"
     },
     "7a6c77fb49b522cd3f40137b174dee2b": {
       "target": {
@@ -20676,7 +24008,10 @@
         "partner": "ВТБ",
         "program": "Аэрофлот Бонус",
         "source_id": "af_vtb_rules"
-      }
+      },
+      "last_checked": 1793077154.6046796,
+      "capture_status": "failed",
+      "capture_error": "Error"
     },
     "60641f4d5a5adaa18c91fd9dccd63f9f": {
       "target": {
@@ -20685,7 +24020,10 @@
         "partner": "НСПК",
         "program": "Единая карта петербуржца (ЕКП)",
         "source_id": "nspk_ekp_rules"
-      }
+      },
+      "last_checked": 1793077156.0096393,
+      "capture_status": "failed",
+      "capture_error": "Error"
     },
     "2b2ee93c2c7acfaa326e173c3509f6a6": {
       "target": {
@@ -20694,7 +24032,10 @@
         "partner": "Уралсиб",
         "program": "РЖД Бонус",
         "source_id": "uralsib_rzd_rules"
-      }
+      },
+      "last_checked": 1793077157.3972802,
+      "capture_status": "failed",
+      "capture_error": "Error"
     },
     "487a0ccb13b3d119d44aab0344b577ec": {
       "target": {
@@ -20703,7 +24044,10 @@
         "partner": "Gorilla by БАСТА",
         "program": "Карта выпускника НИУ ВШЭ",
         "source_id": "hse_alumni"
-      }
+      },
+      "last_checked": 1793077161.2690885,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "6eefca7b45dba46dba5301ed9cfdb67b": {
       "target": {
@@ -20712,7 +24056,10 @@
         "partner": "Bionova",
         "program": "Карта выпускника НИУ ВШЭ",
         "source_id": "hse_alumni"
-      }
+      },
+      "last_checked": 1793077164.2561946,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "7cece7325fd8ceb92ce502cd500a6fd7": {
       "target": {
@@ -20721,7 +24068,10 @@
         "partner": "SIX WINES",
         "program": "Карта выпускника НИУ ВШЭ",
         "source_id": "hse_alumni"
-      }
+      },
+      "last_checked": 1793077167.2612529,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "0dbcadb95320008eab6c9afbe5a72a7e": {
       "target": {
@@ -20730,7 +24080,10 @@
         "partner": "Много Лосося",
         "program": "Карта выпускника НИУ ВШЭ",
         "source_id": "hse_alumni"
-      }
+      },
+      "last_checked": 1793077169.8766518,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "6cf9ab1bec88254b49fcf6abc71d899e": {
       "target": {
@@ -20739,7 +24092,10 @@
         "partner": "Roasted by MIA",
         "program": "Карта выпускника НИУ ВШЭ",
         "source_id": "hse_alumni"
-      }
+      },
+      "last_checked": 1793077172.860199,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "748c8a823619464a123a8f9ccf98f051": {
       "target": {
@@ -20748,7 +24104,10 @@
         "partner": "Alpaca",
         "program": "Карта выпускника НИУ ВШЭ",
         "source_id": "hse_alumni"
-      }
+      },
+      "last_checked": 1793077175.5324044,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "f9bf73a49b28e727bb284aa1713f056c": {
       "target": {
@@ -20757,7 +24116,10 @@
         "partner": "KROOKIES",
         "program": "Карта выпускника НИУ ВШЭ",
         "source_id": "hse_alumni"
-      }
+      },
+      "last_checked": 1793077178.154082,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "241c743e02173bda0bb7805a6dc2cfe9": {
       "target": {
@@ -20766,7 +24128,10 @@
         "partner": "Artplay Media",
         "program": "Карта выпускника НИУ ВШЭ",
         "source_id": "hse_alumni"
-      }
+      },
+      "last_checked": 1793077180.8499453,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "f36f20b7ee7903e774e71ae9be575fb0": {
       "target": {
@@ -20775,7 +24140,10 @@
         "partner": "Сеть детских лагерей Дружите.ру",
         "program": "Карта выпускника НИУ ВШЭ",
         "source_id": "hse_alumni"
-      }
+      },
+      "last_checked": 1793077183.5079877,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "f3e5214b62152299bc604c8d9f358f4b": {
       "target": {
@@ -20784,7 +24152,10 @@
         "partner": "Альпина Нон-фикшн",
         "program": "Карта выпускника НИУ ВШЭ",
         "source_id": "hse_alumni"
-      }
+      },
+      "last_checked": 1793077186.3588347,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "9046822c3605060e990c8ece45e2c0db": {
       "target": {
@@ -20793,7 +24164,10 @@
         "partner": "VOROBYEVA PHOTO",
         "program": "Карта выпускника НИУ ВШЭ",
         "source_id": "hse_alumni"
-      }
+      },
+      "last_checked": 1793077188.8343382,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "5edc7b8a7305d0dca73c08770fa9e60e": {
       "target": {
@@ -20802,7 +24176,10 @@
         "partner": "ФЛАУВАУ",
         "program": "Карта выпускника НИУ ВШЭ",
         "source_id": "hse_alumni"
-      }
+      },
+      "last_checked": 1793077191.459216,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "12d75d892bb52096175b5e1fc6ac5c9b": {
       "target": {
@@ -20811,7 +24188,10 @@
         "partner": "DROP me flowers",
         "program": "Карта выпускника НИУ ВШЭ",
         "source_id": "hse_alumni"
-      }
+      },
+      "last_checked": 1793077194.088262,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "34eabb38ffa24ef4b1c117536e81448d": {
       "target": {
@@ -20820,7 +24200,10 @@
         "partner": "Almabella",
         "program": "Карта выпускника НИУ ВШЭ",
         "source_id": "hse_alumni"
-      }
+      },
+      "last_checked": 1793077196.7534814,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "d4f0dc79ad09306548b1113e8aae44bf": {
       "target": {
@@ -20829,7 +24212,10 @@
         "partner": "JetHunter",
         "program": "Карта выпускника НИУ ВШЭ",
         "source_id": "hse_alumni"
-      }
+      },
+      "last_checked": 1793077199.5083337,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "747478701ba16e3411dd765305de7df6": {
       "target": {
@@ -20838,7 +24224,10 @@
         "partner": "Автошкола Пеликан",
         "program": "Карта выпускника НИУ ВШЭ",
         "source_id": "hse_alumni"
-      }
+      },
+      "last_checked": 1793077202.170252,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "8b96b3a86cde20cc70306e8801924616": {
       "target": {
@@ -20847,7 +24236,10 @@
         "partner": "Студия вокала MEZZO",
         "program": "Карта выпускника НИУ ВШЭ",
         "source_id": "hse_alumni"
-      }
+      },
+      "last_checked": 1793077204.5210974,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "2f95d26027296f03a1f6ce25fc0ab566": {
       "target": {
@@ -20856,7 +24248,10 @@
         "partner": "Точная оптика",
         "program": "Карта выпускника НИУ ВШЭ",
         "source_id": "hse_alumni"
-      }
+      },
+      "last_checked": 1793077207.214593,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "35a1b8c44f0ce52ce25830fb2e94d174": {
       "target": {
@@ -20865,7 +24260,10 @@
         "partner": "Ретрит-центр МА-МА",
         "program": "Карта выпускника НИУ ВШЭ",
         "source_id": "hse_alumni"
-      }
+      },
+      "last_checked": 1793077209.8466818,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "364b13887232c63d67be254a1cb673a8": {
       "target": {
@@ -20874,7 +24272,10 @@
         "partner": "Клиника \"Улыбка столицы\"",
         "program": "Карта выпускника НИУ ВШЭ",
         "source_id": "hse_alumni"
-      }
+      },
+      "last_checked": 1793077212.54958,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "b6e5e9e05fd861c2f9c189b163e99496": {
       "target": {
@@ -20883,7 +24284,10 @@
         "partner": "REBOOT",
         "program": "Карта выпускника НИУ ВШЭ",
         "source_id": "hse_alumni"
-      }
+      },
+      "last_checked": 1793077215.2053185,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "53c47177d88ab70ae0b25011f1ba7201": {
       "target": {
@@ -20892,7 +24296,10 @@
         "partner": "Школа онлайн-фитнеса SEKTA",
         "program": "Карта выпускника НИУ ВШЭ",
         "source_id": "hse_alumni"
-      }
+      },
+      "last_checked": 1793077217.8642683,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "a6fe415b3b3f8763ef3dd9d280d2b7ba": {
       "target": {
@@ -20901,7 +24308,10 @@
         "partner": "Йога-студия «Материал»",
         "program": "Карта выпускника НИУ ВШЭ",
         "source_id": "hse_alumni"
-      }
+      },
+      "last_checked": 1793077221.0112464,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "355982d61b39353390002b0b955f3cdd": {
       "target": {
@@ -20910,7 +24320,10 @@
         "partner": "PSY.one психология и коучинг",
         "program": "Карта выпускника НИУ ВШЭ",
         "source_id": "hse_alumni"
-      }
+      },
+      "last_checked": 1793077223.6769736,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "260fa5eba6d0971e77a4d7c4f11ad84e": {
       "target": {
@@ -20919,7 +24332,10 @@
         "partner": "Feedback",
         "program": "Карта выпускника НИУ ВШЭ",
         "source_id": "hse_alumni"
-      }
+      },
+      "last_checked": 1793077226.5398874,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "73fa1f49e46e9102f6c4a91d9d11369f": {
       "target": {
@@ -20928,7 +24344,10 @@
         "partner": "Сила ветра",
         "program": "Карта выпускника НИУ ВШЭ",
         "source_id": "hse_alumni"
-      }
+      },
+      "last_checked": 1793077229.1933637,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "b8537f09766e0ca4f1dc4d79234cc1f8": {
       "target": {
@@ -20937,7 +24356,10 @@
         "partner": "СпортМарафон",
         "program": "Карта выпускника НИУ ВШЭ",
         "source_id": "hse_alumni"
-      }
+      },
+      "last_checked": 1793077231.904241,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "cfe9a2c958efa9caf2eeea1d9da8be43": {
       "target": {
@@ -20946,7 +24368,10 @@
         "partner": "BeUp",
         "program": "Карта выпускника НИУ ВШЭ",
         "source_id": "hse_alumni"
-      }
+      },
+      "last_checked": 1793077234.565628,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "a0e9efce64c54eecf674be563bba2b1a": {
       "target": {
@@ -20955,7 +24380,10 @@
         "partner": "FlyFly",
         "program": "Карта выпускника НИУ ВШЭ",
         "source_id": "hse_alumni"
-      }
+      },
+      "last_checked": 1793077237.3991654,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "ab15271070c3318b8c09487ab19cb5ea": {
       "target": {
@@ -20964,7 +24392,10 @@
         "partner": "Arizen",
         "program": "Карта выпускника НИУ ВШЭ",
         "source_id": "hse_alumni"
-      }
+      },
+      "last_checked": 1793077240.06266,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "ee0fc7d58209d24f41a5d2b3e12e63bc": {
       "target": {
@@ -20973,7 +24404,10 @@
         "partner": "SF Education",
         "program": "Карта выпускника НИУ ВШЭ",
         "source_id": "hse_alumni"
-      }
+      },
+      "last_checked": 1793077243.0022118,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "71c2d5d40b2957dbfdee07c8e7c3851c": {
       "target": {
@@ -20982,7 +24416,10 @@
         "partner": "Skyeng",
         "program": "Карта выпускника НИУ ВШЭ",
         "source_id": "hse_alumni"
-      }
+      },
+      "last_checked": 1793077245.6209822,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "0db3c72e887dd4d6a15d0ee959106f16": {
       "target": {
@@ -20991,7 +24428,10 @@
         "partner": "Soft Skills lab",
         "program": "Карта выпускника НИУ ВШЭ",
         "source_id": "hse_alumni"
-      }
+      },
+      "last_checked": 1793077248.2344413,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "dd8bfc14aaaa14e4d2596da75f587f98": {
       "target": {
@@ -21000,7 +24440,10 @@
         "partner": "Синхронизация",
         "program": "Карта выпускника НИУ ВШЭ",
         "source_id": "hse_alumni"
-      }
+      },
+      "last_checked": 1793077250.9088085,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "554881873cf4bf185a2f050bba8018b1": {
       "target": {
@@ -21009,7 +24452,10 @@
         "partner": "Skill Cup",
         "program": "Карта выпускника НИУ ВШЭ",
         "source_id": "hse_alumni"
-      }
+      },
+      "last_checked": 1793077253.6050937,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "89b3ccbfcb97c80a54c2adf077d61e55": {
       "target": {
@@ -21018,7 +24464,10 @@
         "partner": "Академия Аналитики",
         "program": "Карта выпускника НИУ ВШЭ",
         "source_id": "hse_alumni"
-      }
+      },
+      "last_checked": 1793077256.236622,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "38f0c96e6c44c8f9e7326d07ba8fe0b8": {
       "target": {
@@ -21027,7 +24476,10 @@
         "partner": "Changellenge >> Education",
         "program": "Карта выпускника НИУ ВШЭ",
         "source_id": "hse_alumni"
-      }
+      },
+      "last_checked": 1793077258.94653,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "e0dd4f980db9266b68502e2045cf6ef6": {
       "target": {
@@ -21036,7 +24488,10 @@
         "partner": "Gmatrix Education",
         "program": "Карта выпускника НИУ ВШЭ",
         "source_id": "hse_alumni"
-      }
+      },
+      "last_checked": 1793077261.599621,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "cb9b8d86135192caa477be60086988c4": {
       "target": {
@@ -21045,7 +24500,10 @@
         "partner": "Moscow Digital School",
         "program": "Карта выпускника НИУ ВШЭ",
         "source_id": "hse_alumni"
-      }
+      },
+      "last_checked": 1793077264.276639,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "346a6077169d38b7eccbccfff53c1635": {
       "target": {
@@ -21054,7 +24512,10 @@
         "partner": "КОРОЛЬ ГОВОРИТ!",
         "program": "Карта выпускника НИУ ВШЭ",
         "source_id": "hse_alumni"
-      }
+      },
+      "last_checked": 1793077266.9323087,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "7bd847ccc8590383d4d7bf3c083f2ac7": {
       "target": {
@@ -21063,7 +24524,10 @@
         "partner": "21SHOP‎",
         "program": "Карта выпускника НИУ ВШЭ",
         "source_id": "hse_alumni"
-      }
+      },
+      "last_checked": 1793077269.9441116,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "33a26e3b0f8f0a4b08fd113a3985c0dd": {
       "target": {
@@ -21072,7 +24536,10 @@
         "partner": "Waf-waf",
         "program": "Карта выпускника НИУ ВШЭ",
         "source_id": "hse_alumni"
-      }
+      },
+      "last_checked": 1793077272.6148295,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "8287202e11530cdc3766280670f1d874": {
       "target": {
@@ -21081,7 +24548,10 @@
         "partner": "Морда довольна Магазин подарков",
         "program": "Карта выпускника НИУ ВШЭ",
         "source_id": "hse_alumni"
-      }
+      },
+      "last_checked": 1793077275.2802355,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "4f913046685943d29a53e94325ea0132": {
       "target": {
@@ -21090,7 +24560,10 @@
         "partner": "SI OPTICS",
         "program": "Карта выпускника НИУ ВШЭ",
         "source_id": "hse_alumni"
-      }
+      },
+      "last_checked": 1793077277.894035,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "90acca626f60c47896d86ee7019ea9cd": {
       "target": {
@@ -21099,7 +24572,10 @@
         "partner": "МильФей",
         "program": "Карта выпускника НИУ ВШЭ",
         "source_id": "hse_alumni"
-      }
+      },
+      "last_checked": 1793077280.698189,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "cbb915d08d426be685bfeaa8565460d6": {
       "target": {
@@ -21108,7 +24584,10 @@
         "partner": "HUG ME DOG",
         "program": "Карта выпускника НИУ ВШЭ",
         "source_id": "hse_alumni"
-      }
+      },
+      "last_checked": 1793077283.3148189,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "06a48cd576dde44fb0924f4bc659c718": {
       "target": {
@@ -21117,7 +24596,10 @@
         "partner": "Imperious",
         "program": "Карта выпускника НИУ ВШЭ",
         "source_id": "hse_alumni"
-      }
+      },
+      "last_checked": 1793077286.003211,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "a7ffe299b869ae0b0569780116c07bd6": {
       "target": {
@@ -21126,7 +24608,10 @@
         "partner": "Студия дизайна интерьеров КубКвадрат",
         "program": "Карта выпускника НИУ ВШЭ",
         "source_id": "hse_alumni"
-      }
+      },
+      "last_checked": 1793077288.6699085,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "a9483ad86e0170384552a891a7752571": {
       "target": {
@@ -21135,7 +24620,10 @@
         "partner": "Морда довольна",
         "program": "Карта выпускника НИУ ВШЭ",
         "source_id": "hse_alumni"
-      }
+      },
+      "last_checked": 1793077291.311521,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "48e15bacf7009ab8daee4bc85a7bf02c": {
       "target": {
@@ -21144,7 +24632,10 @@
         "partner": "Журналус – медиа о дизайне",
         "program": "Карта выпускника НИУ ВШЭ",
         "source_id": "hse_alumni"
-      }
+      },
+      "last_checked": 1793077293.998921,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "f0c63a0cd02ba554baa8f724bdd7ea1b": {
       "target": {
@@ -21153,7 +24644,10 @@
         "partner": "Подарочный сертификат «Журналуса»",
         "program": "Карта выпускника НИУ ВШЭ",
         "source_id": "hse_alumni"
-      }
+      },
+      "last_checked": 1793077296.5963056,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "3991b37a949e8f6266443c85f6a05684": {
       "target": {
@@ -21162,7 +24656,10 @@
         "partner": "Мокапус",
         "program": "Карта выпускника НИУ ВШЭ",
         "source_id": "hse_alumni"
-      }
+      },
+      "last_checked": 1793077299.2686756,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "3055df2033babf63a7e5f1429ca2045a": {
       "target": {
@@ -21171,7 +24668,10 @@
         "partner": "Фокус",
         "program": "Карта выпускника НИУ ВШЭ",
         "source_id": "hse_alumni"
-      }
+      },
+      "last_checked": 1793077301.8643234,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "ed31bbbb61092faff53e9cc2b36c9f6f": {
       "target": {
@@ -21180,7 +24680,10 @@
         "partner": "Донстрой",
         "program": "Карта выпускника НИУ ВШЭ",
         "source_id": "hse_alumni"
-      }
+      },
+      "last_checked": 1793077304.4993336,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "11bfd1c9f594e2aaecc79575fcd6d071": {
       "target": {
@@ -21189,7 +24692,10 @@
         "partner": "ГрузовичкоФ",
         "program": "Карта выпускника НИУ ВШЭ",
         "source_id": "hse_alumni"
-      }
+      },
+      "last_checked": 1793077307.2241693,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "cfa822d9c0c545ec19d2c2afa1f68a83": {
       "target": {
@@ -21198,7 +24704,10 @@
         "partner": "Дом Групп",
         "program": "Карта выпускника НИУ ВШЭ",
         "source_id": "hse_alumni"
-      }
+      },
+      "last_checked": 1793077310.266925,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "aaf2ff5e4d36e467ef50455c61bf351b": {
       "target": {
@@ -27520,19 +31029,19 @@
     }
   },
   "usage": {
-    "date": "2026-10-26",
+    "date": "2026-10-27",
     "attempts": 50
   },
   "provider_not_before": 1792886400.4816973,
-  "last_request_at": 1792991414.430934,
+  "last_request_at": 1793078068.4537697,
   "providers": {
     "tokenharbor": {
       "usage": {
-        "date": "2026-10-26",
-        "attempts": 106
+        "date": "2026-10-27",
+        "attempts": 30
       },
-      "provider_not_before": 0,
-      "last_request_at": 1792994761.1523588
+      "provider_not_before": 1793082129.8143902,
+      "last_request_at": 1793078529.8143857
     }
   }
 }
