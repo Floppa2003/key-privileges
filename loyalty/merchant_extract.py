@@ -109,14 +109,18 @@ def reported_cost_warning(data: dict) -> str | None:
     return None
 
 
-def parse_final(data: dict, schema: dict) -> dict:
+def parse_final(data: dict, schema: dict, *, provider='orcarouter') -> dict:
     if not isinstance(data, dict): raise ValueError('response_shape')
     returned = data.get('model')
     if not isinstance(returned, str):
         raise ValueError('returned_model_missing')
     # Providers may report the native family and a dated snapshot, not the route ID.
     normalized = re.sub(r'[-_.]', '', returned.rsplit('/', 1)[-1].lower().removesuffix(':free'))
-    if not re.fullmatch(r'deepseekv41flash(?:free|[0-9]{4,8})?', normalized):
+    # Accept only the observed OrcaRouter snapshot, not arbitrary economy variants.
+    # The request stays on the free route; the actual returned model is preserved.
+    orca_snapshot = (provider == 'orcarouter'
+                     and returned == 'deepseek-v4-1-flash-economy-261017')
+    if not orca_snapshot and not re.fullmatch(r'deepseekv41flash(?:free|[0-9]{4,8})?', normalized):
         raise ValueError('returned_model_mismatch')
     choices = data.get('choices')
     if not isinstance(choices, list) or len(choices) != 1 or not isinstance(choices[0], dict) or choices[0].get('finish_reason') != 'stop':
@@ -236,7 +240,7 @@ The retry budget bounds admission of new attempts/waits; socket timeouts bound I
                 if isinstance(data, dict):
                     row.update(returned_model=data.get('model'), usage=data.get('usage'))
                 try:
-                    obj = parse_final(data, schema)
+                    obj = parse_final(data, schema, provider=provider)
                     save(out / 'extracted.json', obj)
                     result.pop('error', None)
                     result.update(status='completed', schema_valid=True, returned_model=data['model'],
