@@ -28,17 +28,26 @@ jobs:
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with:
           python-version: '3.12'
-      - name: Run regression without model credentials
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          repository: Floppa2003/key-privileges
+          run-id: '40761906959'
+          artifact-ids: '12848098215'
+          github-token: ${{ github.token }}
+          path: probe-inputs/prior-regression
+          merge-multiple: true
+      - name: Read previous full-suite failure without rerunning it
+        run: tail -n 110 probe-inputs/prior-regression/loyalty-tests.log
+      - name: Verify actual model transport and budget code without credentials
         run: |
           set -euo pipefail
           mkdir -p probe-inputs/code
           git rev-parse HEAD > probe-inputs/commit.txt
           python -m pip install -r loyalty/requirements.txt > probe-inputs/install.log 2>&1
-          python -m unittest discover -s loyalty/tests -v > probe-inputs/loyalty-tests.log 2>&1
-          python -m unittest discover -s diagnostics/tests -v > probe-inputs/diagnostic-tests.log 2>&1
+          python -m unittest discover -s loyalty/tests -p 'test_merchant*.py' -v 2>&1 | tee probe-inputs/merchant-tests.log
+          python -m unittest discover -s diagnostics/tests -p 'test_free_credits_probe.py' -v 2>&1 | tee probe-inputs/credit-tests.log
+          python -m unittest discover -s diagnostics/tests -p 'test_deepseek_capacity_probe.py' -v 2>&1 | tee probe-inputs/capacity-tests.log
           node --test key/refresh.test.mjs > probe-inputs/key-tests.log 2>&1
-          tail -n 5 probe-inputs/loyalty-tests.log
-          tail -n 5 probe-inputs/diagnostic-tests.log
           tail -n 10 probe-inputs/key-tests.log
           cp diagnostics/free_credits_probe.py diagnostics/deepseek_capacity_probe.py probe-inputs/code/
           cp diagnostics/tests/test_free_credits_probe.py probe-inputs/code/
@@ -103,4 +112,46 @@ jobs:
         with:
           name: free-credits-${{ matrix.provider }}-${{ github.run_id }}
           path: output/
+          retention-days: 30
+  review:
+    needs: [prepare, probe]
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          pattern: free-credits-*-${{ github.run_id }}
+          path: evidence
+      - name: Independently read back all inputs and outputs without model keys
+        run: |
+          python - <<'PY'
+          import hashlib,json,re
+          from pathlib import Path
+          root=Path('evidence');result={'verified_hashes':0,'providers':{},'outputs':[],'sources':{},'publication_allowed':False}
+          for manifest in root.glob('*/SHA256SUMS.json'):
+              for name,digest in json.loads(manifest.read_text()).items():
+                  p=(manifest.parent/name).resolve()
+                  assert p.is_relative_to(manifest.parent.resolve())
+                  assert hashlib.sha256(p.read_bytes()).hexdigest()==digest,name
+                  result['verified_hashes']+=1
+          for p in root.glob('*/summary.json'):
+              d=json.loads(p.read_text());result['providers'][d['provider']]=d
+          files=list(root.glob('*/inputs.json'))
+          if files:
+              inputs=json.loads(files[0].read_text())
+              result['sources']={d['id']:d['text'].split('Полный текст:\n',1)[-1] for d in inputs['documents']}
+          for p in root.glob('*/model-*/*/extracted.json'):
+              d=json.loads(p.read_text());case=p.parent.name
+              source=' '.join(result['sources'].get(case,'').split())
+              quotes=[q for o in d.get('offers',[]) for q in o.get('evidence',[])]
+              result['outputs'].append({'path':str(p.relative_to(root)),'case':case,'value':d,
+                  'quotes_in_text':sum(' '.join(q.split()) in source for q in quotes),'quotes_total':len(quotes)})
+          Path('review.json').write_text(json.dumps(result,ensure_ascii=False,indent=2))
+          print(json.dumps(result,ensure_ascii=False,indent=2))
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: free-credits-review-${{ github.run_id }}
+          path: review.json
           retention-days: 30
