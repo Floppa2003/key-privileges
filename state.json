@@ -23519,7 +23519,95 @@
         "partner": "КИОН",
         "program": "MiXX M",
         "source_id": "t2_mixx"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793165988.6484213,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "bb7fc781612019f876fdf0df15204291106f405017c41f6c1912c3541fe45097",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "bb7fc781612019f876fdf0df15204291106f405017c41f6c1912c3541fe45097",
+            "seconds": 12.030960541000013,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 2925,
+              "prompt_tokens": 3056,
+              "total_tokens": 5981,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 2626
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 2925,
+          "prompt_tokens": 3056,
+          "total_tokens": 5981,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 2626
+          }
+        },
+        "seconds": 12.036915244000056,
+        "http_attempts": 1
+      },
+      "fingerprint": "4649a7ae64c273176e0a1ca4d313bed1b07a37b173560b3073c65a22ae442bdd",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": "подписка MiXX M",
+            "audience": "частным лицам",
+            "restrictions": [
+              "Доступен в числе сервисов, которые можно выбрать при изменении состава подписки MiXX M."
+            ],
+            "how_to_get": [
+              "Изменить состав подписки MiXX M, выбрав сервисы из списка.",
+              "Выбрать «Онлайн-кинотеатр КИОН» в списке сервисов."
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "В подписку MiXX M входят 6 настраиваемых сервисов и 6 постоянных.",
+              "Или вы можете изменить состав подписки, выбрав сервисы из списка:",
+              "Онлайн-кинотеатр КИОН"
+            ],
+            "practical_advice": [
+              {
+                "text": "Если КИОН не подключён, измените состав подписки MiXX M и выберите «Онлайн-кинотеатр КИОН» из списка.",
+                "basis": "inference"
+              }
+            ]
+          }
+        ],
+        "unknowns": [
+          "Не указаны стоимость, срок действия и отдельные условия доступа к КИОН в составе MiXX M."
+        ]
+      },
+      "inferred_as_of": "2026-10-28",
+      "inferred_at": 1793165988.6484997,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "a87af0d56312ad7c88264cb9dbb079c4": {
       "target": {
@@ -23528,7 +23616,86 @@
         "partner": "RUTUBE",
         "program": "MiXX M",
         "source_id": "t2_mixx"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793166005.3900301,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "387684c28d6a5ee06a1d247c60b93d1e102b27055b1db1355e6aeca90d99e7bb",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "387684c28d6a5ee06a1d247c60b93d1e102b27055b1db1355e6aeca90d99e7bb",
+            "seconds": 9.715487194000161,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 1530,
+              "prompt_tokens": 3057,
+              "total_tokens": 4587,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 1337
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 1530,
+          "prompt_tokens": 3057,
+          "total_tokens": 4587,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 1337
+          }
+        },
+        "seconds": 9.721548282999947,
+        "http_attempts": 1
+      },
+      "fingerprint": "8edef1ddd4e27e41260ebe4a6bd24bdefe0ff414b8285433141dda6fbdd4bd7b",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": "включение видеохостинга RUTUBE в состав подписки MiXX M",
+            "audience": "абоненты подписки MiXX M",
+            "restrictions": [],
+            "how_to_get": [
+              "Изменить состав подписки MiXX M, выбрав видеохостинг RUTUBE из списка сервисов."
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Видеохостинг RUTUBE",
+              "изменить состав подписки, выбрав сервисы из списка"
+            ],
+            "practical_advice": []
+          }
+        ],
+        "unknowns": [
+          "Стоимость и срок действия включения RUTUBE в подписку MiXX M не указаны."
+        ]
+      },
+      "inferred_as_of": "2026-10-28",
+      "inferred_at": 1793166005.3901134,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "1255d9c45cdcc04b9d5d7d5008f3144c": {
       "target": {
@@ -23537,7 +23704,93 @@
         "partner": "Ozon Premium",
         "program": "MiXX M",
         "source_id": "t2_mixx"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793166022.5230584,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "1b6ae93ba0e40c1413c17e95e28334e51421665ec039447a923a500cef305af8",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "1b6ae93ba0e40c1413c17e95e28334e51421665ec039447a923a500cef305af8",
+            "seconds": 10.10535566800013,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 2209,
+              "prompt_tokens": 3056,
+              "total_tokens": 5265,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 1992
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 2209,
+          "prompt_tokens": 3056,
+          "total_tokens": 5265,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 1992
+          }
+        },
+        "seconds": 10.110863983999934,
+        "http_attempts": 1
+      },
+      "fingerprint": "d0531bb086282e53c6cfdc244aaf258b3e511f4a55da76811e49a8dfb711926b",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": null,
+            "audience": "абоненты MiXX M",
+            "restrictions": [],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Ozon Premium: выгодный шопинг",
+              "Или вы можете изменить состав подписки, выбрав сервисы из списка"
+            ],
+            "practical_advice": [
+              {
+                "text": "Проверьте доступность Ozon Premium в списке выбираемых сервисов при изменении состава подписки MiXX M.",
+                "basis": "inference"
+              }
+            ],
+            "how_to_get": [
+              "Изменить состав подписки MiXX M",
+              "Выбрать Ozon Premium из списка сервисов"
+            ]
+          }
+        ],
+        "unknowns": [
+          "Размер выгоды и условия использования Ozon Premium в тексте не указаны",
+          "Не указано, как активируется Ozon Premium после выбора"
+        ]
+      },
+      "inferred_as_of": "2026-10-28",
+      "inferred_at": 1793166022.523139,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "2a4e444f7b33d99eb906f30e94205d19": {
       "target": {
@@ -23546,7 +23799,87 @@
         "partner": "Магнит Плюс Премиум",
         "program": "MiXX M",
         "source_id": "t2_mixx"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793166045.5934415,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "64da987430c204f82694701c0591c3bdd51bc8ca14235982df7a69b0d7808a08",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "64da987430c204f82694701c0591c3bdd51bc8ca14235982df7a69b0d7808a08",
+            "seconds": 16.04501379999988,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 3975,
+              "prompt_tokens": 3062,
+              "total_tokens": 7037,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 3755
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 3975,
+          "prompt_tokens": 3062,
+          "total_tokens": 7037,
+          "prompt_tokens_details": {
+            "cached_tokens": 256
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 3755
+          }
+        },
+        "seconds": 16.050595148999946,
+        "http_attempts": 1
+      },
+      "fingerprint": "293f261ac924c316f7ae8bc1c7d8eb34a23bf79197353d0e9ba6b068bf30487b",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": "доступ к сервису «Магнит Плюс Премиум» в составе подписки MiXX M",
+            "audience": "не указано",
+            "restrictions": [],
+            "how_to_get": [
+              "Изменить состав подписки MiXX M, выбрав сервис «Магнит Плюс Премиум» из списка."
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Что входит в подписку MiXX M?",
+              "Или вы можете изменить состав подписки, выбрав сервисы из списка:",
+              "Магнит Плюс Премиум"
+            ],
+            "practical_advice": []
+          }
+        ],
+        "unknowns": [
+          "Размер выгоды, стоимость, срок действия и ограничения для «Магнит Плюс Премиум» в блоке не указаны."
+        ]
+      },
+      "inferred_as_of": "2026-10-28",
+      "inferred_at": 1793166045.5935187,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "6fae44e92ed026a106f938ab42602060": {
       "target": {
@@ -23555,7 +23888,10 @@
         "partner": "Литрес",
         "program": "MiXX M",
         "source_id": "t2_mixx"
-      }
+      },
+      "last_checked": 1793164869.0329542,
+      "capture_status": "failed",
+      "capture_error": "Error"
     },
     "fe6aeb5f10862a9eb35656042423f7c4": {
       "target": {
@@ -23564,7 +23900,87 @@
         "partner": "Юрент",
         "program": "MiXX M",
         "source_id": "t2_mixx"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793166065.3979642,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "dd46edaf06ebc490b20666eb508feaf081e6e9f955b116873bf7d2eca5a88f95",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "dd46edaf06ebc490b20666eb508feaf081e6e9f955b116873bf7d2eca5a88f95",
+            "seconds": 12.777271007000081,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 2625,
+              "prompt_tokens": 3056,
+              "total_tokens": 5681,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 2430
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 2625,
+          "prompt_tokens": 3056,
+          "total_tokens": 5681,
+          "prompt_tokens_details": {
+            "cached_tokens": 256
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 2430
+          }
+        },
+        "seconds": 12.782770866000192,
+        "http_attempts": 1
+      },
+      "fingerprint": "bf15392474971fefc146313ac68afa03a01945840a8394ec2c57cc9ca76e2092",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": "Самокаты Юрент",
+            "audience": "не указано",
+            "restrictions": [],
+            "how_to_get": [
+              "Изменить состав подписки MiXX M, выбрав сервис «Самокаты Юрент» из списка."
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Или вы можете изменить состав подписки, выбрав сервисы из списка:",
+              "Самокаты Юрент"
+            ],
+            "practical_advice": []
+          }
+        ],
+        "unknowns": [
+          "Размер выгоды и условия использования сервиса «Самокаты Юрент» в подписке MiXX M не указаны.",
+          "Срок действия предложения не указан."
+        ]
+      },
+      "inferred_as_of": "2026-10-28",
+      "inferred_at": 1793166065.3980415,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "131580e09348a8ee28bf1b5e281afaf0": {
       "target": {
@@ -23573,7 +23989,92 @@
         "partner": "GPTMobile",
         "program": "MiXX M",
         "source_id": "t2_mixx"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793166084.5229774,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "68af492cce2c854a355e317dd2ce42e17ac6fcbded38e3fdcc97d197f4bb5d71",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "68af492cce2c854a355e317dd2ce42e17ac6fcbded38e3fdcc97d197f4bb5d71",
+            "seconds": 12.099451940000108,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 2230,
+              "prompt_tokens": 3055,
+              "total_tokens": 5285,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 1992
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 2230,
+          "prompt_tokens": 3055,
+          "total_tokens": 5285,
+          "prompt_tokens_details": {
+            "cached_tokens": 256
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 1992
+          }
+        },
+        "seconds": 12.104843888999994,
+        "http_attempts": 1
+      },
+      "fingerprint": "75bde6d777abce77c490c05bdc1b19e5b7d3bc81f3a27b2d055bd478ef9de766",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": "подписка MiXX M",
+            "audience": "клиенты, оформляющие подписку MiXX M",
+            "restrictions": [],
+            "how_to_get": [
+              "Изменить состав подписки MiXX M, выбрав сервис «Нейросети GPTMobile» из списка."
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Нейросети GPTMobile",
+              "Или вы можете изменить состав подписки, выбрав сервисы из списка:"
+            ],
+            "practical_advice": [
+              {
+                "text": "Проверьте состав подписки MiXX M: GPTMobile указан среди сервисов, которые можно выбрать при изменении состава.",
+                "basis": "inference"
+              }
+            ]
+          }
+        ],
+        "unknowns": [
+          "Не указаны стоимость, объём и срок доступа к «Нейросети GPTMobile» в рамках MiXX M.",
+          "Не указано, какие именно функции GPTMobile предоставляются."
+        ]
+      },
+      "inferred_as_of": "2026-10-28",
+      "inferred_at": 1793166084.5230546,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "69ae894120969cfc46ddaf09b7ba525e": {
       "target": {
@@ -23582,7 +24083,86 @@
         "partner": "Kaspersky Standard",
         "program": "MiXX M",
         "source_id": "t2_mixx"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793166102.6012783,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "5a5f3a9e8a12d3d78c5ab23f894e04b18af7e7d9af31060d3b0ca36a8942fa14",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "5a5f3a9e8a12d3d78c5ab23f894e04b18af7e7d9af31060d3b0ca36a8942fa14",
+            "seconds": 11.052241980999952,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 2274,
+              "prompt_tokens": 3058,
+              "total_tokens": 5332,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 2109
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 2274,
+          "prompt_tokens": 3058,
+          "total_tokens": 5332,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 2109
+          }
+        },
+        "seconds": 11.057662126999958,
+        "http_attempts": 1
+      },
+      "fingerprint": "ef61684aca6f53032463f9f8178d97ec14ee990aa9d5a76b9b2ee9dcad020a25",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": "Подписка MiXX M",
+            "audience": "Для всех",
+            "restrictions": [
+              "на 3 устройства"
+            ],
+            "how_to_get": [
+              "Изменить состав подписки MiXX M, выбрав сервис «Антивирус Kaspersky Standard» из списка."
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Или вы можете изменить состав подписки, выбрав сервисы из списка:",
+              "Антивирус Kaspersky Standard на 3 устройства"
+            ],
+            "practical_advice": []
+          }
+        ],
+        "unknowns": []
+      },
+      "inferred_as_of": "2026-10-28",
+      "inferred_at": 1793166102.6013486,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "0b0a748309eac699fa63cd716bd3699c": {
       "target": {
@@ -23591,7 +24171,91 @@
         "partner": "скидка на Lamoda",
         "program": "MiXX M",
         "source_id": "t2_mixx"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793166123.1340759,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "c27161817566a2241ae3c1aeb1f4aac6c6e4b45e531afda358f2447758fe84a4",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "c27161817566a2241ae3c1aeb1f4aac6c6e4b45e531afda358f2447758fe84a4",
+            "seconds": 13.506867697999951,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 3059,
+              "prompt_tokens": 3058,
+              "total_tokens": 6117,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 2858
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 3059,
+          "prompt_tokens": 3058,
+          "total_tokens": 6117,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 2858
+          }
+        },
+        "seconds": 13.512276386999929,
+        "http_attempts": 1
+      },
+      "fingerprint": "e68674dc9b1e30c25e115a8b5e22cd8f2e674b9854c845f4895e0af74d4b49a7",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "discount",
+            "value": null,
+            "unit": null,
+            "basis": "Lamoda",
+            "audience": "подписчики MiXX M",
+            "restrictions": [],
+            "how_to_get": [],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Также в подписке есть сервисы, которые всегда в составе: скидка на Lamoda"
+            ],
+            "practical_advice": [
+              {
+                "text": "Уточнить размер и условия скидки на Lamoda в подписке MiXX M, так как на странице они не указаны.",
+                "basis": "inference"
+              }
+            ]
+          }
+        ],
+        "unknowns": [
+          "Размер скидки на Lamoda",
+          "Условия применения скидки на Lamoda",
+          "Срок действия скидки на Lamoda",
+          "Способ получения/активации скидки на Lamoda"
+        ]
+      },
+      "inferred_as_of": "2026-10-28",
+      "inferred_at": 1793166123.1341543,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "09a17fefa0a9f6333da35134c80d0ab5": {
       "target": {
@@ -23600,7 +24264,88 @@
         "partner": "Флаувау",
         "program": "MiXX M",
         "source_id": "t2_mixx"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793166141.6950986,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "dfcb205b40d7545cb8a6eac9b6d00192ea4ab6307e75d0d2d24b76d975aa62b5",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "dfcb205b40d7545cb8a6eac9b6d00192ea4ab6307e75d0d2d24b76d975aa62b5",
+            "seconds": 11.533807553000088,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 2414,
+              "prompt_tokens": 3058,
+              "total_tokens": 5472,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 2258
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 2414,
+          "prompt_tokens": 3058,
+          "total_tokens": 5472,
+          "prompt_tokens_details": {
+            "cached_tokens": 256
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 2258
+          }
+        },
+        "seconds": 11.539038693000066,
+        "http_attempts": 1
+      },
+      "fingerprint": "527ab98d80ff2442bf4d548269ed6c0877e468c62622dfee43657fb4b208245b",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "discount",
+            "value": 500,
+            "unit": "руб.",
+            "basis": "Флаувау",
+            "audience": "подписчики MiXX M",
+            "restrictions": [
+              "Предоставляется в составе подписки MiXX M"
+            ],
+            "how_to_get": [
+              "Оформить подписку MiXX M"
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "скидка 500 руб. на Флаувау"
+            ],
+            "practical_advice": []
+          }
+        ],
+        "unknowns": [
+          "Точные условия применения скидки на Флаувау",
+          "Срок действия скидки"
+        ]
+      },
+      "inferred_as_of": "2026-10-28",
+      "inferred_at": 1793166141.6951742,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "271e383fd1fab266a8abc6998cf5b54c": {
       "target": {
@@ -23609,7 +24354,87 @@
         "partner": "скидки и кешбэк в финансовых сервисах",
         "program": "MiXX M",
         "source_id": "t2_mixx"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793166166.7201424,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "aa5470fcec20abe37128b82e390f5ad268839524f59031d9871a19665752dbcc",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "aa5470fcec20abe37128b82e390f5ad268839524f59031d9871a19665752dbcc",
+            "seconds": 17.998699902,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 4873,
+              "prompt_tokens": 3067,
+              "total_tokens": 7940,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 4683
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 4873,
+          "prompt_tokens": 3067,
+          "total_tokens": 7940,
+          "prompt_tokens_details": {
+            "cached_tokens": 256
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 4683
+          }
+        },
+        "seconds": 18.004162501999872,
+        "http_attempts": 1
+      },
+      "fingerprint": "594d488d3d08c55715f7032f45a14d2c9a61b31682dedf66e5b8a5bbc5934e65",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": "финансовые сервисы",
+            "audience": "подписчики MiXX M",
+            "restrictions": [],
+            "how_to_get": [
+              "Оформить подписку MiXX M"
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "В подписку MiXX M входят 6 настраиваемых сервисов и 6 постоянных.",
+              "сервисы, которые всегда в составе",
+              "скидки и кешбэк в финансовых сервисах"
+            ],
+            "practical_advice": []
+          }
+        ],
+        "unknowns": [
+          "Размер скидок и кешбэка, перечень финансовых сервисов, сроки начисления и ограничения не указаны."
+        ]
+      },
+      "inferred_as_of": "2026-10-28",
+      "inferred_at": 1793166166.720219,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "a274d87124d3223b163e131a655fd3e9": {
       "target": {
@@ -23618,7 +24443,91 @@
         "partner": "уникальные предложения при обмене минут и ГБ",
         "program": "MiXX M",
         "source_id": "t2_mixx"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793166189.9638236,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "3fc6251bbfd15c2939fb4e957fa8910e601cf3e55d99e539588d6a27afd3fd47",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "3fc6251bbfd15c2939fb4e957fa8910e601cf3e55d99e539588d6a27afd3fd47",
+            "seconds": 16.216756882000027,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 3746,
+              "prompt_tokens": 3066,
+              "total_tokens": 6812,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 3568
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 3746,
+          "prompt_tokens": 3066,
+          "total_tokens": 6812,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 3568
+          }
+        },
+        "seconds": 16.22195889799991,
+        "http_attempts": 1
+      },
+      "fingerprint": "5592e49c79da97f7388870f2944b12bfec24c1bf9eb2f16a3ed8e7e22ad3c401",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": "обмен минут и ГБ",
+            "audience": "подписчики MiXX M",
+            "restrictions": [
+              "Доступно в составе подписки MiXX M"
+            ],
+            "how_to_get": [
+              "Обменять минуты и ГБ"
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "уникальные предложения при обмене минут и ГБ",
+              "в подписке есть сервисы, которые всегда в составе"
+            ],
+            "practical_advice": []
+          }
+        ],
+        "unknowns": [
+          "Конкретный состав уникальных предложений",
+          "Размер выгоды",
+          "Срок действия",
+          "Дополнительные ограничения обмена минут и ГБ"
+        ]
+      },
+      "inferred_as_of": "2026-10-28",
+      "inferred_at": 1793166189.9638987,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "7884be8d268f29f494aa183d0770ca8c": {
       "target": {
@@ -23627,7 +24536,88 @@
         "partner": "+2 категории Гигабэка",
         "program": "MiXX M",
         "source_id": "t2_mixx"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793166212.0100021,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "4f9c3c9dd9293adcb41cf51cb89f0ff75b438742582fa33a7a59cf1c0fc3e3e5",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "4f9c3c9dd9293adcb41cf51cb89f0ff75b438742582fa33a7a59cf1c0fc3e3e5",
+            "seconds": 15.02004774399984,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 3079,
+              "prompt_tokens": 3061,
+              "total_tokens": 6140,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 2861
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 3079,
+          "prompt_tokens": 3061,
+          "total_tokens": 6140,
+          "prompt_tokens_details": {
+            "cached_tokens": 256
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 2861
+          }
+        },
+        "seconds": 15.025779430000057,
+        "http_attempts": 1
+      },
+      "fingerprint": "379143a750f7e2abf1c5302670826235b5a4ed8c44822dd5830ed480e6408dbb",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "cashback",
+            "value": 2,
+            "unit": "категории",
+            "basis": "категории Гигабэка",
+            "audience": "Подписчики MiXX M",
+            "restrictions": [
+              "Сервис всегда в составе подписки MiXX M."
+            ],
+            "how_to_get": [
+              "Оформить подписку MiXX M."
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "сервисы, которые всегда в составе",
+              "+2 категории Гигабэка"
+            ],
+            "practical_advice": []
+          }
+        ],
+        "unknowns": [
+          "Не указано, какие именно категории Гигабэка добавляются и как они выбираются."
+        ]
+      },
+      "inferred_as_of": "2026-10-28",
+      "inferred_at": 1793166212.0100784,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "9867ed9e0f3ab6f4e9da4423bc22087e": {
       "target": {
@@ -23636,7 +24626,105 @@
         "partner": "T2",
         "program": "T2 Selection",
         "source_id": "t2_selection"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793166240.409881,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "1acf8ff5afa8dfbf466c8c0f09c079a672896595d0f62ed79d55dfcfbed9c5ec",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "1acf8ff5afa8dfbf466c8c0f09c079a672896595d0f62ed79d55dfcfbed9c5ec",
+            "seconds": 21.371620301999883,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 5434,
+              "prompt_tokens": 5558,
+              "total_tokens": 10992,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 5153
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 5434,
+          "prompt_tokens": 5558,
+          "total_tokens": 10992,
+          "prompt_tokens_details": {
+            "cached_tokens": 256
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 5153
+          }
+        },
+        "seconds": 21.377120817000105,
+        "http_attempts": 1
+      },
+      "fingerprint": "c9283daf29c9e6e9155b3e126aff0088c8d613b4d9df25aad8650192accf2752",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "discount",
+            "value": null,
+            "unit": null,
+            "basis": "Сервисы Яндекса",
+            "audience": "Участники программы T2 Selection",
+            "restrictions": [],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Скидки в сервисах Яндекса"
+            ],
+            "practical_advice": [],
+            "how_to_get": [
+              "Участвовать в программе T2 Selection"
+            ]
+          },
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": "Салоны T2 и выделенная линия 711",
+            "audience": "Участники программы T2 Selection",
+            "restrictions": [],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "приоритетное обслуживание в салонах T2 и по выделенной линии 711"
+            ],
+            "practical_advice": [],
+            "how_to_get": [
+              "Участвовать в программе T2 Selection"
+            ]
+          }
+        ],
+        "unknowns": [
+          "Не указаны размер и перечень скидок в сервисах Яндекса.",
+          "Не указаны условия и срок действия преимуществ T2 Selection.",
+          "Не указан порядок подключения к программе T2 Selection."
+        ]
+      },
+      "inferred_as_of": "2026-10-28",
+      "inferred_at": 1793166240.4099638,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "829660b7e54f8b375268d5445c9938ec": {
       "target": {
@@ -23645,7 +24733,101 @@
         "partner": "Яндекс Станцию Мини 3",
         "program": "MiXX S — акции салонов T2",
         "source_id": "t2_mixx_s"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793166265.673618,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "233f82c8adea1a9be13059b3aa18672c496075bba92807eb307430263138deb8",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "233f82c8adea1a9be13059b3aa18672c496075bba92807eb307430263138deb8",
+            "seconds": 18.23780911599988,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 4465,
+              "prompt_tokens": 2705,
+              "total_tokens": 7170,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 4001
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 4465,
+          "prompt_tokens": 2705,
+          "total_tokens": 7170,
+          "prompt_tokens_details": {
+            "cached_tokens": 256
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 4001
+          }
+        },
+        "seconds": 18.24322366199999,
+        "http_attempts": 1
+      },
+      "fingerprint": "b76acf5d585c99301a8fdaa674bec91f325db83d13c67d68e57d5f6cf79ad7c9",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "discount",
+            "value": 15,
+            "unit": "%",
+            "basis": "Яндекс Станция Мини 3",
+            "audience": "частным лицам",
+            "restrictions": [
+              "Только в салонах связи",
+              "Акция действует с 03 августа по 30 сентября 2026 г.",
+              "Скидка на Яндекс Станцию Мини 3 предоставляется при покупке подписки MiXX S на 6 месяцев",
+              "Яндекс Станция Мини 3 приобретается без часов",
+              "Все товары должны быть приобретены комплектом в одном чеке",
+              "Предложение действительно, пока товары есть в наличии",
+              "Количество товаров ограничено",
+              "Информацию о наличии товара уточняйте у продавцов-консультантов в салонах связи T2 и на сайте",
+              "Организатор акции вправе менять условия и период проведения акции"
+            ],
+            "promo_code": null,
+            "valid_until": "2026-09-30",
+            "accrual_timing": null,
+            "evidence": [
+              "Скидка 15% на Яндекс колонку при покупке MIXX S",
+              "Только в салонах связи",
+              "Акция действует с 03 августа по 30 сентября 2026 г.",
+              "при покупке подписки MiXX S на 6 месяцев - скидку 15% на Яндекс Станцию Мини 3;",
+              "Все товары должны быть приобретены комплектом в одном чеке.",
+              "Предложение действительно, пока товары есть в наличии. Количество товаров ограничено."
+            ],
+            "how_to_get": [
+              "Приходите в салон Т2 и сообщите сотруднику, что хотите участвовать в акции.",
+              "Купите Яндекс Станцию Мини 3 без часов в комплекте с подпиской MiXX S на 6 месяцев.",
+              "Приобретите все товары комплектом в одном чеке.",
+              "Получите скидку 15% на Яндекс Станцию Мини 3."
+            ],
+            "practical_advice": []
+          }
+        ],
+        "unknowns": []
+      },
+      "inferred_as_of": "2026-10-28",
+      "inferred_at": 1793166265.6737022,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "2f4cc410b7ae43067f97c60325bba40e": {
       "target": {
@@ -23654,7 +24836,104 @@
         "partner": "Яндекс Станцию Лайт 2 без часов",
         "program": "MiXX S — акции салонов T2",
         "source_id": "t2_mixx_s"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793166291.8212874,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "a0125d0f747594304bd5e3112c76156664810a0f4ea8e5e65a5edaff86ed687c",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "a0125d0f747594304bd5e3112c76156664810a0f4ea8e5e65a5edaff86ed687c",
+            "seconds": 19.121739630000093,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 4806,
+              "prompt_tokens": 2708,
+              "total_tokens": 7514,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 4397
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 4806,
+          "prompt_tokens": 2708,
+          "total_tokens": 7514,
+          "prompt_tokens_details": {
+            "cached_tokens": 256
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 4397
+          }
+        },
+        "seconds": 19.127175149000095,
+        "http_attempts": 1
+      },
+      "fingerprint": "8a6e1068a04afbd529824823c46edee1542a63aa36837e4c5d8840332d24e28e",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "discount",
+            "value": 15,
+            "unit": "percent",
+            "basis": "Яндекс Станция Лайт 2 без часов",
+            "audience": "не указана",
+            "restrictions": [
+              "Только в салонах связи",
+              "При покупке подписки MiXX S на 3 месяца",
+              "Все товары должны быть приобретены комплектом в одном чеке",
+              "Предложение действительно, пока товары есть в наличии",
+              "Количество товаров ограничено",
+              "Акция действует с 03 августа по 30 сентября 2026 г."
+            ],
+            "how_to_get": [
+              "Прийти в салон T2 и сообщить сотруднику, что хотите участвовать в акции.",
+              "Купить Яндекс Станцию Лайт 2 без часов в комплекте с подпиской MiXX S на 3 месяца.",
+              "Оформить все товары комплектом в одном чеке."
+            ],
+            "promo_code": null,
+            "valid_until": "2026-09-30",
+            "accrual_timing": null,
+            "evidence": [
+              "при покупке подписки MiXX S на 3 месяца - скидку 15% на Яндекс Станцию Лайт 2 без часов.",
+              "Только в салонах связи",
+              "Все товары должны быть приобретены комплектом в одном чеке.",
+              "Предложение действительно, пока товары есть в наличии.",
+              "Акция действует с 03 августа по 30 сентября 2026 г."
+            ],
+            "practical_advice": [
+              {
+                "text": "Перед визитом уточните наличие Яндекс Станции Лайт 2 без часов в конкретном салоне T2.",
+                "basis": "inference"
+              }
+            ]
+          }
+        ],
+        "unknowns": [
+          "Точная сумма скидки в рублях не указана.",
+          "Наличие товара в конкретном салоне не указано."
+        ]
+      },
+      "inferred_as_of": "2026-10-28",
+      "inferred_at": 1793166291.8213658,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "92973d230841047bf56853c58d5c4fe9": {
       "target": {
@@ -23663,7 +24942,99 @@
         "partner": "StayInTouch",
         "program": "T2 — акции тарифов Black / Premium",
         "source_id": "t2_powerbank"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793166325.1672096,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "45fc5a03ec8b23f4efd11421370f37ab43404088b8cde842b6553f7d966ff958",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "45fc5a03ec8b23f4efd11421370f37ab43404088b8cde842b6553f7d966ff958",
+            "seconds": 26.319717516000082,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 7294,
+              "prompt_tokens": 2797,
+              "total_tokens": 10091,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 6827
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 7294,
+          "prompt_tokens": 2797,
+          "total_tokens": 10091,
+          "prompt_tokens_details": {
+            "cached_tokens": 256
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 6827
+          }
+        },
+        "seconds": 26.32505009900001,
+        "http_attempts": 1
+      },
+      "fingerprint": "d6076dae10a09445ed02fee39d5a46d0b490d155614dc3c149525fe0126ecc72",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": "количество сессий использования powerbank ежемесячно через сеть партнерских станций StayInTouch",
+            "audience": "абоненты тарифов линеек Black и Premium",
+            "restrictions": [
+              "Период одной аренды не более 3 суток.",
+              "Доступно по всей России в городах, где есть станции аренды.",
+              "Организатор имеет право в любой момент изменить условия акции и настоящие правила на свое усмотрение, а также прекратить или временно приостановить проведение акции."
+            ],
+            "how_to_get": [
+              "Подключите тариф Black или Premium.",
+              "Посетите офис Т2.",
+              "Установите мобильное приложение StayInTouch.",
+              "Пройдите быструю регистрацию в приложении и привяжите банковскую карту.",
+              "Найдите на карте ближайшую станцию аренды.",
+              "Отсканируйте QR‑код на станции или считайте NFC‑метку.",
+              "Получите и проверьте powerbank."
+            ],
+            "promo_code": null,
+            "valid_until": "2026-07-28",
+            "accrual_timing": null,
+            "evidence": [
+              "В тарифе Black или Premium вам доступна неограниченная аренда powerbank по всей России в городах, где есть станции аренды.",
+              "Для абонентов тарифов линеек Black и Premium нет ограничений по количеству сессий использования powerbank ежемесячно через сеть партнерских станций StayInTouch.",
+              "Период одной аренды не более 3 суток.",
+              "Акция действует с 01 сентября 2025 г. по 28 июля 2026 г.",
+              "Чтобы арендовать powerbank, посетите офис Т2.",
+              "Подключите тариф Black или Premium.",
+              "Установите мобильное приложение StayInTouch."
+            ],
+            "practical_advice": []
+          }
+        ],
+        "unknowns": []
+      },
+      "inferred_as_of": "2026-10-28",
+      "inferred_at": 1793166325.1672907,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "b1d0b2fd12b1cef7a420a3e4893a9408": {
       "target": {
@@ -23672,7 +25043,85 @@
         "partner": "ТВИЛ.РУ",
         "program": "Utair Status",
         "source_id": "utair_media"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793166353.5695207,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "475dcceff5e1ab9ec13125b5bcc48eb8be32a47df89d54eda141968cab901aa5",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "475dcceff5e1ab9ec13125b5bcc48eb8be32a47df89d54eda141968cab901aa5",
+            "seconds": 21.374695802000133,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 4780,
+              "prompt_tokens": 5525,
+              "total_tokens": 10305,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 4632
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 4780,
+          "prompt_tokens": 5525,
+          "total_tokens": 10305,
+          "prompt_tokens_details": {
+            "cached_tokens": 256
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 4632
+          }
+        },
+        "seconds": 21.38040584500004,
+        "http_attempts": 1
+      },
+      "fingerprint": "ff806a8bf7f07b81295fd730327c16b788836e25a6577fccd7d179e944077aa9",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "points",
+            "value": 13,
+            "unit": "%",
+            "basis": "бронирование отелей, квартир и домов",
+            "audience": "для всех уровней Status",
+            "restrictions": [],
+            "how_to_get": [
+              "Забронировать отели, квартиры или дома у ТВИЛ.РУ"
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "13% милями за бронирование отелей, квартир и домов для всех уровней Status"
+            ],
+            "practical_advice": []
+          }
+        ],
+        "unknowns": [
+          "Срок начисления миль"
+        ]
+      },
+      "inferred_as_of": "2026-10-28",
+      "inferred_at": 1793166353.5695932,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "9e251cfc82b7005d459d46a331c2c829": {
       "target": {
@@ -23681,7 +25130,109 @@
         "partner": "Otello",
         "program": "Utair Status",
         "source_id": "utair_media"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793166381.833675,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "b734d1bd683f1618931ffdf23eaddc857b517cfd3834e4fa561eb2e48fe810ee",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "b734d1bd683f1618931ffdf23eaddc857b517cfd3834e4fa561eb2e48fe810ee",
+            "seconds": 21.23686167599999,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 4397,
+              "prompt_tokens": 5520,
+              "total_tokens": 9917,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 4075
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 4397,
+          "prompt_tokens": 5520,
+          "total_tokens": 9917,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 4075
+          }
+        },
+        "seconds": 21.242360468000015,
+        "http_attempts": 1
+      },
+      "fingerprint": "dc7e69aababc3d281cdf9be4ceaf82de3b41fbe7d52dc0f06a6dec0844655d67",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "points",
+            "value": 15,
+            "unit": "% милями",
+            "basis": "стоимость бронирования",
+            "audience": "Участники уровней Bronze, Silver, Gold и Platinum программы Utair Status",
+            "restrictions": [
+              "Доступно для уровней Bronze, Silver, Gold и Platinum"
+            ],
+            "how_to_get": [
+              "Совершить бронирование у партнёра Otello"
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "15% милями от стоимости бронирования для уровней Bronze, Silver, Gold и Platinum."
+            ],
+            "practical_advice": []
+          },
+          {
+            "benefit_kind": "points",
+            "value": 13,
+            "unit": "% милями",
+            "basis": "стоимость бронирования",
+            "audience": "Участники уровней Start и Basic программы Utair Status",
+            "restrictions": [
+              "Доступно для уровней Start и Basic"
+            ],
+            "how_to_get": [
+              "Совершить бронирование у партнёра Otello"
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Для уровня Start и Basic — 13% милями"
+            ],
+            "practical_advice": []
+          }
+        ],
+        "unknowns": [
+          "Срок действия предложения не указан.",
+          "Срок начисления миль не указан.",
+          "Какие именно бронирования Otello учитываются, не указано."
+        ]
+      },
+      "inferred_as_of": "2026-10-28",
+      "inferred_at": 1793166381.833756,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "783d1e46a75d4f25b13aeac854a39880": {
       "target": {
@@ -23690,7 +25241,88 @@
         "partner": "Островок!",
         "program": "Utair Status",
         "source_id": "utair_media"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793166401.7513065,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "e22045c9d496c6dcf7681f96b0825e3a111f8095f9c961d8abaa3b4a150e789e",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "e22045c9d496c6dcf7681f96b0825e3a111f8095f9c961d8abaa3b4a150e789e",
+            "seconds": 12.890279380000038,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 2420,
+              "prompt_tokens": 5522,
+              "total_tokens": 7942,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 2181
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 2420,
+          "prompt_tokens": 5522,
+          "total_tokens": 7942,
+          "prompt_tokens_details": {
+            "cached_tokens": 256
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 2181
+          }
+        },
+        "seconds": 12.89581457600002,
+        "http_attempts": 1
+      },
+      "fingerprint": "583bc05d2ec95df220303ff6b9b8af6ed0e51c5e3cabb0cc781a87368e142ed9",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "points",
+            "value": 8,
+            "unit": "%",
+            "basis": "бронирование отелей по всему миру",
+            "audience": "участники программы Utair Status",
+            "restrictions": [],
+            "how_to_get": [
+              "Забронировать отели по всему миру у партнёра «Островок!»"
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Островок!",
+              "Бронируйте отели по всему миру и получайте 8% милями"
+            ],
+            "practical_advice": []
+          }
+        ],
+        "unknowns": [
+          "Не указано, на какие уровни Status распространяется предложение",
+          "Не указано, когда начисляются мили",
+          "Не указан срок действия предложения"
+        ]
+      },
+      "inferred_as_of": "2026-10-28",
+      "inferred_at": 1793166401.7514,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "3243a906b7355bb103dc3b61c9727b60": {
       "target": {
@@ -23699,7 +25331,87 @@
         "partner": "i’way",
         "program": "Utair Status",
         "source_id": "utair_media"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793166424.2752094,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "b687bd5459a3aef8d875bd98ddf777fb5c9d76e21e612e4a0b71ce41d4f35bff",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "b687bd5459a3aef8d875bd98ddf777fb5c9d76e21e612e4a0b71ce41d4f35bff",
+            "seconds": 15.495867517000079,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 3105,
+              "prompt_tokens": 5521,
+              "total_tokens": 8626,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 2953
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 3105,
+          "prompt_tokens": 5521,
+          "total_tokens": 8626,
+          "prompt_tokens_details": {
+            "cached_tokens": 256
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 2953
+          }
+        },
+        "seconds": 15.501195408000058,
+        "http_attempts": 1
+      },
+      "fingerprint": "a907218398faea1428cbc1888af0108f5287b0aca17582cbd24715a394e597cb",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "points",
+            "value": 11,
+            "unit": "% милями",
+            "basis": "за каждый заказанный трансфер",
+            "audience": "участники программы Utair Status",
+            "restrictions": [],
+            "how_to_get": [
+              "Заказать трансфер у i’way"
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "i’way",
+              "11% милями за каждый заказанный трансфер"
+            ],
+            "practical_advice": []
+          }
+        ],
+        "unknowns": [
+          "Не указано, требуется ли уровень Status для получения 11% миль",
+          "Не указан срок начисления миль"
+        ]
+      },
+      "inferred_as_of": "2026-10-28",
+      "inferred_at": 1793166424.275282,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "aaf966255f1f7598052fe2ce4c9a66d1": {
       "target": {
@@ -23708,7 +25420,84 @@
         "partner": "Суточно.ру",
         "program": "Utair Status",
         "source_id": "utair_media"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793166454.7058363,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "c5c95e51167b94402ba49867262868049741b0d14585c81c5bf887bc7da84072",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "c5c95e51167b94402ba49867262868049741b0d14585c81c5bf887bc7da84072",
+            "seconds": 23.403287516999853,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 5342,
+              "prompt_tokens": 5522,
+              "total_tokens": 10864,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 5183
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 5342,
+          "prompt_tokens": 5522,
+          "total_tokens": 10864,
+          "prompt_tokens_details": {
+            "cached_tokens": 256
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 5183
+          }
+        },
+        "seconds": 23.40893630200003,
+        "http_attempts": 1
+      },
+      "fingerprint": "6184e9a27d0f8c763e0da53daef537870d24b9b4ce9fb486e98b2c419ad5b37c",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "points",
+            "value": 13,
+            "unit": "%",
+            "basis": "стоимость бронирования отелей, квартир и домов",
+            "audience": "все уровни Status",
+            "restrictions": [],
+            "how_to_get": [
+              "Совершить бронирование отелей, квартир и домов на Суточно.ру"
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "13% милями за бронирование отелей, квартир и домов для всех уровней Status",
+              "До 13% милями от стоимости брони"
+            ],
+            "practical_advice": []
+          }
+        ],
+        "unknowns": []
+      },
+      "inferred_as_of": "2026-10-28",
+      "inferred_at": 1793166454.7059162,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "0de568f235a2adcbbbde7f193d0ec2a6": {
       "target": {
@@ -23729,7 +25518,69 @@
         "partner": "Ultima Яндекс Go",
         "program": "T2 Selection",
         "source_id": "t2_selection_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793166464.8949046,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "c147a9bc2a443dbc2b431cb729b3d74c0341ce69f55a3719087de45967712a09",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "c147a9bc2a443dbc2b431cb729b3d74c0341ce69f55a3719087de45967712a09",
+            "seconds": 3.163281551999944,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 271,
+              "prompt_tokens": 2121,
+              "total_tokens": 2392,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 159
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 271,
+          "prompt_tokens": 2121,
+          "total_tokens": 2392,
+          "prompt_tokens_details": {
+            "cached_tokens": 256
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 159
+          }
+        },
+        "seconds": 3.1687011720000555,
+        "http_attempts": 1
+      },
+      "fingerprint": "509276d2de737ea136fc243c7394f31546f68fb6f3c9a8ed83b0fe63d9179255",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В предоставленном тексте и на изображениях отсутствует блок TARGET с описанием программы «T2 Selection» у партнёра «Ultima Яндекс Go»",
+          "Не указаны выгода, область действия, способ получения и ограничения предложения",
+          "Не указаны промокод, срок действия и срок начисления",
+          "Нет дословных цитат из блока TARGET для подтверждения условия"
+        ]
+      },
+      "inferred_as_of": "2026-10-28",
+      "inferred_at": 1793166464.8949752,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "6cc721c3a112076865a7a8b711f7be6b": {
       "target": {
@@ -23738,7 +25589,66 @@
         "partner": "Ultima Яндекс Еда",
         "program": "T2 Selection",
         "source_id": "t2_selection_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793166474.943828,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "f221f76938bc33f276b808d991f079dd604d537698cc22712e1ddb62f68accba",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "f221f76938bc33f276b808d991f079dd604d537698cc22712e1ddb62f68accba",
+            "seconds": 3.023439020999831,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 279,
+              "prompt_tokens": 2083,
+              "total_tokens": 2362,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 233
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 279,
+          "prompt_tokens": 2083,
+          "total_tokens": 2362,
+          "prompt_tokens_details": {
+            "cached_tokens": 256
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 233
+          }
+        },
+        "seconds": 3.0283759620001547,
+        "http_attempts": 1
+      },
+      "fingerprint": "6f245119bf2ffb4ad067f9cd0428c289a3b6ffe6013b2b46a17bc50cadf1823d",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В предоставленном тексте отсутствует блок с условиями предложения для Ultima Яндекс Еда в программе T2 Selection."
+        ]
+      },
+      "inferred_as_of": "2026-10-28",
+      "inferred_at": 1793166474.9438958,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "11d881a6d52bc615f5cc7cdd6316a753": {
       "target": {
@@ -23747,7 +25657,66 @@
         "partner": "Ultima Яндекс Маркет",
         "program": "T2 Selection",
         "source_id": "t2_selection_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793166484.6708505,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "a3c4d7260be40bd5c3dcda1073bd3b90f1ca3a2463ef204c283440a327f45194",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "a3c4d7260be40bd5c3dcda1073bd3b90f1ca3a2463ef204c283440a327f45194",
+            "seconds": 2.7003848899998957,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 199,
+              "prompt_tokens": 2122,
+              "total_tokens": 2321,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 154
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 199,
+          "prompt_tokens": 2122,
+          "total_tokens": 2321,
+          "prompt_tokens_details": {
+            "cached_tokens": 256
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 154
+          }
+        },
+        "seconds": 2.705332867999914,
+        "http_attempts": 1
+      },
+      "fingerprint": "d00be8068cf42d6128d5665012d0e278cb3fafee4cd73da3663b2d6c06b34c31",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В предоставленном тексте отсутствует описание программы T2 Selection для партнёра Ultima Яндекс Маркет."
+        ]
+      },
+      "inferred_as_of": "2026-10-28",
+      "inferred_at": 1793166484.6709263,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "dc31f517d5d2714d33bda72419488714": {
       "target": {
@@ -23756,7 +25725,67 @@
         "partner": "MILE·ON·AIR",
         "program": "T2 Selection",
         "source_id": "t2_selection_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793166497.514622,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "e4938670da2d1370afab7213b586f6c867c1663b92a46b1dc8390e6c252d3c56",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "e4938670da2d1370afab7213b586f6c867c1663b92a46b1dc8390e6c252d3c56",
+            "seconds": 5.8187960779998775,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 444,
+              "prompt_tokens": 2157,
+              "total_tokens": 2601,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 371
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 444,
+          "prompt_tokens": 2157,
+          "total_tokens": 2601,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 371
+          }
+        },
+        "seconds": 5.823802134000061,
+        "http_attempts": 1
+      },
+      "fingerprint": "dd8cb9d0cb7940f9c3ad71f66bf1c25c5551febb4e1d48c97580d1dbbd5a0640",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В предоставленном тексте нет блока TARGET для партнёра MILE·ON·AIR или программы T2 Selection.",
+          "Нет сведений о выгоде, области действия, способе получения и ограничениях предложения."
+        ]
+      },
+      "inferred_as_of": "2026-10-28",
+      "inferred_at": 1793166497.514695,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "f4667f2121ca566db76508d0a9f80909": {
       "target": {
@@ -23765,7 +25794,66 @@
         "partner": "Яндекс Лавка",
         "program": "T2 Selection",
         "source_id": "t2_selection_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793166510.1240616,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "9c184df2e14a496a1649ee9b9b61b1e223daafacd4c1fec51ad7e8163b800822",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "9c184df2e14a496a1649ee9b9b61b1e223daafacd4c1fec51ad7e8163b800822",
+            "seconds": 5.582910351999999,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 252,
+              "prompt_tokens": 2084,
+              "total_tokens": 2336,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 206
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 252,
+          "prompt_tokens": 2084,
+          "total_tokens": 2336,
+          "prompt_tokens_details": {
+            "cached_tokens": 256
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 206
+          }
+        },
+        "seconds": 5.5881106409999575,
+        "http_attempts": 1
+      },
+      "fingerprint": "a7ff1dd6a0145b84ce32d75e0df0a11eaa17656f43b4374cdc2aa86732590b01",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В предоставленном тексте нет условий программы T2 Selection для партнёра «Яндекс Лавка»."
+        ]
+      },
+      "inferred_as_of": "2026-10-28",
+      "inferred_at": 1793166510.1241386,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "783d63e0e3578666b1c1c2a14900c2b7": {
       "target": {
@@ -23774,7 +25862,96 @@
         "partner": "Utair",
         "program": "Utair Status",
         "source_id": "utair_tiers"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793166542.0515504,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "6470b446ad5c0a39bc57fcafd38ee3903828dbb524c93a8c7fd796d91e3225a4",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "6470b446ad5c0a39bc57fcafd38ee3903828dbb524c93a8c7fd796d91e3225a4",
+            "seconds": 24.899336610999853,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 6691,
+              "prompt_tokens": 5520,
+              "total_tokens": 12211,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 6291
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 6691,
+          "prompt_tokens": 5520,
+          "total_tokens": 12211,
+          "prompt_tokens_details": {
+            "cached_tokens": 256
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 6291
+          }
+        },
+        "seconds": 24.904851977999897,
+        "http_attempts": 1
+      },
+      "fingerprint": "2d72476e5ec43f773a7e38535fe077984caa5517a4e003f710a764a9dd8909e9",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "points",
+            "value": 7,
+            "unit": "%",
+            "basis": "сумма покупки на любом тарифе билета",
+            "audience": "участники программы Utair Status",
+            "restrictions": [
+              "Начисление миль зависит от выбранного тарифа билета и дополнительных услуг.",
+              "Премиальные сервисы доступны с 10 000 ₽, потраченных на полеты с Utair и указанием карты Status.",
+              "Привилегии не предоставляются на билеты других Авиакомпаний-партнеров по код-шеринговому соглашению, а также на чартерных и заказных рейсах Авиакомпании, если не оговорено иное."
+            ],
+            "how_to_get": [
+              "Стать участником программы Status",
+              "Купить билет Utair",
+              "Совершать полеты с Utair, указывая карту Status"
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Возвращайте до 7% милями от суммы покупки на любом тарифе билета",
+              "1 миля = 1 ₽",
+              "Мили начисляются в зависимости от выбранного тарифа и дополнительных услуг",
+              "Привилегии не предоставляются на билеты других Авиакомпаний-партнеров по код-шеринговому соглашению",
+              "а также на чартерных и заказных рейсах Авиакомпании, если не оговорено иное"
+            ],
+            "practical_advice": []
+          }
+        ],
+        "unknowns": [
+          "Точный процент начисления миль по тарифам не указан",
+          "Срок зачисления миль на счет не указан"
+        ]
+      },
+      "inferred_as_of": "2026-10-28",
+      "inferred_at": 1793166542.0516312,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "b2dc9c45ba8d8216b9629a789ff2bf59": {
       "target": {
@@ -23783,7 +25960,98 @@
         "partner": "Smartavia",
         "program": "Единая карта петербуржца (ЕКП)",
         "source_id": "smartavia_rules"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793166567.8029087,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "0977cc2bd4b4f687916e91da4f033cf6f49493d220bddef74d3b1540e01b98fd",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "0977cc2bd4b4f687916e91da4f033cf6f49493d220bddef74d3b1540e01b98fd",
+            "seconds": 18.71952071999999,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 2753,
+              "prompt_tokens": 5720,
+              "total_tokens": 8473,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 2466
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 2753,
+          "prompt_tokens": 5720,
+          "total_tokens": 8473,
+          "prompt_tokens_details": {
+            "cached_tokens": 256
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 2466
+          }
+        },
+        "seconds": 18.725181319000058,
+        "http_attempts": 1
+      },
+      "fingerprint": "aa8a341969df234df632aeba26d4e8264bca39dafa6f1bbfa526db9a5463b0d1",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "discount",
+            "value": 20,
+            "unit": "%",
+            "basis": "годовая Подписка Smartavia",
+            "audience": "держатели Единой карты Петербуржца",
+            "restrictions": [
+              "Только при покупке годовой Подписки Smartavia"
+            ],
+            "how_to_get": [
+              "Оформить годовую Подписку Smartavia"
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Получите скидку 20% на Подписку Smartavia",
+              "Всем держателям Единой карты Петербуржца при покупке годовой Подписки Smartavia",
+              "Оформить Подписку"
+            ],
+            "practical_advice": [
+              {
+                "text": "Проверьте, что оформляете именно годовую подписку: скидка 20% указана для годовой Подписки Smartavia.",
+                "basis": "inference"
+              },
+              {
+                "text": "Скидка относится к покупке подписки, а не к отдельным услугам вроде билетов или багажа.",
+                "basis": "inference"
+              }
+            ]
+          }
+        ],
+        "unknowns": [
+          "Не указано, распространяется ли скидка 20% на все тарифы годовой подписки."
+        ]
+      },
+      "inferred_as_of": "2026-10-28",
+      "inferred_at": 1793166567.8031087,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "cc9f1653e3c6fc203cc5a74ce8b45d7e": {
       "target": {
@@ -24716,6 +26984,29 @@
         "partner": "Альфа-Банк",
         "program": "Alfa Only",
         "source_id": "alfa_only_public_rules"
+      },
+      "status": "transport_error",
+      "last_checked": 1793166586.0267842,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "e26d578644b9484794a137e32ecf10883bbab4c19a283ce51b9a5aae08f0f32c",
+        "status": "transport_error",
+        "schema_valid": false,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "e26d578644b9484794a137e32ecf10883bbab4c19a283ce51b9a5aae08f0f32c",
+            "seconds": 11.157355680999899,
+            "error_type": "ConnectionError"
+          }
+        ],
+        "error": "unknown_execution_outcome_not_retried",
+        "seconds": 11.162664704999997,
+        "http_attempts": 1
       }
     },
     "a13b2353515a3b00eeef7e4b05a954cc": {
@@ -24725,6 +27016,29 @@
         "partner": "РБК",
         "program": "Alfa Only",
         "source_id": "alfa_only_public_rules"
+      },
+      "status": "transport_error",
+      "last_checked": 1793166603.4888875,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "ac42443af6c935d397a6783f3fd3c556a8173b2a9adec68735d23a58edb409fd",
+        "status": "transport_error",
+        "schema_valid": false,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "ac42443af6c935d397a6783f3fd3c556a8173b2a9adec68735d23a58edb409fd",
+            "seconds": 10.389850560000014,
+            "error_type": "ConnectionError"
+          }
+        ],
+        "error": "unknown_execution_outcome_not_retried",
+        "seconds": 10.39531871700001,
+        "http_attempts": 1
       }
     },
     "c80cc8e0253e253485a3f3d8718bcc46": {
@@ -24734,6 +27048,29 @@
         "partner": "Quintessentially Nova",
         "program": "Alfa Only",
         "source_id": "alfa_only_public_rules"
+      },
+      "status": "transport_error",
+      "last_checked": 1793166620.961778,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "b5dda177b6f1bc2458af734ec068124a255e421541b0aba28c705412d4aa2466",
+        "status": "transport_error",
+        "schema_valid": false,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "b5dda177b6f1bc2458af734ec068124a255e421541b0aba28c705412d4aa2466",
+            "seconds": 10.399233625000079,
+            "error_type": "ConnectionError"
+          }
+        ],
+        "error": "unknown_execution_outcome_not_retried",
+        "seconds": 10.404648449999968,
+        "http_attempts": 1
       }
     },
     "f8fb8ea2461c61865d72464e8a60c741": {
@@ -24743,6 +27080,29 @@
         "partner": "Simple",
         "program": "Alfa Only",
         "source_id": "alfa_only_public_rules"
+      },
+      "status": "transport_error",
+      "last_checked": 1793166638.4214752,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "dfdba8c3dd9f4c1ceefa994f0756b50fd4a68ea5e71ad1c56c80360fcd2436d4",
+        "status": "transport_error",
+        "schema_valid": false,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "dfdba8c3dd9f4c1ceefa994f0756b50fd4a68ea5e71ad1c56c80360fcd2436d4",
+            "seconds": 10.39863815700005,
+            "error_type": "ConnectionError"
+          }
+        ],
+        "error": "unknown_execution_outcome_not_retried",
+        "seconds": 10.403848315000005,
+        "http_attempts": 1
       }
     },
     "e3af2a514dc62c40992d51745bf0c606": {
@@ -24752,6 +27112,29 @@
         "partner": "Smart Reading",
         "program": "Alfa Only",
         "source_id": "alfa_only_public_rules"
+      },
+      "status": "transport_error",
+      "last_checked": 1793166655.8756146,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "9027c2611c3b83a643eb3d25d451554ebe0a301d5d5fbc1fd6845e713b6af302",
+        "status": "transport_error",
+        "schema_valid": false,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "9027c2611c3b83a643eb3d25d451554ebe0a301d5d5fbc1fd6845e713b6af302",
+            "seconds": 10.389535460999923,
+            "error_type": "ConnectionError"
+          }
+        ],
+        "error": "unknown_execution_outcome_not_retried",
+        "seconds": 10.395073451999906,
+        "http_attempts": 1
       }
     },
     "1360be7033b3e5e48a3ebdc283a7083e": {
@@ -24761,6 +27144,29 @@
         "partner": "АльфаСтрахование",
         "program": "Alfa Only",
         "source_id": "alfa_only_public_rules"
+      },
+      "status": "transport_error",
+      "last_checked": 1793166673.3238218,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "33c3af2574dfd33b54babad1b5c0bb1011dfd90b080908eb08e162dab57c487f",
+        "status": "transport_error",
+        "schema_valid": false,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "33c3af2574dfd33b54babad1b5c0bb1011dfd90b080908eb08e162dab57c487f",
+            "seconds": 10.386633721999942,
+            "error_type": "ConnectionError"
+          }
+        ],
+        "error": "unknown_execution_outcome_not_retried",
+        "seconds": 10.391931030000023,
+        "http_attempts": 1
       }
     },
     "56d7e6b8ce2b9ed47dcf8dd65284b575": {
@@ -24770,6 +27176,29 @@
         "partner": "Альфа-Банк",
         "program": "Alfa Only",
         "source_id": "alfa_only_cashback_rules"
+      },
+      "status": "transport_error",
+      "last_checked": 1793166690.752139,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "7917a92f2851b5f52c2d4321b54b7e36ba89a951bd918a1ab7a32ceabadbfa7d",
+        "status": "transport_error",
+        "schema_valid": false,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "7917a92f2851b5f52c2d4321b54b7e36ba89a951bd918a1ab7a32ceabadbfa7d",
+            "seconds": 10.39366083799996,
+            "error_type": "ConnectionError"
+          }
+        ],
+        "error": "unknown_execution_outcome_not_retried",
+        "seconds": 10.395959488000017,
+        "http_attempts": 1
       }
     },
     "b2bd2aedeb765b242ca8040d05a65dba": {
@@ -24779,7 +27208,67 @@
         "partner": "Betulla",
         "program": "Alfa Only",
         "source_id": "alfa_only_partner_pdf_offers"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793166709.5391655,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "b18d1513b6226b25c065c97052f27403028c7a75d3f1e4573274fb337bd47aaa",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "b18d1513b6226b25c065c97052f27403028c7a75d3f1e4573274fb337bd47aaa",
+            "seconds": 11.757240009000043,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 478,
+              "prompt_tokens": 8092,
+              "total_tokens": 8570,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 425
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 478,
+          "prompt_tokens": 8092,
+          "total_tokens": 8570,
+          "prompt_tokens_details": {
+            "cached_tokens": 256
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 425
+          }
+        },
+        "seconds": 11.76303043200005,
+        "http_attempts": 1
+      },
+      "fingerprint": "a5a763b2003361d3bee50a0ad8857ae89977f4f0d77df81e9e437e5555f23cfd",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В предоставленном тексте нет предложения программы Alfa Only для партнёра Betulla",
+          "Партнёр Betulla не упоминается"
+        ]
+      },
+      "inferred_as_of": "2026-10-28",
+      "inferred_at": 1793166709.5392346,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "d9f7b0e9c489970b76f9e7e9003a4342": {
       "target": {
@@ -24788,7 +27277,97 @@
         "partner": "Р14",
         "program": "Alfa Only",
         "source_id": "alfa_only_partner_pdf_offers"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793166749.9622333,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "ac4ea5c2c7c80560675be0db9377e9acf404def30c44be9e7e4793a919fa2073",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "ac4ea5c2c7c80560675be0db9377e9acf404def30c44be9e7e4793a919fa2073",
+            "seconds": 33.392363208000006,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 7464,
+              "prompt_tokens": 8289,
+              "total_tokens": 15753,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 6864
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 7464,
+          "prompt_tokens": 8289,
+          "total_tokens": 15753,
+          "prompt_tokens_details": {
+            "cached_tokens": 256
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 6864
+          }
+        },
+        "seconds": 33.3984151950001,
+        "http_attempts": 1
+      },
+      "fingerprint": "f85515aa8def5cf9f8d917fafa3dc417171fed8b99226e9c5c5329e386e8f4db",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "cashback",
+            "value": 10,
+            "unit": "%",
+            "basis": "сумма первой Расходной операции, совершенной в ТСП Партнера в течение календарного месяца, входящего в Период проведения Акции",
+            "audience": "Клиенты Банка — физические лица (резиденты РФ), обслуживающиеся в рамках Пакета услуг «Alfa Only»",
+            "restrictions": [
+              "Учитывается первая Расходная операция с использованием Карты/Карты AlfaTravel.",
+              "Операция должна быть совершена в ТСП Партнера; акция проводится в г. Санкт-Петербург.",
+              "Период акции: с 01.01.2026 по 31.10.2026 включительно.",
+              "Максимум 1 500 Альфа-Баллов/Бонусных Миль.",
+              "Начисление однократное; не суммируется с другими Акциями Партнера, где начисляются Альфа-Баллы/Бонусные Мили за Расходные операции в ТСП; применяются условия с наибольшим значением.",
+              "Партнер вправе прекратить участие при несоблюдении Правил или злоупотреблении правами."
+            ],
+            "how_to_get": [
+              "Совершить не менее 1 (одной) Расходной операции с использованием Карты/Карты AlfaTravel в ТСП Партнера."
+            ],
+            "promo_code": null,
+            "valid_until": "2026-10-31",
+            "accrual_timing": "в течение 10 дней с даты окончания календарного месяца",
+            "evidence": [
+              "Кэшбэк до 10% за первую покупку Alfa Only",
+              "Участник Акции – Клиент, обслуживающийся в рамках Пакета услуг «Alfa Only»",
+              "Альфа-Баллы/ Бонусные Мили по ставке 10 %, но не более 1 500 (одна тысяча пятьсот) Альфа-Баллов/ Бонусных Миль от суммы первой Расходной операции",
+              "совершить не менее 1 (одной) Расходной операции с использованием Карты/ Карты AlfaTravel",
+              "начисляются Банком единоразово (однократно)",
+              "в течение 10 дней с даты окончания календарного месяца",
+              "Акция Партнера проводится на территории РФ, а именно в г.Санкт-Петербург.",
+              "Санкт-Петербург, Ул. Академика Павлова, 5В"
+            ],
+            "practical_advice": []
+          }
+        ],
+        "unknowns": []
+      },
+      "inferred_as_of": "2026-10-28",
+      "inferred_at": 1793166749.9623141,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "68c8550f9ab3260fd5ae74d43857f8b0": {
       "target": {
@@ -24797,7 +27376,107 @@
         "partner": "Такахули",
         "program": "Alfa Only",
         "source_id": "alfa_only_partner_pdf_offers"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793166786.8804297,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "fe6c163b87d001ff25f6edb407c23711c12d43a5e61b98d10fa403c9fd1448a8",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "fe6c163b87d001ff25f6edb407c23711c12d43a5e61b98d10fa403c9fd1448a8",
+            "seconds": 29.88764525900001,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 7330,
+              "prompt_tokens": 7580,
+              "total_tokens": 14910,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 6446
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 7330,
+          "prompt_tokens": 7580,
+          "total_tokens": 14910,
+          "prompt_tokens_details": {
+            "cached_tokens": 256
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 6446
+          }
+        },
+        "seconds": 29.894145152999727,
+        "http_attempts": 1
+      },
+      "fingerprint": "83dbaa644ed58bad2f0b318b1f024aee04528e285f891c2bde14394fad8e5c9e",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "points",
+            "value": 10,
+            "unit": "%",
+            "basis": "Сумма всех Расходных операций, совершенных в ТСП Партнера в течение календарного месяца, входящего в Период проведения Акции.",
+            "audience": "Клиенты — физические лица (резиденты РФ), обслуживающиеся в рамках Пакета услуг «Alfa Only».",
+            "restrictions": [
+              "Период проведения Акции Партнера: с 00:00:00 «01» февраля 2026г. по 23:59:59 «31» августа 2026г. включительно.",
+              "Акция проводится на территории РФ, а именно в г. Москва.",
+              "ТСП: Ресторан «Такахули» г. Москва, ул. Малая Бронная, 10с1.",
+              "Начисление по ставке 10%, но не более 1 500 Альфа-Баллов/Бонусных Миль от суммы всех Расходных операций в ТСП за календарный месяц.",
+              "Не суммируется с Альфа-Баллами/Бонусными Милями в рамках иных Акций Партнера, где начисляются за Расходные операции в ТСП; начисляются на условиях акции с наибольшим значением.",
+              "Партнер вправе прекратить участие при несоблюдении Правил или злоупотреблении правами."
+            ],
+            "how_to_get": [
+              "Совершить не менее одной расходной операции с использованием Карты/Карты AlfaTravel в ТСП Партнера в период проведения акции; первая такая операция подтверждает участие."
+            ],
+            "promo_code": null,
+            "valid_until": "2026-08-31",
+            "accrual_timing": "в течение 10 дней с даты окончания календарного месяца",
+            "evidence": [
+              "получают Альфа-Баллы/ Бонусные Мили по ставке 10 %, но не более 1 500 (одна тысяча пятьсот) Альфа-Баллов/ Бонусных Миль от суммы всех Расходных операций, совершенных в ТСП в течение календарного месяца, входящего в Период проведения Акции.",
+              "совершить не менее 1 (одной) Расходной операции с использованием Карты/ Карты AlfaTravel.",
+              "Период проведения Акции Партнера – срок проведения Акции Партнера: с 00:00:00 часов по московскому времени «01» февраля 2026г. по 23:59:59 часов по московскому времени «31» августа 2026г. включительно.",
+              "Ресторан «Такахули» г. Москва, ул. Малая Бронная, 10с1",
+              "Начисление предусмотренных Акцией Партнера Альфа-Баллов/ Бонусных Миль на Бонусный счет, открытый в рамках Правил Программы Реверсивный Cashback/ Правил Программы AlfaTravel, производится Банком в течение 10 дней с даты окончания календарного месяца."
+            ],
+            "practical_advice": [
+              {
+                "text": "Совершайте покупки в «Такахули» в одном календарном месяце, чтобы все операции попали в расчёт лимита 1 500 баллов/миль за этот месяц.",
+                "basis": "inference"
+              },
+              {
+                "text": "Сверяйте ставки с другими акциями партнёра: сумма баллов/миль не складывается, применяется акция с наибольшим значением.",
+                "basis": "inference"
+              },
+              {
+                "text": "Проверьте, что оплата проходит именно в ТСП из приложения — ресторан «Такахули» в Москве на Малой Бронной, 10с1.",
+                "basis": "inference"
+              }
+            ]
+          }
+        ],
+        "unknowns": []
+      },
+      "inferred_as_of": "2026-10-28",
+      "inferred_at": 1793166786.880519,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "ddcc73bcf9595e2bf91a288f111162e6": {
       "target": {
@@ -24806,7 +27485,109 @@
         "partner": "ООО «СОМ» — FRESA и другие ТСП",
         "program": "Alfa Only",
         "source_id": "alfa_only_partner_pdf_offers"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793166818.7313495,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "ed8ac1d30e883902060ac7095aae023c93dc301ea1737cfd2ef60367f3c9a0e4",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "ed8ac1d30e883902060ac7095aae023c93dc301ea1737cfd2ef60367f3c9a0e4",
+            "seconds": 24.819743409999774,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 4720,
+              "prompt_tokens": 8331,
+              "total_tokens": 13051,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 4028
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 4720,
+          "prompt_tokens": 8331,
+          "total_tokens": 13051,
+          "prompt_tokens_details": {
+            "cached_tokens": 256
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 4028
+          }
+        },
+        "seconds": 24.82556969699999,
+        "http_attempts": 1
+      },
+      "fingerprint": "144a55e91a3f6e7a298574655aa8451ce0221c52784c5640bdfda0cf7a2fbf92",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "cashback",
+            "value": 10,
+            "unit": "%",
+            "basis": "Сумма первой Расходной операции, совершенной в ТСП в течение календарного месяца, входящего в Период проведения Акции",
+            "audience": "Клиенты Банка, обслуживающиеся в рамках Пакета услуг «Alfa Only»",
+            "restrictions": [
+              "Не более 1 500 Альфа-Баллов/Бонусных Миль от суммы первой Расходной операции.",
+              "Учитывается первая Расходная операция, совершенная в ТСП в течение календарного месяца в период акции.",
+              "Операция должна быть совершена с использованием Карты/Карты AlfaTravel в ТСП Партнера; в списке ТСП указана «FRESA».",
+              "Период проведения акции: с 01.02.2026 по 30.11.2026.",
+              "Территория акции: г. Москва, г. Санкт-Петербург, г. Владивосток.",
+              "Не суммируется с иными Акциями Партнера; начисляются по условиям акции с наибольшим значением."
+            ],
+            "how_to_get": [
+              "Совершить не менее одной Расходной операции с использованием Карты/Карты AlfaTravel в ТСП Партнера в период акции."
+            ],
+            "promo_code": null,
+            "valid_until": "2026-11-30",
+            "accrual_timing": "в течение 10 дней с даты окончания календарного месяца",
+            "evidence": [
+              "получают Альфа-Баллы/ Бонусные Мили по ставке 10 %, но не более 1 500 (одна тысяча пятьсот) Альфа-Баллов/ Бонусных Миль от суммы первой Расходной операции",
+              "совершить не менее 1 (одной) Расходной операции с использованием Карты/ Карты AlfaTravel",
+              "Участник Акции – Клиент, обслуживающийся в рамках Пакета услуг «Alfa Only»",
+              "в течение 10 дней с даты окончания календарного месяца",
+              "«FRESA» г. Санкт-Перербург, ул. Вознесенский пр, 6"
+            ],
+            "practical_advice": [
+              {
+                "text": "Совершите первую покупку в «FRESA» в период акции картой, чтобы операция могла участвовать в акции.",
+                "basis": "inference"
+              },
+              {
+                "text": "Если покупка превышает 15 000 ₽, кэшбэк всё равно ограничен 1 500 баллами/милями.",
+                "basis": "inference"
+              },
+              {
+                "text": "Не рассчитывайте на кэшбэк по этой акции за вторую и последующие покупки в том же календарном месяце.",
+                "basis": "inference"
+              }
+            ]
+          }
+        ],
+        "unknowns": [
+          "Не указано, будут ли конкретному клиенту начислены Альфа-Баллы или Бонусные Мили — это зависит от его участия в Программе Реверсивный Cashback или AlfaTravel."
+        ]
+      },
+      "inferred_as_of": "2026-10-28",
+      "inferred_at": 1793166818.7314596,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "1525cf61efd8a6c91074b0ccb2a7dfa9": {
       "target": {
@@ -24815,7 +27596,110 @@
         "partner": "Mama Tuta / Probka",
         "program": "Alfa Only",
         "source_id": "alfa_only_partner_pdf_offers"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793166853.2962232,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "fe51e4a6e15dcf044999e4c3b13108d418c974ce5d5a8f7f92dfbc2465bc8085",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "fe51e4a6e15dcf044999e4c3b13108d418c974ce5d5a8f7f92dfbc2465bc8085",
+            "seconds": 27.53288434199976,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 5547,
+              "prompt_tokens": 8340,
+              "total_tokens": 13887,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 4762
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 5547,
+          "prompt_tokens": 8340,
+          "total_tokens": 13887,
+          "prompt_tokens_details": {
+            "cached_tokens": 256
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 4762
+          }
+        },
+        "seconds": 27.53913462899982,
+        "http_attempts": 1
+      },
+      "fingerprint": "978d900cc2a882576e3d1c3952e842bf53d5c36b0b55eb9e5404603df8e39013",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "cashback",
+            "value": 10,
+            "unit": "%",
+            "basis": "Сумма первой Расходной операции, совершенной в ТСП в течение календарного месяца, входящего в Период проведения Акции.",
+            "audience": "Клиенты, обслуживающиеся в рамках Пакета услуг «Alfa Only».",
+            "restrictions": [
+              "Только для клиентов, обслуживающихся в рамках Пакета услуг «Alfa Only».",
+              "Учитывается сумма первой Расходной операции, совершенной в ТСП в течение календарного месяца, входящего в Период проведения Акции.",
+              "Максимум — 1 500 Альфа-Баллов/Бонусных Миль.",
+              "Акция проводится в г. Санкт-Петербург; ТСП: Ресторан Mama Tuta и Ресторан Probka по адресу Зоологический пер. 2-4.",
+              "Период проведения Акции: с 01.01.2026 по 31.10.2026 включительно.",
+              "Альфа-Баллы/Бонусные Мили не суммируются с начислениями по иным Акциям Партнера; применяются условия акции с наибольшим значением.",
+              "Начисление производится единоразово (однократно) на Бонусный счет."
+            ],
+            "promo_code": null,
+            "valid_until": "2026-10-31",
+            "accrual_timing": "в течение 10 дней с даты окончания календарного месяца",
+            "evidence": [
+              "Кэшбэк до 10% за первую покупку Alfa Only",
+              "Участник Акции – Клиент, обслуживающийся в рамках Пакета услуг «Alfa Only»",
+              "совершить не менее 1 (одной) Расходной операции с использованием Карты/ Карты AlfaTravel",
+              "получают Альфа-Баллы/ Бонусные Мили по ставке 10 %, но не более 1 500 (одна тысяча пятьсот) Альфа-Баллов/ Бонусных Миль от суммы первой Расходной операции",
+              "в течение 10 дней с даты окончания календарного месяца",
+              "Ресторан Mama Tuta г. Санкт-Петербург, Зоологический пер. 2-4",
+              "Ресторан Probka г. Санкт-Петербург, Зоологический пер. 2-4"
+            ],
+            "practical_advice": [
+              {
+                "text": "Совершайте первую покупку в одном из ресторанов Mama Tuta или Probka в Санкт-Петербурге: для расчёта берётся первая расходная операция в ТСП за календарный месяц.",
+                "basis": "inference"
+              },
+              {
+                "text": "Если первая покупка превышает 15 000 ₽, сумма вознаграждения всё равно ограничена 1 500 Альфа-Баллами/Бонусными Милями.",
+                "basis": "inference"
+              },
+              {
+                "text": "Проверьте, что вы являетесь клиентом пакета «Alfa Only»: это требование к участнику акции.",
+                "basis": "inference"
+              }
+            ],
+            "how_to_get": [
+              "Совершить не менее 1 (одной) Расходной операции с использованием Карты/ Карты AlfaTravel в ТСП Партнера; для расчёта выгоды учитывается первая Расходная операция в календарном месяце акции."
+            ]
+          }
+        ],
+        "unknowns": []
+      },
+      "inferred_as_of": "2026-10-28",
+      "inferred_at": 1793166853.296311,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "5787495c040e803d4065241ce69a5aa8": {
       "target": {
@@ -24824,7 +27708,123 @@
         "partner": "Пафос",
         "program": "Alfa Only",
         "source_id": "greatlist_alfa_only"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793166884.583663,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "b488cf883d5fa87bacbe16c870a2e199f02a323c86ecee9dae0dcde7a7789128",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "b488cf883d5fa87bacbe16c870a2e199f02a323c86ecee9dae0dcde7a7789128",
+            "seconds": 24.254483665999942,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 3583,
+              "prompt_tokens": 3857,
+              "total_tokens": 7440,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 3091
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 3583,
+          "prompt_tokens": 3857,
+          "total_tokens": 7440,
+          "prompt_tokens_details": {
+            "cached_tokens": 256
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 3091
+          }
+        },
+        "seconds": 24.261155301000144,
+        "http_attempts": 1
+      },
+      "fingerprint": "b0cfa61329a4e124af2f2cfac2915841bbc3be10f6e3b1d3f8fbabe5e1d05f56",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "discount",
+            "value": 10,
+            "unit": "%",
+            "basis": "приоритетная бронь через консьерж-сервис",
+            "audience": "клиенты Alfa Only",
+            "restrictions": [
+              "Только для клиентов Alfa Only",
+              "Только при приоритетной брони через консьерж-сервис"
+            ],
+            "how_to_get": [
+              "Оформить приоритетную бронь через консьерж-сервис"
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Привилегии для клиентов Alfa Only:",
+              "приоритетная бронь через консьерж-сервис — с комплиментом и скидкой 10%"
+            ],
+            "practical_advice": [
+              {
+                "text": "При бронировании через консьерж-сервис попросите подтвердить приоритетную бронь и применение скидки 10%.",
+                "basis": "inference"
+              }
+            ]
+          },
+          {
+            "benefit_kind": "gift",
+            "value": null,
+            "unit": null,
+            "basis": "приоритетная бронь через консьерж-сервис",
+            "audience": "клиенты Alfa Only",
+            "restrictions": [
+              "Только для клиентов Alfa Only",
+              "Только при приоритетной брони через консьерж-сервис"
+            ],
+            "how_to_get": [
+              "Оформить приоритетную бронь через консьерж-сервис"
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Привилегии для клиентов Alfa Only:",
+              "приоритетная бронь через консьерж-сервис — с комплиментом и скидкой 10%"
+            ],
+            "practical_advice": [
+              {
+                "text": "Уточните у консьерж-сервиса, что именно входит в комплимент.",
+                "basis": "inference"
+              }
+            ]
+          }
+        ],
+        "unknowns": [
+          "Состав комплимента не указан.",
+          "Срок действия скидки и комплимента не указан.",
+          "Не указано, является ли фирменный десерт отдельной привилегией или просто позицией меню."
+        ]
+      },
+      "inferred_as_of": "2026-10-28",
+      "inferred_at": 1793166884.5837553,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "127835a5674bc3f54223beec03121968": {
       "target": {
@@ -24833,7 +27833,106 @@
         "partner": "Bruno",
         "program": "Alfa Only",
         "source_id": "greatlist_alfa_only"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793166915.2634723,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "0869b8c104126a34cb0b0ccac245d88f9b417b5e41835df86eaa08c354f1cbcc",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "0869b8c104126a34cb0b0ccac245d88f9b417b5e41835df86eaa08c354f1cbcc",
+            "seconds": 23.647887293000167,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 4346,
+              "prompt_tokens": 4275,
+              "total_tokens": 8621,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 4011
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 4346,
+          "prompt_tokens": 4275,
+          "total_tokens": 8621,
+          "prompt_tokens_details": {
+            "cached_tokens": 256
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 4011
+          }
+        },
+        "seconds": 23.653696384999876,
+        "http_attempts": 1
+      },
+      "fingerprint": "d17428975637479d98a6eb954498ece4f7c9329409d1cbac4158ba7e7328fb37",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": "бронь в ресторане Bruno",
+            "audience": "клиенты Alfa Only",
+            "restrictions": [],
+            "how_to_get": [
+              "Обратиться в консьерж-сервис для бронирования"
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Привилегии для клиентов Alfa Only:",
+              "приоритетная бронь через консьерж-сервис"
+            ],
+            "practical_advice": []
+          },
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": "фирменный коктейль, созданный вместе с шефами",
+            "audience": "клиенты Alfa Only",
+            "restrictions": [],
+            "how_to_get": [],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Привилегии для клиентов Alfa Only:",
+              "В меню — фирменный коктейль, созданный вместе с шефами"
+            ],
+            "practical_advice": []
+          }
+        ],
+        "unknowns": [
+          "Не указан срок действия привилегий Alfa Only в Bruno.",
+          "Не указано, является ли фирменный коктейль бесплатным или платным.",
+          "Не указаны дополнительные ограничения приоритетной брони.",
+          "Не указано, как именно клиенту Alfa Only получить фирменный коктейль."
+        ]
+      },
+      "inferred_as_of": "2026-10-28",
+      "inferred_at": 1793166915.263552,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "e9b45a49ee37b90fa304a5ed8c4933a1": {
       "target": {
@@ -24842,7 +27941,87 @@
         "partner": "Selfie",
         "program": "Alfa Only",
         "source_id": "greatlist_alfa_only"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793166942.5104387,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "fa9e93fa08de6e99b440b17d7c3420f4c9e7c75b54813cde80317a4269b36d8e",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "fa9e93fa08de6e99b440b17d7c3420f4c9e7c75b54813cde80317a4269b36d8e",
+            "seconds": 20.214182449999953,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 2582,
+              "prompt_tokens": 4149,
+              "total_tokens": 6731,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 2355
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 2582,
+          "prompt_tokens": 4149,
+          "total_tokens": 6731,
+          "prompt_tokens_details": {
+            "cached_tokens": 256
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 2355
+          }
+        },
+        "seconds": 20.22073957199973,
+        "http_attempts": 1
+      },
+      "fingerprint": "64728f9c9808b351e59685a1542e7c325f42e5d512faaa255d40a6d7c82f8d31",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": "Приоритетная бронь через консьерж-сервис; фирменный коктейль, созданный вместе с шефами, в меню",
+            "audience": "Клиенты Alfa Only",
+            "restrictions": [],
+            "how_to_get": [
+              "Обратиться в консьерж-сервис для приоритетной брони"
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Клиентам Alfa Only доступна приоритетная бронь через консьерж-сервис.",
+              "В меню — фирменный коктейль, созданный вместе с шефами"
+            ],
+            "practical_advice": []
+          }
+        ],
+        "unknowns": [
+          "Не указаны ограничения и срок действия предложения.",
+          "Не указано, предоставляется ли фирменный коктейль бесплатно или на особых условиях."
+        ]
+      },
+      "inferred_as_of": "2026-10-28",
+      "inferred_at": 1793166942.510521,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "7ce725416065b556c9d619978561b7ed": {
       "target": {
@@ -24851,7 +28030,10 @@
         "partner": "Maritozzo",
         "program": "Alfa Only",
         "source_id": "greatlist_alfa_only"
-      }
+      },
+      "last_checked": 1793165065.8993483,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "b8011e8bf01045c56dea108b9a31a340": {
       "target": {
@@ -24860,7 +28042,103 @@
         "partner": "Mina",
         "program": "Alfa Only",
         "source_id": "greatlist_alfa_only"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793166970.2871034,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "62ac2d9b170bc8683f66be5c736106bff5a7b8bd0152075bddb552d6bd6567fc",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "62ac2d9b170bc8683f66be5c736106bff5a7b8bd0152075bddb552d6bd6567fc",
+            "seconds": 20.74600091100001,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 2778,
+              "prompt_tokens": 4113,
+              "total_tokens": 6891,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 2498
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 2778,
+          "prompt_tokens": 4113,
+          "total_tokens": 6891,
+          "prompt_tokens_details": {
+            "cached_tokens": 256
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 2498
+          }
+        },
+        "seconds": 20.75181997999971,
+        "http_attempts": 1
+      },
+      "fingerprint": "6d935c9a43f8f8b62ff671d723331b12b2f7e598d1fab3161d5814926072dfbc",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": "приоритетная бронь",
+            "audience": "клиенты Alfa Only",
+            "restrictions": [],
+            "how_to_get": [
+              "Обратиться в консьерж-сервис Alfa Only для приоритетной брони."
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Партнёр премиального сервиса Alfa Only от Альфа-Банка",
+              "приоритетная бронь через консьерж-сервис"
+            ],
+            "practical_advice": []
+          },
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": "фирменный коктейль",
+            "audience": "клиенты Alfa Only",
+            "restrictions": [],
+            "how_to_get": [
+              "Заказать фирменный коктейль из меню."
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Привилегии для клиентов Alfa Only:",
+              "В меню — фирменный коктейль, созданный вместе с шефами"
+            ],
+            "practical_advice": []
+          }
+        ],
+        "unknowns": []
+      },
+      "inferred_as_of": "2026-10-28",
+      "inferred_at": 1793166970.28718,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "092d13150efbb7d8fdbbdf4cb96a5d02": {
       "target": {
@@ -24869,7 +28147,107 @@
         "partner": "Loro",
         "program": "Alfa Only",
         "source_id": "greatlist_alfa_only"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793166999.9523575,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "a971bae54fa94ade00990d119cdd98cf5dee1ba8615f25faa119dd887cde895e",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "a971bae54fa94ade00990d119cdd98cf5dee1ba8615f25faa119dd887cde895e",
+            "seconds": 22.635051117999865,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 3162,
+              "prompt_tokens": 3842,
+              "total_tokens": 7004,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 2856
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 3162,
+          "prompt_tokens": 3842,
+          "total_tokens": 7004,
+          "prompt_tokens_details": {
+            "cached_tokens": 256
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 2856
+          }
+        },
+        "seconds": 22.640988792999906,
+        "http_attempts": 1
+      },
+      "fingerprint": "5b7d9a8735784c55e7fd801e61e62db4a736a0d0369a51d6c1eae61f02984256",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": "приоритетная бронь",
+            "audience": "клиенты Alfa Only",
+            "restrictions": [],
+            "how_to_get": [
+              "обратиться в консьерж-сервис для бронирования"
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Привилегии для клиентов Alfa Only",
+              "приоритетная бронь через консьерж-сервис"
+            ],
+            "practical_advice": []
+          },
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": "фирменный коктейль в меню",
+            "audience": "клиенты Alfa Only",
+            "restrictions": [],
+            "how_to_get": [
+              "заказать фирменный коктейль в меню"
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Привилегии для клиентов Alfa Only",
+              "В меню — фирменный коктейль, созданный вместе с шефами"
+            ],
+            "practical_advice": []
+          }
+        ],
+        "unknowns": [
+          "Не указано, является ли фирменный коктейль бесплатным для клиентов Alfa Only",
+          "Не указаны сроки действия привилегий",
+          "Не указаны дополнительные ограничения"
+        ]
+      },
+      "inferred_as_of": "2026-10-28",
+      "inferred_at": 1793166999.9524555,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "1f2f57219dd480ef06a0a578d56de955": {
       "target": {
@@ -24878,7 +28256,106 @@
         "partner": "Mama Tuta",
         "program": "Alfa Only",
         "source_id": "greatlist_alfa_only"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793167027.2575595,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "0afcc9d63c94b006f2fcfc11c6d5cc123a4b873fa20d4a5ed28a4c2a2263ad76",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "0afcc9d63c94b006f2fcfc11c6d5cc123a4b873fa20d4a5ed28a4c2a2263ad76",
+            "seconds": 20.274058245000106,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 1919,
+              "prompt_tokens": 3844,
+              "total_tokens": 5763,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 1587
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 1919,
+          "prompt_tokens": 3844,
+          "total_tokens": 5763,
+          "prompt_tokens_details": {
+            "cached_tokens": 256
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 1587
+          }
+        },
+        "seconds": 20.279901918000178,
+        "http_attempts": 1
+      },
+      "fingerprint": "ec974239f21a4f08cd41dddacffd32835cc7e11e0a98f9f20fcfc4f54a40296e",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": "бронирование через консьерж-сервис",
+            "audience": "клиенты Alfa Only",
+            "restrictions": [],
+            "how_to_get": [
+              "Обратиться в консьерж-сервис для приоритетной брони"
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Привилегии для клиентов Alfa Only:",
+              "приоритетная бронь через консьерж-сервис"
+            ],
+            "practical_advice": []
+          },
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": "фирменный коктейль в меню",
+            "audience": "клиенты Alfa Only",
+            "restrictions": [],
+            "how_to_get": [
+              "Заказать фирменный коктейль, созданный вместе с шефами"
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Привилегии для клиентов Alfa Only:",
+              "В меню — фирменный коктейль, созданный вместе с шефами"
+            ],
+            "practical_advice": []
+          }
+        ],
+        "unknowns": [
+          "Не указано, предоставляется ли фирменный коктейль бесплатно, со скидкой или на иных условиях",
+          "Не указаны дополнительные условия приоритетной брони через консьерж-сервис"
+        ]
+      },
+      "inferred_as_of": "2026-10-28",
+      "inferred_at": 1793167027.2576406,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "93ec02754ec556221522fe956d176ada": {
       "target": {
@@ -24887,7 +28364,105 @@
         "partner": "Айна",
         "program": "Alfa Only",
         "source_id": "greatlist_alfa_only"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793167059.3287904,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "4d2e571dac75af1dc99408f26a33de5d9f3888a8ad862eccb7f7a028efaca335",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "4d2e571dac75af1dc99408f26a33de5d9f3888a8ad862eccb7f7a028efaca335",
+            "seconds": 25.03915690599979,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 5067,
+              "prompt_tokens": 3843,
+              "total_tokens": 8910,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 4718
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 5067,
+          "prompt_tokens": 3843,
+          "total_tokens": 8910,
+          "prompt_tokens_details": {
+            "cached_tokens": 256
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 4718
+          }
+        },
+        "seconds": 25.04520610999998,
+        "http_attempts": 1
+      },
+      "fingerprint": "09f07ebccac2f2954e462a3f76cba99df1ec04818c62587e5d594a234ab4ee47",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "discount",
+            "value": 10,
+            "unit": "percent",
+            "basis": "приоритетная бронь через консьерж-сервис",
+            "audience": "клиенты Alfa Only",
+            "restrictions": [],
+            "how_to_get": [
+              "Оформить приоритетную бронь через консьерж-сервис"
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Привилегии для клиентов Alfa Only:",
+              "приоритетная бронь через консьерж-сервис — со скидкой 10%"
+            ],
+            "practical_advice": []
+          },
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": "фирменный коктейль и десерт, созданные вместе с шефами",
+            "audience": "клиенты Alfa Only",
+            "restrictions": [],
+            "how_to_get": [],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "В меню — фирменный коктейль и десерт, созданные вместе с шефами"
+            ],
+            "practical_advice": []
+          }
+        ],
+        "unknowns": [
+          "Не указано, на что именно действует скидка 10%.",
+          "Не указаны срок действия и дополнительные ограничения по брони.",
+          "Не указано, являются ли фирменный коктейль и десерт бесплатными или со скидкой.",
+          "Не указан способ получения фирменного коктейля и десерта."
+        ]
+      },
+      "inferred_as_of": "2026-10-28",
+      "inferred_at": 1793167059.3288796,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "61ee378c9670380c08f9dc5b42887d1d": {
       "target": {
@@ -24896,7 +28471,119 @@
         "partner": "Self Edge Japanese",
         "program": "Alfa Only",
         "source_id": "greatlist_alfa_only"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793167087.579366,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "79a06abe43bf166c072ffb1d9fe50a39ce98ec5e5c48933ec850be108a459b09",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "79a06abe43bf166c072ffb1d9fe50a39ce98ec5e5c48933ec850be108a459b09",
+            "seconds": 21.21703111199986,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 3493,
+              "prompt_tokens": 3628,
+              "total_tokens": 7121,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 3051
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 3493,
+          "prompt_tokens": 3628,
+          "total_tokens": 7121,
+          "prompt_tokens_details": {
+            "cached_tokens": 256
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 3051
+          }
+        },
+        "seconds": 21.223670948999825,
+        "http_attempts": 1
+      },
+      "fingerprint": "4f21b6d5f630542f347206ccbcf1c9c015a212bb11b622871d16fd1e89696a41",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "gift",
+            "value": null,
+            "unit": null,
+            "basis": "приоритетная бронь через консьерж-сервис",
+            "audience": "клиенты Alfa Only",
+            "restrictions": [],
+            "how_to_get": [
+              "Быть клиентом Alfa Only",
+              "Забронировать столик через консьерж-сервис"
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Привилегии для клиентов Alfa Only:",
+              "приоритетная бронь через консьерж-сервис — с комплиментом от ресторана"
+            ],
+            "practical_advice": [
+              {
+                "text": "При бронировании уточните у консьерж-сервиса, что именно входит в комплимент от ресторана.",
+                "basis": "inference"
+              }
+            ]
+          },
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": "фирменный коктейль в меню",
+            "audience": "клиенты Alfa Only",
+            "restrictions": [],
+            "how_to_get": [
+              "Быть клиентом Alfa Only",
+              "Заказать фирменный коктейль в меню"
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Привилегии для клиентов Alfa Only:",
+              "В меню — фирменный коктейль, созданный вместе с шефами"
+            ],
+            "practical_advice": [
+              {
+                "text": "При визите уточните у сотрудников ресторана, как получить фирменный коктейль, созданный с шефами.",
+                "basis": "inference"
+              }
+            ]
+          }
+        ],
+        "unknowns": [
+          "Размер комплимента от ресторана не указан.",
+          "Не указано, предоставляется ли фирменный коктейль бесплатно или является платным пунктом меню.",
+          "Срок действия привилегий и промокоды не указаны."
+        ]
+      },
+      "inferred_as_of": "2026-10-28",
+      "inferred_at": 1793167087.5794683,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "918cd6b491e21eed078ef80e18ea6ad8": {
       "target": {
@@ -24905,7 +28592,133 @@
         "partner": "Probka",
         "program": "Alfa Only",
         "source_id": "greatlist_alfa_only"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793167118.6408553,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "f0c452e358db8969cd5e1d98ac34b27e831ce369416c8489a9e45ed64aff8d20",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "f0c452e358db8969cd5e1d98ac34b27e831ce369416c8489a9e45ed64aff8d20",
+            "seconds": 24.028984548000153,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 4547,
+              "prompt_tokens": 4169,
+              "total_tokens": 8716,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 4082
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 4547,
+          "prompt_tokens": 4169,
+          "total_tokens": 8716,
+          "prompt_tokens_details": {
+            "cached_tokens": 256
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 4082
+          }
+        },
+        "seconds": 24.03509500500013,
+        "http_attempts": 1
+      },
+      "fingerprint": "8790afd38e14de5ee70fec7484d8b8cc7065c26d032d9aa84bbb61ff74af1790",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "cashback",
+            "value": 10,
+            "unit": "%",
+            "basis": "оплата в ресторане Probka",
+            "audience": "клиенты Alfa Only",
+            "restrictions": [
+              "только для клиентов Alfa Only",
+              "размер кэшбэка — до 10%, точный процент не указан"
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Привилегии для клиентов Alfa Only:",
+              "кэшбэк до 10%"
+            ],
+            "practical_advice": [],
+            "how_to_get": [
+              "быть клиентом Alfa Only",
+              "совершить оплату в ресторане Probka"
+            ]
+          },
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": "бронирование столика в ресторане Probka",
+            "audience": "клиенты Alfa Only",
+            "restrictions": [
+              "только для клиентов Alfa Only"
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Привилегии для клиентов Alfa Only:",
+              "приоритетная бронь через консьерж-сервис"
+            ],
+            "practical_advice": [],
+            "how_to_get": [
+              "обратиться в консьерж-сервис для бронирования"
+            ]
+          },
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": "меню ресторана Probka",
+            "audience": "клиенты Alfa Only",
+            "restrictions": [
+              "только для клиентов Alfa Only"
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Привилегии для клиентов Alfa Only:",
+              "В меню — фирменный коктейль, созданный вместе с шефами"
+            ],
+            "practical_advice": [],
+            "how_to_get": [
+              "заказать фирменный коктейль в меню"
+            ]
+          }
+        ],
+        "unknowns": [
+          "точный процент кэшбэка не указан",
+          "срок действия привилегий не указан"
+        ]
+      },
+      "inferred_as_of": "2026-10-28",
+      "inferred_at": 1793167118.6409414,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "ef5128ba7aed8d207d7b2bdd1743cd42": {
       "target": {
@@ -24914,7 +28727,123 @@
         "partner": "Зойка",
         "program": "Alfa Only",
         "source_id": "greatlist_alfa_only"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793167146.7321582,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "cc661f9ace16e18b1b5cb6e28e9ff824f6659ddc21b165493b4061712112f854",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "cc661f9ace16e18b1b5cb6e28e9ff824f6659ddc21b165493b4061712112f854",
+            "seconds": 21.059673738999663,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 4095,
+              "prompt_tokens": 3990,
+              "total_tokens": 8085,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 3658
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 4095,
+          "prompt_tokens": 3990,
+          "total_tokens": 8085,
+          "prompt_tokens_details": {
+            "cached_tokens": 256
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 3658
+          }
+        },
+        "seconds": 21.065607039000042,
+        "http_attempts": 1
+      },
+      "fingerprint": "4350aab6c602901f43e1f06be59bb9fbefcdd42115be1ceadf4a4916b269a399",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "cashback",
+            "value": 10,
+            "unit": "%",
+            "basis": "ресторан «Зойка»",
+            "audience": "клиенты Alfa Only",
+            "restrictions": [
+              "до 10%"
+            ],
+            "how_to_get": [],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Привилегии для клиентов Alfa Only:",
+              "кэшбэк до 10%"
+            ],
+            "practical_advice": []
+          },
+          {
+            "benefit_kind": "discount",
+            "value": 10,
+            "unit": "%",
+            "basis": "приоритетная бронь через консьерж-сервис",
+            "audience": "клиенты Alfa Only",
+            "restrictions": [],
+            "how_to_get": [
+              "Забронировать через консьерж-сервис"
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "приоритетная бронь через консьерж-сервис — со скидкой 10%"
+            ],
+            "practical_advice": []
+          },
+          {
+            "benefit_kind": "gift",
+            "value": null,
+            "unit": null,
+            "basis": "меню ресторана «Зойка»",
+            "audience": "клиенты Alfa Only",
+            "restrictions": [],
+            "how_to_get": [],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "В меню — фирменный коктейль и десерт, созданные вместе с шефами"
+            ],
+            "practical_advice": []
+          }
+        ],
+        "unknowns": [
+          "Не указано, на какие операции или покупки распространяется кэшбэк до 10%.",
+          "Не указано, как получить фирменный коктейль и десерт.",
+          "Не указан срок действия привилегий.",
+          "Не указаны дополнительные ограничения по скидке 10% и кэшбэку, кроме указанного размера."
+        ]
+      },
+      "inferred_as_of": "2026-10-28",
+      "inferred_at": 1793167146.7322385,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "0cf28368a06f5b2f2cd70b0f11f4873b": {
       "target": {
@@ -24923,6 +28852,34 @@
         "partner": "Lucky Izakaya Bar",
         "program": "Alfa Only",
         "source_id": "greatlist_alfa_only"
+      },
+      "status": "deferred",
+      "last_checked": 1793167149.289471,
+      "last_result": {
+        "provider": "tokenharbor",
+        "requested_model": "deepseek-v4.1-flash:free",
+        "endpoint": "https://tokenharbor.ai/v1/chat/completions",
+        "request_body_sha256": "cd43d313dc639813dab760f299b2828a836b2ae43c2873339e2d49e85006e5d2",
+        "status": "deferred",
+        "schema_valid": false,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "cd43d313dc639813dab760f299b2828a836b2ae43c2873339e2d49e85006e5d2",
+            "seconds": 2.3928963700000168,
+            "http_status": 429,
+            "retry_after_seconds": 3600.0,
+            "retry_not_admitted": true
+          }
+        ],
+        "api_error_code": "free_tier_limit_reached",
+        "error": "transient_http_exhausted",
+        "retry_after_seconds": 3600.0,
+        "stop_batch_reason": "provider_rate_limited",
+        "seconds": 2.3941015099999277,
+        "http_attempts": 1
       }
     },
     "447337f5825b4ccb26e44236c94c6edc": {
@@ -24977,7 +28934,10 @@
         "partner": "Северяне",
         "program": "Alfa Only",
         "source_id": "greatlist_alfa_only"
-      }
+      },
+      "last_checked": 1793165148.1747022,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "710ce35f0c714c4a9332167a3162ae25": {
       "target": {
@@ -25013,7 +28973,10 @@
         "partner": "Гвидон",
         "program": "Alfa Only",
         "source_id": "greatlist_alfa_only"
-      }
+      },
+      "last_checked": 1793165171.403808,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "928daf1cc8541c0da6ec29d646ebbb81": {
       "target": {
@@ -25121,7 +29084,10 @@
         "partner": "Saviv",
         "program": "Alfa Only",
         "source_id": "greatlist_alfa_only"
-      }
+      },
+      "last_checked": 1793165252.099142,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "bd7896703a69d20b275263b9c5951862": {
       "target": {
@@ -25130,7 +29096,10 @@
         "partner": "Tartarbar",
         "program": "Alfa Only",
         "source_id": "greatlist_alfa_only"
-      }
+      },
+      "last_checked": 1793165258.4968927,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "114a6ebb65a163585d490c7f8074a61d": {
       "target": {
@@ -31026,22 +34995,49 @@
         "program": "FlyStation — публичные акции",
         "source_id": "flystation_public"
       }
+    },
+    "47134def05e8f0210b8a2bb7e7d3267a": {
+      "target": {
+        "id": "47134def05e8f0210b8a2bb7e7d3267a",
+        "url": "https://msk.t2.ru/bolshe/offers",
+        "partner": "Яндекс Плюс",
+        "program": "T2 «Больше»",
+        "source_id": "t2_bolshe"
+      }
+    },
+    "36fcf01076bc4b6f2dc99dae8aa0c4ea": {
+      "target": {
+        "id": "36fcf01076bc4b6f2dc99dae8aa0c4ea",
+        "url": "https://magnit.ru/partners/2062",
+        "partner": "Т2",
+        "program": "Магнит Плюс — партнёры",
+        "source_id": "magnit_partners_public"
+      }
+    },
+    "bfd7dc61dc86b2992496c6d7cf6d4a6a": {
+      "target": {
+        "id": "bfd7dc61dc86b2992496c6d7cf6d4a6a",
+        "url": "https://gorodtroika.ru/partners/3572",
+        "partner": "SENECA",
+        "program": "Город / Тройка",
+        "source_id": "gorod_public"
+      }
     }
   },
   "usage": {
-    "date": "2026-10-27",
+    "date": "2026-10-28",
     "attempts": 50
   },
   "provider_not_before": 1792886400.4816973,
-  "last_request_at": 1793078068.4537697,
+  "last_request_at": 1793167146.7321572,
   "providers": {
     "tokenharbor": {
       "usage": {
-        "date": "2026-10-27",
-        "attempts": 30
+        "date": "2026-10-28",
+        "attempts": 1
       },
-      "provider_not_before": 1793082129.8143902,
-      "last_request_at": 1793078529.8143857
+      "provider_not_before": 1793170749.2894735,
+      "last_request_at": 1793167149.2894702
     }
   }
 }
