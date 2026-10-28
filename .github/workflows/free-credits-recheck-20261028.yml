@@ -1,4 +1,5 @@
 name: Activated free credits and model alternatives
+# Focused transport regression; preserve the separate full-suite failure for diagnosis.
 on:
   push:
     branches: [loyalty/deepseek-capacity-recheck-20261028]
