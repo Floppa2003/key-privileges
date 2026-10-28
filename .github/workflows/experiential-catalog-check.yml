@@ -1,0 +1,74 @@
+name: Experiential granted models read-only check
+on:
+  push:
+    branches: [loyalty/deepseek-capacity-recheck-20261028]
+    paths: [.github/workflows/experiential-catalog-check.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          repository: Floppa2003/key-privileges
+          run-id: '40765619821'
+          artifact-ids: '12850705787'
+          github-token: ${{ github.token }}
+          path: prior
+          merge-multiple: true
+      - name: Read granted DeepSeek catalog and previous errors without inference
+        env:
+          EXPLABS_API_KEY: ${{ secrets.EXPERIENTAL_API_KEY }}
+        run: |
+          python - <<'PY'
+          import base64,hashlib,json,os,urllib.request,urllib.error
+          from pathlib import Path
+          key=os.environ.pop('EXPLABS_API_KEY','')
+          out=Path('output');out.mkdir()
+          report={'credential_present':bool(key),'generation_requests':0,'production_state_changed':False}
+          def scrub(text):
+              if key:
+                  for token in (key,json.dumps(key)[1:-1],base64.b64encode(key.encode()).decode()):
+                      text=text.replace(token,'[REDACTED]')
+              return text
+          manifest=json.loads(Path('prior/SHA256SUMS.json').read_text())
+          for name,digest in manifest.items():
+              p=(Path('prior')/name).resolve()
+              assert p.is_relative_to(Path('prior').resolve())
+              assert hashlib.sha256(p.read_bytes()).hexdigest()==digest
+          report['verified_previous_files']=len(manifest)
+          report['previous_inference_response']=json.loads(Path('prior/model-0/vision/response.json').read_text())
+          report['previous_accounting_response']=json.loads(Path('prior/usage-before/response.json').read_text())
+          class NoRedirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self,*args,**kwargs): return None
+          opener=urllib.request.build_opener(NoRedirect)
+          if key:
+              url='https://api.experientiallabs.ai/v1/models'
+              request=urllib.request.Request(url,headers={'Authorization':'Bearer '+key})
+              try:
+                  response=opener.open(request,timeout=60)
+              except urllib.error.HTTPError as exc:
+                  response=exc
+              with response:
+                  report['catalog_http_status']=response.status
+                  data=json.loads(scrub(response.read().decode()))
+              if isinstance(data,dict):
+                  report['catalog_fields']=sorted(data)
+                  models=data.get('data',data.get('models',[]))
+                  report['catalog_model_count']=len(models)
+                  report['deepseek_models']=[m for m in models if 'deepseek' in str(m.get('id',m.get('slug',''))).lower()]
+                  if 'error' in data: report['catalog_error']=data['error']
+          text=scrub(json.dumps(report,ensure_ascii=False,indent=2))
+          (out/'catalog-check.json').write_text(text)
+          print(text)
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: experiential-catalog-${{ github.run_id }}
+          path: output/
+          retention-days: 30
