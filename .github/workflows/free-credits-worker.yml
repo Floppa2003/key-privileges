@@ -1,0 +1,106 @@
+name: Free credits evaluation worker
+on:
+  workflow_call:
+    inputs:
+      experiential_variable_present:
+        type: boolean
+        default: false
+    secrets:
+      AI_GATEWAY_API_KEY:
+        required: false
+      EXPLABS_API_KEY:
+        required: false
+      OPENROUTER_API_KEY:
+        required: false
+      GEMINI_API_KEY:
+        required: false
+permissions:
+  contents: read
+  actions: read
+jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - name: Run regression without model credentials
+        run: |
+          set -euo pipefail
+          mkdir -p probe-inputs/code
+          git rev-parse HEAD > probe-inputs/commit.txt
+          python -m pip install -r loyalty/requirements.txt > probe-inputs/install.log 2>&1
+          python -m unittest discover -s loyalty/tests -v > probe-inputs/loyalty-tests.log 2>&1
+          python -m unittest discover -s diagnostics/tests -v > probe-inputs/diagnostic-tests.log 2>&1
+          node --test key/refresh.test.mjs > probe-inputs/key-tests.log 2>&1
+          tail -n 5 probe-inputs/loyalty-tests.log
+          tail -n 5 probe-inputs/diagnostic-tests.log
+          tail -n 10 probe-inputs/key-tests.log
+          cp diagnostics/free_credits_probe.py diagnostics/deepseek_capacity_probe.py probe-inputs/code/
+          cp diagnostics/tests/test_free_credits_probe.py probe-inputs/code/
+          cp .github/workflows/free-credits-worker.yml probe-inputs/code/
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          repository: Floppa2003/key-privileges
+          run-id: '40077128489'
+          artifact-ids: '12554050020'
+          github-token: ${{ github.token }}
+          path: saved-inputs
+          merge-multiple: true
+      - name: Verify and preserve identical full evidence
+        run: |
+          python diagnostics/free_credits_probe.py prepare --inputs saved-inputs/captures/inputs.json --out probe-inputs
+          cat probe-inputs/input-provenance.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: free-credits-inputs-${{ github.run_id }}
+          path: probe-inputs/
+          retention-days: 30
+  probe:
+    needs: prepare
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        provider: [vercel, experiential, openrouter, gemini]
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - name: Install without credentials
+        run: python -m pip install -r loyalty/requirements.txt
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: free-credits-inputs-${{ github.run_id }}
+          path: inputs
+      - name: Bounded real image and document requests
+        env:
+          LLM_PROBE_KEY: ${{ matrix.provider == 'vercel' && secrets.AI_GATEWAY_API_KEY || matrix.provider == 'experiential' && secrets.EXPLABS_API_KEY || matrix.provider == 'openrouter' && secrets.OPENROUTER_API_KEY || matrix.provider == 'gemini' && secrets.GEMINI_API_KEY || '' }}
+          PROVIDER: ${{ matrix.provider }}
+          EXPERIENTIAL_VARIABLE_PRESENT: ${{ inputs.experiential_variable_present }}
+        run: python diagnostics/free_credits_probe.py "$PROVIDER" --inputs inputs/inputs.json --out output
+      - name: Preserve outputs and hashes without credentials
+        if: always()
+        run: |
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          p=Path('output');p.mkdir(exist_ok=True)
+          (p/'SHA256SUMS.json').write_text(json.dumps({str(x.relative_to(p)):hashlib.sha256(x.read_bytes()).hexdigest() for x in p.rglob('*') if x.is_file() and x.name!='SHA256SUMS.json'},indent=2))
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: free-credits-${{ matrix.provider }}-${{ github.run_id }}
+          path: output/
+          retention-days: 30
