@@ -1,5 +1,5 @@
 name: Activated free credits and model alternatives
-# Focused transport regression; preserve the separate full-suite failure for diagnosis.
+# Recheck only Experiential after the user supplied its exact credential name.
 on:
   push:
     branches: [loyalty/deepseek-capacity-recheck-20261028]
@@ -15,9 +15,7 @@ jobs:
   evaluate:
     uses: ./.github/workflows/free-credits-worker.yml
     with:
-      experiential_variable_present: ${{ vars.EXPLABS_API_KEY != '' || vars.EXPERIENTIAL_API_KEY != '' || vars.EXPERIENTIALLABS_API_KEY != '' || vars.EXPERIENTIAL != '' }}
+      providers: '["experiential"]'
+      experiential_variable_present: ${{ vars.EXPERIENTAL_API_KEY != '' }}
     secrets:
-      AI_GATEWAY_API_KEY: ${{ secrets.AI_GATEWAY_API_KEY }}
-      EXPLABS_API_KEY: ${{ secrets.EXPLABS_API_KEY || secrets.EXPERIENTIAL_API_KEY || secrets.EXPERIENTIALLABS_API_KEY || secrets.EXPERIENTIAL || vars.EXPLABS_API_KEY || vars.EXPERIENTIAL_API_KEY || vars.EXPERIENTIALLABS_API_KEY || vars.EXPERIENTIAL }}
-      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      EXPLABS_API_KEY: ${{ secrets.EXPERIENTAL_API_KEY || vars.EXPERIENTAL_API_KEY }}
