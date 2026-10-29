@@ -28889,6 +28889,41 @@
         "partner": "Eva",
         "program": "Alfa Only",
         "source_id": "greatlist_alfa_only"
+      },
+      "status": "failed_validation",
+      "last_checked": 1793253068.5806305,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "17b2c79c098862f47dbce0e010e51568810b9fb1c5ff39a8a83e9c458d1a904f",
+        "status": "failed_validation",
+        "schema_valid": false,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "17b2c79c098862f47dbce0e010e51568810b9fb1c5ff39a8a83e9c458d1a904f",
+            "seconds": 89.916688346,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 8192,
+              "prompt_tokens": 4020,
+              "total_tokens": 12212,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 7814
+              }
+            }
+          }
+        ],
+        "error": "incomplete_or_blocked_generation",
+        "seconds": 89.91835047900008,
+        "http_attempts": 1
       }
     },
     "cba8322baf054ab8d49a20b6ff9739f2": {
@@ -28898,7 +28933,100 @@
         "partner": "Ikura",
         "program": "Alfa Only",
         "source_id": "greatlist_alfa_only"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793253142.050745,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "91d53153a32e35cfbe247d041c1065289e77e0a5c07500af714e99b2af1f5f22",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "91d53153a32e35cfbe247d041c1065289e77e0a5c07500af714e99b2af1f5f22",
+            "seconds": 66.42275600499988,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 4254,
+              "prompt_tokens": 4054,
+              "total_tokens": 8308,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 3926
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 4254,
+          "prompt_tokens": 4054,
+          "total_tokens": 8308,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 3926
+          }
+        },
+        "seconds": 66.43140654699982,
+        "http_attempts": 1
+      },
+      "fingerprint": "15dd5231cf521b6475bd7e46a0e22550ab2520af5732bb12bfba922448581ccc",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": "Приоритетная бронь в ресторане Ikura; фирменный коктейль в меню",
+            "audience": "Клиенты Alfa Only",
+            "restrictions": [
+              "Приоритетная бронь доступна через консьерж-сервис."
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Клиентам Alfa Only доступна приоритетная бронь через консьерж-сервис.",
+              "В меню — фирменный коктейль, созданный вместе с шефами"
+            ],
+            "practical_advice": [
+              {
+                "text": "Для приоритетной брони обращайтесь в консьерж-сервис Alfa Only.",
+                "basis": "inference"
+              },
+              {
+                "text": "Фирменный коктейль можно заказать из меню ресторана.",
+                "basis": "inference"
+              }
+            ],
+            "how_to_get": [
+              "Обратиться в консьерж-сервис Alfa Only для приоритетной брони.",
+              "Заказать фирменный коктейль в меню ресторана."
+            ]
+          }
+        ],
+        "unknowns": [
+          "Стоимость или размер выгоды не указаны.",
+          "Срок действия предложения не указан.",
+          "Не указано, является ли фирменный коктейль бесплатным или специальным условием для Alfa Only."
+        ]
+      },
+      "inferred_as_of": "2026-10-29",
+      "inferred_at": 1793253142.050882,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "6ea6de4e28589cc16d415fad8a3d474a": {
       "target": {
@@ -28907,7 +29035,99 @@
         "partner": "Горыныч",
         "program": "Alfa Only",
         "source_id": "greatlist_alfa_only"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793253199.4823475,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "da625705f652f35123e3d1db204ec996701863426fe28816c820bdd0e6e21084",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "da625705f652f35123e3d1db204ec996701863426fe28816c820bdd0e6e21084",
+            "seconds": 50.381815925999945,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 4426,
+              "prompt_tokens": 4398,
+              "total_tokens": 8824,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 4094
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 4426,
+          "prompt_tokens": 4398,
+          "total_tokens": 8824,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 4094
+          }
+        },
+        "seconds": 50.389655318999985,
+        "http_attempts": 1
+      },
+      "fingerprint": "39a69082ec1aa1eccfadf728f0a294397c08ec531dbafbdc2b82da8a81899fb9",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": "Ресторан «Горыныч»: приоритетная бронь и фирменный коктейль в меню",
+            "audience": "Клиенты Alfa Only",
+            "restrictions": [
+              "Доступно клиентам Alfa Only"
+            ],
+            "how_to_get": [
+              "Обратиться через консьерж-сервис для приоритетной брони."
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Партнёр премиального сервиса Alfa Only от Альфа-Банка",
+              "Клиентам Alfa Only доступна приоритетная бронь через консьерж-сервис.",
+              "В меню — фирменный коктейль, созданный вместе с шефами"
+            ],
+            "practical_advice": [
+              {
+                "text": "Для приоритетной брони используйте консьерж-сервис Alfa Only.",
+                "basis": "inference"
+              },
+              {
+                "text": "Уточните, предоставляется ли фирменный коктейль бесплатно или он доступен в меню как обычная позиция.",
+                "basis": "inference"
+              }
+            ]
+          }
+        ],
+        "unknowns": [
+          "Не указано, бесплатен ли фирменный коктейль или он просто присутствует в меню.",
+          "Не указаны срок действия и ограничения по количеству или времени для приоритетной брони."
+        ]
+      },
+      "inferred_as_of": "2026-10-29",
+      "inferred_at": 1793253199.482449,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "fb0e344072a5ad9fde1e51822edf7cd5": {
       "target": {
@@ -28916,7 +29136,89 @@
         "partner": "Saray",
         "program": "Alfa Only",
         "source_id": "greatlist_alfa_only"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793253280.6941125,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "44e26c14251158e1b31321fc19e833f1c56b2d65aba57cc4a7811f0b629109fe",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "44e26c14251158e1b31321fc19e833f1c56b2d65aba57cc4a7811f0b629109fe",
+            "seconds": 74.16339083800017,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 6655,
+              "prompt_tokens": 4352,
+              "total_tokens": 11007,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 6393
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 6655,
+          "prompt_tokens": 4352,
+          "total_tokens": 11007,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 6393
+          }
+        },
+        "seconds": 74.17232606999983,
+        "http_attempts": 1
+      },
+      "fingerprint": "d01e67d333409aec6c8848c84d832542da248a0061412d9df91672159727eb2b",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": "Ресторан Saray",
+            "audience": "Клиенты Alfa Only",
+            "restrictions": [],
+            "how_to_get": [
+              "Обратиться в консьерж-сервис для приоритетной брони.",
+              "Заказать фирменный коктейль в меню."
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "приоритетная бронь через консьерж-сервис — с комплиментом от ресторана",
+              "В меню — фирменный коктейль, созданный вместе с шефами"
+            ],
+            "practical_advice": []
+          }
+        ],
+        "unknowns": [
+          "Размер и состав комплимента от ресторана",
+          "Стоимость фирменного коктейля",
+          "Срок действия привилегий"
+        ]
+      },
+      "inferred_as_of": "2026-10-29",
+      "inferred_at": 1793253280.694205,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "7bbfd81d5bc830fd01976fe0cc761bf8": {
       "target": {
@@ -28925,7 +29227,106 @@
         "partner": "Oltremare",
         "program": "Alfa Only",
         "source_id": "greatlist_alfa_only"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793253352.786137,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "2c23cf347c4fcba9eea71e128ddac0aa661cae8659c6b12474eee3a5088fb800",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "2c23cf347c4fcba9eea71e128ddac0aa661cae8659c6b12474eee3a5088fb800",
+            "seconds": 65.04740424599981,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 3861,
+              "prompt_tokens": 4029,
+              "total_tokens": 7890,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 3547
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 3861,
+          "prompt_tokens": 4029,
+          "total_tokens": 7890,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 3547
+          }
+        },
+        "seconds": 65.05498464700008,
+        "http_attempts": 1
+      },
+      "fingerprint": "7debf56b45175e046765a040288f16c7389dbbe916c41d5e9ba542ef986d9a75",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": null,
+            "audience": "клиенты Alfa Only",
+            "restrictions": [],
+            "how_to_get": [
+              "обратиться в консьерж-сервис Alfa Only для приоритетной брони"
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "приоритетная бронь через консьерж-сервис",
+              "Привилегии для клиентов Alfa Only:"
+            ],
+            "practical_advice": []
+          },
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": "фирменный коктейль, созданный вместе с шефами",
+            "audience": "клиенты Alfa Only",
+            "restrictions": [],
+            "how_to_get": [
+              "заказать фирменный коктейль, созданный вместе с шефами"
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "В меню — фирменный коктейль, созданный вместе с шефами",
+              "Привилегии для клиентов Alfa Only:"
+            ],
+            "practical_advice": []
+          }
+        ],
+        "unknowns": [
+          "Не указано, является ли фирменный коктейль бесплатным или предоставляется на иных условиях.",
+          "Не указаны дополнительные ограничения приоритетной брони."
+        ]
+      },
+      "inferred_as_of": "2026-10-29",
+      "inferred_at": 1793253352.7862344,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "acf37581bef279e09416a512a04884ae": {
       "target": {
@@ -28946,7 +29347,105 @@
         "partner": "Smoke BBQ",
         "program": "Alfa Only",
         "source_id": "greatlist_alfa_only"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793253412.287712,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "10c984bb1499e02d6a63c44009d12b5e360642b7a629a84e3ac81f80202b00a7",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "10c984bb1499e02d6a63c44009d12b5e360642b7a629a84e3ac81f80202b00a7",
+            "seconds": 52.45420083900012,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 4600,
+              "prompt_tokens": 3710,
+              "total_tokens": 8310,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 4251
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 4600,
+          "prompt_tokens": 3710,
+          "total_tokens": 8310,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 4251
+          }
+        },
+        "seconds": 52.462114692000114,
+        "http_attempts": 1
+      },
+      "fingerprint": "c6b77ebc75baca242b7c70fd6621ec144549678c43f007f25d41ffe10ba1d4c9",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": "приоритетная бронь в ресторане Smoke BBQ",
+            "audience": "Клиенты Alfa Only",
+            "restrictions": [],
+            "how_to_get": [
+              "Оформить бронь через консьерж-сервис"
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Партнёр премиального сервиса Alfa Only от Альфа-Банка",
+              "Привилегии для клиентов Alfa Only:",
+              "приоритетная бронь через консьерж-сервис"
+            ],
+            "practical_advice": []
+          },
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": "фирменный коктейль, созданный вместе с шефами, в меню ресторана Smoke BBQ",
+            "audience": "Клиенты Alfa Only",
+            "restrictions": [],
+            "how_to_get": [],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Привилегии для клиентов Alfa Only:",
+              "В меню — фирменный коктейль, созданный вместе с шефами"
+            ],
+            "practical_advice": []
+          }
+        ],
+        "unknowns": [
+          "Не указано, является ли фирменный коктейль бесплатным/комплиментарным и как именно его получить.",
+          "Не указаны срок действия привилегий, ограничения по бронированию и стоимость коктейля."
+        ]
+      },
+      "inferred_as_of": "2026-10-29",
+      "inferred_at": 1793253412.2878141,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "f33bc4bae6a7936652e60cdbeed16234": {
       "target": {
@@ -28955,7 +29454,131 @@
         "partner": "Leveldva",
         "program": "Alfa Only",
         "source_id": "greatlist_alfa_only"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793253504.7399733,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "77d2faebebfb30637f4df13eac0cc97ed5b04f80d3c816d7112116c20b301b3c",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "77d2faebebfb30637f4df13eac0cc97ed5b04f80d3c816d7112116c20b301b3c",
+            "seconds": 85.40433840200012,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 8038,
+              "prompt_tokens": 3737,
+              "total_tokens": 11775,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 7520
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 8038,
+          "prompt_tokens": 3737,
+          "total_tokens": 11775,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 7520
+          }
+        },
+        "seconds": 85.41238875699992,
+        "http_attempts": 1
+      },
+      "fingerprint": "398785ac5fec8d5853e65409c0cf33aa3e684244111884984dd5eae53c122644",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "cashback",
+            "value": 10,
+            "unit": "%",
+            "basis": "покупки в баре Leveldva",
+            "audience": "Клиенты Alfa Only",
+            "restrictions": [
+              "Максимальный кэшбэк — 10%."
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Привилегии для клиентов Alfa Only",
+              "кэшбэк до 10%"
+            ],
+            "practical_advice": [],
+            "how_to_get": [
+              "Быть клиентом Alfa Only",
+              "Оплатить покупку в баре Leveldva"
+            ]
+          },
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": "бронирование",
+            "audience": "Клиенты Alfa Only",
+            "restrictions": [
+              "Приоритетная бронь предоставляется через консьерж-сервис."
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Привилегии для клиентов Alfa Only",
+              "приоритетная бронь через консьерж-сервис"
+            ],
+            "practical_advice": [],
+            "how_to_get": [
+              "Обратиться в консьерж-сервис Alfa Only для бронирования в баре Leveldva"
+            ]
+          },
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": "фирменный коктейль в меню",
+            "audience": "Клиенты Alfa Only",
+            "restrictions": [],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Привилегии для клиентов Alfa Only",
+              "В меню — фирменный коктейль, созданный вместе с шефами"
+            ],
+            "practical_advice": [],
+            "how_to_get": [
+              "Заказать фирменный коктейль в меню бара Leveldva"
+            ]
+          }
+        ],
+        "unknowns": [
+          "Не указано, на какие именно покупки в Leveldva распространяется кэшбэк до 10% и когда он начисляется.",
+          "Не указано, является ли фирменный коктейль бесплатным или его нужно оплачивать отдельно.",
+          "Не указан порядок обращения в консьерж-сервис для приоритетной брони."
+        ]
+      },
+      "inferred_as_of": "2026-10-29",
+      "inferred_at": 1793253504.740081,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "8125aeaf622c91cfb720a64de57c3236": {
       "target": {
@@ -28964,7 +29587,106 @@
         "partner": "Koji",
         "program": "Alfa Only",
         "source_id": "greatlist_alfa_only"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793253562.5836897,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "9889f32857133bf2f3d041d5d20e084c1d3ccc2ec5276e77493c19132e708a1f",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "9889f32857133bf2f3d041d5d20e084c1d3ccc2ec5276e77493c19132e708a1f",
+            "seconds": 50.79653053300012,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 4663,
+              "prompt_tokens": 3761,
+              "total_tokens": 8424,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 4287
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 4663,
+          "prompt_tokens": 3761,
+          "total_tokens": 8424,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 4287
+          }
+        },
+        "seconds": 50.80444814300017,
+        "http_attempts": 1
+      },
+      "fingerprint": "0624e829ec04205ae0c97b7b6821b14caf135f12a9510050e276a36803b632cc",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": "бронь в ресторане Koji",
+            "audience": "Клиенты Alfa Only (премиальный сервис Альфа-Банка)",
+            "restrictions": [],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Партнёр премиального сервиса Alfa Only от Альфа-Банка",
+              "приоритетная бронь через консьерж-сервис — с комплиментом от ресторана"
+            ],
+            "practical_advice": [],
+            "how_to_get": [
+              "Обратиться в консьерж-сервис для приоритетной брони в ресторане Koji."
+            ]
+          },
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": "меню ресторана Koji",
+            "audience": "Клиенты Alfa Only (премиальный сервис Альфа-Банка)",
+            "restrictions": [],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "В меню — фирменный коктейль, созданный вместе с шефами"
+            ],
+            "practical_advice": [],
+            "how_to_get": [
+              "Посетить ресторан Koji и выбрать фирменный коктейль в меню."
+            ]
+          }
+        ],
+        "unknowns": [
+          "Не указан состав комплимента от ресторана.",
+          "Не указано, предоставляется ли фирменный коктейль бесплатно или является обычной позицией меню.",
+          "Срок действия привилегий не указан."
+        ]
+      },
+      "inferred_as_of": "2026-10-29",
+      "inferred_at": 1793253562.583793,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "ec420e0673dd23c26910d7ae51df8fa7": {
       "target": {
@@ -28985,7 +29707,10 @@
         "partner": "Mamie",
         "program": "Alfa Only",
         "source_id": "greatlist_alfa_only"
-      }
+      },
+      "last_checked": 1793251826.6027098,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "4aab052799d96c7471163ad866f55b0d": {
       "target": {
@@ -28994,7 +29719,106 @@
         "partner": "Jun",
         "program": "Alfa Only",
         "source_id": "greatlist_alfa_only"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793253632.7583601,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "4d90988053ccf30cda8753abc6e7c5723c7efb64b46ba3c25d90b81c7001e2c5",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "4d90988053ccf30cda8753abc6e7c5723c7efb64b46ba3c25d90b81c7001e2c5",
+            "seconds": 63.12552198399999,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 4434,
+              "prompt_tokens": 3860,
+              "total_tokens": 8294,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 4046
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 4434,
+          "prompt_tokens": 3860,
+          "total_tokens": 8294,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 4046
+          }
+        },
+        "seconds": 63.13379828300003,
+        "http_attempts": 1
+      },
+      "fingerprint": "7af0800d05697742fe214bd4ee5b7223e2edfcc110f0fff7450e929df0417ec9",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": null,
+            "audience": "клиенты Alfa Only",
+            "restrictions": [],
+            "how_to_get": [
+              "Обратиться в консьерж-сервис для приоритетной брони"
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "приоритетная бронь через консьерж-сервис — с комплиментом от ресторана",
+              "Привилегии для клиентов Alfa Only"
+            ],
+            "practical_advice": []
+          },
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": null,
+            "audience": "клиенты Alfa Only",
+            "restrictions": [],
+            "how_to_get": [
+              "Заказать фирменный коктейль"
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "В меню — фирменный коктейль, созданный вместе с шефами"
+            ],
+            "practical_advice": []
+          }
+        ],
+        "unknowns": [
+          "Не указано, какой именно комплимент предоставляется от ресторана",
+          "Не указано, является ли фирменный коктейль комплиментом или платным блюдом",
+          "Не указаны сроки действия привилегий"
+        ]
+      },
+      "inferred_as_of": "2026-10-29",
+      "inferred_at": 1793253632.7584577,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "c08afa4cc953d1a57db69ce5578baff9": {
       "target": {
@@ -29003,7 +29827,104 @@
         "partner": "Niki",
         "program": "Alfa Only",
         "source_id": "greatlist_alfa_only"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793253684.0413356,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "e1e0d0503a34c12163e23bdc92c3bb00b7fc74d2799cc28894180a4032f4b2c1",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "e1e0d0503a34c12163e23bdc92c3bb00b7fc74d2799cc28894180a4032f4b2c1",
+            "seconds": 44.23525670899994,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 3667,
+              "prompt_tokens": 4193,
+              "total_tokens": 7860,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 3357
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 3667,
+          "prompt_tokens": 4193,
+          "total_tokens": 7860,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 3357
+          }
+        },
+        "seconds": 44.24308201100007,
+        "http_attempts": 1
+      },
+      "fingerprint": "75b2682018d94a4c5a183855675f2998792da8d8ae522e1147f1cbea85a30b59",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": "бронирование в ресторане Niki",
+            "audience": "клиенты Alfa Only",
+            "restrictions": [],
+            "how_to_get": [
+              "Обратиться в консьерж-сервис для приоритетной брони"
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "приоритетная бронь через консьерж-сервис"
+            ],
+            "practical_advice": []
+          },
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": "фирменный коктейль в меню",
+            "audience": "клиенты Alfa Only",
+            "restrictions": [],
+            "how_to_get": [
+              "Заказать фирменный коктейль в меню ресторана"
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "В меню — фирменный коктейль, созданный вместе с шефами"
+            ],
+            "practical_advice": []
+          }
+        ],
+        "unknowns": [
+          "Не указано, предоставляется ли фирменный коктейль бесплатно или является платным блюдом меню.",
+          "Не указаны срок действия и исчерпывающие ограничения привилегий Alfa Only в блоке TARGET."
+        ]
+      },
+      "inferred_as_of": "2026-10-29",
+      "inferred_at": 1793253684.041444,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "8508bbaf35679e32267dc994aa62df63": {
       "target": {
@@ -29012,7 +29933,86 @@
         "partner": "Mushrooms",
         "program": "Alfa Only",
         "source_id": "greatlist_alfa_only"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793253720.7770808,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "294744747f743591e254be4e49d388e027adba1629a9d608408bf3193bc7b1d1",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "294744747f743591e254be4e49d388e027adba1629a9d608408bf3193bc7b1d1",
+            "seconds": 29.69113468699993,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 2529,
+              "prompt_tokens": 3647,
+              "total_tokens": 6176,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 2343
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 2529,
+          "prompt_tokens": 3647,
+          "total_tokens": 6176,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 2343
+          }
+        },
+        "seconds": 29.698770488000036,
+        "http_attempts": 1
+      },
+      "fingerprint": "ed03857cf0c9921f29074a91a1bda6e6938425036f726878036a5665cf2ee8c5",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": "Бронирование в ресторане Mushrooms",
+            "audience": "Клиенты Alfa Only",
+            "restrictions": [],
+            "how_to_get": [
+              "Обратиться в консьерж-сервис Alfa Only для приоритетной брони"
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Партнёр премиального сервиса Alfa Only от Альфа-Банка",
+              "Клиентам Alfa Only доступна приоритетная бронь через консьерж-сервис"
+            ],
+            "practical_advice": []
+          }
+        ],
+        "unknowns": [
+          "Не указаны срок действия и дополнительные ограничения приоритетной брони."
+        ]
+      },
+      "inferred_as_of": "2026-10-29",
+      "inferred_at": 1793253720.777325,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "8501efba228cb16e7a48a394b374f595": {
       "target": {
@@ -29021,7 +30021,128 @@
         "partner": "Reborn",
         "program": "Alfa Only",
         "source_id": "greatlist_alfa_only"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793253776.6623266,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "cc2a23575fdd5281b7bdb2726d35113c439f7b0a8e4343847300180ebf5e65f7",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "cc2a23575fdd5281b7bdb2726d35113c439f7b0a8e4343847300180ebf5e65f7",
+            "seconds": 48.838751241999944,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 4340,
+              "prompt_tokens": 3669,
+              "total_tokens": 8009,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 3917
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 4340,
+          "prompt_tokens": 3669,
+          "total_tokens": 8009,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 3917
+          }
+        },
+        "seconds": 48.84704829100019,
+        "http_attempts": 1
+      },
+      "fingerprint": "dfc5de629c6ac7cfb2de16253c08907226a952b331469ea074495fbebffba0f0",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "cashback",
+            "value": 10,
+            "unit": "percent",
+            "basis": "ресторан Reborn",
+            "audience": "клиенты Alfa Only",
+            "restrictions": [
+              "Только для клиентов Alfa Only"
+            ],
+            "how_to_get": [],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Привилегии для клиентов Alfa Only:",
+              "кэшбэк до 10%"
+            ],
+            "practical_advice": []
+          },
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": "бронирование в ресторане Reborn",
+            "audience": "клиенты Alfa Only",
+            "restrictions": [
+              "Только для клиентов Alfa Only"
+            ],
+            "how_to_get": [
+              "Обратиться в консьерж-сервис для бронирования"
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "приоритетная бронь через консьерж-сервис"
+            ],
+            "practical_advice": []
+          },
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": "меню ресторана Reborn",
+            "audience": "клиенты Alfa Only",
+            "restrictions": [
+              "Только для клиентов Alfa Only"
+            ],
+            "how_to_get": [
+              "Выбрать в меню фирменный коктейль и десерт"
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "В меню — фирменный коктейль и десерт, созданные вместе с шефами"
+            ],
+            "practical_advice": []
+          }
+        ],
+        "unknowns": [
+          "Не указаны точные правила начисления кэшбэка",
+          "Не указано, являются ли фирменные коктейль и десерт бесплатными",
+          "Не указан срок действия привилегий"
+        ]
+      },
+      "inferred_as_of": "2026-10-29",
+      "inferred_at": 1793253776.6624322,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "1714fd0579c3516a6d0ae5353351c2fb": {
       "target": {
@@ -29030,7 +30151,104 @@
         "partner": "Mina",
         "program": "Alfa Only",
         "source_id": "greatlist_alfa_only"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793253852.1523347,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "77a4fe2195313ce4b4a5ac8d947ae8883d8975d6dbf3299f2a6980b373c0f854",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "77a4fe2195313ce4b4a5ac8d947ae8883d8975d6dbf3299f2a6980b373c0f854",
+            "seconds": 68.44286555400004,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 6126,
+              "prompt_tokens": 3645,
+              "total_tokens": 9771,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 5837
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 6126,
+          "prompt_tokens": 3645,
+          "total_tokens": 9771,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 5837
+          }
+        },
+        "seconds": 68.45072972400021,
+        "http_attempts": 1
+      },
+      "fingerprint": "bb1fb0f15a9061f03479d21752e9461a57a7f1a9ffc135edc883caa086801547",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": "бронирование столика в ресторане Mina",
+            "audience": "клиенты Alfa Only",
+            "restrictions": [],
+            "how_to_get": [
+              "Бронировать через консьерж-сервис"
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "приоритетная бронь через консьерж-сервис"
+            ],
+            "practical_advice": []
+          },
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": "фирменный коктейль в меню ресторана Mina",
+            "audience": "клиенты Alfa Only",
+            "restrictions": [],
+            "how_to_get": [
+              "Выбрать в меню фирменный коктейль, созданный вместе с шефами"
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "В меню — фирменный коктейль, созданный вместе с шефами"
+            ],
+            "practical_advice": []
+          }
+        ],
+        "unknowns": [
+          "Стоимость фирменного коктейля и условия его предоставления не указаны",
+          "Срок действия привилегий не указан"
+        ]
+      },
+      "inferred_as_of": "2026-10-29",
+      "inferred_at": 1793253852.1524363,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "70322d117cb98e17cf421674c730c05d": {
       "target": {
@@ -29039,7 +30257,104 @@
         "partner": "Self Edge Japanese",
         "program": "Alfa Only",
         "source_id": "greatlist_alfa_only"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793253892.2633855,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "a41322c89b4b346b7f3805a3cadde6b8d39e8550e57b488284b7c679cb1ae6a2",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "a41322c89b4b346b7f3805a3cadde6b8d39e8550e57b488284b7c679cb1ae6a2",
+            "seconds": 33.063037926000106,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 2967,
+              "prompt_tokens": 3215,
+              "total_tokens": 6182,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 2687
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 2967,
+          "prompt_tokens": 3215,
+          "total_tokens": 6182,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 2687
+          }
+        },
+        "seconds": 33.07107034899991,
+        "http_attempts": 1
+      },
+      "fingerprint": "32d770454e5641a790ef72fd0c4c6acf8bb0d3fdccc35ebce6a01c2e1cf39324",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": null,
+            "audience": "Клиенты Alfa Only",
+            "restrictions": [],
+            "how_to_get": [
+              "Обратиться в консьерж-сервис для приоритетной брони"
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "приоритетная бронь через консьерж-сервис"
+            ],
+            "practical_advice": []
+          },
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": null,
+            "audience": "Клиенты Alfa Only",
+            "restrictions": [],
+            "how_to_get": [
+              "Заказать фирменный коктейль, созданный вместе с шефами, в меню"
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "В меню — фирменный коктейль, созданный вместе с шефами"
+            ],
+            "practical_advice": []
+          }
+        ],
+        "unknowns": [
+          "Не указано, является ли фирменный коктейль бесплатным или его нужно оплачивать отдельно.",
+          "Не указаны сроки действия привилегий."
+        ]
+      },
+      "inferred_as_of": "2026-10-29",
+      "inferred_at": 1793253892.2634847,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "78652f5dd443e9ca384cc5eeb35f3b00": {
       "target": {
@@ -29048,6 +30363,29 @@
         "partner": "Blackchops",
         "program": "Alfa Only",
         "source_id": "greatlist_alfa_only"
+      },
+      "status": "transport_error",
+      "last_checked": 1793253990.0001066,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "fa73b4a5777b4db149d597b4661a374432e50f5756c966b58db61c2513bc3598",
+        "status": "transport_error",
+        "schema_valid": false,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "fa73b4a5777b4db149d597b4661a374432e50f5756c966b58db61c2513bc3598",
+            "seconds": 90.6980828400001,
+            "error_type": "ReadTimeout"
+          }
+        ],
+        "error": "unknown_execution_outcome_not_retried",
+        "seconds": 90.69940186600024,
+        "http_attempts": 1
       }
     },
     "ffaeaacaa8f205e7d731f0965790d49b": {
@@ -29057,7 +30395,127 @@
         "partner": "Harvest",
         "program": "Alfa Only",
         "source_id": "greatlist_alfa_only"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793254066.0116584,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "c9f3dae337256115c45e893573e4e4d7b66ca158b067d94f5c9f1972a351160d",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "c9f3dae337256115c45e893573e4e4d7b66ca158b067d94f5c9f1972a351160d",
+            "seconds": 68.96061247199987,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 6495,
+              "prompt_tokens": 3552,
+              "total_tokens": 10047,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 6034
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 6495,
+          "prompt_tokens": 3552,
+          "total_tokens": 10047,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 6034
+          }
+        },
+        "seconds": 68.9725131260002,
+        "http_attempts": 1
+      },
+      "fingerprint": "8173a7cf883180a0ea67fde3bb6b05510b9a63ffff84197a4ab508ae55fa2590",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "cashback",
+            "value": 10,
+            "unit": "%",
+            "basis": "ресторан Harvest",
+            "audience": "Клиенты Alfa Only",
+            "restrictions": [
+              "Кэшбэк — до 10%"
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Партнёр премиального сервиса Alfa Only от Альфа-Банка",
+              "Привилегии для клиентов Alfa Only:",
+              "кэшбэк до 10%"
+            ],
+            "practical_advice": [],
+            "how_to_get": [
+              "Являться клиентом Alfa Only"
+            ]
+          },
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": "бронирование в ресторане Harvest",
+            "audience": "Клиенты Alfa Only",
+            "restrictions": [],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "приоритетная бронь через консьерж-сервис"
+            ],
+            "practical_advice": [],
+            "how_to_get": [
+              "Обратиться в консьерж-сервис для бронирования"
+            ]
+          },
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": "меню ресторана Harvest",
+            "audience": "Клиенты Alfa Only",
+            "restrictions": [],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "В меню — фирменный коктейль и десерт, созданные вместе с шефами"
+            ],
+            "practical_advice": [],
+            "how_to_get": [
+              "Выбрать в меню фирменный коктейль и десерт"
+            ]
+          }
+        ],
+        "unknowns": [
+          "Точные условия и сроки начисления кэшбэка не указаны.",
+          "Не указано, бесплатны ли фирменный коктейль и десерт для клиентов Alfa Only.",
+          "Не указаны условия и порядок приоритетной брони через консьерж-сервис."
+        ]
+      },
+      "inferred_as_of": "2026-10-29",
+      "inferred_at": 1793254066.0117617,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "719646757c9dfb00e96f5ba2daade841": {
       "target": {
@@ -29066,7 +30524,126 @@
         "partner": "FRESA",
         "program": "Alfa Only",
         "source_id": "greatlist_alfa_only"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793254151.0261772,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "4994e24eea8b3d73c8cd3b2dc8e5226456e8fd15bbe282044f23d4eea28aaa57",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "4994e24eea8b3d73c8cd3b2dc8e5226456e8fd15bbe282044f23d4eea28aaa57",
+            "seconds": 77.95863094100014,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 7397,
+              "prompt_tokens": 3557,
+              "total_tokens": 10954,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 6975
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 7397,
+          "prompt_tokens": 3557,
+          "total_tokens": 10954,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 6975
+          }
+        },
+        "seconds": 77.9667044480002,
+        "http_attempts": 1
+      },
+      "fingerprint": "ae99dc0d5ce54a77269da3a482242daa3ba407bd030ae2bc705989a6fc227c3b",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "cashback",
+            "value": 10,
+            "unit": "%",
+            "basis": "ресторан FRESA",
+            "audience": "клиенты Alfa Only",
+            "restrictions": [
+              "до 10%"
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Привилегии для клиентов Alfa Only:",
+              "кэшбэк до 10%"
+            ],
+            "practical_advice": [],
+            "how_to_get": []
+          },
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": "бронирование в ресторане FRESA",
+            "audience": "клиенты Alfa Only",
+            "restrictions": [],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "приоритетная бронь через консьерж-сервис"
+            ],
+            "practical_advice": [],
+            "how_to_get": [
+              "Бронировать через консьерж-сервис"
+            ]
+          },
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": "меню ресторана FRESA",
+            "audience": "клиенты Alfa Only",
+            "restrictions": [],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "В меню — фирменный коктейль, созданный вместе с шефами"
+            ],
+            "practical_advice": [],
+            "how_to_get": [
+              "Заказать фирменный коктейль из меню"
+            ]
+          }
+        ],
+        "unknowns": [
+          "Срок действия привилегий не указан",
+          "Указан только максимум кэшбэка — до 10%",
+          "Способ получения кэшбэка не указан",
+          "Срок начисления кэшбэка не указан",
+          "Не указано, является ли фирменный коктейль бесплатным/комплиментарным"
+        ]
+      },
+      "inferred_as_of": "2026-10-29",
+      "inferred_at": 1793254151.0263164,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "1232cd8100c1a0668d27ae51d8878054": {
       "target": {
@@ -29075,7 +30652,106 @@
         "partner": "Smoke BBQ",
         "program": "Alfa Only",
         "source_id": "greatlist_alfa_only"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793254219.1014369,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "ed2f994bae960c709aeaf53d3286ffca3fc412823ee30957139e3079912ff509",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "ed2f994bae960c709aeaf53d3286ffca3fc412823ee30957139e3079912ff509",
+            "seconds": 61.027399273000356,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 4250,
+              "prompt_tokens": 3598,
+              "total_tokens": 7848,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 3919
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 4250,
+          "prompt_tokens": 3598,
+          "total_tokens": 7848,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 3919
+          }
+        },
+        "seconds": 61.03530079500024,
+        "http_attempts": 1
+      },
+      "fingerprint": "60cdd1f4e0a9bae0e3913da12c9743ce08612164ef005e238079d29627227448",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": "приоритетное бронирование в ресторане Smoke BBQ",
+            "audience": "клиенты Alfa Only",
+            "restrictions": [],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Привилегии для клиентов Alfa Only:",
+              "приоритетная бронь через консьерж-сервис"
+            ],
+            "practical_advice": [],
+            "how_to_get": [
+              "Обратиться в консьерж-сервис Alfa Only для приоритетной брони."
+            ]
+          },
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": "фирменный коктейль в меню ресторана Smoke BBQ",
+            "audience": "клиенты Alfa Only",
+            "restrictions": [],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Привилегии для клиентов Alfa Only:",
+              "В меню — фирменный коктейль, созданный вместе с шефами"
+            ],
+            "practical_advice": [],
+            "how_to_get": [
+              "Заказать фирменный коктейль в ресторане Smoke BBQ."
+            ]
+          }
+        ],
+        "unknowns": [
+          "Размер выгоды, срок действия и промокод для привилегий не указаны.",
+          "Не указано, является ли фирменный коктейль бесплатным."
+        ]
+      },
+      "inferred_as_of": "2026-10-29",
+      "inferred_at": 1793254219.1015518,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "6daf9db83e01cc2a388c7f7a629e70b5": {
       "target": {
@@ -29108,7 +30784,124 @@
         "partner": "Probka",
         "program": "Alfa Only",
         "source_id": "greatlist_alfa_only"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793254291.71729,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "973ce6deeb014e9f8e898fc74103b3dda793afdba364b31c46237590a1fdf1d9",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "973ce6deeb014e9f8e898fc74103b3dda793afdba364b31c46237590a1fdf1d9",
+            "seconds": 65.56867969599989,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 4210,
+              "prompt_tokens": 3575,
+              "total_tokens": 7785,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 3808
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 4210,
+          "prompt_tokens": 3575,
+          "total_tokens": 7785,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 3808
+          }
+        },
+        "seconds": 65.57677160100002,
+        "http_attempts": 1
+      },
+      "fingerprint": "afd9ebcc3981f50b199275cfdff9a4530f10b023fc69d3a0d14453af398ed450",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "cashback",
+            "value": 10,
+            "unit": "%",
+            "basis": "в ресторане Probka",
+            "audience": "клиенты Alfa Only",
+            "restrictions": [],
+            "how_to_get": [
+              "Быть клиентом Alfa Only"
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "кэшбэк до 10%",
+              "Привилегии для клиентов Alfa Only:"
+            ],
+            "practical_advice": []
+          },
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": "бронь в ресторане Probka",
+            "audience": "клиенты Alfa Only",
+            "restrictions": [],
+            "how_to_get": [
+              "Забронировать через консьерж-сервис"
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "приоритетная бронь через консьерж-сервис"
+            ],
+            "practical_advice": []
+          },
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": "фирменный коктейль в меню ресторана Probka",
+            "audience": "клиенты Alfa Only",
+            "restrictions": [],
+            "how_to_get": [
+              "Заказать фирменный коктейль в меню"
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "В меню — фирменный коктейль, созданный вместе с шефами"
+            ],
+            "practical_advice": []
+          }
+        ],
+        "unknowns": [
+          "Не указаны условия и сроки начисления кэшбэка",
+          "Не указано, является ли фирменный коктейль бесплатным",
+          "Не указаны ограничения по приоритетной брони"
+        ]
+      },
+      "inferred_as_of": "2026-10-29",
+      "inferred_at": 1793254291.7174156,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "1934e4972f710c491fcace8e62fd4d3c": {
       "target": {
@@ -29117,7 +30910,98 @@
         "partner": "Self Edge Japanese",
         "program": "Alfa Only",
         "source_id": "greatlist_alfa_only"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793254364.1820045,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "30cc3bf32b8b07e46ec77d6f7508f01ed9ad98dd741b9d25da9b713251403107",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "30cc3bf32b8b07e46ec77d6f7508f01ed9ad98dd741b9d25da9b713251403107",
+            "seconds": 65.41794787700019,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 5671,
+              "prompt_tokens": 3544,
+              "total_tokens": 9215,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 5373
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 5671,
+          "prompt_tokens": 3544,
+          "total_tokens": 9215,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 5373
+          }
+        },
+        "seconds": 65.4258085600004,
+        "http_attempts": 1
+      },
+      "fingerprint": "39d34fe4ce2a4d0d0c08d4904fcee72921b2313617b45085b4c41b596ec81652",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": "приоритетная бронь и фирменный коктейль в меню",
+            "audience": "Клиенты Alfa Only",
+            "restrictions": [
+              "Только для клиентов Alfa Only"
+            ],
+            "how_to_get": [
+              "Обратиться в консьерж-сервис для приоритетной брони",
+              "Заказать фирменный коктейль в меню"
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Партнёр премиального сервиса Alfa Only от Альфа-Банка",
+              "Привилегии для клиентов Alfa Only:",
+              "приоритетная бронь через консьерж-сервис",
+              "В меню — фирменный коктейль, созданный вместе с шефами"
+            ],
+            "practical_advice": [
+              {
+                "text": "Бронировать места заранее: в ресторане немного столиков.",
+                "basis": "inference"
+              }
+            ]
+          }
+        ],
+        "unknowns": [
+          "Срок действия привилегий не указан",
+          "Условия и ограничения приоритетной брони не раскрыты",
+          "Не указано, требуется ли отдельный заказ или оплата для фирменного коктейля"
+        ]
+      },
+      "inferred_as_of": "2026-10-29",
+      "inferred_at": 1793254364.1822467,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "b58fb4a674ab54828ebbc0bc3102ec5f": {
       "target": {
@@ -29126,7 +31010,92 @@
         "partner": "GMS (Смоленская)",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793254391.3859167,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "208d672591944652184b6d399f09056a538af9db3586b706e29308e2e67fbd79",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "208d672591944652184b6d399f09056a538af9db3586b706e29308e2e67fbd79",
+            "seconds": 20.16408686600016,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 1761,
+              "prompt_tokens": 2419,
+              "total_tokens": 4180,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 1513
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 1761,
+          "prompt_tokens": 2419,
+          "total_tokens": 4180,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 1513
+          }
+        },
+        "seconds": 20.17122876900021,
+        "http_attempts": 1
+      },
+      "fingerprint": "b1d2693692a20af0ab8558720a1b6e28bfbe981c52610514f0dce24b17525e8c",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "discount",
+            "value": 10,
+            "unit": "percent",
+            "basis": "GMS (Смоленская), категория «КРАСОТА И ЗДОРОВЬЕ»",
+            "audience": "получатели публичных привилегий Konsierge",
+            "restrictions": [],
+            "how_to_get": [],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "GMS (Смоленская)",
+              "КРАСОТА И ЗДОРОВЬЕ",
+              "Скидка 10%"
+            ],
+            "practical_advice": [
+              {
+                "text": "В карточке не указано, на какие именно услуги или товары действует скидка; уточните это в GMS (Смоленская) до оплаты.",
+                "basis": "inference"
+              }
+            ]
+          }
+        ],
+        "unknowns": [
+          "Не указано, на какие именно услуги или товары распространяется скидка 10%.",
+          "Не указаны условия предъявления или получения скидки.",
+          "Не указан срок действия скидки."
+        ]
+      },
+      "inferred_as_of": "2026-10-29",
+      "inferred_at": 1793254391.3860123,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "1385049ab27b233f297ac1afcc180819": {
       "target": {
@@ -29135,7 +31104,87 @@
         "partner": "GMS (Садовническая)",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793254422.5775805,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "ef7a76acd93fc8a8f0437a1300026d311d1c663984a76d6ea1a78c785666fcaf",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "ef7a76acd93fc8a8f0437a1300026d311d1c663984a76d6ea1a78c785666fcaf",
+            "seconds": 24.154889853999975,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 1598,
+              "prompt_tokens": 2418,
+              "total_tokens": 4016,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 1420
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 1598,
+          "prompt_tokens": 2418,
+          "total_tokens": 4016,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 1420
+          }
+        },
+        "seconds": 24.161618717000238,
+        "http_attempts": 1
+      },
+      "fingerprint": "6924128cc50b007c63ea01d9aa1df57fc16d5889b968583b3c9541b124ad10c7",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "discount",
+            "value": 10,
+            "unit": "%",
+            "basis": "КРАСОТА И ЗДОРОВЬЕ",
+            "audience": "Клиенты Konsierge",
+            "restrictions": [],
+            "how_to_get": [],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "GMS (Садовническая)",
+              "КРАСОТА И ЗДОРОВЬЕ",
+              "Скидка 10%"
+            ],
+            "practical_advice": []
+          }
+        ],
+        "unknowns": [
+          "Способ получения скидки не указан.",
+          "Срок действия скидки не указан.",
+          "Ограничения и точный перечень услуг, к которым применяется скидка, не указаны."
+        ]
+      },
+      "inferred_as_of": "2026-10-29",
+      "inferred_at": 1793254422.5776706,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "581b96d4b68bdbd912d6c4968850736e": {
       "target": {
@@ -29144,7 +31193,88 @@
         "partner": "GMS Hospital",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793254469.4096885,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "17c9d915d9911f42fa64d1461b3757b06354c58e3262031afec6a36769655852",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "17c9d915d9911f42fa64d1461b3757b06354c58e3262031afec6a36769655852",
+            "seconds": 39.79497180299995,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 3386,
+              "prompt_tokens": 2414,
+              "total_tokens": 5800,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 3168
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 3386,
+          "prompt_tokens": 2414,
+          "total_tokens": 5800,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 3168
+          }
+        },
+        "seconds": 39.80171094099978,
+        "http_attempts": 1
+      },
+      "fingerprint": "4c5be6d9d704fb89731fceb350641a41bcf8de7abe8f12bf86a6ac6b43109ba3",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "discount",
+            "value": 10,
+            "unit": "%",
+            "basis": "Красота и здоровье",
+            "audience": "Пользователи программы Konsierge — публичные привилегии",
+            "restrictions": [],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "GMS Hospital",
+              "КРАСОТА И ЗДОРОВЬЕ",
+              "Скидка 10%"
+            ],
+            "practical_advice": [],
+            "how_to_get": []
+          }
+        ],
+        "unknowns": [
+          "Область применения скидки: какие именно услуги или товары GMS Hospital",
+          "Способ получения скидки",
+          "Ограничения",
+          "Срок действия"
+        ]
+      },
+      "inferred_as_of": "2026-10-29",
+      "inferred_at": 1793254469.409785,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "ac6c870f493522a8bd594131948cf21b": {
       "target": {
@@ -29153,7 +31283,92 @@
         "partner": "Азбука вкуса",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793254483.981018,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "c6228edf3507464234e652eb8d26610614fd06326f3c034399542da501297f8a",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "c6228edf3507464234e652eb8d26610614fd06326f3c034399542da501297f8a",
+            "seconds": 7.533853060999718,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 565,
+              "prompt_tokens": 3117,
+              "total_tokens": 3682,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 319
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 565,
+          "prompt_tokens": 3117,
+          "total_tokens": 3682,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 319
+          }
+        },
+        "seconds": 7.540633762000198,
+        "http_attempts": 1
+      },
+      "fingerprint": "1b048b43784204b74c7cab518c3c897a656c59ee4625b83e5cb6182955d1ccb7",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "discount",
+            "value": 10,
+            "unit": "%",
+            "basis": null,
+            "audience": "Клиенты Konsierge (публичные привилегии)",
+            "restrictions": [],
+            "how_to_get": [],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Азбука вкуса",
+              "УСЛУГИ И ПОКУПКИ",
+              "Скидка 10%"
+            ],
+            "practical_advice": [
+              {
+                "text": "На странице указаны только партнёр и размер скидки — уточните в Konsierge, как подтвердить право на скидку и на какие покупки она распространяется.",
+                "basis": "inference"
+              }
+            ]
+          }
+        ],
+        "unknowns": [
+          "Не указано, на какие покупки распространяется скидка 10%",
+          "Не указано, как получить скидку (способ подтверждения)",
+          "Не указаны ограничения и срок действия скидки"
+        ]
+      },
+      "inferred_as_of": "2026-10-29",
+      "inferred_at": 1793254483.9811168,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "ec481c94b65ade33fe2856166f6ccaa6": {
       "target": {
@@ -29162,7 +31377,88 @@
         "partner": "Lotte (Петербург)",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793254500.6646452,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "9b3e7b4d3cfac3490a38bfa20aa70f15bd8dc5577f340d347e0805ce379c74ea",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "9b3e7b4d3cfac3490a38bfa20aa70f15bd8dc5577f340d347e0805ce379c74ea",
+            "seconds": 9.646775959000024,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 691,
+              "prompt_tokens": 2417,
+              "total_tokens": 3108,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 544
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 691,
+          "prompt_tokens": 2417,
+          "total_tokens": 3108,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 544
+          }
+        },
+        "seconds": 9.653441590000057,
+        "http_attempts": 1
+      },
+      "fingerprint": "6f1b1642d47afd3680d442438c34735f7009f5a06acf983245b20409513c01d9",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": null,
+            "audience": "не указана",
+            "restrictions": [],
+            "how_to_get": [],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Lotte (Петербург)",
+              "ОТЕЛИ И КУРОРТЫ",
+              "Привилегия"
+            ],
+            "practical_advice": []
+          }
+        ],
+        "unknowns": [
+          "Содержание и размер привилегии",
+          "Способ получения привилегии",
+          "Ограничения привилегии",
+          "Срок действия привилегии"
+        ]
+      },
+      "inferred_as_of": "2026-10-29",
+      "inferred_at": 1793254500.664734,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "2539cca4224f90417b47c433a34f3c4d": {
       "target": {
@@ -29171,7 +31467,88 @@
         "partner": "Stella di Mosca (Москва)",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793254524.461861,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "3cab0685bc45641452dafd6bdc680aae6ad273e9e382fa936af67b7f4ab97b33",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "3cab0685bc45641452dafd6bdc680aae6ad273e9e382fa936af67b7f4ab97b33",
+            "seconds": 16.75970029700011,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 1357,
+              "prompt_tokens": 3121,
+              "total_tokens": 4478,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 1207
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 1357,
+          "prompt_tokens": 3121,
+          "total_tokens": 4478,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 1207
+          }
+        },
+        "seconds": 16.76679228699959,
+        "http_attempts": 1
+      },
+      "fingerprint": "3c71bd839e539921f1933abad5cbf7099e7df0bf6b343c9db12828e1428cc58e",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": null,
+            "audience": "Не указано",
+            "restrictions": [],
+            "how_to_get": [],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Stella di Mosca (Москва)",
+              "ОТЕЛИ И КУРОРТЫ",
+              "Привилегия"
+            ],
+            "practical_advice": []
+          }
+        ],
+        "unknowns": [
+          "Размер и содержание привилегии не указаны",
+          "Способ получения не указан",
+          "Ограничения не указаны",
+          "Срок действия не указан"
+        ]
+      },
+      "inferred_as_of": "2026-10-29",
+      "inferred_at": 1793254524.4619648,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "0fcc6b2a9f9067c7f1c54727ef24ac0b": {
       "target": {
@@ -29180,7 +31557,66 @@
         "partner": "Гранд Отель Европа (Петербург)",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793254537.4202974,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "b00a56801e768d919cba5715e4d72b333a41347eafb005e644231cc747d5cc12",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "b00a56801e768d919cba5715e4d72b333a41347eafb005e644231cc747d5cc12",
+            "seconds": 5.921581547000187,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 384,
+              "prompt_tokens": 1863,
+              "total_tokens": 2247,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 330
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 384,
+          "prompt_tokens": 1863,
+          "total_tokens": 2247,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 330
+          }
+        },
+        "seconds": 5.9281650869997975,
+        "http_attempts": 1
+      },
+      "fingerprint": "9b132eb264d8ff3475e687807c3fc7bc4372f95af79b72eeced31f46cc49dfc3",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В предоставленном тексте нет сведений о предложении Grand Hotel Europe (Петербург) по программе Konsierge — публичные привилегии."
+        ]
+      },
+      "inferred_as_of": "2026-10-29",
+      "inferred_at": 1793254537.420385,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "7259f0d25db083bfa303397d513f8d4e": {
       "target": {
@@ -29189,7 +31625,88 @@
         "partner": "GMS Dental",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793254564.240162,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "36d76a87d8ac46e1efefd2caa70983c5acc113227245355da0d8bbfc5cdb767c",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "36d76a87d8ac46e1efefd2caa70983c5acc113227245355da0d8bbfc5cdb767c",
+            "seconds": 19.782029163999596,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 1737,
+              "prompt_tokens": 2414,
+              "total_tokens": 4151,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 1524
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 1737,
+          "prompt_tokens": 2414,
+          "total_tokens": 4151,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 1524
+          }
+        },
+        "seconds": 19.78880895300017,
+        "http_attempts": 1
+      },
+      "fingerprint": "af2c84b03c91a743a86cb310b569a6100a95e2624a5bf0a23f52a693f52cc294",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "discount",
+            "value": 10,
+            "unit": "%",
+            "basis": null,
+            "audience": "не указана",
+            "restrictions": [],
+            "how_to_get": [],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "GMS Dental",
+              "КРАСОТА И ЗДОРОВЬЕ",
+              "Скидка 10%"
+            ],
+            "practical_advice": []
+          }
+        ],
+        "unknowns": [
+          "Не указано, на какие услуги или товары распространяется скидка.",
+          "Не указаны условия и способ получения скидки.",
+          "Не указан срок действия предложения.",
+          "Не указана аудитория получения скидки."
+        ]
+      },
+      "inferred_as_of": "2026-10-29",
+      "inferred_at": 1793254564.240262,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "3a01469614d79c8cf355819def46380e": {
       "target": {
@@ -29198,7 +31715,87 @@
         "partner": "Dropp Market",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793254592.8972301,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "94bc130663cc9a66d3fe5382ef662285a0a8506ee2a4543f5aebddb8d5f67b14",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "94bc130663cc9a66d3fe5382ef662285a0a8506ee2a4543f5aebddb8d5f67b14",
+            "seconds": 21.61813419400005,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 1812,
+              "prompt_tokens": 3115,
+              "total_tokens": 4927,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 1673
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 1812,
+          "prompt_tokens": 3115,
+          "total_tokens": 4927,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 1673
+          }
+        },
+        "seconds": 21.624937827000394,
+        "http_attempts": 1
+      },
+      "fingerprint": "851b01d9beea741cecb42c18440d52c8db1b1e7419bc2507321f58c2e5daa22b",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "discount",
+            "value": 7,
+            "unit": "%",
+            "basis": null,
+            "audience": "клиенты Konsierge",
+            "restrictions": [],
+            "how_to_get": [],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Dropp Market",
+              "Скидка 7%"
+            ],
+            "practical_advice": []
+          }
+        ],
+        "unknowns": [
+          "какие покупки или услуги покрывает скидка",
+          "как получить скидку",
+          "срок действия скидки",
+          "требуется ли промокод"
+        ]
+      },
+      "inferred_as_of": "2026-10-29",
+      "inferred_at": 1793254592.8973243,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "50ca90a92dacc31e0fe7b8e5b6076bdd": {
       "target": {
@@ -29207,7 +31804,88 @@
         "partner": "Amnesia",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793254628.9863732,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "9938fb3052c0e79e57c4b3a6a2dcb831d9494e85d23f1a12f5d2feedc9d85ccc",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "9938fb3052c0e79e57c4b3a6a2dcb831d9494e85d23f1a12f5d2feedc9d85ccc",
+            "seconds": 29.050426699000127,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 1794,
+              "prompt_tokens": 3113,
+              "total_tokens": 4907,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 1653
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 1794,
+          "prompt_tokens": 3113,
+          "total_tokens": 4907,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 1653
+          }
+        },
+        "seconds": 29.05714980399989,
+        "http_attempts": 1
+      },
+      "fingerprint": "7460728723c36863b79df0a82a476a08644ef9ef5e99bc98f8876a2a63706f51",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "discount",
+            "value": 10,
+            "unit": "%",
+            "basis": "услуги и покупки",
+            "audience": "не указано",
+            "restrictions": [],
+            "how_to_get": [],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Amnesia",
+              "УСЛУГИ И ПОКУПКИ",
+              "Скидка до 10%"
+            ],
+            "practical_advice": []
+          }
+        ],
+        "unknowns": [
+          "точные условия применения скидки",
+          "способ получения скидки",
+          "срок действия",
+          "ограничения"
+        ]
+      },
+      "inferred_as_of": "2026-10-29",
+      "inferred_at": 1793254628.9864657,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "dfccef67103778ec07d8512530cfce47": {
       "target": {
@@ -29216,7 +31894,90 @@
         "partner": "Muza",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793254665.5019827,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "f69325431d723525229e5d22a883ef52efc6d29eb9a5369c0e22c9e8686b1efd",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "f69325431d723525229e5d22a883ef52efc6d29eb9a5369c0e22c9e8686b1efd",
+            "seconds": 29.476717091999944,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 2497,
+              "prompt_tokens": 3113,
+              "total_tokens": 5610,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 2313
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 2497,
+          "prompt_tokens": 3113,
+          "total_tokens": 5610,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 2313
+          }
+        },
+        "seconds": 29.483872042999792,
+        "http_attempts": 1
+      },
+      "fingerprint": "f4de0065f197e089b189611c6b54985fb79e414b086d2c5f814933dfcb51e255",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "discount",
+            "value": 10,
+            "unit": "percent",
+            "basis": "УСЛУГИ И ПОКУПКИ",
+            "audience": "Клиенты Konsierge",
+            "restrictions": [
+              "Скидка до 10%"
+            ],
+            "how_to_get": [],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Muza",
+              "УСЛУГИ И ПОКУПКИ",
+              "Скидка до 10%"
+            ],
+            "practical_advice": []
+          }
+        ],
+        "unknowns": [
+          "Точный размер скидки в пределах 10% не указан",
+          "Способ получения не указан",
+          "Срок действия не указан",
+          "Иные ограничения, кроме верхнего предела скидки, не указаны"
+        ]
+      },
+      "inferred_as_of": "2026-10-29",
+      "inferred_at": 1793254665.502077,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "26570428893cb81e83d18dba51890324": {
       "target": {
@@ -29225,7 +31986,94 @@
         "partner": "Leto Flowers",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793254718.8394177,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "c2cdb8f683f6f54651afdb9de6d179d5ecf46d603d909f3a871379afd1468d87",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "c2cdb8f683f6f54651afdb9de6d179d5ecf46d603d909f3a871379afd1468d87",
+            "seconds": 46.29862059900006,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 3181,
+              "prompt_tokens": 3114,
+              "total_tokens": 6295,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 2994
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 3181,
+          "prompt_tokens": 3114,
+          "total_tokens": 6295,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 2994
+          }
+        },
+        "seconds": 46.305466173999775,
+        "http_attempts": 1
+      },
+      "fingerprint": "74a9d85d0fbbe10b1b31498beca31642da0ac4244130ff8801a7758d4a6ceeee",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "discount",
+            "value": 10,
+            "unit": "%",
+            "basis": "УСЛУГИ И ПОКУПКИ",
+            "audience": "Клиенты Konsierge",
+            "restrictions": [
+              "Скидка до 10%"
+            ],
+            "how_to_get": [],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Leto Flowers",
+              "УСЛУГИ И ПОКУПКИ",
+              "Скидка до 10%"
+            ],
+            "practical_advice": [
+              {
+                "text": "Уточнить у партнёра точный размер скидки, поскольку указано «до 10%».",
+                "basis": "inference"
+              }
+            ]
+          }
+        ],
+        "unknowns": [
+          "точный размер скидки",
+          "условия получения",
+          "срок действия"
+        ]
+      },
+      "inferred_as_of": "2026-10-29",
+      "inferred_at": 1793254718.8395116,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "307473371e5069667ca2c872bb9a2977": {
       "target": {
@@ -29234,7 +32082,89 @@
         "partner": "Magritte",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793254754.9481409,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "b9c74b8a3fc6a467ae89e9bac17e4b5a84bc52668dc93395cba6998924fee5a1",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "b9c74b8a3fc6a467ae89e9bac17e4b5a84bc52668dc93395cba6998924fee5a1",
+            "seconds": 29.069946588999755,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 2507,
+              "prompt_tokens": 2413,
+              "total_tokens": 4920,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 2378
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 2507,
+          "prompt_tokens": 2413,
+          "total_tokens": 4920,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 2378
+          }
+        },
+        "seconds": 29.076688319999903,
+        "http_attempts": 1
+      },
+      "fingerprint": "732f6b3d5d8f0040def991a1e88cfc852cd22369ec53de652f54674a98af3210",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": "ресторан Magritte",
+            "audience": "не указана",
+            "restrictions": [],
+            "how_to_get": [],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Magritte",
+              "РЕСТОРАНЫ",
+              "Привилегия"
+            ],
+            "practical_advice": []
+          }
+        ],
+        "unknowns": [
+          "размер и состав привилегии",
+          "способ получения",
+          "ограничения",
+          "срок действия",
+          "аудитория"
+        ]
+      },
+      "inferred_as_of": "2026-10-29",
+      "inferred_at": 1793254754.9482338,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "95439d82a2fe19c812689a621cbd9372": {
       "target": {
@@ -29243,7 +32173,88 @@
         "partner": "IMA",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793254773.8580816,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "01d3ab1aec5fc03d02674757f979ab180a582aef893229ce03a98450bb5fc176",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "01d3ab1aec5fc03d02674757f979ab180a582aef893229ce03a98450bb5fc176",
+            "seconds": 11.871200287000192,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 916,
+              "prompt_tokens": 3112,
+              "total_tokens": 4028,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 760
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 916,
+          "prompt_tokens": 3112,
+          "total_tokens": 4028,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 760
+          }
+        },
+        "seconds": 11.878111619000265,
+        "http_attempts": 1
+      },
+      "fingerprint": "1be7c11b045f59842bd69358846b529d0d98cbbbbcf786dadfb54e80d597e0ad",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": null,
+            "audience": "не указано",
+            "restrictions": [],
+            "how_to_get": [],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "IMA",
+              "РЕСТОРАНЫ",
+              "Привилегия"
+            ],
+            "practical_advice": []
+          }
+        ],
+        "unknowns": [
+          "Не указан состав/размер привилегии IMA.",
+          "Не указаны условия получения привилегии IMA.",
+          "Не указан срок действия привилегии IMA.",
+          "Не указана точная аудитория привилегии IMA."
+        ]
+      },
+      "inferred_as_of": "2026-10-29",
+      "inferred_at": 1793254773.8581822,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "32dd64e5418e658113d1607c34816cd4": {
       "target": {
@@ -29252,7 +32263,87 @@
         "partner": "Anchovy's Club",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793254804.9596286,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "2bc6bf6bff00c2509fe3ffc5678dd6fe0dcde0eabe2b026fe6fda33728560704",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "2bc6bf6bff00c2509fe3ffc5678dd6fe0dcde0eabe2b026fe6fda33728560704",
+            "seconds": 24.062507787999948,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 2059,
+              "prompt_tokens": 2416,
+              "total_tokens": 4475,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 1876
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 2059,
+          "prompt_tokens": 2416,
+          "total_tokens": 4475,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 1876
+          }
+        },
+        "seconds": 24.069258203999652,
+        "http_attempts": 1
+      },
+      "fingerprint": "f2ca9c7284bcb487699695ef5469a8ec36ac534591b5d0426dd47b61fec3545c",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": null,
+            "audience": "не указана",
+            "restrictions": [],
+            "how_to_get": [],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Anchovy's Club",
+              "РЕСТОРАНЫ",
+              "Привилегия"
+            ],
+            "practical_advice": []
+          }
+        ],
+        "unknowns": [
+          "Размер и содержание привилегии не указаны",
+          "Способ получения не указан",
+          "Срок действия и ограничения не указаны"
+        ]
+      },
+      "inferred_as_of": "2026-10-29",
+      "inferred_at": 1793254804.9597201,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "fa5489331cba4ce42ee67f9871ab2d16": {
       "target": {
@@ -29261,7 +32352,66 @@
         "partner": "Folk",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793254817.5154653,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "57f5c57cb4c18bf31c4902ac371f21a544ac0ab2b5c9032a7b8ca95bd9dd92e8",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "57f5c57cb4c18bf31c4902ac371f21a544ac0ab2b5c9032a7b8ca95bd9dd92e8",
+            "seconds": 5.516532132000066,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 326,
+              "prompt_tokens": 2413,
+              "total_tokens": 2739,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 289
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 326,
+          "prompt_tokens": 2413,
+          "total_tokens": 2739,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 289
+          }
+        },
+        "seconds": 5.523658134000016,
+        "http_attempts": 1
+      },
+      "fingerprint": "0c8158c83af5a6d08c91f45c91013e2744559d35d97358a491f0ecef1890efb3",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В предоставленном тексте нет предложения программы для партнёра Folk."
+        ]
+      },
+      "inferred_as_of": "2026-10-29",
+      "inferred_at": 1793254817.515569,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "cda30e8b821204e8334122e1b79465c7": {
       "target": {
@@ -29270,7 +32420,66 @@
         "partner": "The Carlton (Москва)",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793254828.7862794,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "e6e39ef9f7825b4cdff5bf0f2a1e9f1efa37ef434083f769f07c4773d48ce4ed",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "e6e39ef9f7825b4cdff5bf0f2a1e9f1efa37ef434083f769f07c4773d48ce4ed",
+            "seconds": 4.232039442000314,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 228,
+              "prompt_tokens": 1917,
+              "total_tokens": 2145,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 191
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 228,
+          "prompt_tokens": 1917,
+          "total_tokens": 2145,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 191
+          }
+        },
+        "seconds": 4.238637235999704,
+        "http_attempts": 1
+      },
+      "fingerprint": "fd3778bbf2a72c41e2060a19186e41c096900857af987e38060ca6b817f5bb98",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В предоставленных данных нет описания предложения The Carlton (Москва)."
+        ]
+      },
+      "inferred_as_of": "2026-10-29",
+      "inferred_at": 1793254828.7863746,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "37cc9a70c3c955c768cf5b4c8de49936": {
       "target": {
@@ -29279,7 +32488,88 @@
         "partner": "Amber",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793254855.0553086,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "b74c0f4430fd59f49d63b464fb1a2121e2c87092161909cc69f3d65042ba0802",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "b74c0f4430fd59f49d63b464fb1a2121e2c87092161909cc69f3d65042ba0802",
+            "seconds": 19.23003130999996,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 1658,
+              "prompt_tokens": 3113,
+              "total_tokens": 4771,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 1500
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 1658,
+          "prompt_tokens": 3113,
+          "total_tokens": 4771,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 1500
+          }
+        },
+        "seconds": 19.236709351000172,
+        "http_attempts": 1
+      },
+      "fingerprint": "26bda0818aab07571e0e442a850e1cc5ccfdda6b7b446b50bb9f79e0cfc54525",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": "ресторан Amber",
+            "audience": "клиенты Konsierge",
+            "restrictions": [],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Amber",
+              "РЕСТОРАНЫ",
+              "Привилегия"
+            ],
+            "practical_advice": [],
+            "how_to_get": []
+          }
+        ],
+        "unknowns": [
+          "Размер и точные условия привилегии Amber не указаны",
+          "Способ получения привилегии Amber не указан",
+          "Срок действия привилегии Amber не указан",
+          "Ограничения привилегии Amber не указаны"
+        ]
+      },
+      "inferred_as_of": "2026-10-29",
+      "inferred_at": 1793254855.0553997,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "035f717c7ea1ed1ab9d9d1bfcc1c8e9b": {
       "target": {
@@ -29288,7 +32578,86 @@
         "partner": "Padron",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793254887.4547546,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "0d4e21f00496eed4fc9fbf39b0426f791e346a66deb1fd174bd96f5d3071edaf",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "0d4e21f00496eed4fc9fbf39b0426f791e346a66deb1fd174bd96f5d3071edaf",
+            "seconds": 25.36095646600006,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 2154,
+              "prompt_tokens": 2891,
+              "total_tokens": 5045,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 2024
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 2154,
+          "prompt_tokens": 2891,
+          "total_tokens": 5045,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 2024
+          }
+        },
+        "seconds": 25.367760451000322,
+        "http_attempts": 1
+      },
+      "fingerprint": "2c30472605d621d1dc02018ef487b9483ea077f5db5203c7915bc75e00bcdb34",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": "ресторан Padron",
+            "audience": "клиенты Konsierge",
+            "restrictions": [],
+            "how_to_get": [],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Padron",
+              "РЕСТОРАНЫ",
+              "Привилегия"
+            ],
+            "practical_advice": []
+          }
+        ],
+        "unknowns": [
+          "Состав привилегии не раскрыт",
+          "Не указаны способ получения, ограничения и срок действия"
+        ]
+      },
+      "inferred_as_of": "2026-10-29",
+      "inferred_at": 1793254887.4548624,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "a47293c93c86057d6fe8362c7e621a6e": {
       "target": {
@@ -29297,7 +32666,85 @@
         "partner": "Eno Bistro",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793254915.0446491,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "5c3789f540420b61c65d59ee78e1fe1f0196d9a958eebc820d19ae043b3af843",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "5c3789f540420b61c65d59ee78e1fe1f0196d9a958eebc820d19ae043b3af843",
+            "seconds": 20.550348845999906,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 1812,
+              "prompt_tokens": 3115,
+              "total_tokens": 4927,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 1690
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 1812,
+          "prompt_tokens": 3115,
+          "total_tokens": 4927,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 1690
+          }
+        },
+        "seconds": 20.557172217000243,
+        "http_attempts": 1
+      },
+      "fingerprint": "68b62b59bcaeade9959cbf2a5ca8c1c59a50dfb64e7487e5a4c9ecac15e33517",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": null,
+            "audience": "Клиенты Konsierge",
+            "restrictions": [],
+            "how_to_get": [],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Eno Bistro",
+              "РЕСТОРАНЫ",
+              "Привилегия"
+            ],
+            "practical_advice": []
+          }
+        ],
+        "unknowns": [
+          "Точные условия привилегии Eno Bistro не указаны."
+        ]
+      },
+      "inferred_as_of": "2026-10-29",
+      "inferred_at": 1793254915.0447516,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "fb8134c210e1b4ba1bf550bda8b9dcc6": {
       "target": {
@@ -29306,7 +32753,88 @@
         "partner": "Пафос (Москва)",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793254946.308028,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "d26f9eda992c9e52624ccb0259c1d8706a3977a6ad16e811781b857f3d980d72",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "d26f9eda992c9e52624ccb0259c1d8706a3977a6ad16e811781b857f3d980d72",
+            "seconds": 24.224118155999804,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 2010,
+              "prompt_tokens": 3119,
+              "total_tokens": 5129,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 1868
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 2010,
+          "prompt_tokens": 3119,
+          "total_tokens": 5129,
+          "prompt_tokens_details": {
+            "cached_tokens": 256
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 1868
+          }
+        },
+        "seconds": 24.231309428999793,
+        "http_attempts": 1
+      },
+      "fingerprint": "e5cc5671a5be50093d154705c28a20ce8c15eb40f375c8e6e03df6b9995de844",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "discount",
+            "value": 10,
+            "unit": "%",
+            "basis": "ресторан",
+            "audience": "не указана",
+            "restrictions": [],
+            "how_to_get": [],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Пафос (Москва)",
+              "РЕСТОРАНЫ",
+              "Скидка 10%"
+            ],
+            "practical_advice": []
+          }
+        ],
+        "unknowns": [
+          "Способ получения не указан",
+          "Ограничения не указаны",
+          "Срок действия не указан",
+          "Аудитория не указана"
+        ]
+      },
+      "inferred_as_of": "2026-10-29",
+      "inferred_at": 1793254946.308118,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "f1f17217f998c72b7a9d0617b0bff45b": {
       "target": {
@@ -29315,7 +32843,85 @@
         "partner": "Гармония",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793254978.1920223,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "2aa7cc5af2c34b348a44ef4cee190d099b5277cadf060d95fea8fe623e2b2e99",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "2aa7cc5af2c34b348a44ef4cee190d099b5277cadf060d95fea8fe623e2b2e99",
+            "seconds": 24.844825320999917,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 2140,
+              "prompt_tokens": 3115,
+              "total_tokens": 5255,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 1999
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 2140,
+          "prompt_tokens": 3115,
+          "total_tokens": 5255,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 1999
+          }
+        },
+        "seconds": 24.851546848999988,
+        "http_attempts": 1
+      },
+      "fingerprint": "19d10e82eea4d8b137eb556ee698ec1bc981b254c30042b77582107d7a7bd8aa",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "basis": "КРАСОТА И ЗДОРОВЬЕ",
+            "audience": "не указана",
+            "restrictions": [],
+            "how_to_get": [],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Гармония",
+              "КРАСОТА И ЗДОРОВЬЕ",
+              "Привилегия"
+            ],
+            "practical_advice": []
+          }
+        ],
+        "unknowns": [
+          "Не указаны конкретный размер и содержание привилегии, способ получения и ограничения."
+        ]
+      },
+      "inferred_as_of": "2026-10-29",
+      "inferred_at": 1793254978.1921165,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "b325e620256828c71234fb5c7800a8c2": {
       "target": {
@@ -29324,7 +32930,92 @@
         "partner": "EMC (Щепкина)",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793255008.1772091,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "8d4558ee264a89e8baf5f0cbe39dc799e1c5b20c9cce64a726a59e4e0b174546",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "8d4558ee264a89e8baf5f0cbe39dc799e1c5b20c9cce64a726a59e4e0b174546",
+            "seconds": 22.94623052499992,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 1976,
+              "prompt_tokens": 3118,
+              "total_tokens": 5094,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 1753
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 1976,
+          "prompt_tokens": 3118,
+          "total_tokens": 5094,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 1753
+          }
+        },
+        "seconds": 22.95301094999968,
+        "http_attempts": 1
+      },
+      "fingerprint": "ecc87b78a41851875af0da8c807e21ff109d8cf7fca9cb44797b54e972b950e2",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "discount",
+            "value": 10,
+            "unit": "%",
+            "basis": "КРАСОТА И ЗДОРОВЬЕ",
+            "audience": "клиенты Konsierge",
+            "restrictions": [],
+            "how_to_get": [],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "EMC (Щепкина)",
+              "КРАСОТА И ЗДОРОВЬЕ",
+              "Скидка 10%"
+            ],
+            "practical_advice": [
+              {
+                "text": "Перед визитом уточните, распространяется ли скидка на нужную услугу: в карточке указана только категория «КРАСОТА И ЗДОРОВЬЕ».",
+                "basis": "inference"
+              }
+            ]
+          }
+        ],
+        "unknowns": [
+          "Не указаны конкретные услуги, на которые распространяется скидка",
+          "Не указан способ получения скидки",
+          "Не указаны срок действия и дополнительные условия"
+        ]
+      },
+      "inferred_as_of": "2026-10-29",
+      "inferred_at": 1793255008.177322,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "2808e179ec740e6edbe0eec2e7740c79": {
       "target": {
@@ -29333,7 +33024,88 @@
         "partner": "ЮГ 22 (Москва)",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793255036.4840837,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "57e8f8364f220b4bbb4a0501366988d49e1e135dd891d5c12f9108afadfaa354",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "57e8f8364f220b4bbb4a0501366988d49e1e135dd891d5c12f9108afadfaa354",
+            "seconds": 21.267576437000116,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 1644,
+              "prompt_tokens": 3120,
+              "total_tokens": 4764,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 1504
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 1644,
+          "prompt_tokens": 3120,
+          "total_tokens": 4764,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 1504
+          }
+        },
+        "seconds": 21.27434755000013,
+        "http_attempts": 1
+      },
+      "fingerprint": "6b3a47bf229e3f139c5caed19552cf0299a67ae99a360cbb0232eb65cc55783d",
+      "extracted": {
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "discount",
+            "value": 10,
+            "unit": "%",
+            "basis": null,
+            "audience": "не указано",
+            "restrictions": [],
+            "how_to_get": [],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "ЮГ 22 (Москва)",
+              "РЕСТОРАНЫ",
+              "Скидка 10%"
+            ],
+            "practical_advice": []
+          }
+        ],
+        "unknowns": [
+          "Способ получения скидки",
+          "Ограничения по скидке",
+          "Срок действия скидки",
+          "Аудитория"
+        ]
+      },
+      "inferred_as_of": "2026-10-29",
+      "inferred_at": 1793255036.4841805,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "ce97e00fab14a10cb9c5903c00ef2dc1": {
       "target": {
@@ -29342,7 +33114,66 @@
         "partner": "El Pimpi",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793255048.647486,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "ad2aa76ec45d28ff773f65a0762afb833173d1c7f2858c0d27aed9dc2e47893b",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "ad2aa76ec45d28ff773f65a0762afb833173d1c7f2858c0d27aed9dc2e47893b",
+            "seconds": 5.123648963000051,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 229,
+              "prompt_tokens": 3115,
+              "total_tokens": 3344,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 194
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 229,
+          "prompt_tokens": 3115,
+          "total_tokens": 3344,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 194
+          }
+        },
+        "seconds": 5.130295130000377,
+        "http_attempts": 1
+      },
+      "fingerprint": "1e6f549a9441924b56da49c3e86c37de8d343f6c5bae6ee4e7f92ea22cd3b5ac",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "Предложение El Pimpi отсутствует в предоставленном тексте."
+        ]
+      },
+      "inferred_as_of": "2026-10-29",
+      "inferred_at": 1793255048.6475837,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "597978d858c9a8aab98c95d784b68b3f": {
       "target": {
@@ -29351,7 +33182,66 @@
         "partner": "Eshak (Новый Арбат)",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793255062.2815025,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "ec6b5a22a5ec50e9209eb844f341da29533b51a768a8f2fae4f74315a4ee9ef2",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "ec6b5a22a5ec50e9209eb844f341da29533b51a768a8f2fae4f74315a4ee9ef2",
+            "seconds": 6.593504311000288,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 423,
+              "prompt_tokens": 3120,
+              "total_tokens": 3543,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 369
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 423,
+          "prompt_tokens": 3120,
+          "total_tokens": 3543,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 369
+          }
+        },
+        "seconds": 6.600719129000026,
+        "http_attempts": 1
+      },
+      "fingerprint": "1fad0c30f122a19d181bff5175978a3d2246bd0e34232053d9689fa23179a5c6",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В предоставленных материалах партнёр Eshak (Новый Арбат) и программа Konsierge — публичные привилегии не найдены."
+        ]
+      },
+      "inferred_as_of": "2026-10-29",
+      "inferred_at": 1793255062.281592,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "5cc69673a235e889243b0e4d35e35f98": {
       "target": {
@@ -29360,7 +33250,64 @@
         "partner": "ЕМС (Клиника женского и детского здоровья)",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793255090.9436367,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "135d9502a489ec94974b66345d7048a9861d06a43b2f3887b4b573821a8d2b87",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "135d9502a489ec94974b66345d7048a9861d06a43b2f3887b4b573821a8d2b87",
+            "seconds": 21.62229603600008,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 1960,
+              "prompt_tokens": 3124,
+              "total_tokens": 5084,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 1942
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 1960,
+          "prompt_tokens": 3124,
+          "total_tokens": 5084,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 1942
+          }
+        },
+        "seconds": 21.628999540000223,
+        "http_attempts": 1
+      },
+      "fingerprint": "ec5f0343f9a869bbff65024058f89fd6a68606dbad04c32f6fde9d8d7acf93b5",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": []
+      },
+      "inferred_as_of": "2026-10-29",
+      "inferred_at": 1793255090.9437203,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "56a411dde5c8e71aa3fbb78edb9c00d8": {
       "target": {
@@ -29369,7 +33316,66 @@
         "partner": "Eshak (Рублевское шоссе)",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793255104.5295942,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "47822f93286a1e683b759c0f089f84de0bf14261ca1f5fcfef20103e67f1fa82",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "47822f93286a1e683b759c0f089f84de0bf14261ca1f5fcfef20103e67f1fa82",
+            "seconds": 6.546627229000023,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 349,
+              "prompt_tokens": 3122,
+              "total_tokens": 3471,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 296
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 349,
+          "prompt_tokens": 3122,
+          "total_tokens": 3471,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 296
+          }
+        },
+        "seconds": 6.553275690999726,
+        "http_attempts": 1
+      },
+      "fingerprint": "577d9c238f38f8d0f2c4f44edff199b3638e683d89c81fb065209d1e232ede14",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "Партнёр Eshak (Рублевское шоссе) отсутствует в предоставленном списке привилегий Konsierge."
+        ]
+      },
+      "inferred_as_of": "2026-10-29",
+      "inferred_at": 1793255104.5296855,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "c3825d41005a2041f3d52a0392dd657e": {
       "target": {
@@ -29378,7 +33384,64 @@
         "partner": "Eshak (Можайское шоссе)",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793255118.7542856,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "34fff2d3e9e4cb38c4741b133c3a0a7ed993affb55833bbbca7a64e45c18394c",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "34fff2d3e9e4cb38c4741b133c3a0a7ed993affb55833bbbca7a64e45c18394c",
+            "seconds": 7.185320633999709,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 426,
+              "prompt_tokens": 2422,
+              "total_tokens": 2848,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 407
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 426,
+          "prompt_tokens": 2422,
+          "total_tokens": 2848,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 407
+          }
+        },
+        "seconds": 7.192265142999986,
+        "http_attempts": 1
+      },
+      "fingerprint": "61d1b782b1f3ee0deff3580ff8e043b5ac9dad6184b6da5f4cab33f98814692d",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": []
+      },
+      "inferred_as_of": "2026-10-29",
+      "inferred_at": 1793255118.7543786,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "5322f1ac6ad479d6196df4fe933ca6f7": {
       "target": {
@@ -29387,7 +33450,66 @@
         "partner": "EMC (Орловский)",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793255133.0010304,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "68608068dd6c476dc7b22dafff186f57048a778f05634c6f0a89d51a4d7afbb5",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "68608068dd6c476dc7b22dafff186f57048a778f05634c6f0a89d51a4d7afbb5",
+            "seconds": 7.206891050000195,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 417,
+              "prompt_tokens": 2418,
+              "total_tokens": 2835,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 363
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 417,
+          "prompt_tokens": 2418,
+          "total_tokens": 2835,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 363
+          }
+        },
+        "seconds": 7.2135819840000295,
+        "http_attempts": 1
+      },
+      "fingerprint": "8fb245ff6989c3f55ff8b149afcec5a8c978259c4206a01f73616dd9662cff4f",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В предоставленных данных нет предложения для партнёра EMC (Орловский) в программе Konsierge — публичные привилегии."
+        ]
+      },
+      "inferred_as_of": "2026-10-29",
+      "inferred_at": 1793255133.0011246,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "7a06d6c27df6c24867b05e6e61bcb0fe": {
       "target": {
@@ -29396,6 +33518,34 @@
         "partner": "Manana (Москва)",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
+      },
+      "status": "deferred",
+      "last_checked": 1793255133.8149507,
+      "last_result": {
+        "provider": "tokenharbor",
+        "requested_model": "deepseek-v4.1-flash:free",
+        "endpoint": "https://tokenharbor.ai/v1/chat/completions",
+        "request_body_sha256": "d6b44bd819b6213b1d254ac06b9c8e0934c589123db84ae9754ff244cbf98945",
+        "status": "deferred",
+        "schema_valid": false,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "d6b44bd819b6213b1d254ac06b9c8e0934c589123db84ae9754ff244cbf98945",
+            "seconds": 0.5156217520002429,
+            "http_status": 429,
+            "retry_after_seconds": 3600.0,
+            "retry_not_admitted": true
+          }
+        ],
+        "api_error_code": "free_tier_limit_reached",
+        "error": "transient_http_exhausted",
+        "retry_after_seconds": 3600.0,
+        "stop_batch_reason": "provider_rate_limited",
+        "seconds": 0.5161900200000673,
+        "http_attempts": 1
       }
     },
     "25f833887592520595b9b3df818baa9a": {
@@ -35022,22 +39172,58 @@
         "program": "Город / Тройка",
         "source_id": "gorod_public"
       }
+    },
+    "e7f7056852b2411a7825d863c139c7dc": {
+      "target": {
+        "id": "e7f7056852b2411a7825d863c139c7dc",
+        "url": "https://backit.me/ru/cashback/shops/xcom-shop",
+        "partner": "Xcom-Shop",
+        "program": "Backit — денежный кешбэк",
+        "source_id": "backit_public"
+      }
+    },
+    "edfd0dfdeb11ff1125001e4812591d18": {
+      "target": {
+        "id": "edfd0dfdeb11ff1125001e4812591d18",
+        "url": "https://www.clubavolta.com/ru/nashi-partnery/aviakompanii/aeroplan",
+        "partner": "Aeroplan®",
+        "program": "Club Avolta",
+        "source_id": "club_avolta_public"
+      }
+    },
+    "9a81fb7375f196a65aa538d08265d992": {
+      "target": {
+        "id": "9a81fb7375f196a65aa538d08265d992",
+        "url": "https://gorodtroika.ru/bonus-plus/coupons/19811",
+        "partner": "Термопарк",
+        "program": "Город / Тройка",
+        "source_id": "gorod_public"
+      }
+    },
+    "d052cf9492d3b0aaf5d0929661d041bc": {
+      "target": {
+        "id": "d052cf9492d3b0aaf5d0929661d041bc",
+        "url": "https://gorodtroika.ru/bonus-plus/coupons/19808",
+        "partner": "Термопарк",
+        "program": "Город / Тройка",
+        "source_id": "gorod_public"
+      }
     }
   },
   "usage": {
-    "date": "2026-10-28",
+    "date": "2026-10-29",
     "attempts": 50
   },
   "provider_not_before": 1792886400.4816973,
-  "last_request_at": 1793167146.7321572,
+  "last_request_at": 1793255133.001029,
   "providers": {
     "tokenharbor": {
       "usage": {
-        "date": "2026-10-28",
+        "date": "2026-10-29",
         "attempts": 1
       },
-      "provider_not_before": 1793170749.2894735,
-      "last_request_at": 1793167149.2894702
+      "provider_not_before": 1793258733.8149533,
+      "last_request_at": 1793255133.81495
     }
   }
 }
