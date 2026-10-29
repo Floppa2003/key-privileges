@@ -1,0 +1,65 @@
+name: Experiential free access root-cause diagnostic
+on:
+  push:
+    branches: [loyalty/deepseek-capacity-recheck-20261028]
+    paths: [.github/workflows/experiential-access-debug.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: experiential-free-access-debug
+  cancel-in-progress: false
+jobs:
+  diagnose:
+    if: github.repository == 'Floppa2003/key-privileges' && github.ref == 'refs/heads/loyalty/deepseek-capacity-recheck-20261028'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Check free-only request boundary without credentials
+        run: |
+          python - <<'PY'
+          import sys
+          sys.path.insert(0,'diagnostics')
+          import experiential_access_debug as d
+          for model in d.MODELS:
+              p=d.minimal_payload(model)
+              assert p['model'].endswith(':free')
+              assert set(p)=={'model','messages','max_tokens'}
+          try:
+              d.minimal_payload('unapproved-paid-model')
+          except ValueError:
+              pass
+          else:
+              raise AssertionError('paid model was allowed')
+          assert d.classify(403,{'error':{'code':'model_not_granted'}})=='free_access_denied'
+          assert d.classify(200,{'choices':[{'message':{'content':'OK'}}]})=='generation_received'
+          assert d.signal_fields({'email':'private@example.test','org_id':'private','api_key':'secret','payment_verified':False})=={'payment_verified':False}
+          print('PASS: exact free routes, minimal payload, denial/success classification, identity filtering')
+          PY
+      - name: Read own account and reproduce with minimal free requests
+        env:
+          EXPERIENTAL_API_KEY: ${{ secrets.EXPERIENTAL_API_KEY }}
+        run: python diagnostics/experiential_access_debug.py
+      - name: Preserve executed code and fingerprints
+        if: always()
+        run: |
+          mkdir -p access-debug-output/code
+          cp diagnostics/experiential_access_debug.py access-debug-output/code/
+          cp .github/workflows/experiential-access-debug.yml access-debug-output/code/
+          git rev-parse HEAD > access-debug-output/commit.txt
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          root=Path('access-debug-output')
+          (root/'SHA256SUMS.json').write_text(json.dumps({str(p.relative_to(root)):hashlib.sha256(p.read_bytes()).hexdigest() for p in root.rglob('*') if p.is_file() and p.name!='SHA256SUMS.json'},indent=2))
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: experiential-access-debug-${{ github.run_id }}
+          path: access-debug-output/
+          retention-days: 14
