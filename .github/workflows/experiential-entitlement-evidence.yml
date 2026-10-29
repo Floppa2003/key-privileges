@@ -1,0 +1,111 @@
+name: Experiential entitlement evidence readback
+on:
+  push:
+    branches: [loyalty/deepseek-capacity-recheck-20261028]
+    paths: [.github/workflows/experiential-entitlement-evidence.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          repository: Floppa2003/key-privileges
+          run-id: '40890300378'
+          artifact-ids: '12904691800'
+          github-token: ${{ github.token }}
+          path: prior
+          merge-multiple: true
+      - name: Verify prior results and read exact promotion/account metadata
+        env:
+          EXPERIENTAL_API_KEY: ${{ secrets.EXPERIENTAL_API_KEY }}
+        run: |
+          python - <<'PY'
+          import base64,hashlib,json,os,re,urllib.request,urllib.error,urllib.parse
+          from pathlib import Path
+          key=os.environ.pop('EXPERIENTAL_API_KEY','').strip()
+          private=[key] if key else []
+          root=Path('prior').resolve()
+          manifest=json.loads((root/'SHA256SUMS.json').read_text())
+          for name,digest in manifest.items():
+              p=(root/name).resolve()
+              assert p.is_relative_to(root)
+              assert hashlib.sha256(p.read_bytes()).hexdigest()==digest
+          old=json.loads((root/'report.json').read_text())
+          report={'verified_files':len(manifest),'generation_attempts':0,'account_mutations':0,'prior_probes':[r for r in old['calls'] if r['method']=='POST'],'reads':[]}
+          class NoRedirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self,*args,**kwargs): return None
+          opener=urllib.request.build_opener(NoRedirect)
+          def scrub(text):
+              for secret in private:
+                  for v in (secret,json.dumps(secret)[1:-1],base64.b64encode(secret.encode()).decode()):
+                      text=text.replace(v,'[REDACTED]')
+              return re.sub(r'\bxpl_[A-Za-z0-9_-]+','[REDACTED]',text)
+          def get(label,path,auth=True):
+              headers={'Accept':'application/json'}
+              if auth: headers['Authorization']='Bearer '+key
+              req=urllib.request.Request('https://api.experientiallabs.ai'+path,headers=headers)
+              row={'label':label,'authenticated':auth}
+              try:
+                  try: response=opener.open(req,timeout=45)
+                  except urllib.error.HTTPError as exc: response=exc
+                  with response:
+                      row['http_status']=response.status
+                      raw=response.read(6000000)
+                      row['response_sha256']=hashlib.sha256(raw).hexdigest()
+                      data=json.loads(raw)
+                  if isinstance(data,dict):
+                      row['top_level_fields']=sorted(data)
+                      if 'error' in data: row['error']=data['error']
+                      if 'detail' in data: row['detail']=data['detail']
+              except (ValueError,urllib.error.URLError,TimeoutError,OSError) as exc:
+                  row['transport_or_parse_error']=type(exc).__name__;data={}
+              report['reads'].append(row)
+              return row,data
+          def numeric_state(value,path=''):
+              result={}
+              if isinstance(value,dict):
+                  for k,v in value.items():
+                      if re.search(r'(?:name|email|secret|token|hash|_id|^id$)',k,re.I): continue
+                      child=(path+'.'+k).lstrip('.')
+                      if isinstance(v,(dict,list)): result.update(numeric_state(v,child))
+                      elif isinstance(v,(bool,int,float)) or v is None: result[child]=v
+                      elif re.search(r'(?:plan|tier|status|currency|balance|credit|limit|usage|spend|payment|verify)',k,re.I):
+                          result[child]=v
+              elif isinstance(value,list):
+                  result[path+'.count']=len(value)
+              return result
+          if not key: raise RuntimeError('missing key')
+          row,who=get('identity','/api/whoami')
+          org=who.get('org_id') if isinstance(who,dict) else None
+          if org: private.append(org)
+          row['is_provisioning']=who.get('is_provisioning')
+          for label,path in [('key_summary','/api/v1/key'),('credits','/api/v1/credits')]:
+              row,data=get(label,path);row['state']=numeric_state(data)
+          if org:
+              row,data=get('usage_org','/api/gateway/usage/daily?'+urllib.parse.urlencode({'org_id':org,'scope':'org'}))
+              row['state']=numeric_state(data)
+          for model in ('deepseek-v4.1-flash','deepseek-v4.1-flash-1017','clef-flash'):
+              for auth in (False,True):
+                  row,data=get('promotion:'+model,'/api/models/'+model,auth)
+                  row['promotion_metadata']={k:data.get(k) for k in ('promotional_listed','promotions','ads_on_all_requests')}
+                  row['plan_discounts']=[{'provider':p.get('provider'), 'status':p.get('status'), 'requires_payment':p.get('requires_payment'), 'requires_purchase':p.get('requires_purchase'), 'discounts':p.get('plan_discounts')} for p in data.get('providers',[])]
+          row,data=get('compatible_catalog','/api/v1/models')
+          models=data.get('data',[]) if isinstance(data,dict) else []
+          row['count']=len(models)
+          row['deepseek_and_free_routes']=[{k:m.get(k) for k in ('id','canonical_slug','pricing','architecture')} for m in models if 'deepseek-v4.1-flash' in str(m.get('canonical_slug',m.get('id',''))) or str(m.get('id','')).endswith(':free')]
+          out=Path('entitlement-output');out.mkdir()
+          text=scrub(json.dumps(report,ensure_ascii=False,indent=2))
+          (out/'report.json').write_text(text)
+          print(text)
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: experiential-entitlement-${{ github.run_id }}
+          path: entitlement-output/
+          retention-days: 14
