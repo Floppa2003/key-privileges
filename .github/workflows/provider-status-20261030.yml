@@ -1,0 +1,171 @@
+name: Provider status audit 30 October
+on:
+  push:
+    branches: [loyalty/deepseek-capacity-recheck-20261028]
+    paths: [.github/workflows/provider-status-20261030.yml]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: provider-status-audit-20261030
+  cancel-in-progress: false
+jobs:
+  checks:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {persist-credentials: false}
+      - name: Validate diagnostic without credentials
+        run: |
+          python -m pip install -r loyalty/requirements.txt Pillow
+          python -m py_compile diagnostics/provider_status_20261030.py
+          python - <<'PY'
+          import sys
+          sys.path.insert(0,'diagnostics')
+          import provider_status_20261030 as a
+          doc=a.smoke()
+          for provider,(_,models) in a.ROUTES.items():
+              for model in models:
+                  p=a.request_payload(doc,provider,model)
+                  assert not any(k in p for k in ('tools','web_search_options','plugins'))
+                  assert len(doc['images'])==1
+          try: a.request_payload(doc,'orcarouter','deepseek/deepseek-v4.1-flash')
+          except ValueError: pass
+          else: raise AssertionError('paid route accepted')
+          assert a.zero_price({'pricing':{'prompt':'0','completion':'0'}})
+          assert not a.zero_price({'pricing':{'prompt':'0','completion':'0.1'}})
+          print('PASS: payload creation, free route boundary, zero-price detection, no search')
+          PY
+  probe:
+    needs: checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 16
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        provider: [orcarouter, tokenharbor, openrouter, opencode, gemini, vercel, experiential, kilo, cohere, scaleway, nvidia, nebius]
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {persist-credentials: false}
+      - name: Install without credentials
+        run: python -m pip install -r loyalty/requirements.txt Pillow
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        continue-on-error: true
+        with:
+          repository: Floppa2003/key-privileges
+          run-id: '40077128489'
+          artifact-ids: '12554050020'
+          github-token: ${{ github.token }}
+          path: saved-inputs
+          merge-multiple: true
+      - name: One-shot free routes and account metadata
+        env:
+          LLM_PROBE_KEY: ${{ matrix.provider == 'orcarouter' && (secrets.ORCAROUTER_API_KEY || vars.ORCAROUTER_API_KEY) || matrix.provider == 'tokenharbor' && (secrets.TOKENHARBOR_API_KEY || vars.TOKENHARBOR_API_KEY) || matrix.provider == 'openrouter' && (secrets.OPENROUTER_API_KEY || vars.OPENROUTER_API_KEY) || matrix.provider == 'opencode' && (secrets.OPENCODE_API_KEY || vars.OPENCODE_API_KEY) || matrix.provider == 'gemini' && (secrets.GEMINI_API_KEY || vars.GEMINI_API_KEY) || matrix.provider == 'vercel' && (secrets.AI_GATEWAY_API_KEY || vars.AI_GATEWAY_API_KEY) || matrix.provider == 'experiential' && (secrets.EXPERIENTAL_API_KEY || vars.EXPERIENTAL_API_KEY) || matrix.provider == 'kilo' && (secrets.KILO_API_KEY || vars.KILO_API_KEY) || matrix.provider == 'cohere' && (secrets.COHERE_API_KEY || vars.COHERE_API_KEY) || matrix.provider == 'scaleway' && (secrets.SCALEWAY_API_KEY || vars.SCALEWAY_API_KEY) || matrix.provider == 'nvidia' && (secrets.NVIDIA_API_KEY || vars.NVIDIA_API_KEY) || matrix.provider == 'nebius' && (secrets.NEBIUS_API_KEY || vars.NEBIUS_API_KEY) || '' }}
+        run: python diagnostics/provider_status_20261030.py '${{ matrix.provider }}' --inputs saved-inputs/captures/inputs.json --out output
+      - name: Fingerprint output and executed code
+        if: always()
+        run: |
+          mkdir -p output/code
+          cp diagnostics/provider_status_20261030.py diagnostics/deepseek_capacity_probe.py output/code/
+          git rev-parse HEAD > output/commit.txt
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          r=Path('output')
+          (r/'SHA256SUMS.json').write_text(json.dumps({str(p.relative_to(r)):hashlib.sha256(p.read_bytes()).hexdigest() for p in r.rglob('*') if p.is_file() and p.name!='SHA256SUMS.json'},indent=2))
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: provider-audit-${{ matrix.provider }}-${{ github.run_id }}
+          path: output/
+          retention-days: 30
+  production:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Read latest daily output and state without model keys
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CODEX_AUTH_PRESENT: ${{ secrets.CODEX_AUTH_JSON != '' }}
+          OLLAMA_KEY_PRESENT: ${{ secrets.OLLAMA_API_KEY != '' }}
+          NARA_KEY_PRESENT: ${{ secrets.NARA_API_KEY != '' }}
+          INFRON_KEY_PRESENT: ${{ secrets.INFRON_API_KEY != '' }}
+        run: |
+          python - <<'PY'
+          import collections,hashlib,io,json,os,subprocess,zipfile
+          from pathlib import Path
+          repo=os.environ['GITHUB_REPOSITORY'];out=Path('production');out.mkdir()
+          def api(p,raw=False):
+              cmd=['gh','api',f'repos/{repo}/{p}']
+              if raw:cmd+=['-H','Accept: application/vnd.github.raw+json']
+              return subprocess.check_output(cmd,timeout=90)
+          report={'model_requests':0,'queue_mutations':0,'credential_presence':{k:os.environ.get(k) for k in ('CODEX_AUTH_PRESENT','OLLAMA_KEY_PRESENT','NARA_KEY_PRESENT','INFRON_KEY_PRESENT')}}
+          ref=json.loads(api('git/ref/heads/main'));report['main_sha']=ref['object']['sha']
+          runs=json.loads(api('actions/runs?branch=main&per_page=100'))['workflow_runs']
+          daily=[r for r in runs if r.get('path')=='.github/workflows/merchant-llm-daily.yml']
+          report['daily_runs']=[{k:r.get(k) for k in ('id','created_at','status','conclusion','head_sha','html_url')} for r in daily[:3]]
+          if daily:
+              r=daily[0];arts=json.loads(api(f"actions/runs/{r['id']}/artifacts"))['artifacts']
+              for art in arts:
+                  if art.get('expired') or not art['name'].startswith('merchant-llm-daily-'):continue
+                  b=api(f"actions/artifacts/{art['id']}/zip");report['artifact']={'id':art['id'],'sha256':hashlib.sha256(b).hexdigest()}
+                  with zipfile.ZipFile(io.BytesIO(b)) as z:
+                      for n in z.namelist():
+                          if n.endswith(('capture-summary.json','results/summary.json','catalog-provenance.json')):
+                              data=json.loads(z.read(n));report[n]=data
+                          if n.endswith('inference.log'):
+                              (out/'inference.log').write_bytes(z.read(n))
+                  break
+          try:
+              raw=api('contents/state.json?ref=loyalty%2Fllm-state',True);state=json.loads(raw)
+              report['state_sha256']=hashlib.sha256(raw).hexdigest();report['state_top_keys']=list(state)
+              report['state_sizes']={k:len(v) for k,v in state.items() if isinstance(v,(list,dict))}
+              for k,v in state.items():
+                  if k in ('providers','budgets','provider_state','provider_budgets','updated_at','version'):report['state_'+k]=v
+                  if isinstance(v,dict) and len(v)>100:
+                      vals=[x for x in v.values() if isinstance(x,dict)];report['state_'+k+'_status_counts']=dict(collections.Counter(x.get('status','missing') for x in vals));report['state_'+k+'_sample_keys']=list(vals[0]) if vals else []
+          except Exception as e:report['state_error']=type(e).__name__
+          (out/'report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2))
+          print(json.dumps({k:v for k,v in report.items() if not k.endswith('summary.json')},ensure_ascii=False,indent=2))
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: provider-audit-production-${{ github.run_id }}
+          path: production/
+          retention-days: 30
+  review:
+    needs: [probe, production]
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          pattern: provider-audit-*-${{ github.run_id }}
+          path: evidence
+      - name: Verify artifacts and read actual outcomes without keys
+        run: |
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          root=Path('evidence');out={'verified_hashes':0,'providers':{},'production':{}}
+          for manifest in root.glob('*/SHA256SUMS.json'):
+              for n,d in json.loads(manifest.read_text()).items():
+                  p=(manifest.parent/n).resolve();assert p.is_relative_to(manifest.parent.resolve());assert hashlib.sha256(p.read_bytes()).hexdigest()==d
+                  out['verified_hashes']+=1
+          for p in root.glob('*/summary.json'):
+              d=json.loads(p.read_text());out['providers'][d['provider']]=d
+          for p in root.glob('*production*/report.json'):out['production']=json.loads(p.read_text())
+          Path('review.json').write_text(json.dumps(out,ensure_ascii=False,indent=2))
+          compact={'verified_hashes':out['verified_hashes'],'providers':{k:{x:v for x,v in d.items() if x!='catalog'} for k,d in out['providers'].items()},'production':{k:v for k,v in out['production'].items() if not k.endswith('summary.json')}}
+          print(json.dumps(compact,ensure_ascii=False,indent=2))
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: provider-status-review-${{ github.run_id }}
+          path: review.json
+          retention-days: 30
