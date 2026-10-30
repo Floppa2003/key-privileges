@@ -1,14 +1,21 @@
-name: Daily DeepSeek merchant processing
+name: Daily merchant LLM processing
 on:
   schedule:
-    # OrcaRouter's UTC-day quota resets at midnight; 03:05 Europe/Moscow.
+    # UTC-day quotas reset at midnight; 03:05 Europe/Moscow.
     - cron: '5 0 * * *'
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/merchant-llm-daily.yml
+      - loyalty/merchant_channels.py
+      - loyalty/merchant_extract.py
+      - loyalty/merchant_queue.py
   workflow_dispatch:
     inputs:
       max_requests:
-        description: Maximum total attempts (1-250); Orca 50/day, Harbor local ceiling 200/day
+        description: Maximum total attempts (1-700); provider and credit safety limits still apply
         type: string
-        default: '250'
+        default: '500'
       max_pages:
         description: Maximum current public pages to capture (1-300)
         type: string
@@ -17,6 +24,7 @@ permissions:
   contents: read
   actions: read
 concurrency:
+  # Preserve the original group so old and new executions cannot race the state branch.
   group: merchant-daily-orcarouter
   cancel-in-progress: false
 jobs:
@@ -47,6 +55,7 @@ jobs:
           set -euo pipefail
           mkdir -p llm-output incoming
           git rev-parse HEAD > llm-output/commit.txt
+          cp loyalty/merchant_channels.py llm-output/channel-config.py
           python -m pip install -r loyalty/requirements.txt
           sudo apt-get update -qq && sudo apt-get install -y poppler-utils
           python -m playwright install --with-deps chromium
@@ -88,16 +97,24 @@ jobs:
           PY
       - name: Capture current full pages and rendered PDFs, without API or Google credentials
         env:
-          MAX_PAGES: ${{ inputs.max_pages || '300' }}
+          MAX_PAGES: ${{ github.event_name == 'push' && '4' || inputs.max_pages || '300' }}
         run: |
+          providers=$(PYTHONPATH=loyalty python -c 'import merchant_channels as c; print(",".join(c.DEFAULT_PROVIDERS))')
           python loyalty/merchant_queue.py prepare --catalog incoming/normalized.json \
-            --state llm-state/state.json --out llm-output/captures --max-pages "$MAX_PAGES" --providers orcarouter,tokenharbor \
+            --state llm-state/state.json --out llm-output/captures --max-pages "$MAX_PAGES" --providers "$providers" \
             > llm-output/capture.log 2>&1
-      - name: Process changed documents through independent free DeepSeek routes
+      - name: Process shared queue through confirmed channels with allowance guards
         env:
           ORCAROUTER_API_KEY: ${{ secrets.ORCAROUTER_API_KEY }}
           TOKENHARBOR_API_KEY: ${{ secrets.TOKENHARBOR_API_KEY }}
-          MAX_REQUESTS: ${{ inputs.max_requests || '250' }}
+          EXPERIENTAL_API_KEY: ${{ secrets.EXPERIENTAL_API_KEY }}
+          KILO_API_KEY: ${{ secrets.KILO_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          AI_GATEWAY_API_KEY: ${{ secrets.AI_GATEWAY_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_FREE_TIER_KEY_SHA256: ${{ vars.GEMINI_FREE_TIER_KEY_SHA256 }}
+          GEMINI_FREE_TIER_VERIFIED_UNTIL: ${{ vars.GEMINI_FREE_TIER_VERIFIED_UNTIL }}
+          MAX_REQUESTS: ${{ github.event_name == 'push' && '4' || inputs.max_requests || '500' }}
         run: |
           python loyalty/merchant_queue.py pool --manifest llm-output/captures/manifest.json \
             --state llm-state/state.json --out llm-output/results --max-requests "$MAX_REQUESTS" --execute \
@@ -129,9 +146,12 @@ jobs:
         if: always()
         run: |
           python - <<'PY'
-          import json,os
+          import json,os,sys
           from pathlib import Path
-          lines=['## Daily LLM processing','DeepSeek V4.1 Flash / OrcaRouter + Token Harbor; free routes only; no Sheets publication.']
+          sys.path.insert(0,'loyalty')
+          import merchant_channels as channels
+          lines=['## Daily LLM processing', 'Provider order: '+', '.join(channels.DEFAULT_PROVIDERS),
+                 'Free-only routes or audited donated credit; Gemini requires billing evidence; no Sheets publication.']
           for label,path in [('Capture','llm-output/captures/capture-summary.json'),('Extraction','llm-output/results/summary.json')]:
               p=Path(path)
               if p.exists():
