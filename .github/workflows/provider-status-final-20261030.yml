@@ -1,0 +1,162 @@
+name: Final provider audit reconciliation 30 October
+on:
+  push:
+    branches: [loyalty/deepseek-capacity-recheck-20261028]
+    paths: [.github/workflows/provider-status-final-20261030.yml]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  kilo:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {persist-credentials: false}
+      - run: python -m pip install -r loyalty/requirements.txt Pillow
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          repository: Floppa2003/key-privileges
+          run-id: '40077128489'
+          artifact-ids: '12554050020'
+          github-token: ${{ github.token }}
+          path: saved-inputs
+          merge-multiple: true
+      - name: Test exact free multimodal extraction model, not classifier
+        env:
+          LLM_PROBE_KEY: ${{ secrets.KILO_API_KEY || vars.KILO_API_KEY }}
+        run: |
+          python - <<'PY'
+          import json,sys,time
+          from pathlib import Path
+          sys.path.insert(0,'diagnostics');import provider_status_20261030 as a
+          raw=json.loads(Path('saved-inputs/captures/inputs.json').read_text());docs=raw if isinstance(raw,list) else raw['documents']
+          audit=a.Audit('kilo',Path('output'));model='nvidia/nemotron-3.5-super-vl:free'
+          original=a.request_payload
+          def payload(doc,p,m):
+              result=original(doc,p,m);result['reasoning']={'enabled':True,'effort':'high'};return result
+          a.request_payload=payload
+          try:
+              if audit.key:
+                  row,data=audit.generate(model,a.smoke(),0)
+                  if row.get('vision_correct') and not a.common.existing.reported_cost_warning(data):
+                      time.sleep(7)
+                      audit.generate(model,next(d for d in docs if d['id']=='muzcomedy'),0)
+              else:audit.report['status']='credential_missing'
+          finally:
+              audit.checkpoint();print(json.dumps(a.clean(audit.report),ensure_ascii=False,indent=2));audit.session.close()
+          PY
+      - name: Fingerprint executed sources and outputs
+        if: always()
+        run: |
+          mkdir -p output/code
+          cp diagnostics/provider_status_20261030.py .github/workflows/provider-status-final-20261030.yml output/code/
+          git rev-parse HEAD > output/commit.txt
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          r=Path('output');(r/'SHA256SUMS.json').write_text(json.dumps({str(p.relative_to(r)):hashlib.sha256(p.read_bytes()).hexdigest() for p in r.rglob('*') if p.is_file() and p.name!='SHA256SUMS.json'},indent=2))
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: final-audit-kilo-${{ github.run_id }}
+          path: output/
+          retention-days: 30
+  accounting:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {persist-credentials: false}
+      - run: python -m pip install -r loyalty/requirements.txt Pillow
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          repository: Floppa2003/key-privileges
+          run-id: '41039061816'
+          artifact-ids: '12969352230'
+          github-token: ${{ github.token }}
+          path: cohere
+          merge-multiple: true
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          repository: Floppa2003/key-privileges
+          run-id: '40077128489'
+          artifact-ids: '12554050020'
+          github-token: ${{ github.token }}
+          path: saved-inputs
+          merge-multiple: true
+      - name: Read raw Cohere output and relevant source sections without new inference
+        run: |
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          r=Path('cohere');manifest=json.loads((r/'SHA256SUMS.json').read_text())
+          for n,h in manifest.items():assert hashlib.sha256((r/n).read_bytes()).hexdigest()==h
+          raw=json.loads((r/'route-0/muzcomedy/response.json').read_text())
+          s=json.loads(Path('saved-inputs/captures/inputs.json').read_text());docs=s if isinstance(s,list) else s['documents'];doc=next(d for d in docs if d['id']=='muzcomedy')
+          text=doc['text'].split('Полный текст:\n',1)[-1]
+          out={'cohere_content':(raw.get('choices') or [{}])[0].get('message',{}).get('content'),'source_full_text':text,'generation_requests':0}
+          Path('account-output').mkdir();Path('account-output/cohere-and-source.json').write_text(json.dumps(out,ensure_ascii=False,indent=2));print(json.dumps(out,ensure_ascii=False,indent=2))
+          PY
+      - name: Read settled Vercel balance
+        env:
+          LLM_PROBE_KEY: ${{ secrets.AI_GATEWAY_API_KEY || vars.AI_GATEWAY_API_KEY }}
+        run: |
+          python - <<'PY'
+          import json,sys
+          from pathlib import Path
+          sys.path.insert(0,'diagnostics');import provider_status_20261030 as a
+          d=a.Audit('vercel',Path('account-output/vercel'))
+          try:
+              value,row=d.read('settled_credits','https://ai-gateway.vercel.sh/v1/credits');d.report['credits']=value
+          finally:d.checkpoint();print(json.dumps(a.clean(d.report),indent=2));d.session.close()
+          PY
+      - name: Read settled Experiential balance and own activity
+        env:
+          LLM_PROBE_KEY: ${{ secrets.EXPERIENTAL_API_KEY || vars.EXPERIENTAL_API_KEY }}
+        run: |
+          python - <<'PY'
+          import json,sys
+          from pathlib import Path
+          sys.path.insert(0,'diagnostics');import provider_status_20261030 as a
+          d=a.Audit('experiential',Path('account-output/experiential'))
+          try:
+              value,row=d.read('settled_credits','https://api.experientiallabs.ai/api/v1/credits');d.report['credits']=value
+              value,row=d.read('settled_usage','https://api.experientiallabs.ai/api/v1/usage?limit=20')
+              d.report['settled_rows']=[{k:v for k,v in x.items() if k in ('created_at','model','provider','real_cost_usd','cost_usd','pricing_known','status','input_tokens','output_tokens','reasoning_tokens')} for x in value.get('data',[]) if isinstance(x,dict)]
+          finally:d.checkpoint();print(json.dumps(a.clean(d.report),indent=2));d.session.close()
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: final-audit-accounting-${{ github.run_id }}
+          path: account-output/
+          retention-days: 30
+  verify:
+    needs: [kilo,accounting]
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          pattern: final-audit-*-${{ github.run_id }}
+          path: evidence
+      - name: Independent readback
+        run: |
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          r=Path('evidence');out={'verified_files':0,'summaries':{},'extracted':{}}
+          for p in r.glob('*/SHA256SUMS.json'):
+              for n,h in json.loads(p.read_text()).items():
+                  f=(p.parent/n).resolve();assert f.is_relative_to(p.parent.resolve());assert hashlib.sha256(f.read_bytes()).hexdigest()==h;out['verified_files']+=1
+          for p in r.rglob('summary.json'):out['summaries'][str(p.relative_to(r))]=json.loads(p.read_text())
+          for p in r.glob('*/route-*/muzcomedy/extracted.json'):out['extracted'][str(p.relative_to(r))]=json.loads(p.read_text())
+          Path('final-readback.json').write_text(json.dumps(out,ensure_ascii=False,indent=2));print(json.dumps(out,ensure_ascii=False,indent=2))
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: final-audit-verified-${{ github.run_id }}
+          path: final-readback.json
+          retention-days: 30
