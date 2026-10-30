@@ -22,6 +22,7 @@ import time
 
 import jsonschema
 import requests
+import merchant_channels as channels
 
 HERE = Path(__file__).resolve().parent
 MODEL = 'deepseek/deepseek-v4.1-flash-free'
@@ -34,6 +35,8 @@ PROVIDERS = {
                     'endpoint': 'https://tokenharbor.ai/v1/chat/completions',
                     'secret': 'TOKENHARBOR_API_KEY'},
 }
+
+PROVIDERS.update(channels.NEW_PROVIDERS)
 
 
 def provider_config(provider: str) -> dict:
@@ -86,7 +89,7 @@ def build_request(target: dict, text: str, images: list[bytes], schema: dict, sy
         # not OrcaRouter's provider-specific reasoning extension.
         result.pop('reasoning')
         result['max_tokens'] = 16384
-    return result
+    return channels.adapt_request(result, provider)
 
 
 
@@ -110,6 +113,7 @@ def reported_cost_warning(data: dict) -> str | None:
 
 
 def parse_final(data: dict, schema: dict, *, provider='orcarouter') -> dict:
+    data = channels.normalize_response(data, provider)
     if not isinstance(data, dict): raise ValueError('response_shape')
     returned = data.get('model')
     if not isinstance(returned, str):
@@ -120,7 +124,10 @@ def parse_final(data: dict, schema: dict, *, provider='orcarouter') -> dict:
     # The request stays on the free route; the actual returned model is preserved.
     orca_snapshot = (provider == 'orcarouter'
                      and returned == 'deepseek-v4-1-flash-economy-261017')
-    if not orca_snapshot and not re.fullmatch(r'deepseekv41flash(?:free|[0-9]{4,8})?', normalized):
+    if provider in channels.NEW_PROVIDERS:
+        if not channels.accepted_model(provider, returned):
+            raise ValueError('returned_model_mismatch')
+    elif not orca_snapshot and not re.fullmatch(r'deepseekv41flash(?:free|[0-9]{4,8})?', normalized):
         raise ValueError('returned_model_mismatch')
     choices = data.get('choices')
     if not isinstance(choices, list) or len(choices) != 1 or not isinstance(choices[0], dict) or choices[0].get('finish_reason') != 'stop':
@@ -186,8 +193,10 @@ The retry budget bounds admission of new attempts/waits; socket timeouts bound I
     if not key.strip() or any(ord(c) < 33 for c in key):
         raise ValueError('missing_or_invalid_actions_secret')
     route = provider_config(provider)
-    if payload.get('model') != route['model']: raise ValueError('unapproved_request_model')
-    allowed = {'model', 'stream', 'temperature', 'max_tokens', 'reasoning', 'messages'}
+    if channels.request_model(payload, provider) != route['model']:
+        raise ValueError('unapproved_request_model')
+    allowed = ({'systemInstruction', 'contents', 'generationConfig'} if provider == 'gemini' else
+               {'model', 'stream', 'temperature', 'max_tokens', 'reasoning', 'messages'})
     if set(payload) - allowed:
         raise ValueError('unexpected_request_options')
     body = json.dumps(payload, ensure_ascii=False, allow_nan=False).encode('utf-8')
@@ -216,8 +225,11 @@ The retry budget bounds admission of new attempts/waits; socket timeouts bound I
             row = {'attempt': number, 'request_body_sha256': result['request_body_sha256']}
             call_start = monotonic()
             try:
-                response = session.post(route['endpoint'], headers={'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key},
-                    data=body, timeout=(min(10, remaining / 2), min(180 if provider == 'tokenharbor' else 90, remaining / 2)), allow_redirects=False)
+                headers = {'Content-Type': 'application/json'}
+                headers.update({'x-goog-api-key': key} if provider == 'gemini' else {'Authorization': 'Bearer ' + key})
+                response = session.post(route['endpoint'], headers=headers, data=body,
+                    timeout=(min(10, remaining / 2), min(180 if provider != 'orcarouter' else 90, remaining / 2)),
+                    allow_redirects=False)
             except requests.RequestException as exc:
                 row.update(seconds=monotonic() - call_start, error_type=type(exc).__name__)
                 result.update(status='transport_error', error='unknown_execution_outcome_not_retried')
@@ -237,17 +249,23 @@ The retry budget bounds admission of new attempts/waits; socket timeouts bound I
             except (ValueError, UnicodeError):
                 data = {}
             if response.status_code == 200:
-                if isinstance(data, dict):
-                    row.update(returned_model=data.get('model'), usage=data.get('usage'))
+                try:
+                    normalized_data = channels.normalize_response(data, provider)
+                except (ValueError, TypeError, AttributeError):
+                    normalized_data = {}
+                if isinstance(normalized_data, dict):
+                    row.update(returned_model=normalized_data.get('model'), usage=normalized_data.get('usage'))
+                    result['usage'] = normalized_data.get('usage')
                 try:
                     obj = parse_final(data, schema, provider=provider)
                     save(out / 'extracted.json', obj)
                     result.pop('error', None)
-                    result.update(status='completed', schema_valid=True, returned_model=data['model'],
-                                  usage=data.get('usage'))
+                    result.update(status='completed', schema_valid=True, returned_model=normalized_data['model'],
+                                  usage=normalized_data.get('usage'))
                 except (ValueError, KeyError, TypeError, AttributeError) as exc:
                     result.update(status='failed_validation', error=str(exc) if isinstance(exc, ValueError) else type(exc).__name__)
-                warning = reported_cost_warning(data)
+                warning = (channels.cost_warning(normalized_data, provider) if provider in channels.NEW_PROVIDERS
+                           else reported_cost_warning(data))
                 if warning:
                     result['stop_batch_reason'] = warning
                     result['warnings'] = [warning]
@@ -360,10 +378,7 @@ def prepare_document(document: dict, out: Path, schema: dict, system: str, *, pr
         name = f'page-{n}.png'; (out / name).write_bytes(raw)
         image_manifest.append({'file': name, 'sha256': hashlib.sha256(raw).hexdigest(), 'bytes': len(raw)})
     payload = build_request(document['target'], document['text'], document['images'], schema, system, provider=provider)
-    brief = copy.deepcopy(payload)
-    for part in brief['messages'][1]['content']:
-        if part.get('type') == 'image_url':
-            part['image_url']['url'] = '[see ordered image manifest]'
+    brief = channels.redact_images(payload, provider)
     save(out / 'request.json', {'payload_without_image_bytes': brief, 'images': image_manifest})
     save(out / 'input.json', {'source': document['source'], 'images': image_manifest,
                             'all_images_sent': True, 'full_text_sent': True, 'publication_allowed': False})

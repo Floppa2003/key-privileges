@@ -13,14 +13,15 @@ import time
 from urllib.parse import urlsplit
 
 import merchant_extract as extractor
+import merchant_channels as channels
 from model import clean_url
 
 HERE = Path(__file__).resolve().parent
 DAILY_REQUESTS = 50
 REQUEST_INTERVAL = 7
 # Harbor's 200/day is OUR workload ceiling, not a claim about its weekly allowance.
-PROVIDER_DAILY_LIMITS = {'orcarouter': DAILY_REQUESTS, 'tokenharbor': 200}
-PROVIDER_INTERVALS = {'orcarouter': REQUEST_INTERVAL, 'tokenharbor': 2}
+PROVIDER_DAILY_LIMITS = {'orcarouter': DAILY_REQUESTS, 'tokenharbor': 200, **channels.DAILY_LIMITS}
+PROVIDER_INTERVALS = {'orcarouter': REQUEST_INTERVAL, 'tokenharbor': 2, **channels.INTERVALS}
 POOL_REQUESTS = sum(PROVIDER_DAILY_LIMITS.values())
 MAX_CAPTURE_PAGES = 300
 
@@ -144,14 +145,23 @@ def process_documents(documents: list[dict], state: dict, state_path: Path, out:
             sleep(wait)
         folder = out / ident
         payload = extractor.prepare_document(document, folder, schema, system, provider=provider)
-        # Reserve before IO. An interrupted request must not silently restore its quota.
-        reserved = min(extractor.MAX_ATTEMPTS, remaining)
+        check = channels.admission(provider, payload, key, ledger, now(), session=session)
+        if not check['allowed']:
+            summary.update(status='deferred', stop_reason=check.get('reason', 'allowance_unverified'),
+                           allowance_check=check, not_attempted=[d['id'] for d in documents[index:]])
+            break
+        # New accounts use one POST per item. This also keeps Kilo's hourly pacing
+        # intact and makes the Vercel worst-case reservation cover exactly one call.
+        reserved = min(1 if provider in channels.NEW_PROVIDERS else extractor.MAX_ATTEMPTS, remaining)
+        channels.reserve_budget(ledger, check, now())
         ledger['usage']['attempts'] += reserved
         ledger['last_request_at'] = now()
         item['status'] = 'in_flight'
         write_state(state_path, state)
         result = extractor.infer(payload, schema, folder / 'direct', key,
                                  session=session, sleep=sleep, max_attempts=reserved, provider=provider)
+        channels.reconcile(provider, ledger, check, result, now())
+        extractor.save(folder / 'direct/summary.json', result)
         attempts = result['http_attempts']
         ledger['usage']['attempts'] -= reserved - attempts
         ledger['last_request_at'] = now()
@@ -188,7 +198,7 @@ def process_documents(documents: list[dict], state: dict, state_path: Path, out:
 def process_pool(documents: list[dict], state: dict, state_path: Path, out: Path,
                  keys: dict, schema: dict, system: str, *, sessions=None,
                  now=time.time, sleep=time.sleep, max_requests=POOL_REQUESTS,
-                 time_budget=4500, providers=('orcarouter', 'tokenharbor')) -> dict:
+                 time_budget=4500, providers=channels.DEFAULT_PROVIDERS) -> dict:
     """Try independent free accounts in order, never regenerate a model answer.
 
     Both routes share the evidence/contract fingerprint, not serving credentials.
@@ -231,7 +241,8 @@ def process_pool(documents: list[dict], state: dict, state_path: Path, out: Path
         no_retry.update(row['id'] for row in result['results']
                         if row['status'] in ('failed_validation', 'transport_error'))
         stop = result.get('stop_reason')
-        if stop in ('credential_echo', 'nonzero_reported_cost', 'invalid_reported_cost'):
+        if stop in ('credential_echo', 'nonzero_reported_cost', 'invalid_reported_cost',
+                    'missing_reported_cost', 'unexpected_byok', 'credit_cost_bound_exceeded'):
             summary['stop_reason'] = stop
             break
         extractor.save(out/'summary.json', summary)
@@ -359,7 +370,7 @@ def main(argv=None) -> int:
     pool.add_argument('--manifest', type=Path, required=True)
     pool.add_argument('--max-requests', type=int, default=POOL_REQUESTS)
     pool.add_argument('--execute', action='store_true')
-    pool.add_argument('--providers', default='orcarouter,tokenharbor')
+    pool.add_argument('--providers', default=','.join(channels.DEFAULT_PROVIDERS))
     prepare.add_argument('--providers', default='orcarouter')
     for command in (prepare, extract, pool):
         command.add_argument('--state', type=Path, required=True)
@@ -396,7 +407,8 @@ def main(argv=None) -> int:
             extractor.save(args.out/'summary.json', result)
     print(json.dumps(result, ensure_ascii=False))
     return 2 if result.get('stop_reason') in ('provider_access_error','provider_nonretryable_error',
-                                             'credential_echo','nonzero_reported_cost','invalid_reported_cost') else 0
+                                             'credential_echo','nonzero_reported_cost','invalid_reported_cost',
+                                             'missing_reported_cost','unexpected_byok','credit_cost_bound_exceeded') else 0
 
 
 if __name__ == '__main__':
