@@ -1,0 +1,51 @@
+name: Read Vercel endpoint pricing
+on:
+  push:
+    branches: [loyalty/confirmed-channels-20261030]
+    paths: [.github/workflows/confirmed-channel-pricing-read.yml]
+permissions:
+  contents: read
+jobs:
+  read:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Read exact model endpoints without inference
+        env:
+          AI_GATEWAY_API_KEY: ${{ secrets.AI_GATEWAY_API_KEY }}
+        run: |
+          python - <<'PY'
+          import json,os,urllib.request,urllib.error
+          from pathlib import Path
+          root=Path('pricing-output');root.mkdir()
+          key=os.environ.pop('AI_GATEWAY_API_KEY')
+          urls=['https://ai-gateway.vercel.sh/v1/models/nvidia/nemotron-3.5-super-vl/endpoints',
+                'https://ai-gateway.vercel.sh/v1/models/nvidia/nemotron-3.5-super-vl']
+          for i,url in enumerate(urls):
+              req=urllib.request.Request(url,headers={'Authorization':'Bearer '+key,'Accept':'application/json'})
+              try:
+                  with urllib.request.urlopen(req,timeout=30) as r: status=r.status;raw=r.read()
+              except urllib.error.HTTPError as e:status=e.code;raw=e.read()
+              raw=raw.replace(key.encode(),b'[REDACTED]')
+              (root/f'{i}.json').write_bytes(raw)
+              print(url,status,raw.decode()[:24000])
+          PY
+      - name: Read official routing syntax without credentials
+        run: |
+          python - <<'PY'
+          import urllib.request
+          from pathlib import Path
+          url='https://vercel.com/docs/ai-gateway/sdks-and-apis/openai-chat-completions'
+          req=urllib.request.Request(url,headers={'Accept':'text/markdown'})
+          with urllib.request.urlopen(req,timeout=30) as r:text=r.read().decode()
+          Path('pricing-output/official-routing.txt').write_text(text)
+          for term in ('providerOptions','extra_body','only','maxPrice','provider_options'):
+              start=text.find(term)
+              if start>=0:print(term,text[max(0,start-400):start+1600])
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: vercel-pricing-${{ github.run_id }}
+          path: pricing-output/
+          retention-days: 30
