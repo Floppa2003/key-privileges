@@ -1,0 +1,134 @@
+name: Verify confirmed merchant channels
+on:
+  push:
+    branches: [loyalty/confirmed-channels-20261030]
+    paths: [.github/workflows/confirmed-channels-verify.yml]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: confirmed-channels-verify
+  cancel-in-progress: false
+jobs:
+  regression:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {persist-credentials: false, ref: '${{ github.sha }}'}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with: {python-version: '3.12'}
+      - name: Verify final code and scheduled workflow without credentials
+        run: |
+          set -euo pipefail
+          mkdir -p regression-output
+          git rev-parse HEAD > regression-output/commit.txt
+          python -m pip install -r loyalty/requirements.txt PyYAML
+          sudo apt-get update -qq && sudo apt-get install -y poppler-utils
+          python -m unittest discover -s loyalty/tests -v > regression-output/python.log 2>&1
+          node --test key/refresh.test.mjs > regression-output/node.log 2>&1
+          python - <<'PY'
+          import pathlib,yaml,sys
+          sys.path.insert(0,'loyalty')
+          import merchant_channels as c
+          import merchant_queue as q
+          path=pathlib.Path('.github/workflows/merchant-llm-daily.yml')
+          value=yaml.load(path.read_text(),Loader=yaml.BaseLoader)
+          assert value['on']['schedule']==[{'cron':'5 0 * * *'}]
+          assert value['concurrency']['group']=='merchant-daily-orcarouter'
+          assert value['on']['workflow_dispatch']['inputs']['max_requests']['default']=='500'
+          assert q.POOL_REQUESTS==700
+          assert tuple(c.DEFAULT_PROVIDERS)==('orcarouter','experiential','kilo','openrouter','vercel','gemini','tokenharbor')
+          steps=value['jobs']['process']['steps']
+          process=next(x for x in steps if x.get('name','').startswith('Process shared queue'))
+          for p in c.NEW_PROVIDERS:
+              assert c.NEW_PROVIDERS[p]['secret'] in process['env']
+          assert "github.event_name == 'push' && '4'" in process['env']['MAX_REQUESTS']
+          assert 'sheets_normalized' not in path.read_text()
+          print('PASS: exact seven-channel order, unchanged cron/concurrency, credential wiring, bounded deploy, no Sheets')
+          PY
+          git diff --check
+          tail -8 regression-output/python.log
+          tail -8 regression-output/node.log
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: channel-regression-${{ github.run_id }}
+          path: regression-output/
+          retention-days: 30
+  canary:
+    needs: regression
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {persist-credentials: false, ref: '${{ github.sha }}'}
+      - name: Install dependencies and obtain frozen evidence without model keys
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python -m pip install -r loyalty/requirements.txt
+          gh api repos/Floppa2003/key-privileges/actions/artifacts/12554050020/zip > evidence.zip
+          echo '39a4d00884c8c421a60a753553dc0b7ae368a769c62df3904b3538ef0fc11948  evidence.zip' | sha256sum -c -
+          python - <<'PY'
+          import zipfile
+          from pathlib import Path
+          with zipfile.ZipFile('evidence.zip') as z:
+              assert z.testzip() is None
+              Path('inputs.json').write_bytes(z.read('captures/inputs.json'))
+          PY
+      - name: One real document per active added channel through production queue
+        env:
+          EXPERIENTAL_API_KEY: ${{ secrets.EXPERIENTAL_API_KEY }}
+          KILO_API_KEY: ${{ secrets.KILO_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          AI_GATEWAY_API_KEY: ${{ secrets.AI_GATEWAY_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_FREE_TIER_KEY_SHA256: ${{ vars.GEMINI_FREE_TIER_KEY_SHA256 }}
+          GEMINI_FREE_TIER_VERIFIED_UNTIL: ${{ vars.GEMINI_FREE_TIER_VERIFIED_UNTIL }}
+        run: python diagnostics/confirmed_channels_canary.py --inputs inputs.json --out canary-output
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: channel-canary-${{ github.run_id }}
+          path: canary-output/
+          retention-days: 30
+  readback:
+    if: always()
+    needs: [regression, canary]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          pattern: channel-*-${{ github.run_id }}
+          path: evidence
+          merge-multiple: false
+      - name: Independently read saved outputs without model credentials
+        run: |
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          root=Path('evidence')
+          report=next(root.rglob('canary-report.json'))
+          manifests=list(root.rglob('SHA256SUMS.json'))
+          assert manifests
+          count=0
+          for p in manifests:
+              for name,digest in json.loads(p.read_text()).items():
+                  f=(p.parent/name).resolve()
+                  assert f.is_relative_to(p.parent.resolve())
+                  assert hashlib.sha256(f.read_bytes()).hexdigest()==digest
+                  count+=1
+          data=json.loads(report.read_text())
+          assert data['production_state_changed'] is False and data['publication_allowed'] is False
+          assert data['all_four_completed'] is True
+          for p,value in data['providers'].items():
+              assert value['http_attempts']==1 and value['completed']==1
+              state=json.loads((report.parent/(p+'-state.json')).read_text())
+              item=state['items']['muzcomedy']
+              assert item['extracted']==value['extracted'] and item['inferred_provider']==p
+              assert item['publication_allowed'] is False
+          print(json.dumps({'verified_files':count,'canary':data},ensure_ascii=False,indent=2))
+          PY
