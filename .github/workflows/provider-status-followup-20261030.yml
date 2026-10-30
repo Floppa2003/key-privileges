@@ -1,0 +1,175 @@
+name: Provider status focused followup 30 October
+on:
+  push:
+    branches: [loyalty/deepseek-capacity-recheck-20261028]
+    paths: [.github/workflows/provider-status-followup-20261030.yml]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          repository: Floppa2003/key-privileges
+          run-id: '41037993591'
+          pattern: provider-audit-*-41037993591
+          github-token: ${{ github.token }}
+          path: evidence
+      - name: Read completed outputs and production counters
+        run: |
+          python - <<'PY'
+          import collections,hashlib,json
+          from pathlib import Path
+          root=Path('evidence');out={'verified_files':0,'documents':{},'models':{},'production':{}}
+          for p in root.glob('*/SHA256SUMS.json'):
+              for n,h in json.loads(p.read_text()).items():
+                  f=(p.parent/n).resolve();assert f.is_relative_to(p.parent.resolve());assert hashlib.sha256(f.read_bytes()).hexdigest()==h;out['verified_files']+=1
+          for p in root.glob('*/route-*/muzcomedy/extracted.json'):
+              out['documents'][str(p.relative_to(root))]=json.loads(p.read_text())
+          for p in root.glob('*/summary.json'):
+              d=json.loads(p.read_text());provider=d['provider']
+              if provider in ('kilo','vercel','experiential'):
+                  out['models'][provider]=[m for m in d.get('catalog',[]) if str(m.get('id','')).endswith((':free','-free'))]
+          p=next(root.glob('*production*/report.json'));prod=json.loads(p.read_text())
+          for k,d in prod.items():
+              if not k.endswith('summary.json'):continue
+              if not isinstance(d,dict):continue
+              row={a:b for a,b in d.items() if not isinstance(b,(dict,list))}
+              row['fields']=list(d)
+              for a,b in d.items():
+                  if isinstance(b,list):
+                      row[a+'_length']=len(b)
+                      if b and all(isinstance(x,dict) for x in b):
+                          row[a+'_item_fields']=list(b[0]);row[a+'_status_counts']=dict(collections.Counter(str(x.get('status')) for x in b));row[a+'_provider_status_counts']=dict(collections.Counter(str(x.get('provider'))+':'+str(x.get('status')) for x in b))
+                          row[a+'_error_counts']=dict(collections.Counter(str(x.get('error_type',x.get('error')))[:250] for x in b if x.get('status') not in ('completed','captured','ok','cached')))
+                  if isinstance(b,dict) and len(b)<15:row[a]=b
+              out['production'][k]=row
+          Path('focused-readback.json').write_text(json.dumps(out,ensure_ascii=False,indent=2));print(json.dumps(out,ensure_ascii=False,indent=2))
+          PY
+      - name: Read actual OpenRouter daily allowance without inference
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY || vars.OPENROUTER_API_KEY }}
+        run: |
+          python - <<'PY'
+          import hashlib,json,os,urllib.request
+          from datetime import datetime,timezone
+          from pathlib import Path
+          key=os.environ.pop('OPENROUTER_API_KEY','')
+          req=urllib.request.Request('https://openrouter.ai/api/v1/key',headers={'Authorization':'Bearer '+key,'Accept':'application/json'})
+          with urllib.request.urlopen(req,timeout=30) as r:
+              raw=r.read();d=json.loads(raw).get('data',{})
+          fields=('is_free_tier','limit','limit_remaining','usage','usage_daily','usage_weekly','usage_monthly','free_model_daily_requests')
+          out={'checked_at':datetime.now(timezone.utc).isoformat(),'http_status':200,'response_sha256':hashlib.sha256(raw).hexdigest(),'limits':{k:d.get(k) for k in fields},'generation_requests':0}
+          text=json.dumps(out,indent=2);assert not key or key not in text
+          Path('openrouter-quota.json').write_text(text);print(text)
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: provider-focused-readback-${{ github.run_id }}
+          path: |
+            focused-readback.json
+            openrouter-quota.json
+          retention-days: 30
+  targeted:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    strategy:
+      fail-fast: false
+      matrix:
+        provider: [vercel, cohere]
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {persist-credentials: false}
+      - run: python -m pip install -r loyalty/requirements.txt
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          repository: Floppa2003/key-privileges
+          run-id: '40077128489'
+          artifact-ids: '12554050020'
+          github-token: ${{ github.token }}
+          path: saved-inputs
+          merge-multiple: true
+      - name: Targeted requests with model-specific output cap
+        env:
+          PROVIDER: ${{ matrix.provider }}
+          LLM_PROBE_KEY: ${{ matrix.provider == 'vercel' && (secrets.AI_GATEWAY_API_KEY || vars.AI_GATEWAY_API_KEY) || matrix.provider == 'cohere' && (secrets.COHERE_API_KEY || vars.COHERE_API_KEY) || '' }}
+        run: |
+          python - <<'PY'
+          import json,os,sys
+          from pathlib import Path
+          sys.path.insert(0,'diagnostics');import provider_status_20261030 as a
+          provider=os.environ['PROVIDER']
+          raw=json.loads(Path('saved-inputs/captures/inputs.json').read_text());inputs={'documents':raw} if isinstance(raw,list) else raw
+          audit=a.Audit(provider,Path('focused-output'))
+          try:
+              if provider=='vercel':
+                  a.ROUTES['vercel']=(a.ROUTES['vercel'][0],['nvidia/nemotron-3.5-super-vl','xiaomi/mimo-v2.6-flash','zai/glm-5.3-flash','minimax/minimax-m3.1-flash','google/gemini-2.5-flash'])
+                  data,row=audit.read('full_catalog','https://ai-gateway.vercel.sh/v1/models')
+                  selected=set(a.ROUTES['vercel'][1])|{'nvidia/nemotron-3.5-lightning-free','reflection/beam-free'}
+                  a.save(Path('focused-output/catalog-selected.json'),[m for m in a.model_rows(data) if m.get('id') in selected])
+                  audit.run(inputs)
+              else:
+                  original=a.request_payload
+                  def bounded(doc,p,m):
+                      payload=original(doc,p,m);payload['max_tokens']=min(payload['max_tokens'],8192);return payload
+                  a.request_payload=bounded
+                  doc=next(d for d in inputs['documents'] if d['id']=='muzcomedy')
+                  audit.report['diagnostic_change']='Only max_tokens reduced from rejected 16384 to provider maximum 8192. Source, prompt, schema and images unchanged.'
+                  if audit.key:audit.generate('command-a-vision-07-2025',doc,0)
+                  else:audit.report['status']='credential_missing'
+          finally:
+              audit.checkpoint();print(json.dumps(a.clean(audit.report),ensure_ascii=False,indent=2));audit.session.close()
+          PY
+      - name: Preserve exact followup and fingerprint outputs
+        if: always()
+        run: |
+          mkdir -p focused-output/code
+          cp diagnostics/provider_status_20261030.py .github/workflows/provider-status-followup-20261030.yml focused-output/code/
+          git rev-parse HEAD > focused-output/commit.txt
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          r=Path('focused-output');(r/'SHA256SUMS.json').write_text(json.dumps({str(p.relative_to(r)):hashlib.sha256(p.read_bytes()).hexdigest() for p in r.rglob('*') if p.is_file() and p.name!='SHA256SUMS.json'},indent=2))
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: provider-focused-${{ matrix.provider }}-${{ github.run_id }}
+          path: focused-output/
+          retention-days: 30
+  verify:
+    needs: [inspect, targeted]
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          pattern: provider-focused-*-${{ github.run_id }}
+          path: evidence
+      - name: Independent final readback without provider keys
+        run: |
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          root=Path('evidence');out={'verified_files':0,'providers':{},'documents':{}}
+          for p in root.glob('*/SHA256SUMS.json'):
+              for n,h in json.loads(p.read_text()).items():
+                  f=(p.parent/n).resolve();assert f.is_relative_to(p.parent.resolve());assert hashlib.sha256(f.read_bytes()).hexdigest()==h;out['verified_files']+=1
+          for p in root.glob('*/summary.json'):
+              d=json.loads(p.read_text());d.pop('catalog',None);out['providers'][d['provider']]=d
+          for p in root.glob('*/route-*/muzcomedy/extracted.json'):out['documents'][str(p.relative_to(root))]=json.loads(p.read_text())
+          for name in ('focused-readback.json','openrouter-quota.json','catalog-selected.json'):
+              for p in root.glob('*/'+name):out[name]=json.loads(p.read_text())
+          Path('verified-followup.json').write_text(json.dumps(out,ensure_ascii=False,indent=2))
+          small={k:v for k,v in out.items() if k not in ('focused-readback.json','catalog-selected.json')}
+          print(json.dumps(small,ensure_ascii=False,indent=2))
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: provider-focused-verified-${{ github.run_id }}
+          path: verified-followup.json
+          retention-days: 30
