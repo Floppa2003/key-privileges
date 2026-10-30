@@ -5,7 +5,6 @@ Request ceilings below are local workload limits, not advertised account grants.
 """
 from __future__ import annotations
 
-import base64
 import copy
 from datetime import datetime, timezone
 from decimal import Decimal, InvalidOperation
@@ -14,6 +13,7 @@ import json
 import os
 
 import requests
+import merchant_credit_prices
 
 SUPER_VL = 'nvidia/nemotron-3.5-super-vl'
 NEW_PROVIDERS = {
@@ -31,7 +31,9 @@ NEW_PROVIDERS = {
 }
 DAILY_LIMITS = {'experiential': 100, 'kilo': 180, 'openrouter': 50, 'vercel': 100, 'gemini': 20}
 INTERVALS = {'experiential': 7, 'kilo': 20, 'openrouter': 4, 'vercel': 2, 'gemini': 15}
-DEFAULT_PROVIDERS = ('orcarouter', 'experiential', 'kilo', 'openrouter', 'vercel', 'gemini', 'tokenharbor')
+# OpenRouter remains an explicit diagnostic route, but not an automatic queue route:
+# run 41110786925 mixed two neighbouring programs despite valid JSON and matching quotes.
+DEFAULT_PROVIDERS = ('orcarouter', 'experiential', 'kilo', 'vercel', 'gemini', 'tokenharbor')
 VERCEL_DAILY_USD = Decimal('1')
 VERCEL_AUDITED_GRANT = Decimal('5')
 EXPERIENTIAL_DAILY_TOKENS = 1_000_000
@@ -212,32 +214,16 @@ def admission(provider, payload, key, ledger, timestamp, session=None):
         model = next((row for row in models if row.get('id') == SUPER_VL), None)
         if not model:
             raise ValueError('audited_model_missing')
-        context = model.get('context_window')
-        output = payload.get('max_tokens')
-        if type(context) is not int or not 1 <= context <= 2_000_000 or type(output) is not int or not 1 <= output <= 16384:
-            raise ValueError('model_cost_bound_unavailable')
-        pricing = model.get('pricing', {})
-        allowed_fields = {'input', 'output', 'input_tiers', 'output_tiers',
-                          'input_cache_read', 'input_cache_write', 'input_cache_read_tiers', 'input_cache_write_tiers'}
-        if set(pricing) - allowed_fields:
-            raise ValueError('unaccounted_pricing_dimension')
-        def rate(field):
-            values = [decimal(pricing[field])]
-            values += [decimal(row['cost']) for row in pricing.get(field + '_tiers', [])]
-            if field == 'input':
-                for cached in ('input_cache_read', 'input_cache_write'):
-                    if cached in pricing:
-                        values.append(decimal(pricing[cached]))
-                    values += [decimal(row['cost']) for row in pricing.get(cached + '_tiers', [])]
-            return max(values)
-        # Whole context at the highest published input tier plus maximum output;
-        # add margin. This is deliberately not a one-document price extrapolation.
-        reserve = (Decimal(context) * rate('input') + Decimal(output) * rate('output')) * Decimal('1.10') + Decimal('0.001')
+        endpoint_data = None
+        if model.get('pricing', {}).get('varies_by_provider'):
+            endpoint_data = _get(session, 'https://ai-gateway.vercel.sh/v1/models/' + SUPER_VL + '/endpoints', key).get('data')
+        reserve = merchant_credit_prices.reservation(model, payload.get('max_tokens'), endpoint_data)
         virtual = min(balance, decimal(ledger.get('credit_remaining', str(balance))))
         allowed = reserve <= virtual and decimal(budget['usd']) + reserve <= VERCEL_DAILY_USD
         return {'allowed': allowed, 'reason': 'free_credit_safety_budget', 'reservation_usd': str(reserve),
-                'balance': str(balance), 'total_used': str(used), 'virtual_remaining': str(virtual)}
-    except (requests.RequestException, ValueError, KeyError, TypeError, StopIteration) as exc:
+                'balance': str(balance), 'total_used': str(used), 'virtual_remaining': str(virtual),
+                'pricing_endpoints_checked': len(endpoint_data['endpoints']) if endpoint_data else 0}
+    except (requests.RequestException, ValueError, KeyError, TypeError, AttributeError, StopIteration) as exc:
         # Never retain raw exception bodies/headers or authentication material.
         return {'allowed': False, 'reason': str(exc) if type(exc) is ValueError else type(exc).__name__}
     finally:
