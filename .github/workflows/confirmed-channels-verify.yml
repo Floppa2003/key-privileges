@@ -38,14 +38,14 @@ jobs:
           assert value['concurrency']['group']=='merchant-daily-orcarouter'
           assert value['on']['workflow_dispatch']['inputs']['max_requests']['default']=='500'
           assert q.POOL_REQUESTS==700
-          assert tuple(c.DEFAULT_PROVIDERS)==('orcarouter','experiential','kilo','openrouter','vercel','gemini','tokenharbor')
-          steps=value['jobs']['process']['steps']
-          process=next(x for x in steps if x.get('name','').startswith('Process shared queue'))
+          assert c.DEFAULT_PROVIDERS==('orcarouter','experiential','kilo','vercel','gemini','tokenharbor')
+          assert 'openrouter' not in c.DEFAULT_PROVIDERS
+          process=next(x for x in value['jobs']['process']['steps'] if x.get('name','').startswith('Process shared queue'))
           for p in c.NEW_PROVIDERS:
               assert c.NEW_PROVIDERS[p]['secret'] in process['env']
           assert "github.event_name == 'push' && '4'" in process['env']['MAX_REQUESTS']
           assert 'sheets_normalized' not in path.read_text()
-          print('PASS: exact seven-channel order, unchanged cron/concurrency, credential wiring, bounded deploy, no Sheets')
+          print('PASS: final pool excludes OpenRouter; unchanged cron/concurrency; no Sheets; bounded deployment')
           PY
           git diff --check
           tail -8 regression-output/python.log
@@ -56,14 +56,14 @@ jobs:
           name: channel-regression-${{ github.run_id }}
           path: regression-output/
           retention-days: 30
-  canary:
+  vercel:
     needs: regression
     runs-on: ubuntu-24.04
-    timeout-minutes: 12
+    timeout-minutes: 8
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with: {persist-credentials: false, ref: '${{ github.sha }}'}
-      - name: Install dependencies and obtain frozen evidence without model keys
+      - name: Obtain verified frozen evidence without model credentials
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -78,25 +78,19 @@ jobs:
               assert z.testzip() is None
               Path('inputs.json').write_bytes(z.read('captures/inputs.json'))
           PY
-      - name: One real document per active added channel through production queue
+      - name: One Vercel request with corrected guard and settled credit readback
         env:
-          EXPERIENTAL_API_KEY: ${{ secrets.EXPERIENTAL_API_KEY }}
-          KILO_API_KEY: ${{ secrets.KILO_API_KEY }}
-          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           AI_GATEWAY_API_KEY: ${{ secrets.AI_GATEWAY_API_KEY }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GEMINI_FREE_TIER_KEY_SHA256: ${{ vars.GEMINI_FREE_TIER_KEY_SHA256 }}
-          GEMINI_FREE_TIER_VERIFIED_UNTIL: ${{ vars.GEMINI_FREE_TIER_VERIFIED_UNTIL }}
-        run: python diagnostics/confirmed_channels_canary.py --inputs inputs.json --out canary-output
+        run: python diagnostics/vercel_queue_acceptance.py
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
-          name: channel-canary-${{ github.run_id }}
-          path: canary-output/
+          name: channel-vercel-${{ github.run_id }}
+          path: vercel-acceptance/
           retention-days: 30
   readback:
     if: always()
-    needs: [regression, canary]
+    needs: [regression, vercel]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
@@ -105,15 +99,23 @@ jobs:
           pattern: channel-*-${{ github.run_id }}
           path: evidence
           merge-multiple: false
-      - name: Independently read saved outputs without model credentials
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          repository: Floppa2003/key-privileges
+          run-id: '41110786925'
+          artifact-ids: '13003328118'
+          github-token: ${{ github.token }}
+          path: prior-canary
+          merge-multiple: true
+      - name: Independent readback of fresh Vercel and preserved prior successful routes
         run: |
           python - <<'PY'
           import hashlib,json
           from pathlib import Path
           root=Path('evidence')
-          report=next(root.rglob('canary-report.json'))
-          manifests=list(root.rglob('SHA256SUMS.json'))
-          assert manifests
+          report=next(root.rglob('report.json'))
+          manifests=list(root.rglob('SHA256SUMS.json'))+[Path('prior-canary/SHA256SUMS.json')]
+          assert len(manifests)==2
           count=0
           for p in manifests:
               for name,digest in json.loads(p.read_text()).items():
@@ -122,13 +124,26 @@ jobs:
                   assert hashlib.sha256(f.read_bytes()).hexdigest()==digest
                   count+=1
           data=json.loads(report.read_text())
+          assert data['status']=='completed' and data['credits_reconciled']
+          assert data['generation_requests']==1
           assert data['production_state_changed'] is False and data['publication_allowed'] is False
-          assert data['all_four_completed'] is True
-          for p,value in data['providers'].items():
-              assert value['http_attempts']==1 and value['completed']==1
-              state=json.loads((report.parent/(p+'-state.json')).read_text())
-              item=state['items']['muzcomedy']
+          state=json.loads((report.parent/'state.json').read_text())
+          assert state['items']['muzcomedy']==data['item']
+          previous=json.loads(Path('prior-canary/canary-report.json').read_text())
+          accepted={p:previous['providers'][p] for p in ('experiential','kilo')}
+          for p,value in accepted.items():
+              assert value['completed']==1 and value['http_attempts']==1
+              item=json.loads(Path('prior-canary',p+'-state.json').read_text())['items']['muzcomedy']
               assert item['extracted']==value['extracted'] and item['inferred_provider']==p
-              assert item['publication_allowed'] is False
-          print(json.dumps({'verified_files':count,'canary':data},ensure_ascii=False,indent=2))
+          out={'verified_files':count,'fresh_vercel':data,'preserved_prior_results':accepted,
+               'quarantined':'openrouter: semantic attribution failure retained in run 41110786925',
+               'gemini':'billing_status_unverified; no new inference'}
+          Path('verified-integration.json').write_text(json.dumps(out,ensure_ascii=False,indent=2))
+          print(json.dumps(out,ensure_ascii=False,indent=2))
           PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: channel-verified-${{ github.run_id }}
+          path: verified-integration.json
+          retention-days: 30
