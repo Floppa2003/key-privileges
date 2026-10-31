@@ -26,6 +26,31 @@ jobs:
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
           repository: Floppa2003/key-privileges
+          run-id: '41205750809'
+          artifact-ids: '13044468348'
+          github-token: ${{ github.token }}
+          path: prior-acceptance
+          merge-multiple: true
+      - name: Stronger check must detect the old omitted secondary benefit, without new inference
+        run: |
+          python - <<'PY' > evidence-acceptance/semantic-red.log 2>&1
+          import sys
+          from pathlib import Path
+          sys.path.insert(0,'diagnostics')
+          import merchant_evidence_acceptance as a
+          a.ROOT=Path('prior-acceptance')
+          try:
+              a.inspect()
+          except AssertionError as exc:
+              assert 'lost secondary benefit' in str(exc),str(exc)
+              print('Expected old-output regression:',str(exc))
+          else:
+              raise AssertionError('Expected missing non-monetary benefit')
+          PY
+          tail -2 evidence-acceptance/semantic-red.log
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          repository: Floppa2003/key-privileges
           run-id: '41194911797'
           artifact-ids: '13041115453'
           github-token: ${{ github.token }}
@@ -37,7 +62,7 @@ jobs:
         env:
           EXPERIENTAL_API_KEY: ${{ secrets.EXPERIENTAL_API_KEY || vars.EXPERIENTAL_API_KEY }}
         run: python diagnostics/merchant_evidence_acceptance.py infer
-      - name: Read responses and check actual offer conditions
+      - name: Read responses and check monetary and non-monetary benefits
         run: python diagnostics/merchant_evidence_acceptance.py inspect
       - name: Preserve source and evidence hashes
         if: always()
