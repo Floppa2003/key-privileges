@@ -40459,7 +40459,75 @@
         "partner": "Memo",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793445931.4493988,
+      "last_result": {
+        "provider": "experiential",
+        "requested_model": "deepseek-v4.1-flash:free",
+        "endpoint": "https://api.experientiallabs.ai/v1/chat/completions",
+        "request_body_sha256": "1c047f89a77e85348f51fd31d4197445334d4810a9787015220c7049d4d47587",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "1c047f89a77e85348f51fd31d4197445334d4810a9787015220c7049d4d47587",
+            "seconds": 9.372838091999995,
+            "http_status": 200,
+            "returned_model": "deepseek-v4.1-flash",
+            "usage": {
+              "prompt_tokens": 1911,
+              "completion_tokens": 1139,
+              "total_tokens": 3050,
+              "prompt_tokens_details": {
+                "cached_tokens": 0,
+                "cache_write_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 1037,
+                "image_tokens": 0
+              },
+              "cost": 0.0,
+              "is_byok": false
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4.1-flash",
+        "usage": {
+          "prompt_tokens": 1911,
+          "completion_tokens": 1139,
+          "total_tokens": 3050,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "cache_write_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 1037,
+            "image_tokens": 0
+          },
+          "cost": 0.0,
+          "is_byok": false
+        },
+        "seconds": 9.378528351,
+        "http_attempts": 1
+      },
+      "fingerprint": "f58811fe432bc4edbbb72ed6ad6301dc3edf5ea1361810e5adae7ff742eeed00",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В блоке TARGET нет описания предложения, выгоды, условий получения или ограничений для партнёра Memo.",
+          "В предоставленном тексте и на страницах не найдено упоминаний партнёра Memo или его предложения в программе Konsierge — публичные привилегии."
+        ]
+      },
+      "inferred_as_of": "2026-10-31",
+      "inferred_at": 1793445931.4494689,
+      "inferred_provider": "experiential",
+      "returned_model": "deepseek-v4.1-flash",
+      "publication_allowed": false
     },
     "0c337fb1372288455b785c70b2621d64": {
       "target": {
@@ -40468,7 +40536,88 @@
         "partner": "Hide",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793445940.8816555,
+      "last_result": {
+        "provider": "kilo",
+        "requested_model": "nvidia/nemotron-3.5-super-vl:free",
+        "endpoint": "https://ai-gateway.kilo.ai/api/v1/chat/completions",
+        "request_body_sha256": "7e94e6165396bfbb23afa47d1d1f46e4e71f3eee1328a204c0d8cec00ff1cf7a",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "7e94e6165396bfbb23afa47d1d1f46e4e71f3eee1328a204c0d8cec00ff1cf7a",
+            "seconds": 9.344640311999996,
+            "http_status": 200,
+            "returned_model": "nvidia/nemotron-3.5-super-vl:free",
+            "usage": {
+              "prompt_tokens": 4064,
+              "completion_tokens": 1168,
+              "total_tokens": 5232,
+              "cost": 0,
+              "is_byok": false,
+              "prompt_tokens_details": {
+                "cached_tokens": 0,
+                "cache_write_tokens": 0,
+                "audio_tokens": 0,
+                "video_tokens": 0
+              },
+              "cost_details": {
+                "upstream_inference_cost": 0,
+                "upstream_inference_prompt_cost": 0,
+                "upstream_inference_completions_cost": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 1144,
+                "image_tokens": 0,
+                "audio_tokens": 0
+              }
+            }
+          }
+        ],
+        "returned_model": "nvidia/nemotron-3.5-super-vl:free",
+        "usage": {
+          "prompt_tokens": 4064,
+          "completion_tokens": 1168,
+          "total_tokens": 5232,
+          "cost": 0,
+          "is_byok": false,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "cost_details": {
+            "upstream_inference_cost": 0,
+            "upstream_inference_prompt_cost": 0,
+            "upstream_inference_completions_cost": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 1144,
+            "image_tokens": 0,
+            "audio_tokens": 0
+          }
+        },
+        "seconds": 9.350095228000015,
+        "http_attempts": 1
+      },
+      "fingerprint": "7589acf64bcbf03605546f823a1eb74f767a910e4a772dc193717f2e89c9b0e8",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": []
+      },
+      "inferred_as_of": "2026-10-31",
+      "inferred_at": 1793445940.8817232,
+      "inferred_provider": "kilo",
+      "returned_model": "nvidia/nemotron-3.5-super-vl:free",
+      "publication_allowed": false
     },
     "cab0a48b4529045adb8c1391430cb0b2": {
       "target": {
@@ -40477,7 +40626,90 @@
         "partner": "El Copitas Bar",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793445945.6743476,
+      "last_result": {
+        "provider": "openrouter",
+        "requested_model": "nvidia/nemotron-3.5-super-vl:free",
+        "endpoint": "https://openrouter.ai/api/v1/chat/completions",
+        "request_body_sha256": "1ce2ea2062003e4a6f04e86f21cd65032863e6dceb5452315bc68341ed6568b8",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "1ce2ea2062003e4a6f04e86f21cd65032863e6dceb5452315bc68341ed6568b8",
+            "seconds": 4.702170330999991,
+            "http_status": 200,
+            "returned_model": "nvidia/nemotron-3.5-super-vl:free",
+            "usage": {
+              "prompt_tokens": 4067,
+              "completion_tokens": 833,
+              "total_tokens": 4900,
+              "cost": 0,
+              "is_byok": false,
+              "prompt_tokens_details": {
+                "cached_tokens": 0,
+                "cache_write_tokens": 0,
+                "audio_tokens": 0,
+                "video_tokens": 0
+              },
+              "cost_details": {
+                "upstream_inference_cost": 0,
+                "upstream_inference_prompt_cost": 0,
+                "upstream_inference_completions_cost": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 788,
+                "image_tokens": 0,
+                "audio_tokens": 0
+              }
+            }
+          }
+        ],
+        "returned_model": "nvidia/nemotron-3.5-super-vl:free",
+        "usage": {
+          "prompt_tokens": 4067,
+          "completion_tokens": 833,
+          "total_tokens": 4900,
+          "cost": 0,
+          "is_byok": false,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "cost_details": {
+            "upstream_inference_cost": 0,
+            "upstream_inference_prompt_cost": 0,
+            "upstream_inference_completions_cost": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 788,
+            "image_tokens": 0,
+            "audio_tokens": 0
+          }
+        },
+        "seconds": 4.707735377999995,
+        "http_attempts": 1
+      },
+      "fingerprint": "666b02f38b9aa7f7a635411ec41d0cfeebee1317d24d62ff93ed48c487e67702",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "Партнер El Copitas Bar не найден в предоставленном тексте"
+        ]
+      },
+      "inferred_as_of": "2026-10-31",
+      "inferred_at": 1793445945.6744227,
+      "inferred_provider": "openrouter",
+      "returned_model": "nvidia/nemotron-3.5-super-vl:free",
+      "publication_allowed": false
     },
     "69f18e55b7f6f48311437c5227a7d41e": {
       "target": {
@@ -40486,7 +40718,97 @@
         "partner": "Po’mestam",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793445947.5193024,
+      "last_result": {
+        "provider": "vercel",
+        "requested_model": "nvidia/nemotron-3.5-super-vl",
+        "endpoint": "https://ai-gateway.vercel.sh/v1/chat/completions",
+        "request_body_sha256": "c08934034eb779c5aab74c71661b47275c6ada0d51f8e75766ad1fe0c8734f46",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "c08934034eb779c5aab74c71661b47275c6ada0d51f8e75766ad1fe0c8734f46",
+            "seconds": 1.0598731480000083,
+            "http_status": 200,
+            "returned_model": "nvidia/nemotron-3.5-super-vl",
+            "usage": {
+              "prompt_tokens": 4038,
+              "completion_tokens": 23,
+              "total_tokens": 4061,
+              "cost": 0.0008191,
+              "is_byok": false,
+              "prompt_tokens_details": {
+                "cached_tokens": 0,
+                "audio_tokens": 0,
+                "video_tokens": 0
+              },
+              "cost_details": {
+                "upstream_inference_cost": null,
+                "upstream_inference_prompt_cost": 0,
+                "upstream_inference_completions_cost": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 0,
+                "image_tokens": 0
+              },
+              "cache_creation_input_tokens": 0,
+              "market_cost": 0.0008191,
+              "gateway_cost": 0.0008191
+            }
+          }
+        ],
+        "credit_guard": {
+          "allowed": true,
+          "balance_before": "4.99407365",
+          "total_used_before": "0.00592635",
+          "request_upper_bound_usd": "0.2179072",
+          "reservation_usd": "0.25"
+        },
+        "returned_model": "nvidia/nemotron-3.5-super-vl",
+        "usage": {
+          "prompt_tokens": 4038,
+          "completion_tokens": 23,
+          "total_tokens": 4061,
+          "cost": 0.0008191,
+          "is_byok": false,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "cost_details": {
+            "upstream_inference_cost": null,
+            "upstream_inference_prompt_cost": 0,
+            "upstream_inference_completions_cost": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0
+          },
+          "cache_creation_input_tokens": 0,
+          "market_cost": 0.0008191,
+          "gateway_cost": 0.0008191
+        },
+        "seconds": 1.7629414300000121,
+        "http_attempts": 1
+      },
+      "fingerprint": "006aa95945184b8170618588b37942ce3e839119f7f6662b7e9f7b6dc087cc97",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": []
+      },
+      "inferred_as_of": "2026-10-31",
+      "inferred_at": 1793445947.5193727,
+      "inferred_provider": "vercel",
+      "returned_model": "nvidia/nemotron-3.5-super-vl",
+      "publication_allowed": false
     },
     "963f79612a947287e5d4ea181a339e1b": {
       "target": {
@@ -40495,6 +40817,33 @@
         "partner": "Grand Cru",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
+      },
+      "status": "deferred",
+      "last_checked": 1793445948.3198137,
+      "last_result": {
+        "provider": "gemini",
+        "requested_model": "gemini-3.8-flash",
+        "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent",
+        "request_body_sha256": "e1c340715460645b236f6315b2430bc77161ef7976642caa5e25fc01f372c453",
+        "status": "deferred",
+        "schema_valid": false,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "e1c340715460645b236f6315b2430bc77161ef7976642caa5e25fc01f372c453",
+            "seconds": 0.7136047440000084,
+            "http_status": 503,
+            "retry_after_seconds": 0,
+            "retry_not_admitted": true
+          }
+        ],
+        "api_error_code": "503",
+        "error": "transient_http_exhausted",
+        "retry_after_seconds": 0,
+        "seconds": 0.7140163539999946,
+        "http_attempts": 1
       }
     },
     "50edeee33ddabe0b58954b5b2fb0a227": {
@@ -45254,6 +45603,15 @@
         "program": "S7 Priority",
         "source_id": "s7"
       }
+    },
+    "f535b648f72297defd8b6166f8aac2a8": {
+      "target": {
+        "id": "f535b648f72297defd8b6166f8aac2a8",
+        "url": "https://konsierge.com/benefits",
+        "partner": "Veshki Resort",
+        "program": "Konsierge — публичные привилегии",
+        "source_id": "konsierge_public"
+      }
     }
   },
   "usage": {
@@ -45270,6 +45628,54 @@
       },
       "provider_not_before": 1793429365.2927306,
       "last_request_at": 1793425765.2927232
+    },
+    "experiential": {
+      "usage": {
+        "date": "2026-10-31",
+        "attempts": 1,
+        "tokens": 3050
+      },
+      "provider_not_before": 0,
+      "last_request_at": 1793445931.4493978
+    },
+    "kilo": {
+      "usage": {
+        "date": "2026-10-31",
+        "attempts": 1,
+        "tokens": 5232
+      },
+      "provider_not_before": 0,
+      "last_request_at": 1793445940.8816543
+    },
+    "openrouter": {
+      "usage": {
+        "date": "2026-10-31",
+        "attempts": 1,
+        "tokens": 4900
+      },
+      "provider_not_before": 0,
+      "last_request_at": 1793445945.6743467
+    },
+    "vercel": {
+      "usage": {
+        "date": "2026-10-31",
+        "attempts": 1,
+        "tokens": 4061
+      },
+      "provider_not_before": 0,
+      "last_request_at": 1793445947.5193017,
+      "credit_usage": {
+        "month": "2026-10",
+        "reserved_usd": 0.0008191
+      }
+    },
+    "gemini": {
+      "usage": {
+        "date": "2026-10-31",
+        "attempts": 1
+      },
+      "provider_not_before": 0,
+      "last_request_at": 1793445948.3198128
     }
   }
 }
