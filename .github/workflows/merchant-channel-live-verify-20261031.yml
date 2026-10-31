@@ -1,0 +1,74 @@
+name: Verify deployed merchant channels 31 October
+on:
+  push:
+    branches: [loyalty/confirmed-channels-verification-20261031]
+    paths: ['.github/workflows/merchant-channel-live-verify-20261031.yml']
+permissions:
+  contents: read
+  actions: write
+concurrency:
+  group: confirmed-channel-verification-20261031
+  cancel-in-progress: false
+jobs:
+  verify:
+    if: github.repository == 'Floppa2003/key-privileges'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: loyalty/llm-state
+          path: state-before
+          sparse-checkout: state.json
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+      - name: Read account balances before verification; no inference
+        env:
+          AI_GATEWAY_API_KEY: ${{ secrets.AI_GATEWAY_API_KEY }}
+          EXPERIENTAL_API_KEY: ${{ secrets.EXPERIENTAL_API_KEY || vars.EXPERIENTAL_API_KEY }}
+        run: python diagnostics/verify_confirmed_channels_20261031.py before
+      - name: Verify merged tree and dispatch exactly one bounded production run
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python diagnostics/verify_confirmed_channels_20261031.py dispatch
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        if: always()
+        with:
+          ref: loyalty/llm-state
+          path: state-after
+          sparse-checkout: state.json
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+      - name: Independently read output artifact and durable queue
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python diagnostics/verify_confirmed_channels_20261031.py readback
+      - name: Read settled account balances and usage; no inference
+        if: always()
+        env:
+          AI_GATEWAY_API_KEY: ${{ secrets.AI_GATEWAY_API_KEY }}
+          EXPERIENTAL_API_KEY: ${{ secrets.EXPERIENTAL_API_KEY || vars.EXPERIENTAL_API_KEY }}
+        run: |
+          sleep 10
+          python diagnostics/verify_confirmed_channels_20261031.py after
+      - name: Fingerprint verification evidence
+        if: always()
+        run: |
+          mkdir -p verification-output
+          git rev-parse HEAD > verification-output/verifier-commit.txt
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib,json
+          root=Path('verification-output')
+          (root/'SHA256SUMS.json').write_text(json.dumps({p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in root.iterdir() if p.is_file()},indent=2))
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: confirmed-channels-live-readback-${{ github.run_id }}
+          path: verification-output/
+          retention-days: 30
