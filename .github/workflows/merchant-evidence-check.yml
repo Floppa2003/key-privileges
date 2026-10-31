@@ -1,0 +1,53 @@
+name: Merchant source evidence regression
+on:
+  push:
+    branches: [main, loyalty/merchant-evidence-fix-20261031]
+    paths:
+      - 'loyalty/merchant_*.py'
+      - loyalty/merchant_prompt.txt
+      - 'loyalty/tests/test_merchant_evidence*.py'
+      - diagnostics/test_merchant_input_browser.py
+      - .github/workflows/merchant-evidence-check.yml
+  pull_request:
+    paths:
+      - 'loyalty/merchant_*.py'
+      - loyalty/merchant_prompt.txt
+      - 'loyalty/tests/test_merchant_evidence*.py'
+      - diagnostics/test_merchant_input_browser.py
+      - .github/workflows/merchant-evidence-check.yml
+permissions:
+  contents: read
+jobs:
+  regression:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - name: Install test dependencies without model credentials
+        run: |
+          mkdir -p evidence-tests
+          git rev-parse HEAD > evidence-tests/commit.txt
+          python -m pip install -r loyalty/requirements.txt > evidence-tests/install.log 2>&1
+          sudo apt-get update -qq && sudo apt-get install -y poppler-utils >> evidence-tests/install.log 2>&1
+          python -m playwright install --with-deps chromium >> evidence-tests/install.log 2>&1
+      - name: Full Python regression
+        run: python -m unittest discover -s loyalty/tests -v > evidence-tests/python.log 2>&1
+      - name: Native card behavior in Chromium with only HTTP replaced
+        run: python diagnostics/test_merchant_input_browser.py -v > evidence-tests/browser.log 2>&1
+      - name: KEY regression
+        run: node --test key/refresh.test.mjs > evidence-tests/key.log 2>&1
+      - name: Print actual test summaries
+        if: always()
+        run: |
+          for f in evidence-tests/python.log evidence-tests/browser.log evidence-tests/key.log; do test ! -f "$f" || { echo "=== $f ==="; tail -18 "$f"; }; done
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: merchant-evidence-tests-${{ github.run_id }}
+          path: evidence-tests/
+          retention-days: 30
