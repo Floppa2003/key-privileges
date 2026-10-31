@@ -22,14 +22,18 @@ jobs:
           python -m pip install -r loyalty/requirements.txt > evidence-build/install.log 2>&1
           sudo apt-get update -qq && sudo apt-get install -y poppler-utils >> evidence-build/install.log 2>&1
           python -m playwright install --with-deps chromium >> evidence-build/install.log 2>&1
+      - name: Observe cache regression before the refinement
+        run: |
+          if python -m unittest discover -s loyalty/tests -p 'test_merchant_evidence_cache.py' -v > evidence-build/cache-red.log 2>&1; then echo 'Expected red regression, got green'; exit 1; fi
+          tail -45 evidence-build/cache-red.log
       - name: Apply exact source transformation
         run: |
           git rev-parse HEAD > evidence-build/base.txt
           python diagnostics/apply_merchant_evidence_fix.py
           git diff --check
           git diff > evidence-build/patch.diff
-      - name: Previously failing source handoff tests
-        run: python -m unittest discover -s loyalty/tests -p 'test_merchant_evidence.py' -v > evidence-build/contracts.log 2>&1
+      - name: Source handoff and cache tests
+        run: python -m unittest discover -s loyalty/tests -p 'test_merchant_evidence*.py' -v > evidence-build/contracts.log 2>&1
       - name: Chromium source identity and completeness tests
         run: python diagnostics/test_merchant_input_browser.py -v > evidence-build/browser.log 2>&1
       - name: Full Python regression
@@ -39,7 +43,7 @@ jobs:
       - name: Read actual results and preserve executed sources
         if: always()
         run: |
-          for f in evidence-build/contracts.log evidence-build/browser.log evidence-build/python.log evidence-build/key.log; do test ! -f "$f" || { echo "=== $f ==="; tail -55 "$f"; }; done
+          for f in evidence-build/contracts.log evidence-build/browser.log evidence-build/python.log evidence-build/key.log; do test ! -f "$f" || { echo "=== $f ==="; tail -30 "$f"; }; done
           mkdir -p evidence-build/code
           cp loyalty/merchant_queue.py loyalty/merchant_extract.py loyalty/merchant_evidence.py loyalty/merchant_konsierge_capture.py evidence-build/code/
       - name: Commit only tested source transformations and verify branch readback
@@ -51,7 +55,7 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -- loyalty/merchant_queue.py loyalty/merchant_extract.py loyalty/merchant_evidence.py
           test -n "$(git diff --cached --name-only)"
-          git commit -m 'fix: retain full source evidence and recover unscoped negative results'
+          git commit -m 'fix: preserve evidence cache across collection-only metadata changes'
           auth=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)
           echo "::add-mask::$auth"
           git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $auth" push origin HEAD:refs/heads/loyalty/merchant-evidence-fix-20261031
