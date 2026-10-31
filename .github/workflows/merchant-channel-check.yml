@@ -4,8 +4,6 @@ on:
     branches: [loyalty/confirmed-channels-20261031]
     paths:
       - '.github/workflows/merchant-channel-check.yml'
-      - 'loyalty/merchant*.py'
-      - 'loyalty/tests/test_merchant*.py'
   pull_request:
     paths:
       - '.github/workflows/merchant-llm-daily.yml'
@@ -25,7 +23,9 @@ jobs:
         with:
           python-version: '3.12'
       - name: Install test dependencies; no model keys
-        run: python -m pip install -r loyalty/requirements.txt
+        run: |
+          python -m pip install -r loyalty/requirements.txt
+          sudo apt-get update -qq && sudo apt-get install -y poppler-utils
       - name: New channel contracts
         run: |
           mkdir -p channel-test-output
@@ -40,7 +40,7 @@ jobs:
       - name: Read exact test summaries
         if: always()
         run: |
-          for f in channel-test-output/*.log; do echo "=== $f ==="; tail -70 "$f"; done
+          for f in channel-test-output/*.log; do echo "=== $f ==="; grep -E '^(FAIL:|ERROR:|Ran |FAILED|OK|# tests |# pass |# fail )' "$f" || true; tail -60 "$f"; done
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
