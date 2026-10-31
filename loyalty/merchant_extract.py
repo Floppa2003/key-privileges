@@ -8,7 +8,7 @@ from __future__ import annotations
 import argparse
 import base64
 import copy
-from datetime import datetime
+from datetime import datetime, timezone
 from decimal import Decimal, InvalidOperation
 from email.utils import parsedate_to_datetime
 import hashlib
@@ -22,13 +22,15 @@ import time
 
 import jsonschema
 import requests
+import merchant_channels as channels
 
 HERE = Path(__file__).resolve().parent
 MODEL = 'deepseek/deepseek-v4.1-flash-free'
 BASE_URL = 'https://api.orcarouter.ai/v1'
 ENDPOINT = BASE_URL + '/chat/completions'
-# Explicit free routes for the same selected model; never accept arbitrary paid IDs.
+# Approved routes only; Vercel is bounded by its verified free-credit budget.
 PROVIDERS = {
+    **channels.PROVIDERS,
     'orcarouter': {'model': MODEL, 'endpoint': ENDPOINT, 'secret': 'ORCAROUTER_API_KEY'},
     'tokenharbor': {'model': 'deepseek-v4.1-flash:free',
                     'endpoint': 'https://tokenharbor.ai/v1/chat/completions',
@@ -81,6 +83,10 @@ def build_request(target: dict, text: str, images: list[bytes], schema: dict, sy
                 {'type': 'image_url', 'image_url': {
                     'url': 'data:image/png;base64,' + base64.b64encode(b).decode('ascii')}}
                 for b in images]]}]}
+    if provider in channels.PROVIDERS:
+        result['max_tokens'] = channels.PROVIDERS[provider]['max_tokens']
+        if not channels.PROVIDERS[provider].get('reasoning_high'):
+            result.pop('reasoning')
     if provider == 'tokenharbor':
         # Exactly the previously successful Harbor payload: native default thinking,
         # not OrcaRouter's provider-specific reasoning extension.
@@ -120,7 +126,13 @@ def parse_final(data: dict, schema: dict, *, provider='orcarouter') -> dict:
     # The request stays on the free route; the actual returned model is preserved.
     orca_snapshot = (provider == 'orcarouter'
                      and returned == 'deepseek-v4-1-flash-economy-261017')
-    if not orca_snapshot and not re.fullmatch(r'deepseekv41flash(?:free|[0-9]{4,8})?', normalized):
+    if provider in ('kilo', 'openrouter', 'vercel'):
+        model_matches = normalized == 'nemotron35supervl'
+    elif provider == 'gemini':
+        model_matches = normalized == 'gemini38flash'
+    else:
+        model_matches = orca_snapshot or bool(re.fullmatch(r'deepseekv41flash(?:free|[0-9]{4,8})?', normalized))
+    if not model_matches:
         raise ValueError('returned_model_mismatch')
     choices = data.get('choices')
     if not isinstance(choices, list) or len(choices) != 1 or not isinstance(choices[0], dict) or choices[0].get('finish_reason') != 'stop':
@@ -158,6 +170,15 @@ def retry_delay(headers: dict, data: dict, *, now: float | None = None) -> float
             except (ValueError, TypeError, OverflowError):
                 pass
     if isinstance(data, dict) and isinstance(data.get('error'), dict):
+        error = data['error']
+        if error.get('code') == 'free_tier_limit_reached':
+            match = re.search(r'comes back on (\d{1,2} [A-Za-z]{3} \d{4}) at (\d{2}:\d{2}) UTC', str(error.get('message', '')))
+            if match:
+                try:
+                    reset = datetime.strptime(' '.join(match.groups()), '%d %b %Y %H:%M').replace(tzinfo=timezone.utc).timestamp()
+                    values.append(reset - (time.time() if now is None else now))
+                except ValueError:
+                    pass
         metadata = data['error'].get('metadata', {})
         if isinstance(metadata, dict):
             try: values.append(float(metadata.get('retry_after_seconds')))
@@ -190,7 +211,8 @@ The retry budget bounds admission of new attempts/waits; socket timeouts bound I
     allowed = {'model', 'stream', 'temperature', 'max_tokens', 'reasoning', 'messages'}
     if set(payload) - allowed:
         raise ValueError('unexpected_request_options')
-    body = json.dumps(payload, ensure_ascii=False, allow_nan=False).encode('utf-8')
+    wire_payload = channels.wire_request(payload, provider)
+    body = json.dumps(wire_payload, ensure_ascii=False, allow_nan=False).encode('utf-8')
     if key.encode() in body:
         raise ValueError('credential_in_input')
     if len(body) > 20_000_000:
@@ -207,6 +229,18 @@ The retry budget bounds admission of new attempts/waits; socket timeouts bound I
               'schema_valid': False, 'publication_allowed': False, 'semantic_review': 'pending',
               'attempts': []}
     try:
+        headers = {'Content-Type': 'application/json'}
+        if provider == 'gemini':
+            headers['x-goog-api-key'] = key
+        else:
+            headers['Authorization'] = 'Bearer ' + key
+        if provider == 'vercel':
+            guard = channels.vercel_credit_guard(session, key, payload)
+            result['credit_guard'] = guard
+            if not guard['allowed']:
+                result.update(status='deferred', stop_batch_reason='free_credit_budget_unavailable')
+                return result
+            max_attempts = 1  # one durable cost reservation, no hidden credit retries
         for number in range(1, max_attempts + 1):
             remaining = RETRY_BUDGET_SECONDS - (monotonic() - started)
             if remaining <= 10:
@@ -216,8 +250,8 @@ The retry budget bounds admission of new attempts/waits; socket timeouts bound I
             row = {'attempt': number, 'request_body_sha256': result['request_body_sha256']}
             call_start = monotonic()
             try:
-                response = session.post(route['endpoint'], headers={'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key},
-                    data=body, timeout=(min(10, remaining / 2), min(180 if provider == 'tokenharbor' else 90, remaining / 2)), allow_redirects=False)
+                response = session.post(route['endpoint'], headers=headers,
+                    data=body, timeout=(min(10, remaining / 2), min(90 if provider == 'orcarouter' else 180, remaining / 2)), allow_redirects=False)
             except requests.RequestException as exc:
                 row.update(seconds=monotonic() - call_start, error_type=type(exc).__name__)
                 result.update(status='transport_error', error='unknown_execution_outcome_not_retried')
@@ -240,6 +274,8 @@ The retry budget bounds admission of new attempts/waits; socket timeouts bound I
                 if isinstance(data, dict):
                     row.update(returned_model=data.get('model'), usage=data.get('usage'))
                 try:
+                    data = channels.response_envelope(data, provider)
+                    result.update(returned_model=data.get('model'), usage=data.get('usage'))
                     obj = parse_final(data, schema, provider=provider)
                     save(out / 'extracted.json', obj)
                     result.pop('error', None)
@@ -247,7 +283,8 @@ The retry budget bounds admission of new attempts/waits; socket timeouts bound I
                                   usage=data.get('usage'))
                 except (ValueError, KeyError, TypeError, AttributeError) as exc:
                     result.update(status='failed_validation', error=str(exc) if isinstance(exc, ValueError) else type(exc).__name__)
-                warning = reported_cost_warning(data)
+                warning = (channels.credit_cost_warning(data) if provider == 'vercel'
+                           else reported_cost_warning(data))
                 if warning:
                     result['stop_batch_reason'] = warning
                     result['warnings'] = [warning]
@@ -273,7 +310,7 @@ The retry budget bounds admission of new attempts/waits; socket timeouts bound I
             server_delay = retry_delay(response.headers, data)
             row['retry_after_seconds'] = server_delay
             result['retry_after_seconds'] = server_delay
-            delay = max(15 * 2 ** (number - 1) + jitter(), server_delay)
+            delay = max(15 * 2 ** (number - 1) + jitter(), server_delay, channels.INTERVALS.get(provider, 0))
             remaining = RETRY_BUDGET_SECONDS - (monotonic() - started)
             if number == max_attempts or delay > 60 or delay + 10 >= remaining:
                 row['retry_not_admitted'] = True
