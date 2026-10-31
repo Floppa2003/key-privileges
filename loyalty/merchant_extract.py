@@ -23,6 +23,7 @@ import time
 import jsonschema
 import requests
 import merchant_channels as channels
+import merchant_evidence as evidence
 
 HERE = Path(__file__).resolve().parent
 MODEL = 'deepseek/deepseek-v4.1-flash-free'
@@ -355,6 +356,7 @@ def load_manifest(path: Path, *, max_documents: int = 30) -> list[dict]:
             raise ValueError('invalid_target')
         try: datetime.strptime(target['as_of'], '%Y-%m-%d')
         except ValueError: raise ValueError('invalid_as_of') from None
+        evidence.validate_source_records(spec, target)
         names = spec.get('images', [])
         if not isinstance(names, list) or not 1 <= len(names) <= 40 or len(set(names)) != len(names):
             raise ValueError('image_count_budget_no_truncation')
@@ -396,7 +398,9 @@ def prepare_document(document: dict, out: Path, schema: dict, system: str, *, pr
     for n, raw in enumerate(document['images'], 1):
         name = f'page-{n}.png'; (out / name).write_bytes(raw)
         image_manifest.append({'file': name, 'sha256': hashlib.sha256(raw).hexdigest(), 'bytes': len(raw)})
-    payload = build_request(document['target'], document['text'], document['images'], schema, system, provider=provider)
+    model_text = evidence.request_text(document)
+    (out / 'model-input-text.txt').write_text(model_text, encoding='utf-8')
+    payload = build_request(document['target'], model_text, document['images'], schema, system, provider=provider)
     brief = copy.deepcopy(payload)
     for part in brief['messages'][1]['content']:
         if part.get('type') == 'image_url':
