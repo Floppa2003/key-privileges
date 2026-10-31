@@ -4,6 +4,8 @@ on:
     branches: [loyalty/confirmed-channels-20261031]
     paths:
       - '.github/workflows/merchant-channel-check.yml'
+      - 'loyalty/merchant*.py'
+      - 'loyalty/tests/test_merchant_channels*.py'
   pull_request:
     paths:
       - '.github/workflows/merchant-llm-daily.yml'
@@ -30,7 +32,7 @@ jobs:
         run: |
           mkdir -p channel-test-output
           git rev-parse HEAD > channel-test-output/commit.txt
-          python -m unittest discover -s loyalty/tests -p test_merchant_channels.py -v > channel-test-output/contracts.log 2>&1
+          python -m unittest discover -s loyalty/tests -p 'test_merchant_channels*.py' -v > channel-test-output/contracts.log 2>&1
       - name: Full Python regression
         if: always()
         run: python -m unittest discover -s loyalty/tests -v > channel-test-output/python.log 2>&1
