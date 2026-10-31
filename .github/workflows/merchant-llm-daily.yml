@@ -1,22 +1,31 @@
-name: Daily DeepSeek merchant processing
+name: Daily merchant LLM processing
 on:
   schedule:
-    # OrcaRouter's UTC-day quota resets at midnight; 03:05 Europe/Moscow.
+    # UTC-day free pools reset at midnight; 03:05 Europe/Moscow.
     - cron: '5 0 * * *'
   workflow_dispatch:
     inputs:
       max_requests:
-        description: Maximum total attempts (1-250); Orca 50/day, Harbor local ceiling 200/day
+        description: Maximum total attempts this run (1-820); provider ceilings still apply
         type: string
-        default: '250'
+        default: '500'
       max_pages:
         description: Maximum current public pages to capture (1-300)
         type: string
         default: '300'
+      providers:
+        description: Ordered approved channels; defaults include all seven
+        type: string
+        default: 'orcarouter,tokenharbor,experiential,kilo,openrouter,vercel,gemini'
+      per_provider_requests:
+        description: Optional per-channel attempt cap for small verification runs
+        type: string
+        default: ''
 permissions:
   contents: read
   actions: read
 concurrency:
+  # Preserve the existing lock: old/new workflow versions must never write together.
   group: merchant-daily-orcarouter
   cancel-in-progress: false
 jobs:
@@ -27,6 +36,8 @@ jobs:
     permissions:
       contents: write
       actions: read
+    env:
+      LLM_PROVIDERS: ${{ inputs.providers || 'orcarouter,tokenharbor,experiential,kilo,openrouter,vercel,gemini' }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
@@ -91,16 +102,26 @@ jobs:
           MAX_PAGES: ${{ inputs.max_pages || '300' }}
         run: |
           python loyalty/merchant_queue.py prepare --catalog incoming/normalized.json \
-            --state llm-state/state.json --out llm-output/captures --max-pages "$MAX_PAGES" --providers orcarouter,tokenharbor \
+            --state llm-state/state.json --out llm-output/captures --max-pages "$MAX_PAGES" --providers "$LLM_PROVIDERS" \
             > llm-output/capture.log 2>&1
-      - name: Process changed documents through independent free DeepSeek routes
+      - name: Process changed documents through confirmed independent channels
         env:
           ORCAROUTER_API_KEY: ${{ secrets.ORCAROUTER_API_KEY }}
           TOKENHARBOR_API_KEY: ${{ secrets.TOKENHARBOR_API_KEY }}
-          MAX_REQUESTS: ${{ inputs.max_requests || '250' }}
+          EXPERIENTAL_API_KEY: ${{ secrets.EXPERIENTAL_API_KEY || vars.EXPERIENTAL_API_KEY }}
+          KILO_API_KEY: ${{ secrets.KILO_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          AI_GATEWAY_API_KEY: ${{ secrets.AI_GATEWAY_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          MAX_REQUESTS: ${{ inputs.max_requests || '500' }}
+          PER_PROVIDER_REQUESTS: ${{ inputs.per_provider_requests }}
         run: |
+          set -euo pipefail
+          extra=()
+          if test -n "$PER_PROVIDER_REQUESTS"; then extra+=(--per-provider-requests "$PER_PROVIDER_REQUESTS"); fi
           python loyalty/merchant_queue.py pool --manifest llm-output/captures/manifest.json \
-            --state llm-state/state.json --out llm-output/results --max-requests "$MAX_REQUESTS" --execute \
+            --state llm-state/state.json --out llm-output/results --max-requests "$MAX_REQUESTS" \
+            --providers "$LLM_PROVIDERS" "${extra[@]}" --execute \
             > llm-output/inference.log 2>&1
       - name: Persist progress even after partial processing, then verify remote state
         if: always()
@@ -131,7 +152,7 @@ jobs:
           python - <<'PY'
           import json,os
           from pathlib import Path
-          lines=['## Daily LLM processing','DeepSeek V4.1 Flash / OrcaRouter + Token Harbor; free routes only; no Sheets publication.']
+          lines=['## Daily LLM processing', 'Approved channels: '+os.environ['LLM_PROVIDERS'], 'Free routes / bounded Vercel promo credits; no Sheets publication.']
           for label,path in [('Capture','llm-output/captures/capture-summary.json'),('Extraction','llm-output/results/summary.json')]:
               p=Path(path)
               if p.exists():
