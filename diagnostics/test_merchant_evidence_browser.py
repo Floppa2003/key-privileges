@@ -1,5 +1,4 @@
 """Real Chromium tests with controlled HTTP only; no source/provider network."""
-import asyncio
 import json
 from pathlib import Path
 import sys
@@ -23,7 +22,7 @@ class RoutedBrowser:
         async def route(r):
             if r.request.resource_type == 'document':
                 self.visited.append(r.request.url)
-                await r.fulfill(status=200, content_type='text/html', body=self.html)
+                await r.fulfill(status=200, content_type='text/html; charset=utf-8', body=self.html)
             else:
                 await r.abort()
         await context.route('**/*', route)
