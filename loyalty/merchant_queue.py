@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import copy
 from datetime import datetime, timezone
 import hashlib
 import json
@@ -13,6 +14,7 @@ import time
 from urllib.parse import urlsplit
 
 import merchant_extract as extractor
+import merchant_evidence as evidence
 from model import clean_url
 
 HERE = Path(__file__).resolve().parent
@@ -75,7 +77,8 @@ def discover_targets(catalog: dict | None, partners: dict, rules: dict) -> list[
     candidates = [dict(value, source_id=sid) for mapping in (partners, rules)
                   for sid, value in mapping.items()]
     candidates.extend({'url': r.get('source_url'), 'partner': r.get('partner_name'),
-                       'program': r.get('program'), 'source_id': r.get('source_id')}
+                       'program': r.get('program'), 'source_id': r.get('source_id'),
+                       'source_records': [copy.deepcopy(r)]}
                       for r in (catalog or {}).get('records', []))
     result = {}
     for candidate in candidates:
@@ -88,8 +91,13 @@ def discover_targets(catalog: dict | None, partners: dict, rules: dict) -> list[
             continue
         identity = [url, partner.strip(), program.strip()]
         ident = hashlib.sha256(json.dumps(identity, ensure_ascii=False).encode()).hexdigest()[:32]
-        result.setdefault(ident, {'id': ident, 'url': url, 'partner': partner.strip(),
+        target = result.setdefault(ident, {'id': ident, 'url': url, 'partner': partner.strip(),
                                   'program': program.strip(), 'source_id': candidate.get('source_id')})
+        for row in candidate.get('source_records', []):
+            records = target.setdefault('source_records', [])
+            if row not in records:
+                records.append(copy.deepcopy(row))
+            target['source_id'] = row.get('source_id') or target.get('source_id')
     return list(result.values())
 
 
@@ -97,7 +105,7 @@ def merge_targets(state: dict, targets: list[dict]) -> None:
     # Incomplete catalogue reads must not delete previously discovered work/results.
     for target in targets:
         item = state['items'].setdefault(target['id'], {})
-        item['target'] = target
+        evidence.merge_target(item, target)
 
 
 def pending_targets(state: dict) -> list[dict]:
@@ -109,7 +117,7 @@ def pending_targets(state: dict) -> list[dict]:
 
 def fingerprint(document: dict, schema: dict, system: str) -> str:
     target = {**document['target'], 'as_of': ''}
-    payload = extractor.build_request(target, document['text'], document['images'], schema, system)
+    payload = extractor.build_request(target, evidence.fingerprint_text(document), document['images'], schema, system)
     raw = json.dumps({'endpoint': extractor.ENDPOINT, 'payload': payload},
                      ensure_ascii=False, sort_keys=True, allow_nan=False).encode()
     return hashlib.sha256(raw).hexdigest()
@@ -130,8 +138,14 @@ def process_documents(documents: list[dict], state: dict, state_path: Path, out:
     for index, document in enumerate(documents):
         ident = document['id']
         item = state['items'].setdefault(ident, {})
+        if not evidence.input_ready(document):
+            item.update(status='needs_source', needs_recapture=True, last_checked=now())
+            summary['status'] = 'incomplete'
+            summary['results'].append({'id': ident, 'status': 'needs_source', 'http_attempts': 0})
+            write_state(state_path, state)
+            continue
         digest = fingerprint(document, schema, system)
-        if item.get('fingerprint') == digest and 'extracted' in item:
+        if evidence.cache_usable(item, document, digest):
             summary['cached'] += 1
             item.update(last_checked=now(), status='cached')
             summary['results'].append({'id': ident, 'status': 'cached',
@@ -188,6 +202,9 @@ def process_documents(documents: list[dict], state: dict, state_path: Path, out:
         summary['http_attempts'] += attempts
         item.update(status=result['status'], last_checked=now(), last_result=result)
         if result['status'] == 'completed':
+            item.update(needs_recapture=False,
+                        inferred_evidence_version=document.get('source', {}).get('evidence_version', 0),
+                        input_scope=copy.deepcopy(document.get('source', {}).get('capture_scope', {})))
             item.update(fingerprint=digest,
                         extracted=extractor.strict_json((folder / 'direct/extracted.json').read_text()),
                         inferred_as_of=document['target']['as_of'], inferred_at=now(),
@@ -239,7 +256,7 @@ def process_pool(documents: list[dict], state: dict, state_path: Path, out: Path
     deadline = now() + time_budget
     def cached(document):
         item = state['items'].get(document['id'], {})
-        return 'extracted' in item and item.get('fingerprint') == fingerprint(document, schema, system)
+        return evidence.cache_usable(item, document, fingerprint(document, schema, system))
     initially_cached = {d['id'] for d in documents if cached(d)}
     for ident in initially_cached:
         state['items'][ident].update(last_checked=now(), status='cached')
@@ -266,7 +283,7 @@ def process_pool(documents: list[dict], state: dict, state_path: Path, out: Path
         # Validation failures are model answers, not quota failures. Unknown network
         # outcomes are also not retried via a second account in this run.
         no_retry.update(row['id'] for row in result['results']
-                        if row['status'] in ('failed_validation', 'transport_error'))
+                        if row['status'] in ('failed_validation', 'transport_error', 'needs_source'))
         stop = result.get('stop_reason')
         if stop in ('credential_echo', 'nonzero_reported_cost', 'invalid_reported_cost'):
             summary['stop_reason'] = stop
@@ -291,6 +308,9 @@ async def capture_page(browser, target: dict, out: Path) -> dict:
     sys.path.insert(0, str(HERE.parent))
     from diagnostics.deepseek_acceptance import tile_png, store
     from public_transport import PublicSource, check_response
+    from merchant_konsierge_capture import handles, capture
+    if handles(target):
+        return await capture(browser, target, out)
     ident, url = target['id'], target['url']
     folder = out / ident
     folder.mkdir()
@@ -328,9 +348,16 @@ async def capture_page(browser, target: dict, out: Path) -> dict:
             if not text.strip(): raise ValueError('empty_page')
             (folder/'source.html').write_text(await source.page.content(), encoding='utf-8')
             images = tile_png(await source.page.screenshot(full_page=True, animations='disabled', timeout=30000))
-        return store(out, ident, {'partner': target['partner'], 'program': target['program'],
+        # Keep the live page and the already acquired, explicitly dated collector
+    # material in the same model call. Never silently throw away the latter.
+    context_start = len(text)
+    text += evidence.snapshot_text(target)
+    spec = store(out, ident, {'partner': target['partner'], 'program': target['program'],
                                   'as_of': datetime.now(timezone.utc).date().isoformat()},
                      text, images, source_url=url)
+    if target.get('source_records'):
+        spec['collector_context_start'] = context_start
+    return evidence.attach_snapshot(spec, target, out)
 
 
 async def prepare_queue(state_path: Path, catalog_path: Path, out: Path, max_pages: int,
@@ -364,9 +391,11 @@ async def prepare_queue(state_path: Path, catalog_path: Path, out: Path, max_pag
                         observations.append({'id': ident, 'status': 'captured', 'url': target['url']})
                         # A captured but not inferred page stays at the front of the queue.
                     except Exception as exc:
-                        state['items'][ident].update(last_checked=time.time(), capture_status='failed',
+                        if isinstance(exc, evidence.InputNotReady):
+                            state['items'][ident].update(status='needs_source', needs_recapture=True)
+                        state['items'][ident].update(last_checked=time.time(), capture_status='needs_source' if isinstance(exc, evidence.InputNotReady) else 'failed',
                                                     capture_error=type(exc).__name__)
-                        observations.append({'id': ident, 'status': 'failed', 'error_type': type(exc).__name__,
+                        observations.append({'id': ident, 'status': 'needs_source' if isinstance(exc, evidence.InputNotReady) else 'failed', 'error_type': type(exc).__name__,
                                              'error': str(exc)[:300], 'url': target['url']})
                     write_state(state_path, state)
                     extractor.save(out/'manifest.json', {'documents': documents})

@@ -372,6 +372,8 @@ def load_manifest(path: Path, *, max_documents: int = 30) -> list[dict]:
             if hashes.get(name) != hashlib.sha256(raw).hexdigest():
                 raise ValueError('source_hash_mismatch')
             return raw
+        for name in spec.get('attachments', []):
+            read(name)  # original collector/native source objects share the hash contract
         text = read(text_name).decode('utf-8')
         if not text.strip() or len(text) > 500000:
             raise ValueError('source_text_budget_no_truncation')
