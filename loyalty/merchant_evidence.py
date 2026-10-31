@@ -27,6 +27,8 @@ def merge_target(item: dict, target: dict) -> None:
     if (replacement.get('source_records') and previous.get('has_offer') is False
             and item.get('inferred_evidence_version', 0) < VERSION):
         # Keep the exact old result for audit, but do not reuse it as a fresh finding.
+        if not item.get('needs_recapture'):
+            item['last_checked'] = 0  # first recovery joins unseen work; failures rotate normally
         item.update(status='needs_source', needs_recapture=True,
                     recapture_reason='legacy_negative_without_catalogue_evidence')
 
