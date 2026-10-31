@@ -19,8 +19,9 @@ HERE = Path(__file__).resolve().parent
 DAILY_REQUESTS = 50
 REQUEST_INTERVAL = 7
 # Harbor's 200/day is OUR workload ceiling, not a claim about its weekly allowance.
-PROVIDER_DAILY_LIMITS = {'orcarouter': DAILY_REQUESTS, 'tokenharbor': 200}
-PROVIDER_INTERVALS = {'orcarouter': REQUEST_INTERVAL, 'tokenharbor': 2}
+PROVIDER_DAILY_LIMITS = dict(extractor.channels.DAILY_LIMITS)
+PROVIDER_INTERVALS = dict(extractor.channels.INTERVALS)
+DEFAULT_PROVIDERS = extractor.channels.DEFAULT_PROVIDERS
 POOL_REQUESTS = sum(PROVIDER_DAILY_LIMITS.values())
 MAX_CAPTURE_PAGES = 300
 
@@ -37,8 +38,14 @@ def provider_state(state: dict, provider: str) -> dict:
 def provider_eligible(state: dict, provider: str, timestamp: float) -> bool:
     ledger = provider_state(state, provider)
     day = datetime.fromtimestamp(timestamp, timezone.utc).date().isoformat()
-    return ledger.get('provider_not_before', 0) <= timestamp and not (
-        ledger['usage']['date'] == day and ledger['usage']['attempts'] >= PROVIDER_DAILY_LIMITS[provider])
+    limited = ledger['usage']['date'] == day and (
+        ledger['usage']['attempts'] >= PROVIDER_DAILY_LIMITS[provider] or
+        provider == 'experiential' and ledger['usage'].get('tokens', 0) >= 1_000_000)
+    credit = ledger.get('credit_usage', {})
+    if provider == 'vercel' and credit.get('month') == day[:7]:
+        policy = extractor.channels
+        limited = limited or policy.decimal_nonnegative(credit.get('reserved_usd', 0)) + policy.VERCEL_RESERVATION > policy.VERCEL_MONTHLY_BUDGET
+    return ledger.get('provider_not_before', 0) <= timestamp and not limited
 
 
 
@@ -136,16 +143,27 @@ def process_documents(documents: list[dict], state: dict, state_path: Path, out:
             ledger['usage'] = {'date': day, 'attempts': 0}
         remaining = min(daily_limit - ledger['usage']['attempts'],
                         max_requests - summary['http_attempts'])
-        if ledger.get('provider_not_before', 0) > now() or remaining <= 0 or now() >= deadline:
+        if not provider_eligible(state, provider, now()) or remaining <= 0 or now() >= deadline:
             summary.update(status='deferred', not_attempted=[d['id'] for d in documents[index:]])
             break
         wait = ledger.get('last_request_at', 0) + PROVIDER_INTERVALS[provider] - now()
         if wait > 0:
             sleep(wait)
+        if now() >= deadline:
+            summary.update(status='deferred', not_attempted=[d['id'] for d in documents[index:]])
+            break
         folder = out / ident
         payload = extractor.prepare_document(document, folder, schema, system, provider=provider)
         # Reserve before IO. An interrupted request must not silently restore its quota.
-        reserved = min(extractor.MAX_ATTEMPTS, remaining)
+        reserved = min(1 if provider == 'vercel' else extractor.MAX_ATTEMPTS, remaining)
+        credit = None
+        if provider == 'vercel':
+            policy = extractor.channels
+            month = datetime.fromtimestamp(now(), timezone.utc).strftime('%Y-%m')
+            if ledger.get('credit_usage', {}).get('month') != month:
+                ledger['credit_usage'] = {'month': month, 'reserved_usd': 0}
+            credit = ledger['credit_usage']
+            credit['reserved_usd'] = float(policy.decimal_nonnegative(credit['reserved_usd']) + policy.VERCEL_RESERVATION)
         ledger['usage']['attempts'] += reserved
         ledger['last_request_at'] = now()
         item['status'] = 'in_flight'
@@ -153,6 +171,18 @@ def process_documents(documents: list[dict], state: dict, state_path: Path, out:
         result = extractor.infer(payload, schema, folder / 'direct', key,
                                  session=session, sleep=sleep, max_attempts=reserved, provider=provider)
         attempts = result['http_attempts']
+        if credit is not None:
+            cost = extractor.channels.credit_cost(result)
+            if attempts == 0:
+                cost = extractor.channels.Decimal(0)
+            # Missing cost / network timeout keeps the whole durable reservation.
+            if cost is not None:
+                credit['reserved_usd'] = float(extractor.channels.decimal_nonnegative(credit['reserved_usd'])
+                                               - extractor.channels.VERCEL_RESERVATION + cost)
+        usage = result.get('usage') or {}
+        tokens = usage.get('total_tokens') if isinstance(usage, dict) else None
+        if isinstance(tokens, int) and not isinstance(tokens, bool) and tokens >= 0:
+            ledger['usage']['tokens'] = ledger['usage'].get('tokens', 0) + tokens
         ledger['usage']['attempts'] -= reserved - attempts
         ledger['last_request_at'] = now()
         summary['http_attempts'] += attempts
@@ -180,6 +210,8 @@ def process_documents(documents: list[dict], state: dict, state_path: Path, out:
             break
     summary.update(provider=provider, daily_usage=ledger['usage'], provider_not_before=ledger.get('provider_not_before', 0),
                    queue_size=len(state['items']))
+    if provider == 'vercel':
+        summary['credit_usage'] = ledger.get('credit_usage', {})
     write_state(state_path, state)
     extractor.save(out / 'summary.json', summary)
     return summary
@@ -188,7 +220,8 @@ def process_documents(documents: list[dict], state: dict, state_path: Path, out:
 def process_pool(documents: list[dict], state: dict, state_path: Path, out: Path,
                  keys: dict, schema: dict, system: str, *, sessions=None,
                  now=time.time, sleep=time.sleep, max_requests=POOL_REQUESTS,
-                 time_budget=4500, providers=('orcarouter', 'tokenharbor')) -> dict:
+                 time_budget=4500, providers=('orcarouter', 'tokenharbor'),
+                 per_provider_requests=None) -> dict:
     """Try independent free accounts in order, never regenerate a model answer.
 
     Both routes share the evidence/contract fingerprint, not serving credentials.
@@ -196,6 +229,8 @@ def process_pool(documents: list[dict], state: dict, state_path: Path, out: Path
     """
     if not 1 <= max_requests <= POOL_REQUESTS:
         raise ValueError('pool_request_budget')
+    if per_provider_requests is not None and not 1 <= per_provider_requests <= POOL_REQUESTS:
+        raise ValueError('per_provider_request_budget')
     if not providers or len(set(providers)) != len(providers):
         raise ValueError('invalid_provider_order')
     for provider in providers:
@@ -211,7 +246,7 @@ def process_pool(documents: list[dict], state: dict, state_path: Path, out: Path
     summary = {'status': 'completed', 'completed': 0, 'cached': len(initially_cached),
                'http_attempts': 0, 'providers': [], 'pending': [], 'publication_allowed': False}
     no_retry = set()
-    for provider in providers:
+    for provider_index, provider in enumerate(providers):
         pending = [d for d in documents if not cached(d) and d['id'] not in no_retry]
         if not pending or summary['http_attempts'] >= max_requests or now() >= deadline:
             break
@@ -221,8 +256,10 @@ def process_pool(documents: list[dict], state: dict, state_path: Path, out: Path
             continue
         result = process_documents(pending, state, state_path, out / provider, key, schema, system,
             provider=provider, session=(sessions or {}).get(provider), now=now, sleep=sleep,
-            max_requests=min(PROVIDER_DAILY_LIMITS[provider], max_requests-summary['http_attempts']),
-            time_budget=max(0, deadline-now()))
+            max_requests=min(PROVIDER_DAILY_LIMITS[provider], max_requests-summary['http_attempts'],
+                             per_provider_requests or POOL_REQUESTS),
+            time_budget=max(0, deadline-now()) if len(providers) <= 2 else
+                        min(max(0, deadline-now()), max(60, (deadline-now()) / (len(providers)-provider_index))))
         summary['providers'].append(result)
         summary['completed'] += result['completed']
         summary['http_attempts'] += result['http_attempts']
@@ -359,8 +396,9 @@ def main(argv=None) -> int:
     pool.add_argument('--manifest', type=Path, required=True)
     pool.add_argument('--max-requests', type=int, default=POOL_REQUESTS)
     pool.add_argument('--execute', action='store_true')
-    pool.add_argument('--providers', default='orcarouter,tokenharbor')
-    prepare.add_argument('--providers', default='orcarouter')
+    pool.add_argument('--providers', default=','.join(DEFAULT_PROVIDERS))
+    pool.add_argument('--per-provider-requests', type=int, default=None)
+    prepare.add_argument('--providers', default=','.join(DEFAULT_PROVIDERS))
     for command in (prepare, extract, pool):
         command.add_argument('--state', type=Path, required=True)
         command.add_argument('--out', type=Path, required=True)
@@ -383,7 +421,8 @@ def main(argv=None) -> int:
             providers = tuple(args.providers.split(','))
             keys = {p: os.environ.get(extractor.provider_config(p)['secret'], '') for p in providers}
             result = process_pool(documents, state, args.state, args.out, keys, schema, system,
-                                  max_requests=args.max_requests, providers=providers)
+                                  max_requests=args.max_requests, providers=providers,
+                                  per_provider_requests=args.per_provider_requests)
         else:
             result = process_documents(documents, state, args.state, args.out,
                 os.environ.get('ORCAROUTER_API_KEY', ''), schema, system, max_requests=args.max_requests)
