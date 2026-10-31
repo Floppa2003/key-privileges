@@ -5,7 +5,6 @@ acquired by the production capture, not made from expected answers.
 """
 import argparse
 import asyncio
-import hashlib
 import json
 import os
 from pathlib import Path
@@ -47,7 +46,6 @@ def infer():
     docs=m.load_manifest(ROOT/'captures/manifest.json')
     state=q.new_state();q.merge_targets(state,json.loads((ROOT/'targets.json').read_text()))
     schema=json.loads((q.HERE/'merchant_offer.schema.json').read_text());prompt=(q.HERE/'merchant_prompt.txt').read_text()
-    # The standard production extractor; no output rewriting, no tools/search.
     result=q.process_documents(docs,state,ROOT/'state.json',ROOT/'results',os.environ['EXPERIENTAL_API_KEY'],schema,prompt,
                                max_requests=4,provider='experiential',time_budget=600)
     m.save(ROOT/'summary.json',result)
@@ -69,6 +67,9 @@ def inspect():
         assert 'консьерж' in actions and 'бронир' in actions,row['partner']
         assert all(o['promo_code'] is None and o['valid_until'] is None for o in offers),row['partner']
         native=json.loads((ROOT/'captures'/row['id']/'native-source.json').read_text())['items']
+        if row['partner']!='Po’mestam':
+            assert any('приоритетное размещение' in i['description'].lower() for i in native)
+            assert any(o['benefit_kind']=='other' and 'приоритет' in (o['basis'] or '').lower() for o in offers),('lost secondary benefit',row['partner'])
         strings=[]
         def collect(x):
             if isinstance(x,str):strings.append(x)
@@ -81,6 +82,7 @@ def inspect():
             for quote in offer['evidence']:
                 assert any(' '.join(quote.split()) in ' '.join(s.split()) for s in strings),(row['partner'],quote)
     m.save(ROOT/'semantic-check.json',{'cases':len(checks),'main_discount_and_booking_checks_passed':True,
+           'all_three_non_monetary_benefits_preserved':True,
            'limits':'Known four-case regression, not a blind full-catalogue accuracy estimate.'})
 
 if __name__=='__main__':
