@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import copy
 from datetime import datetime, timezone
 import hashlib
 import json
@@ -13,6 +14,7 @@ import time
 from urllib.parse import urlsplit
 
 import merchant_extract as extractor
+import merchant_evidence as evidence
 from model import clean_url
 
 HERE = Path(__file__).resolve().parent
@@ -75,7 +77,8 @@ def discover_targets(catalog: dict | None, partners: dict, rules: dict) -> list[
     candidates = [dict(value, source_id=sid) for mapping in (partners, rules)
                   for sid, value in mapping.items()]
     candidates.extend({'url': r.get('source_url'), 'partner': r.get('partner_name'),
-                       'program': r.get('program'), 'source_id': r.get('source_id')}
+                       'program': r.get('program'), 'source_id': r.get('source_id'),
+                       'source_record': r}
                       for r in (catalog or {}).get('records', []))
     result = {}
     for candidate in candidates:
@@ -88,8 +91,14 @@ def discover_targets(catalog: dict | None, partners: dict, rules: dict) -> list[
             continue
         identity = [url, partner.strip(), program.strip()]
         ident = hashlib.sha256(json.dumps(identity, ensure_ascii=False).encode()).hexdigest()[:32]
-        result.setdefault(ident, {'id': ident, 'url': url, 'partner': partner.strip(),
+        target = result.setdefault(ident, {'id': ident, 'url': url, 'partner': partner.strip(),
                                   'program': program.strip(), 'source_id': candidate.get('source_id')})
+        row = candidate.get('source_record')
+        if row is not None:
+            records = target.setdefault('source_records', [])
+            if row not in records:
+                records.append(copy.deepcopy(row))
+            target['source_id'] = row.get('source_id')
     return list(result.values())
 
 
@@ -97,7 +106,19 @@ def merge_targets(state: dict, targets: list[dict]) -> None:
     # Incomplete catalogue reads must not delete previously discovered work/results.
     for target in targets:
         item = state['items'].setdefault(target['id'], {})
-        item['target'] = target
+        previous = item.get('target', {})
+        merged = copy.deepcopy(target)
+        if 'source_records' not in merged and 'source_records' in previous:
+            merged['source_records'] = copy.deepcopy(previous['source_records'])
+        item['target'] = merged
+        # Repair the old incomplete-input negative once, without deleting history
+        # or resetting any provider quota. Corrected inputs get their own hash.
+        if (item.get('extracted', {}).get('has_offer') is False
+                and merged.get('source_records')
+                and item.get('source_repair_version') != evidence.INPUT_CONTRACT_VERSION
+                and item.get('input_contract_version') != evidence.INPUT_CONTRACT_VERSION):
+            item.update(status='needs_source', last_checked=0,
+                        source_repair_version=evidence.INPUT_CONTRACT_VERSION)
 
 
 def pending_targets(state: dict) -> list[dict]:
@@ -109,7 +130,7 @@ def pending_targets(state: dict) -> list[dict]:
 
 def fingerprint(document: dict, schema: dict, system: str) -> str:
     target = {**document['target'], 'as_of': ''}
-    payload = extractor.build_request(target, document['text'], document['images'], schema, system)
+    payload = extractor.build_request(target, evidence.request_text(document, for_cache=True), document['images'], schema, system)
     raw = json.dumps({'endpoint': extractor.ENDPOINT, 'payload': payload},
                      ensure_ascii=False, sort_keys=True, allow_nan=False).encode()
     return hashlib.sha256(raw).hexdigest()
@@ -131,7 +152,7 @@ def process_documents(documents: list[dict], state: dict, state_path: Path, out:
         ident = document['id']
         item = state['items'].setdefault(ident, {})
         digest = fingerprint(document, schema, system)
-        if item.get('fingerprint') == digest and 'extracted' in item:
+        if item.get('fingerprint') == digest and evidence.cache_usable(item, document):
             summary['cached'] += 1
             item.update(last_checked=now(), status='cached')
             summary['results'].append({'id': ident, 'status': 'cached',
@@ -186,13 +207,25 @@ def process_documents(documents: list[dict], state: dict, state_path: Path, out:
         ledger['usage']['attempts'] -= reserved - attempts
         ledger['last_request_at'] = now()
         summary['http_attempts'] += attempts
+        answer = None
+        if result['status'] == 'completed':
+            answer = extractor.strict_json((folder / 'direct/extracted.json').read_text())
+            unresolved = evidence.negative_status(document, answer)
+            if unresolved:
+                # Keep the actual model answer and completed API result intact.
+                # Only the queue's readiness decision changes; do not fabricate an offer.
+                result = {**result, 'generation_status': 'completed', 'status': unresolved,
+                          'input_resolution': unresolved}
+                item['unresolved_extraction'] = answer
+                extractor.save(folder / 'queue-decision.json', result)
         item.update(status=result['status'], last_checked=now(), last_result=result)
         if result['status'] == 'completed':
-            item.update(fingerprint=digest,
-                        extracted=extractor.strict_json((folder / 'direct/extracted.json').read_text()),
+            item.update(fingerprint=digest, extracted=answer,
                         inferred_as_of=document['target']['as_of'], inferred_at=now(),
                         inferred_provider=provider, returned_model=result.get('returned_model'),
+                        input_contract_version=document.get('source', {}).get('capture', {}).get('input_contract_version'),
                         publication_allowed=False)
+            item.pop('unresolved_extraction', None)
             summary['completed'] += 1
         else:
             summary['status'] = 'incomplete'
@@ -239,7 +272,7 @@ def process_pool(documents: list[dict], state: dict, state_path: Path, out: Path
     deadline = now() + time_budget
     def cached(document):
         item = state['items'].get(document['id'], {})
-        return 'extracted' in item and item.get('fingerprint') == fingerprint(document, schema, system)
+        return evidence.cache_usable(item, document) and item.get('fingerprint') == fingerprint(document, schema, system)
     initially_cached = {d['id'] for d in documents if cached(d)}
     for ident in initially_cached:
         state['items'][ident].update(last_checked=now(), status='cached')
@@ -266,7 +299,7 @@ def process_pool(documents: list[dict], state: dict, state_path: Path, out: Path
         # Validation failures are model answers, not quota failures. Unknown network
         # outcomes are also not retried via a second account in this run.
         no_retry.update(row['id'] for row in result['results']
-                        if row['status'] in ('failed_validation', 'transport_error'))
+                        if row['status'] in ('failed_validation', 'transport_error', 'needs_source', 'needs_review'))
         stop = result.get('stop_reason')
         if stop in ('credential_echo', 'nonzero_reported_cost', 'invalid_reported_cost'):
             summary['stop_reason'] = stop
@@ -291,9 +324,10 @@ async def capture_page(browser, target: dict, out: Path) -> dict:
     sys.path.insert(0, str(HERE.parent))
     from diagnostics.deepseek_acceptance import tile_png, store
     from public_transport import PublicSource, check_response
-    ident, url = target['id'], target['url']
+    ident, url = target['id'], evidence.capture_url(target)
     folder = out / ident
     folder.mkdir()
+    capture = {'scope': 'pdf', 'target_found': False, 'content_ready': True}
     async with PublicSource(browser, url) as source:
         if urlsplit(url).path.lower().endswith('.pdf'):
             raw = await source.read_pdf(url)
@@ -308,11 +342,13 @@ async def capture_page(browser, target: dict, out: Path) -> dict:
                 raise ValueError('image_count_budget_no_truncation')
             images = [p.read_bytes() for p in pages]
             text = (folder/'visible-text.txt').read_text(encoding='utf-8')
+            capture['target_found'] = evidence.has_target(text, target['partner'])
             if not text.strip(): text = '[PDF without embedded text; use all attached rendered pages.]'
         else:
             await source.page.set_viewport_size({'width': 1024, 'height': 1024})
             status, html = await source.navigate(url)
             check_response(status, html)
+            capture = await evidence.prepare_public_page(source.page, target)
             # Reveal native HTML disclosures; no form submissions or account interaction.
             await source.page.evaluate("document.querySelectorAll('details').forEach(n => n.open = true)")
             for _ in range(40):
@@ -328,9 +364,13 @@ async def capture_page(browser, target: dict, out: Path) -> dict:
             if not text.strip(): raise ValueError('empty_page')
             (folder/'source.html').write_text(await source.page.content(), encoding='utf-8')
             images = tile_png(await source.page.screenshot(full_page=True, animations='disabled', timeout=30000))
-        return store(out, ident, {'partner': target['partner'], 'program': target['program'],
+        spec = store(out, ident, {'partner': target['partner'], 'program': target['program'],
                                   'as_of': datetime.now(timezone.utc).date().isoformat()},
                      text, images, source_url=url)
+        spec = evidence.attach(spec, target, capture)
+        extractor.save(folder / 'source-records.json', spec['source_records'])
+        extractor.save(folder / 'capture-readiness.json', capture)
+        return spec
 
 
 async def prepare_queue(state_path: Path, catalog_path: Path, out: Path, max_pages: int,
