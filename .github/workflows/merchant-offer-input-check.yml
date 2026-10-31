@@ -9,6 +9,7 @@ on:
       - loyalty/merchant_queue.py
       - loyalty/merchant_extract.py
       - loyalty/tests/test_merchant_evidence*.py
+      - diagnostics/test_merchant_evidence_browser.py
       - .github/workflows/merchant-offer-input-check.yml
 permissions:
   contents: read
@@ -29,12 +30,15 @@ jobs:
           set -euo pipefail
           python -m pip install -r loyalty/requirements.txt
           sudo apt-get update -qq && sudo apt-get install -y poppler-utils
+          python -m playwright install --with-deps chromium
       - name: Evidence contracts
         run: |
           set -euo pipefail
           mkdir -p evidence
           git rev-parse HEAD > evidence/commit.txt
           python -m unittest discover -s loyalty/tests -p 'test_merchant_evidence*.py' -v 2>&1 | tee evidence/contracts.log
+      - name: Real browser capture regressions
+        run: python diagnostics/test_merchant_evidence_browser.py > evidence/browser.log 2>&1
       - name: Full Python regression
         run: python -m unittest discover -s loyalty/tests -v > evidence/python.log 2>&1
       - name: KEY regression
