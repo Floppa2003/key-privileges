@@ -29,9 +29,10 @@ jobs:
           python -m playwright install --with-deps chromium
       - name: Observe browser regression on original capture
         run: |
-          set -uo pipefail
+          set +e
           python diagnostics/test_merchant_evidence_browser.py > repair-output/browser-red.log 2>&1
           rc=$?
+          set -euo pipefail
           cat repair-output/browser-red.log
           test "$rc" -ne 0
           grep -q 'Ran 3 tests' repair-output/browser-red.log
