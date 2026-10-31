@@ -117,7 +117,7 @@ def pending_targets(state: dict) -> list[dict]:
 
 def fingerprint(document: dict, schema: dict, system: str) -> str:
     target = {**document['target'], 'as_of': ''}
-    payload = extractor.build_request(target, document['text'], document['images'], schema, system)
+    payload = extractor.build_request(target, evidence.fingerprint_text(document), document['images'], schema, system)
     raw = json.dumps({'endpoint': extractor.ENDPOINT, 'payload': payload},
                      ensure_ascii=False, sort_keys=True, allow_nan=False).encode()
     return hashlib.sha256(raw).hexdigest()
@@ -350,10 +350,13 @@ async def capture_page(browser, target: dict, out: Path) -> dict:
             images = tile_png(await source.page.screenshot(full_page=True, animations='disabled', timeout=30000))
         # Keep the live page and the already acquired, explicitly dated collector
     # material in the same model call. Never silently throw away the latter.
+    context_start = len(text)
     text += evidence.snapshot_text(target)
     spec = store(out, ident, {'partner': target['partner'], 'program': target['program'],
                                   'as_of': datetime.now(timezone.utc).date().isoformat()},
                      text, images, source_url=url)
+    if target.get('source_records'):
+        spec['collector_context_start'] = context_start
     return evidence.attach_snapshot(spec, target, out)
 
 
