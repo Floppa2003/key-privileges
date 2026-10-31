@@ -37014,7 +37014,66 @@
         "partner": "Four Seasons (Петербург)",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793424962.1214623,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "e03fbf16d2541ad635252a1d565effcaf6d87eafdf94bc37a32debb2cb034ebe",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "e03fbf16d2541ad635252a1d565effcaf6d87eafdf94bc37a32debb2cb034ebe",
+            "seconds": 15.882659798999839,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 788,
+              "prompt_tokens": 3117,
+              "total_tokens": 3905,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 739
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 788,
+          "prompt_tokens": 3117,
+          "total_tokens": 3905,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 739
+          }
+        },
+        "seconds": 15.889427761999968,
+        "http_attempts": 1
+      },
+      "fingerprint": "1df9c5e3b3c523c38edd6831038d7f9e71a510ec6bf1a21ababd02a3459b9c9e",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "Партнёр Four Seasons (Петербург) отсутствует в предоставленном списке привилегий Konsierge."
+        ]
+      },
+      "inferred_as_of": "2026-10-31",
+      "inferred_at": 1793424962.1215408,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "fa745780db5e7ebd2933e3f2e12a5a1f": {
       "target": {
@@ -37023,7 +37082,66 @@
         "partner": "Гранд Отель Поляна",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793424976.1538215,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "11ae50b08bb182e1ba9a8ef7a8439d3b82482c525f551198b54b589ac68bb27b",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "11ae50b08bb182e1ba9a8ef7a8439d3b82482c525f551198b54b589ac68bb27b",
+            "seconds": 6.992442216999962,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 287,
+              "prompt_tokens": 3119,
+              "total_tokens": 3406,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 228
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 287,
+          "prompt_tokens": 3119,
+          "total_tokens": 3406,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 228
+          }
+        },
+        "seconds": 7.001289388000032,
+        "http_attempts": 1
+      },
+      "fingerprint": "d1dcdfaadc05fca5251ff073662c032f9f39e9dea67e7e105e54fbc869b34dc7",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В предоставленных данных не найдено предложение программы «Konsierge — публичные привилегии» для партнёра «Гранд Отель Поляна»."
+        ]
+      },
+      "inferred_as_of": "2026-10-31",
+      "inferred_at": 1793424976.1539216,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "f991a7148fd75c3c1dee93971b1055b7": {
       "target": {
@@ -37032,7 +37150,66 @@
         "partner": "XFIT (Москва)",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793424991.8640454,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "8b0b78682caaf52cf64e2d0fc0b0cdd5ae13bb9180fb5ef669a02c9d55e2a7da",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "8b0b78682caaf52cf64e2d0fc0b0cdd5ae13bb9180fb5ef669a02c9d55e2a7da",
+            "seconds": 8.673700168999858,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 430,
+              "prompt_tokens": 2418,
+              "total_tokens": 2848,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 382
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 430,
+          "prompt_tokens": 2418,
+          "total_tokens": 2848,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 382
+          }
+        },
+        "seconds": 8.67976610300002,
+        "http_attempts": 1
+      },
+      "fingerprint": "9d2d0b00fa6b6e9adcb38b393bf96df4560cc147b9d562b2b124872de2e19bef",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "XFIT (Москва) не найден в списке привилегий Konsierge — публичные привилегии."
+        ]
+      },
+      "inferred_as_of": "2026-10-31",
+      "inferred_at": 1793424991.8641427,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "20a40dd8d37d9be14a4b2a6087089fca": {
       "target": {
@@ -37041,7 +37218,66 @@
         "partner": "XFIT (Петербург)",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793425007.1647265,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "b4540db4ef12848dfd7e8aebae4a29a568793eb78193aa2334c54cf19402d623",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "b4540db4ef12848dfd7e8aebae4a29a568793eb78193aa2334c54cf19402d623",
+            "seconds": 8.263846259000047,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 386,
+              "prompt_tokens": 3117,
+              "total_tokens": 3503,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 342
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 386,
+          "prompt_tokens": 3117,
+          "total_tokens": 3503,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 342
+          }
+        },
+        "seconds": 8.270148446999883,
+        "http_attempts": 1
+      },
+      "fingerprint": "4af2fb0ce562deef00f6dcd6b2faeeb9b038e406239ca9d219a7c21ec17b4a69",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В предоставленных данных нет партнёра XFIT (Петербург) и нет предложения для него."
+        ]
+      },
+      "inferred_as_of": "2026-10-31",
+      "inferred_at": 1793425007.1648362,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "811f1b41486fc41b4f814afad6f3aec0": {
       "target": {
@@ -37050,7 +37286,66 @@
         "partner": "XFIT (Новосибирск)",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793425023.5667217,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "80e164cbc53c9d52a68b1cdcc9d786a84fd399f71d4a06122e679ebc61cb6e2b",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "80e164cbc53c9d52a68b1cdcc9d786a84fd399f71d4a06122e679ebc61cb6e2b",
+            "seconds": 9.363176410000051,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 417,
+              "prompt_tokens": 2419,
+              "total_tokens": 2836,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 369
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 417,
+          "prompt_tokens": 2419,
+          "total_tokens": 2836,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 369
+          }
+        },
+        "seconds": 9.369245754000076,
+        "http_attempts": 1
+      },
+      "fingerprint": "8be803c3caec1d7a393f2a089ef0fe8fdaea9e49b5d38458534606b70f34519a",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В предоставленном блоке TARGET отсутствует предложение для партнёра XFIT (Новосибирск)."
+        ]
+      },
+      "inferred_as_of": "2026-10-31",
+      "inferred_at": 1793425023.5668237,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "8a5ecdd28ec27ec08b990eb0cdfb42b8": {
       "target": {
@@ -37059,7 +37354,66 @@
         "partner": "XFIT (Волгоград)",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793425040.5073192,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "9ddbcfcd858a29b7f19bc7a0e30bb8c8eeaccd35ef8a504af6148227493c694c",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "9ddbcfcd858a29b7f19bc7a0e30bb8c8eeaccd35ef8a504af6148227493c694c",
+            "seconds": 9.902744162999852,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 483,
+              "prompt_tokens": 2418,
+              "total_tokens": 2901,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 431
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 483,
+          "prompt_tokens": 2418,
+          "total_tokens": 2901,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 431
+          }
+        },
+        "seconds": 9.909559853000019,
+        "http_attempts": 1
+      },
+      "fingerprint": "3180525988a388ef87ccf75fcec800b0862d2695ca56454f8cc06db1c890b253",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В предоставленных данных не найдено предложения для XFIT (Волгоград) в программе Konsierge — публичные привилегии."
+        ]
+      },
+      "inferred_as_of": "2026-10-31",
+      "inferred_at": 1793425040.5074208,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "e9d7e058b049300c6ae5f984940a0df6": {
       "target": {
@@ -37068,7 +37422,66 @@
         "partner": "XFIT (Казань)",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793425055.6890147,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "acd95826d6a6ac6a358341e814dc9d0c9335142febcb823faff7db0bac69c98f",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "acd95826d6a6ac6a358341e814dc9d0c9335142febcb823faff7db0bac69c98f",
+            "seconds": 8.143148459000031,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 334,
+              "prompt_tokens": 2417,
+              "total_tokens": 2751,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 291
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 334,
+          "prompt_tokens": 2417,
+          "total_tokens": 2751,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 291
+          }
+        },
+        "seconds": 8.149867201999996,
+        "http_attempts": 1
+      },
+      "fingerprint": "f885b54468a4ec973ccf26841f4c438a5555a3d95130ed126732d69a59b5cfbc",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В предоставленных данных отсутствует предложение для XFIT (Казань) в программе Konsierge."
+        ]
+      },
+      "inferred_as_of": "2026-10-31",
+      "inferred_at": 1793425055.6891139,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "8be8430af81a2dbc2d9410f18644ff44": {
       "target": {
@@ -37077,7 +37490,66 @@
         "partner": "Burgundy ru",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793425071.5758514,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "da04d826dea9c299d15bb2a9ef7a463987c599cfc0c9fb04068847b400e54b5b",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "da04d826dea9c299d15bb2a9ef7a463987c599cfc0c9fb04068847b400e54b5b",
+            "seconds": 8.849796863999927,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 411,
+              "prompt_tokens": 3115,
+              "total_tokens": 3526,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 364
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 411,
+          "prompt_tokens": 3115,
+          "total_tokens": 3526,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 364
+          }
+        },
+        "seconds": 8.855872164999937,
+        "http_attempts": 1
+      },
+      "fingerprint": "b8901478d16dd9dfc5a6049aee84e8fa53e756100fb7c9f80eaa70ce54a4129b",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В предоставленных страницах и полном тексте нет упоминания партнёра Burgundy ru или его предложения."
+        ]
+      },
+      "inferred_as_of": "2026-10-31",
+      "inferred_at": 1793425071.5759568,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "a870510cbcd4126fd5a16d9942341a05": {
       "target": {
@@ -37086,7 +37558,67 @@
         "partner": "OSKELLY",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793425085.1559896,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "ca61bd82489692f7eb494ec9bb554f8169fb8de94829f4a81bf589aff6e62f84",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "ca61bd82489692f7eb494ec9bb554f8169fb8de94829f4a81bf589aff6e62f84",
+            "seconds": 6.543444448999935,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 257,
+              "prompt_tokens": 3115,
+              "total_tokens": 3372,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 195
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 257,
+          "prompt_tokens": 3115,
+          "total_tokens": 3372,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 195
+          }
+        },
+        "seconds": 6.549499831000048,
+        "http_attempts": 1
+      },
+      "fingerprint": "7cdc5c1ea64a8ef59aee74f158a971762e59b901d5bbc8f6da5e632ba74c51b1",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "На предоставленных страницах не найдено предложение партнёра OSKELLY.",
+          "Не указаны выгода, область действия, способ получения и ограничения для OSKELLY."
+        ]
+      },
+      "inferred_as_of": "2026-10-31",
+      "inferred_at": 1793425085.1560895,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "a55d05947b9bc35ca36e7c0fe74e793c": {
       "target": {
@@ -37095,7 +37627,66 @@
         "partner": "BoConcept",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793425097.670424,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "49e4b9597c3b71a8e3f52a894654558181e76c4f471377ab738636b8a13ddffa",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "49e4b9597c3b71a8e3f52a894654558181e76c4f471377ab738636b8a13ddffa",
+            "seconds": 5.477880300999914,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 167,
+              "prompt_tokens": 2413,
+              "total_tokens": 2580,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 130
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 167,
+          "prompt_tokens": 2413,
+          "total_tokens": 2580,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 130
+          }
+        },
+        "seconds": 5.484073230000149,
+        "http_attempts": 1
+      },
+      "fingerprint": "5bbf13e7d060c9dd1f8c9ef17d77379bcbecf3f35a16d20d8211ab05abbfe59b",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В предоставленных данных отсутствует предложение программы для партнёра BoConcept."
+        ]
+      },
+      "inferred_as_of": "2026-10-31",
+      "inferred_at": 1793425097.6705103,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "d1dd8902e577232ed08b0a000b532829": {
       "target": {
@@ -37104,7 +37695,67 @@
         "partner": "SimplePrivé",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793425118.260452,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "68496c52ef441c7eb290369c8cd8078676895c5f3bb99e3d07469b70355fb4f5",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "68496c52ef441c7eb290369c8cd8078676895c5f3bb99e3d07469b70355fb4f5",
+            "seconds": 13.551496203999932,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 735,
+              "prompt_tokens": 3115,
+              "total_tokens": 3850,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 674
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 735,
+          "prompt_tokens": 3115,
+          "total_tokens": 3850,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 674
+          }
+        },
+        "seconds": 13.558824653000102,
+        "http_attempts": 1
+      },
+      "fingerprint": "1a8a52d8599745338346fa4867c64a648ccc4c6ff0e428b90d5dd376cca8e707",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В предоставленном тексте и изображениях нет партнёра SimplePrivé.",
+          "Нет условий программы Konsierge — публичные привилегии для SimplePrivé."
+        ]
+      },
+      "inferred_as_of": "2026-10-31",
+      "inferred_at": 1793425118.2605588,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "11b7f49952f6a95817690e4d8f60efba": {
       "target": {
@@ -37113,7 +37764,66 @@
         "partner": "Prosto eSIM",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793425133.1451826,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "6d9ea55e45e3e4a46878881b1b46ecde8f04f8e60e35d66a1fd41fa62e06bdc4",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "6d9ea55e45e3e4a46878881b1b46ecde8f04f8e60e35d66a1fd41fa62e06bdc4",
+            "seconds": 7.845584343000155,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 294,
+              "prompt_tokens": 3115,
+              "total_tokens": 3409,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 240
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 294,
+          "prompt_tokens": 3115,
+          "total_tokens": 3409,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 240
+          }
+        },
+        "seconds": 7.851927651000096,
+        "http_attempts": 1
+      },
+      "fingerprint": "6da13121e5a31d85abcafb59e877e74fc96474eacc98661455fd43e6ecf38354",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В предоставленных данных нет упоминания партнёра Prosto eSIM или его предложения в программе Konsierge — публичные привилегии."
+        ]
+      },
+      "inferred_as_of": "2026-10-31",
+      "inferred_at": 1793425133.145281,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "22e9bc78ad9341e7258e10b3b260a690": {
       "target": {
@@ -37122,7 +37832,66 @@
         "partner": "Крыша",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793425147.4499643,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "97aa762bdd7bcdecc67661b8c6d722c0215863e9ec46e22528f439eee7bfe3ce",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "97aa762bdd7bcdecc67661b8c6d722c0215863e9ec46e22528f439eee7bfe3ce",
+            "seconds": 7.2679010660001495,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 281,
+              "prompt_tokens": 3114,
+              "total_tokens": 3395,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 225
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 281,
+          "prompt_tokens": 3114,
+          "total_tokens": 3395,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 225
+          }
+        },
+        "seconds": 7.274011305000158,
+        "http_attempts": 1
+      },
+      "fingerprint": "b7b25a8b2c77bee7ab6461d8c2a183d0808250e4d6789506a7140051965d9d52",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В предоставленных материалах не найдено предложение партнёра «Крыша» в программе «Konsierge — публичные привилегии»."
+        ]
+      },
+      "inferred_as_of": "2026-10-31",
+      "inferred_at": 1793425147.4500625,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "4154636c3c629352677c1bb460c7f1e4": {
       "target": {
@@ -37131,7 +37900,66 @@
         "partner": "Jamaa",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793425166.2567976,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "e4269980f71d986e700c16371752db6ce6188c098d0124120690a8499f987a9a",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "e4269980f71d986e700c16371752db6ce6188c098d0124120690a8499f987a9a",
+            "seconds": 11.767821271000003,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 496,
+              "prompt_tokens": 3114,
+              "total_tokens": 3610,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 443
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 496,
+          "prompt_tokens": 3114,
+          "total_tokens": 3610,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 443
+          }
+        },
+        "seconds": 11.773882082,
+        "http_attempts": 1
+      },
+      "fingerprint": "0da4a8ff8d630d078fa970ee21bbc102db9d78e736bfd89358bf154ec67462e5",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В предоставленных данных нет партнёра Jamaa или его предложения в программе «Konsierge — публичные привилегии»."
+        ]
+      },
+      "inferred_as_of": "2026-10-31",
+      "inferred_at": 1793425166.2568967,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "14882c71f1e0cfd1230a4ecce5d6817f": {
       "target": {
@@ -37140,7 +37968,66 @@
         "partner": "Tutto Bene",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793425180.8924513,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "91b076040f8b11a8846955fd0ca90cc89ad5ba2e749c2a3c73ac9206e1eeb928",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "91b076040f8b11a8846955fd0ca90cc89ad5ba2e749c2a3c73ac9206e1eeb928",
+            "seconds": 7.598492209000142,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 307,
+              "prompt_tokens": 3114,
+              "total_tokens": 3421,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 266
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 307,
+          "prompt_tokens": 3114,
+          "total_tokens": 3421,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 266
+          }
+        },
+        "seconds": 7.604941874999895,
+        "http_attempts": 1
+      },
+      "fingerprint": "8a6dd2e477a6aef45a22944e023fb3872fe1ea67133e9eed17a34d01a4557f2a",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "Партнёр Tutto Bene отсутствует в предоставленном списке привилегий."
+        ]
+      },
+      "inferred_as_of": "2026-10-31",
+      "inferred_at": 1793425180.8925424,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "ce5d5dcb4fc9064f0e80e58a5ea40280": {
       "target": {
@@ -37149,7 +38036,66 @@
         "partner": "Soho Dolce",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793425196.5263314,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "9513ef433f95cc1b7efeb4d1854b53e78f50d78371738f669f139a3b1015887e",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "9513ef433f95cc1b7efeb4d1854b53e78f50d78371738f669f139a3b1015887e",
+            "seconds": 8.595532846999959,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 374,
+              "prompt_tokens": 3115,
+              "total_tokens": 3489,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 326
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 374,
+          "prompt_tokens": 3115,
+          "total_tokens": 3489,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 326
+          }
+        },
+        "seconds": 8.602264574999936,
+        "http_attempts": 1
+      },
+      "fingerprint": "8dd101e94e09d95d03c3f3d3d86f5bb8d5ee166b5d06e2d3e1f7cfbd3316d0c6",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "Информация о предложении партнёра Soho Dolce в предоставленном тексте и изображениях не найдена."
+        ]
+      },
+      "inferred_as_of": "2026-10-31",
+      "inferred_at": 1793425196.5264463,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "49c3cbf75b84a3734b4192b477a10dbb": {
       "target": {
@@ -37158,7 +38104,66 @@
         "partner": "Zea",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793425210.84522,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "bd9333a901c888e27b9ff87ff46e1349caa53391482219ea7727145615b15e88",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "bd9333a901c888e27b9ff87ff46e1349caa53391482219ea7727145615b15e88",
+            "seconds": 7.280727606000028,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 270,
+              "prompt_tokens": 3113,
+              "total_tokens": 3383,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 230
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 270,
+          "prompt_tokens": 3113,
+          "total_tokens": 3383,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 230
+          }
+        },
+        "seconds": 7.286775863999992,
+        "http_attempts": 1
+      },
+      "fingerprint": "e5e5c9e5626a0d9f1f16cb4f626127d42a4848f6b37b40413184db51cb9615e3",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В предоставленном тексте нет сведений о предложении партнёра Zea."
+        ]
+      },
+      "inferred_as_of": "2026-10-31",
+      "inferred_at": 1793425210.8453312,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "43383511aed89091d47b229f000119bb": {
       "target": {
@@ -37167,7 +38172,66 @@
         "partner": "Osan by Sang Keung Oh",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793425232.2062266,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "db6b475534fbf19cb73d5ee371899825db7437b1a0d290e61883acd8a502c9b7",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "db6b475534fbf19cb73d5ee371899825db7437b1a0d290e61883acd8a502c9b7",
+            "seconds": 14.323032717999922,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 798,
+              "prompt_tokens": 3118,
+              "total_tokens": 3916,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 753
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 798,
+          "prompt_tokens": 3118,
+          "total_tokens": 3916,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 753
+          }
+        },
+        "seconds": 14.329195228999879,
+        "http_attempts": 1
+      },
+      "fingerprint": "630c538c5328ff15f85a471366f1b7f5dd71c716dec81e499fea8533dc192bc4",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В предоставленном тексте и на изображениях нет предложения или упоминания Osan by Sang Keung Oh."
+        ]
+      },
+      "inferred_as_of": "2026-10-31",
+      "inferred_at": 1793425232.2063303,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "6e4d1c724a77cceb55f6bca782ce6139": {
       "target": {
@@ -37176,7 +38240,66 @@
         "partner": "Зойка",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793425248.736449,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "a330fe594b94f74dc3fcf2df130e83485ff6c370fc544462ffad63d3a483acf1",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "a330fe594b94f74dc3fcf2df130e83485ff6c370fc544462ffad63d3a483acf1",
+            "seconds": 9.492626771999994,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 436,
+              "prompt_tokens": 3114,
+              "total_tokens": 3550,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 382
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 436,
+          "prompt_tokens": 3114,
+          "total_tokens": 3550,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 382
+          }
+        },
+        "seconds": 9.499475534000112,
+        "http_attempts": 1
+      },
+      "fingerprint": "6356d4d11543fb58ee755433952af2876f7a3310147580dbcfed1d538482c114",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В предоставленных данных отсутствует предложение партнёра «Зойка» в программе «Konsierge — публичные привилегии»."
+        ]
+      },
+      "inferred_as_of": "2026-10-31",
+      "inferred_at": 1793425248.7365544,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "d6c1d14dcd06d8571418f9ae631b6dac": {
       "target": {
@@ -37185,7 +38308,66 @@
         "partner": "Айна",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793425266.6455977,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "684ee812b30a3dfad8fd2dac64588da227146133a4404c0457d86e249a00cfc4",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "684ee812b30a3dfad8fd2dac64588da227146133a4404c0457d86e249a00cfc4",
+            "seconds": 10.871129047000068,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 514,
+              "prompt_tokens": 3114,
+              "total_tokens": 3628,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 469
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 514,
+          "prompt_tokens": 3114,
+          "total_tokens": 3628,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 469
+          }
+        },
+        "seconds": 10.878017110999963,
+        "http_attempts": 1
+      },
+      "fingerprint": "5891e8c6e956798a07664dfad288a5cf139ccfa7d739c579550b5ae50dfcf72b",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В предоставленном тексте и изображениях нет партнёра «Айна» или его предложения."
+        ]
+      },
+      "inferred_as_of": "2026-10-31",
+      "inferred_at": 1793425266.6457405,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "1087afbeed40b516aaf20f3ef02b4666": {
       "target": {
@@ -37194,7 +38376,66 @@
         "partner": "0.75 please",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793425283.075945,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "e4af8c0475f09d8a524a1b1c5d45ed02478634879310564117becdfb8c90eb56",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "e4af8c0475f09d8a524a1b1c5d45ed02478634879310564117becdfb8c90eb56",
+            "seconds": 9.392691757999955,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 444,
+              "prompt_tokens": 2415,
+              "total_tokens": 2859,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 402
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 444,
+          "prompt_tokens": 2415,
+          "total_tokens": 2859,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 402
+          }
+        },
+        "seconds": 9.398688930000162,
+        "http_attempts": 1
+      },
+      "fingerprint": "90fd4d950b0989687251caac99e2103e171793c0180dd577a3f173356716bc87",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В предоставленном тексте и изображениях нет партнёра «0.75 please»."
+        ]
+      },
+      "inferred_as_of": "2026-10-31",
+      "inferred_at": 1793425283.0760365,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "fc3c69ea117facd56ed96a1a69167ba7": {
       "target": {
@@ -37203,7 +38444,66 @@
         "partner": "Профессор Фрейд (Петербург)",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793425296.301544,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "43e8f6fa127f27d9b52f30c124e4b8fdd1a909674ccbe3fdf9e4cf9bd64a4918",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "43e8f6fa127f27d9b52f30c124e4b8fdd1a909674ccbe3fdf9e4cf9bd64a4918",
+            "seconds": 6.18873428400002,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 256,
+              "prompt_tokens": 3122,
+              "total_tokens": 3378,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 211
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 256,
+          "prompt_tokens": 3122,
+          "total_tokens": 3378,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 211
+          }
+        },
+        "seconds": 6.194759148999992,
+        "http_attempts": 1
+      },
+      "fingerprint": "1e0b392fcc8afc961e3728cf72c133717fec76fd9dce0ed8ac4dffd4f44348b7",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В предоставленных материалах отсутствует партнёр «Профессор Фрейд (Петербург)»."
+        ]
+      },
+      "inferred_as_of": "2026-10-31",
+      "inferred_at": 1793425296.301666,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "2855868320f9949a4b67e3a9cb84eb22": {
       "target": {
@@ -37212,7 +38512,67 @@
         "partner": "Hyatt Privé",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793425314.9071467,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "5241209f839b7d03e53139215065dd91267b3abbff42b07dcf7af496ff6008ca",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "5241209f839b7d03e53139215065dd91267b3abbff42b07dcf7af496ff6008ca",
+            "seconds": 11.567356448000055,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 417,
+              "prompt_tokens": 2415,
+              "total_tokens": 2832,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 336
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 417,
+          "prompt_tokens": 2415,
+          "total_tokens": 2832,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 336
+          }
+        },
+        "seconds": 11.573791262999976,
+        "http_attempts": 1
+      },
+      "fingerprint": "88b1ca894681e86ab8b6c6037d8db348819d58d1d6213812de25dce334ce5652",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В предоставленном тексте нет упоминания партнёра Hyatt Privé или программы Konsierge — публичные привилегии для него.",
+          "Нет сведений о выгоде, области действия, способе получения и ограничениях для Hyatt Privé."
+        ]
+      },
+      "inferred_as_of": "2026-10-31",
+      "inferred_at": 1793425314.907232,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "f436d6a7dffbed7de6bf01be2f1861bc": {
       "target": {
@@ -37221,7 +38581,66 @@
         "partner": "Room of Celebrity",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793425332.704982,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "406c67e6a89a192098778980cb22587de59b66dbca5f638c8c96b00d9465d0ea",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "406c67e6a89a192098778980cb22587de59b66dbca5f638c8c96b00d9465d0ea",
+            "seconds": 10.760776410000062,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 465,
+              "prompt_tokens": 3115,
+              "total_tokens": 3580,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 419
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 465,
+          "prompt_tokens": 3115,
+          "total_tokens": 3580,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 419
+          }
+        },
+        "seconds": 10.766727565999872,
+        "http_attempts": 1
+      },
+      "fingerprint": "d55f410cebedaa48897bcd1ece8ecea92e2a38aadc2dc2b9033aa27d1e2318ac",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "Партнёр Room of Celebrity не найден в предоставленном списке привилегий Konsierge."
+        ]
+      },
+      "inferred_as_of": "2026-10-31",
+      "inferred_at": 1793425332.7050867,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "9b90ce9fb046d2d375f5633d21f19edc": {
       "target": {
@@ -37230,7 +38649,66 @@
         "partner": "Grand Zor",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793425348.3405216,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "a06f9b09b35a3ccbec248d37b04741c55a10e214f9a7295a28aa16ae5d286053",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "a06f9b09b35a3ccbec248d37b04741c55a10e214f9a7295a28aa16ae5d286053",
+            "seconds": 8.596788784999944,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 432,
+              "prompt_tokens": 2414,
+              "total_tokens": 2846,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 384
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 432,
+          "prompt_tokens": 2414,
+          "total_tokens": 2846,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 384
+          }
+        },
+        "seconds": 8.603532602999849,
+        "http_attempts": 1
+      },
+      "fingerprint": "ea47c9bdc8a83456e053727c05fc21520e4b7779c3292a96d599d497e3fee1e5",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В предоставленных данных не найден партнёр Grand Zor и предложение программы Konsierge — публичные привилегии."
+        ]
+      },
+      "inferred_as_of": "2026-10-31",
+      "inferred_at": 1793425348.340619,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "86c7097b9803d078f20a5d0389d8d04e": {
       "target": {
@@ -37239,7 +38717,66 @@
         "partner": "VAKH (Петербург)",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793425364.9831216,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "f67b891b57f82ebe73b3be4e4075105c1438b0fd363f456c8240abb17017f3d4",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "f67b891b57f82ebe73b3be4e4075105c1438b0fd363f456c8240abb17017f3d4",
+            "seconds": 9.605050684999924,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 428,
+              "prompt_tokens": 3117,
+              "total_tokens": 3545,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 385
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 428,
+          "prompt_tokens": 3117,
+          "total_tokens": 3545,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 385
+          }
+        },
+        "seconds": 9.611068286999853,
+        "http_attempts": 1
+      },
+      "fingerprint": "077dd407776370844d5211e20376228a3b3a2646e9cbf4ab95fc571fa8568ec1",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "На предоставленных страницах нет предложения для партнёра VAKH (Петербург)."
+        ]
+      },
+      "inferred_as_of": "2026-10-31",
+      "inferred_at": 1793425364.9832292,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "3b2e05a237071a0d5650019bbd69d958": {
       "target": {
@@ -37248,7 +38785,66 @@
         "partner": "Кика Бистро",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793425382.1934457,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "97952304e96a46477f409ab03ba6ea5b2dae761efd404c9dedf576129ad7ee41",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "97952304e96a46477f409ab03ba6ea5b2dae761efd404c9dedf576129ad7ee41",
+            "seconds": 10.171500035000008,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 472,
+              "prompt_tokens": 2416,
+              "total_tokens": 2888,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 427
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 472,
+          "prompt_tokens": 2416,
+          "total_tokens": 2888,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 427
+          }
+        },
+        "seconds": 10.17836043400007,
+        "http_attempts": 1
+      },
+      "fingerprint": "eeee74cb839d9f7c1a28eb15bacc2c6fc772cf85a59f1ab44b57f83435d28a8a",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "Партнёр «Кика Бистро» и его предложение на предоставленных страницах не найдены."
+        ]
+      },
+      "inferred_as_of": "2026-10-31",
+      "inferred_at": 1793425382.1935575,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "a8a0615663f1b809ab0b142671790df5": {
       "target": {
@@ -37257,7 +38853,66 @@
         "partner": "AGA (Петербург)",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793425398.6768613,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "c17e5df4b580c5c802d7cd9bd8ffced10414828641819b7760dde1b7568dd9e7",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "c17e5df4b580c5c802d7cd9bd8ffced10414828641819b7760dde1b7568dd9e7",
+            "seconds": 9.442940508999982,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 459,
+              "prompt_tokens": 1857,
+              "total_tokens": 2316,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 406
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 459,
+          "prompt_tokens": 1857,
+          "total_tokens": 2316,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 406
+          }
+        },
+        "seconds": 9.44895646100008,
+        "http_attempts": 1
+      },
+      "fingerprint": "b2a0cd5783adeeda3e8e21e3fb6755aa1ff43d39b4e7f0ca3de064b9350cf964",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В предоставленных данных не найдено предложения партнёра AGA (Петербург) в программе Konsierge — публичные привилегии."
+        ]
+      },
+      "inferred_as_of": "2026-10-31",
+      "inferred_at": 1793425398.676961,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "83f323580a2eb9ac69d0faac840d0516": {
       "target": {
@@ -37266,7 +38921,66 @@
         "partner": "AVA Bistro",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793425414.15361,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "77508d58816abc93b1a3108c93e5098c00f0dbf84bfb04a69e2ba1ecc4393f23",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "77508d58816abc93b1a3108c93e5098c00f0dbf84bfb04a69e2ba1ecc4393f23",
+            "seconds": 8.439178752000089,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 404,
+              "prompt_tokens": 2414,
+              "total_tokens": 2818,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 353
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 404,
+          "prompt_tokens": 2414,
+          "total_tokens": 2818,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 353
+          }
+        },
+        "seconds": 8.445175022000058,
+        "http_attempts": 1
+      },
+      "fingerprint": "c3d2e39bbd95d061bc2c6ef3d531ea88473050c2dac540828ad1ce4275fdf287",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В предоставленных материалах отсутствует предложение партнёра AVA Bistro в программе Konsierge — публичные привилегии."
+        ]
+      },
+      "inferred_as_of": "2026-10-31",
+      "inferred_at": 1793425414.1537256,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "a253f8e6cb57367ea44b4dafc062e4d6": {
       "target": {
@@ -37275,7 +38989,66 @@
         "partner": "Телец-Тунец",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793425429.7653215,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "2802bd56832662d4e1ae0f9a3887c9101261e111b3974fb08bcb2c743ee7f0eb",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "2802bd56832662d4e1ae0f9a3887c9101261e111b3974fb08bcb2c743ee7f0eb",
+            "seconds": 8.574576669999942,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 430,
+              "prompt_tokens": 2419,
+              "total_tokens": 2849,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 384
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 430,
+          "prompt_tokens": 2419,
+          "total_tokens": 2849,
+          "prompt_tokens_details": {
+            "cached_tokens": 256
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 384
+          }
+        },
+        "seconds": 8.580645478000179,
+        "http_attempts": 1
+      },
+      "fingerprint": "4f77a408b5e09faecbeb119fbf8a4455b9ac0268d3ef414d89669a7e3a94606f",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "Партнёр «Телец-Тунец» не найден в предоставленном блоке TARGET."
+        ]
+      },
+      "inferred_as_of": "2026-10-31",
+      "inferred_at": 1793425429.7654176,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "28428f5f9a0fe82d628b65bd217cb57d": {
       "target": {
@@ -37284,7 +39057,67 @@
         "partner": "Hadassah",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793425443.568744,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "7d265ebf8668ed6c2219fee7992afcf59e0d312bbd02e5db3062282e4949be51",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "7d265ebf8668ed6c2219fee7992afcf59e0d312bbd02e5db3062282e4949be51",
+            "seconds": 6.765341213000056,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 304,
+              "prompt_tokens": 3114,
+              "total_tokens": 3418,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 232
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 304,
+          "prompt_tokens": 3114,
+          "total_tokens": 3418,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 232
+          }
+        },
+        "seconds": 6.77170895800009,
+        "http_attempts": 1
+      },
+      "fingerprint": "622428489c4c65651d35af176630611013f782e49ec050f455283cbb92d70412",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "Партнёр Hadassah не упомянут в предоставленном тексте и изображениях.",
+          "Условия программы Konsierge — публичные привилегии для Hadassah отсутствуют в предоставленных данных."
+        ]
+      },
+      "inferred_as_of": "2026-10-31",
+      "inferred_at": 1793425443.5688446,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "7cc71ce316f5ec562e78ed2bc87a1d54": {
       "target": {
@@ -37293,7 +39126,64 @@
         "partner": "Prime Ride",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793425463.0315068,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "d0e31cc9e48d1b4f5b41741ac39684cf4eb61e965f7a7916cf2035050f8aac5e",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "d0e31cc9e48d1b4f5b41741ac39684cf4eb61e965f7a7916cf2035050f8aac5e",
+            "seconds": 12.423987477000082,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 617,
+              "prompt_tokens": 3113,
+              "total_tokens": 3730,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 599
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 617,
+          "prompt_tokens": 3113,
+          "total_tokens": 3730,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 599
+          }
+        },
+        "seconds": 12.430000765000159,
+        "http_attempts": 1
+      },
+      "fingerprint": "16951c2954d0876189baca3afc6dc98b7afbddfd8ad534c02fbcaa6a6c6b8733",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": []
+      },
+      "inferred_as_of": "2026-10-31",
+      "inferred_at": 1793425463.0316153,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "bfd06548178f4c2eb46614afc80d947e": {
       "target": {
@@ -37302,7 +39192,66 @@
         "partner": "MR",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793425479.1560874,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "fca1cf1f7de3c26c2d3317d081055c664076384c376a43cb4ba6fb366cb9e243",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "fca1cf1f7de3c26c2d3317d081055c664076384c376a43cb4ba6fb366cb9e243",
+            "seconds": 9.08659800800001,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 421,
+              "prompt_tokens": 2412,
+              "total_tokens": 2833,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 386
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 421,
+          "prompt_tokens": 2412,
+          "total_tokens": 2833,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 386
+          }
+        },
+        "seconds": 9.09258850099991,
+        "http_attempts": 1
+      },
+      "fingerprint": "a14d810d19e777db7a13fc657e129d1cae04cdf43379c73766ecd84b66bb4af8",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В предоставленном тексте нет предложения партнёра MR."
+        ]
+      },
+      "inferred_as_of": "2026-10-31",
+      "inferred_at": 1793425479.1561837,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "d04316cd126df89328319e6913a37fe8": {
       "target": {
@@ -37311,7 +39260,66 @@
         "partner": "Banya Resort Архангельское",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793425495.1108239,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "47ce33af4ea940ce82cec45ed59c8fb9994e0af3320267b33a2e90d717ea96d1",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "47ce33af4ea940ce82cec45ed59c8fb9994e0af3320267b33a2e90d717ea96d1",
+            "seconds": 8.917222205999906,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 366,
+              "prompt_tokens": 3119,
+              "total_tokens": 3485,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 331
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 366,
+          "prompt_tokens": 3119,
+          "total_tokens": 3485,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 331
+          }
+        },
+        "seconds": 8.92320589399992,
+        "http_attempts": 1
+      },
+      "fingerprint": "9d1487a66bce470833c7e69792e719f05e5dd252d08cd58f6898afc8c520b6f2",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В предоставленных данных нет предложения для Banya Resort Архангельское."
+        ]
+      },
+      "inferred_as_of": "2026-10-31",
+      "inferred_at": 1793425495.1109273,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "72606a68cb119854f41a6592e8efa5f9": {
       "target": {
@@ -37320,7 +39328,68 @@
         "partner": "Made in Bali",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793425509.0452135,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "38fc21757a35c94e4346e1d5a6ea623af2bc3ba2bccccf86faed24c4233f125c",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "38fc21757a35c94e4346e1d5a6ea623af2bc3ba2bccccf86faed24c4233f125c",
+            "seconds": 6.896336068999972,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 266,
+              "prompt_tokens": 1855,
+              "total_tokens": 2121,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 164
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 266,
+          "prompt_tokens": 1855,
+          "total_tokens": 2121,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 164
+          }
+        },
+        "seconds": 6.902724534000072,
+        "http_attempts": 1
+      },
+      "fingerprint": "1d19a8bd9f4c60ba5f6242bc484bbbc4ba10de58d293e6fd13f322337300de4d",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В предоставленном тексте нет предложения программы Konsierge для партнёра Made in Bali.",
+          "Страница привилегий содержит только интерфейс загрузки и футер, поэтому условия предложения не отражены.",
+          "Выгода, область действия, способ получения и ограничения не найдены."
+        ]
+      },
+      "inferred_as_of": "2026-10-31",
+      "inferred_at": 1793425509.045322,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "6f3d980a0ba8633c9114754b252090bf": {
       "target": {
@@ -37329,7 +39398,66 @@
         "partner": "Fab33",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793425523.7183995,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "a7d142926ff66ef13a3feaf59c960c8644e1a9cf8bfc396ed5a516f7c671099b",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "a7d142926ff66ef13a3feaf59c960c8644e1a9cf8bfc396ed5a516f7c671099b",
+            "seconds": 7.633700153000063,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 337,
+              "prompt_tokens": 3113,
+              "total_tokens": 3450,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 302
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 337,
+          "prompt_tokens": 3113,
+          "total_tokens": 3450,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 302
+          }
+        },
+        "seconds": 7.639887144000113,
+        "http_attempts": 1
+      },
+      "fingerprint": "0099ad7ee21f56d029aef6884c1cc04ab0f74693eb051795767684bbf55a1dfd",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В предоставленных данных отсутствует предложение партнёра Fab33."
+        ]
+      },
+      "inferred_as_of": "2026-10-31",
+      "inferred_at": 1793425523.7184868,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "39dd3488afefa7de898e46cedeac8dfa": {
       "target": {
@@ -37338,7 +39466,66 @@
         "partner": "Папина паста",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793425541.803465,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "3133a052ae94579209adeb17d3276eacfc5c1ded6bea9638517156f3200beedb",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "3133a052ae94579209adeb17d3276eacfc5c1ded6bea9638517156f3200beedb",
+            "seconds": 11.046522117999984,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 493,
+              "prompt_tokens": 3116,
+              "total_tokens": 3609,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 447
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 493,
+          "prompt_tokens": 3116,
+          "total_tokens": 3609,
+          "prompt_tokens_details": {
+            "cached_tokens": 256
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 447
+          }
+        },
+        "seconds": 11.052586539000004,
+        "http_attempts": 1
+      },
+      "fingerprint": "d368cb090db4acf592eb60e18d2d7cebbdb5bbac6ca9f71a95954e863216f9f9",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "Партнёр «Папина паста» не найден среди перечисленных привилегий Konsierge."
+        ]
+      },
+      "inferred_as_of": "2026-10-31",
+      "inferred_at": 1793425541.8035612,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "e620d59ff66dd7191b75fc7fdd2a9aea": {
       "target": {
@@ -37347,7 +39534,66 @@
         "partner": "Mops Day SPA (Петербург)",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793425558.524231,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "d8417383778553b504456ba13b64242b94be929c620bcdb674587e2c10edca75",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "d8417383778553b504456ba13b64242b94be929c620bcdb674587e2c10edca75",
+            "seconds": 9.682951154999955,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 493,
+              "prompt_tokens": 3120,
+              "total_tokens": 3613,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 449
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 493,
+          "prompt_tokens": 3120,
+          "total_tokens": 3613,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 449
+          }
+        },
+        "seconds": 9.688985531999833,
+        "http_attempts": 1
+      },
+      "fingerprint": "ca8c0235037b52370f14cb7f2cd576b1891b1860971cc28fac9e189f579e050c",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В предоставленном тексте и изображениях нет предложения для Mops Day SPA (Петербург)."
+        ]
+      },
+      "inferred_as_of": "2026-10-31",
+      "inferred_at": 1793425558.5243223,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "0af931b84ef1dcd786b63f52ab45a976": {
       "target": {
@@ -37356,7 +39602,67 @@
         "partner": "Бани Малевича",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793425573.3062456,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "6a3f0e3e83cdf5d7ae575306273e22f9b7e3158b1138641b96738cf169b342c5",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "6a3f0e3e83cdf5d7ae575306273e22f9b7e3158b1138641b96738cf169b342c5",
+            "seconds": 7.738928888999908,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 355,
+              "prompt_tokens": 1858,
+              "total_tokens": 2213,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 274
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 355,
+          "prompt_tokens": 1858,
+          "total_tokens": 2213,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 274
+          }
+        },
+        "seconds": 7.745169471999816,
+        "http_attempts": 1
+      },
+      "fingerprint": "14276fd14fd0a22fd695a6b2b290a872789589aa7052ed326c017a7afab1a0fe",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В предоставленном тексте нет блока TARGET с предложением программы для партнёра «Бани Малевича».",
+          "На странице «Привилегии» отображается индикатор загрузки; список привилегий не загружен."
+        ]
+      },
+      "inferred_as_of": "2026-10-31",
+      "inferred_at": 1793425573.3063421,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "4fa1a78e8dcb139f55e1633ac3c22e5a": {
       "target": {
@@ -37365,7 +39671,66 @@
         "partner": "Veriko",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793425587.558376,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "94c19d7d2047f98a5d1ecdd0e942990117c1099af7715cbb40dcdb5d008f1805",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "94c19d7d2047f98a5d1ecdd0e942990117c1099af7715cbb40dcdb5d008f1805",
+            "seconds": 7.214404284000011,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 281,
+              "prompt_tokens": 3113,
+              "total_tokens": 3394,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 245
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 281,
+          "prompt_tokens": 3113,
+          "total_tokens": 3394,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 245
+          }
+        },
+        "seconds": 7.220434068000031,
+        "http_attempts": 1
+      },
+      "fingerprint": "b225d0b1135b218c5712c8fd9533945ebbaef6a3674588c421b19f73f65a5dea",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В предоставленном тексте нет предложения партнёра Veriko."
+        ]
+      },
+      "inferred_as_of": "2026-10-31",
+      "inferred_at": 1793425587.558461,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "87459402b1689566ab3294db3a35a98a": {
       "target": {
@@ -37374,7 +39739,67 @@
         "partner": "Kong",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793425628.7246845,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "fbde0d507606b233361d34d12006dea3eb039a194cfc7d0a50c4b71a2512670f",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "fbde0d507606b233361d34d12006dea3eb039a194cfc7d0a50c4b71a2512670f",
+            "seconds": 34.12891956099975,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 2249,
+              "prompt_tokens": 2413,
+              "total_tokens": 4662,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 2183
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 2249,
+          "prompt_tokens": 2413,
+          "total_tokens": 4662,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 2183
+          }
+        },
+        "seconds": 34.13487128599991,
+        "http_attempts": 1
+      },
+      "fingerprint": "530fe2024f1e9a11f206c5b36a500e20a800881676d3b32c3ab40db2b329a946",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В предоставленном блоке привилегий Konsierge нет партнёра Kong.",
+          "Не найдено предложение программы Konsierge — публичные привилегии для партнёра Kong."
+        ]
+      },
+      "inferred_as_of": "2026-10-31",
+      "inferred_at": 1793425628.7247863,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "bd81fb72570744cb2424bdba6c0037ab": {
       "target": {
@@ -37383,7 +39808,66 @@
         "partner": "Claudia",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793425645.516601,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "4acdb74ea4265bc405a551caa1bbf4c9efb3e2bf9bf1d6051c57e57cb41aab3f",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "4acdb74ea4265bc405a551caa1bbf4c9efb3e2bf9bf1d6051c57e57cb41aab3f",
+            "seconds": 9.751896765999845,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 385,
+              "prompt_tokens": 2414,
+              "total_tokens": 2799,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 339
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 385,
+          "prompt_tokens": 2414,
+          "total_tokens": 2799,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 339
+          }
+        },
+        "seconds": 9.75880276099997,
+        "http_attempts": 1
+      },
+      "fingerprint": "6681b50c76a20f33748e1128399f554ad5be98d211c2bddd10fb7c93068ef3c7",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В предоставленных данных нет предложения партнёра Claudia в программе Konsierge — публичные привилегии."
+        ]
+      },
+      "inferred_as_of": "2026-10-31",
+      "inferred_at": 1793425645.5167205,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "46901f1064314fe23ec7b1e0b906a52b": {
       "target": {
@@ -37392,7 +39876,67 @@
         "partner": "Enjoy Camp",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793425659.9856062,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "745b030b41585088a73f6b153811c68beae5b9dba6884ab9094b94902fcf4c0a",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "745b030b41585088a73f6b153811c68beae5b9dba6884ab9094b94902fcf4c0a",
+            "seconds": 7.431530687000304,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 344,
+              "prompt_tokens": 1854,
+              "total_tokens": 2198,
+              "prompt_tokens_details": {
+                "cached_tokens": 256
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 279
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 344,
+          "prompt_tokens": 1854,
+          "total_tokens": 2198,
+          "prompt_tokens_details": {
+            "cached_tokens": 256
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 279
+          }
+        },
+        "seconds": 7.437591542000064,
+        "http_attempts": 1
+      },
+      "fingerprint": "a0f9c309bf56bb051f4a8a358d1a34105ea55b3e03ae8e8e76c5b17bd24c0fd6",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В предоставленном тексте отсутствует предложение Enjoy Camp в программе Konsierge — публичные привилегии.",
+          "Нет данных о выгоде, области действия, способе получения и ограничениях."
+        ]
+      },
+      "inferred_as_of": "2026-10-31",
+      "inferred_at": 1793425659.9857225,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "53909df62bbb9541bf783db55bec9ad4": {
       "target": {
@@ -37401,7 +39945,66 @@
         "partner": "Марко Густо (Петербург)",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793425672.4814782,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "f326a716f8ca704556351e0ddafd1bf8eb9cbf982fc2d4ebb123b99892df9435",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "f326a716f8ca704556351e0ddafd1bf8eb9cbf982fc2d4ebb123b99892df9435",
+            "seconds": 5.457709737000187,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 217,
+              "prompt_tokens": 3121,
+              "total_tokens": 3338,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 170
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 217,
+          "prompt_tokens": 3121,
+          "total_tokens": 3338,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 170
+          }
+        },
+        "seconds": 5.463722677000078,
+        "http_attempts": 1
+      },
+      "fingerprint": "1d3db134181d2b44bc44d5593f2f81d0d36b4061276b69e81f3aaa820db4b317",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В предоставленных данных нет предложения программы для партнёра «Марко Густо (Петербург)»."
+        ]
+      },
+      "inferred_as_of": "2026-10-31",
+      "inferred_at": 1793425672.481574,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "18a5b8801564f614e7d18ce519419532": {
       "target": {
@@ -37410,7 +40013,66 @@
         "partner": "ОМА",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793425688.9471977,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "3d89fa32c661265eccc78ec0046c472561c71050094b45d070a7e3e8e552f5b0",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "3d89fa32c661265eccc78ec0046c472561c71050094b45d070a7e3e8e552f5b0",
+            "seconds": 9.427810720000252,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 418,
+              "prompt_tokens": 3114,
+              "total_tokens": 3532,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 377
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 418,
+          "prompt_tokens": 3114,
+          "total_tokens": 3532,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 377
+          }
+        },
+        "seconds": 9.433875426000213,
+        "http_attempts": 1
+      },
+      "fingerprint": "84fbf51b602b2743c593138bc86bd3ba4508a1769d71183a159f28958b066221",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В предоставленном тексте нет предложения программы для партнёра «ОМА»."
+        ]
+      },
+      "inferred_as_of": "2026-10-31",
+      "inferred_at": 1793425688.9472935,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "e0bc327a9f58cfa32f8aef7da096a0f7": {
       "target": {
@@ -37419,7 +40081,66 @@
         "partner": "Green Park Sokolniki",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793425702.9517238,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "57e526c8fc29aea86d75431c764ae33f6b4e4e612163c24051d95262667383d4",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "57e526c8fc29aea86d75431c764ae33f6b4e4e612163c24051d95262667383d4",
+            "seconds": 6.965275044000009,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 255,
+              "prompt_tokens": 3116,
+              "total_tokens": 3371,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 212
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 255,
+          "prompt_tokens": 3116,
+          "total_tokens": 3371,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 212
+          }
+        },
+        "seconds": 6.97143119500015,
+        "http_attempts": 1
+      },
+      "fingerprint": "91659fe2d3945fd8ef9c6b17ebd62ebd8a733f4a2eebb752a8af6663f1b513d8",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В предоставленном блоке TARGET отсутствует предложение для партнёра Green Park Sokolniki."
+        ]
+      },
+      "inferred_as_of": "2026-10-31",
+      "inferred_at": 1793425702.951821,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "3aecfef570915d6b084e02b5ebf12e91": {
       "target": {
@@ -37428,7 +40149,66 @@
         "partner": "Tatooine",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793425715.6310174,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "be48a74877117c0b55df7fb298ec3b0f486cd1cf196f408c59d02a2a88540966",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "be48a74877117c0b55df7fb298ec3b0f486cd1cf196f408c59d02a2a88540966",
+            "seconds": 5.638507145999938,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 212,
+              "prompt_tokens": 1855,
+              "total_tokens": 2067,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 162
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 212,
+          "prompt_tokens": 1855,
+          "total_tokens": 2067,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 162
+          }
+        },
+        "seconds": 5.644809456000075,
+        "http_attempts": 1
+      },
+      "fingerprint": "77d3863f2a54b1ed69690d764d36a71c3c5a3092c49b883ec961a51c9be00111",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В предоставленных данных нет описания программы «Konsierge — публичные привилегии» для партнёра Tatooine."
+        ]
+      },
+      "inferred_as_of": "2026-10-31",
+      "inferred_at": 1793425715.631112,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "62635bee5d651c23a4d539a840e1506a": {
       "target": {
@@ -37437,7 +40217,66 @@
         "partner": "Valident",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793425729.7194958,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "4ddb50db89b87e09e419eca766b204a5cf08aac9f7be6017230605ec2a569634",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "4ddb50db89b87e09e419eca766b204a5cf08aac9f7be6017230605ec2a569634",
+            "seconds": 7.049047642999994,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 305,
+              "prompt_tokens": 3113,
+              "total_tokens": 3418,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 268
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 305,
+          "prompt_tokens": 3113,
+          "total_tokens": 3418,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 268
+          }
+        },
+        "seconds": 7.054981136000151,
+        "http_attempts": 1
+      },
+      "fingerprint": "7d4128762444286daed9bfc79288d9101fc9e671d065ec475a4b6a6d21622c57",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В предоставленных данных не найдено предложение партнёра Valident."
+        ]
+      },
+      "inferred_as_of": "2026-10-31",
+      "inferred_at": 1793425729.7195852,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "64e866c9cb9ce5850d697963a5716f91": {
       "target": {
@@ -37446,7 +40285,67 @@
         "partner": "Hamster",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793425744.742311,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "e6f3ac4e71c7f0e701360e11acfced580266b89217045d99187b40dac15cbe9e",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "e6f3ac4e71c7f0e701360e11acfced580266b89217045d99187b40dac15cbe9e",
+            "seconds": 7.984685301000354,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 335,
+              "prompt_tokens": 2413,
+              "total_tokens": 2748,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 272
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 335,
+          "prompt_tokens": 2413,
+          "total_tokens": 2748,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 272
+          }
+        },
+        "seconds": 7.990582569000253,
+        "http_attempts": 1
+      },
+      "fingerprint": "019cc9598de81f6eac0e19bcee82e7c41924d6ecc31d36d268f2405b68dc4168",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В предоставленном блоке TARGET нет сведений о партнёре Hamster и его предложении.",
+          "Не указаны выгода, область действия, способ получения и ограничения для Hamster."
+        ]
+      },
+      "inferred_as_of": "2026-10-31",
+      "inferred_at": 1793425744.742409,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "e9bd6e30da188d2332f9e38ce78c819a": {
       "target": {
@@ -37455,7 +40354,66 @@
         "partner": "Амалко-Персонал",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
-      }
+      },
+      "status": "completed",
+      "last_checked": 1793425764.2517686,
+      "last_result": {
+        "provider": "orcarouter",
+        "requested_model": "deepseek/deepseek-v4.1-flash-free",
+        "endpoint": "https://api.orcarouter.ai/v1/chat/completions",
+        "request_body_sha256": "403d2c13e23cfb913fca6e06bc1708e18b239e03999fa11418fc041f9d0eacaf",
+        "status": "completed",
+        "schema_valid": true,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "403d2c13e23cfb913fca6e06bc1708e18b239e03999fa11418fc041f9d0eacaf",
+            "seconds": 12.471015007000005,
+            "http_status": 200,
+            "returned_model": "deepseek-v4-1-flash-economy-261017",
+            "usage": {
+              "completion_tokens": 764,
+              "prompt_tokens": 2419,
+              "total_tokens": 3183,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 697
+              }
+            }
+          }
+        ],
+        "returned_model": "deepseek-v4-1-flash-economy-261017",
+        "usage": {
+          "completion_tokens": 764,
+          "prompt_tokens": 2419,
+          "total_tokens": 3183,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 697
+          }
+        },
+        "seconds": 12.476966919999995,
+        "http_attempts": 1
+      },
+      "fingerprint": "8da5dc25fdc74ded43f6152dc4de7ecce74b4b703e1c2b4c440456fa3bf90171",
+      "extracted": {
+        "has_offer": false,
+        "offers": [],
+        "unknowns": [
+          "В предоставленных данных нет предложения партнёра «Амалко-Персонал» по программе «Konsierge — публичные привилегии»."
+        ]
+      },
+      "inferred_as_of": "2026-10-31",
+      "inferred_at": 1793425764.251875,
+      "inferred_provider": "orcarouter",
+      "returned_model": "deepseek-v4-1-flash-economy-261017",
+      "publication_allowed": false
     },
     "d6e228e219cd0c93301106b7e208e416": {
       "target": {
@@ -37464,6 +40422,34 @@
         "partner": "The St. Regis (Никольская)",
         "program": "Konsierge — публичные привилегии",
         "source_id": "konsierge_public"
+      },
+      "status": "deferred",
+      "last_checked": 1793425765.2927256,
+      "last_result": {
+        "provider": "tokenharbor",
+        "requested_model": "deepseek-v4.1-flash:free",
+        "endpoint": "https://tokenharbor.ai/v1/chat/completions",
+        "request_body_sha256": "d6bf8c1cd171703bab9c4e6b57e13fd6cb5286e7f8532f5c91c4e5c922c623cc",
+        "status": "deferred",
+        "schema_valid": false,
+        "publication_allowed": false,
+        "semantic_review": "pending",
+        "attempts": [
+          {
+            "attempt": 1,
+            "request_body_sha256": "d6bf8c1cd171703bab9c4e6b57e13fd6cb5286e7f8532f5c91c4e5c922c623cc",
+            "seconds": 0.9229650150000452,
+            "http_status": 429,
+            "retry_after_seconds": 3600.0,
+            "retry_not_admitted": true
+          }
+        ],
+        "api_error_code": "free_tier_limit_reached",
+        "error": "transient_http_exhausted",
+        "retry_after_seconds": 3600.0,
+        "stop_batch_reason": "provider_rate_limited",
+        "seconds": 0.9234616720000304,
+        "http_attempts": 1
       }
     },
     "90248f5d6aa046a40ed5fe861a17d6a1": {
@@ -38940,7 +41926,10 @@
         "partner": "Plaza",
         "program": "Club Avolta",
         "source_id": "club_avolta_public"
-      }
+      },
+      "last_checked": 1793424847.8852918,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "3d97a51e62eb9cb05ca2e50e68769a6e": {
       "target": {
@@ -39066,7 +42055,10 @@
         "partner": "Сочи Марриотт Красная Поляна 5*",
         "program": "Мантера Моменты",
         "source_id": "mantera_moments"
-      }
+      },
+      "last_checked": 1793424899.8051867,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "e15495e8e68e7e33a7f71ee222de4eb9": {
       "target": {
@@ -39075,7 +42067,10 @@
         "partner": "Риксос Красная Поляна Сочи 5*",
         "program": "Мантера Моменты",
         "source_id": "mantera_moments"
-      }
+      },
+      "last_checked": 1793424904.8228958,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "5d967e0df3c1e0cfed76e1a20138e22c": {
       "target": {
@@ -39084,7 +42079,10 @@
         "partner": "Новотель Резорт и спа Красная Поляна 5*",
         "program": "Мантера Моменты",
         "source_id": "mantera_moments"
-      }
+      },
+      "last_checked": 1793424909.8453445,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "f6317aea56ec409eca555cf30182851c": {
       "target": {
@@ -39093,7 +42091,10 @@
         "partner": "Новотель Фит Красная Поляна 4*",
         "program": "Мантера Моменты",
         "source_id": "mantera_moments"
-      }
+      },
+      "last_checked": 1793424914.8066719,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "5b808f34379029300279c81f7d676f30": {
       "target": {
@@ -39102,7 +42103,10 @@
         "partner": "Кортъярд Марриотт Сочи Красная Поляна 4*",
         "program": "Мантера Моменты",
         "source_id": "mantera_moments"
-      }
+      },
+      "last_checked": 1793424920.1335034,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "3f5316d92f642f92bb2243ef4c6efe8f": {
       "target": {
@@ -39111,7 +42115,10 @@
         "partner": "Долина 960 4*",
         "program": "Мантера Моменты",
         "source_id": "mantera_moments"
-      }
+      },
+      "last_checked": 1793424925.190938,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "0f9c8fc279f86d443769f9e2799ed306": {
       "target": {
@@ -39120,7 +42127,10 @@
         "partner": "Ибис Стайлс Красная Поляна",
         "program": "Мантера Моменты",
         "source_id": "mantera_moments"
-      }
+      },
+      "last_checked": 1793424930.2769454,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "1aed352bfe171d962fe192cbfc56fab2": {
       "target": {
@@ -39129,7 +42139,10 @@
         "partner": "Панорама by Mercure Красная Поляна",
         "program": "Мантера Моменты",
         "source_id": "mantera_moments"
-      }
+      },
+      "last_checked": 1793424935.3551428,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "35a630817b05c9db3fecec42394767c5": {
       "target": {
@@ -39138,7 +42151,10 @@
         "partner": "Апартаменты Курорта Красная Поляна",
         "program": "Мантера Моменты",
         "source_id": "mantera_moments"
-      }
+      },
+      "last_checked": 1793424940.6909342,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "d35d038b3083a52ea869b54a67ebe504": {
       "target": {
@@ -39147,7 +42163,10 @@
         "partner": "Апарт-отель «Бонус» 3*",
         "program": "Мантера Моменты",
         "source_id": "mantera_moments"
-      }
+      },
+      "last_checked": 1793424945.695201,
+      "capture_status": "failed",
+      "capture_error": "ValueError"
     },
     "5806c2edb9ce144f2e2ef52e2d03934d": {
       "target": {
@@ -42226,22 +45245,31 @@
         "program": "T2 «Больше»",
         "source_id": "t2_bolshe"
       }
+    },
+    "58b8b3e3f6eafa62cd683ff885f5f2cb": {
+      "target": {
+        "id": "58b8b3e3f6eafa62cd683ff885f5f2cb",
+        "url": "https://marketplace.s7.ru/partners/offer/Sela.",
+        "partner": "Sela.",
+        "program": "S7 Priority",
+        "source_id": "s7"
+      }
     }
   },
   "usage": {
-    "date": "2026-10-30",
+    "date": "2026-10-31",
     "attempts": 50
   },
   "provider_not_before": 1792886400.4816973,
-  "last_request_at": 1793340215.8764899,
+  "last_request_at": 1793425764.2517672,
   "providers": {
     "tokenharbor": {
       "usage": {
-        "date": "2026-10-30",
+        "date": "2026-10-31",
         "attempts": 1
       },
-      "provider_not_before": 1793343817.0588996,
-      "last_request_at": 1793340217.0588949
+      "provider_not_before": 1793429365.2927306,
+      "last_request_at": 1793425765.2927232
     }
   }
 }
