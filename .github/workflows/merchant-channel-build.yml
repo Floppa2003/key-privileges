@@ -1,4 +1,5 @@
 name: Build confirmed merchant channels
+# Reconcile against the final daily wiring and corrected PDF dependency setup.
 on:
   push:
     branches: [loyalty/confirmed-channels-20261031]
