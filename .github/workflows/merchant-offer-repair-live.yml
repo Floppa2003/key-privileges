@@ -1,0 +1,205 @@
+name: Verify repaired original offer inputs
+on:
+  push:
+    branches: [loyalty/offer-repair-live-20261031]
+    paths: [.github/workflows/merchant-offer-repair-live.yml]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: merchant-daily-orcarouter
+  cancel-in-progress: false
+jobs:
+  verify_live:
+    if: github.repository == 'Floppa2003/key-privileges' && github.ref == 'refs/heads/loyalty/offer-repair-live-20261031'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    permissions: {contents: write, actions: read}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: 806fbcee5b1f042960db681238baa5b958c0aeef
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: loyalty/llm-state
+          path: llm-state
+          sparse-checkout: state.json
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with: {python-version: '3.12'}
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          repository: Floppa2003/key-privileges
+          run-id: '41194911797'
+          artifact-ids: '13041115453'
+          github-token: ${{ github.token }}
+          path: catalog
+          merge-multiple: true
+      - name: Install public capture runtime without model keys
+        run: |
+          set -euo pipefail
+          mkdir -p live-output/code
+          git rev-parse HEAD > live-output/commit.txt
+          cp loyalty/merchant_{queue,extract,evidence,channels}.py loyalty/merchant_prompt.txt loyalty/merchant_offer.schema.json live-output/code/
+          python -m pip install -r loyalty/requirements.txt
+          sudo apt-get update -qq && sudo apt-get install -y poppler-utils
+          python -m playwright install --with-deps chromium
+      - name: Preserve complete original records and freshly capture the four targets
+        run: |
+          set -euo pipefail
+          PYTHONPATH=loyalty python - <<'PY'
+          import asyncio,copy,hashlib,json,time
+          from pathlib import Path
+          from playwright.async_api import async_playwright
+          import merchant_queue as q
+          import merchant_extract as m
+          root=Path('live-output'); out=root/'captures';out.mkdir()
+          catalog_path=next(Path('catalog').rglob('normalized.json'))
+          catalog=json.loads(catalog_path.read_text())
+          names=['Memo','Hide','El Copitas Bar','Po’mestam']
+          selected=[r for r in catalog['records'] if r.get('source_id')=='konsierge_public' and r.get('partner_name') in names]
+          assert {r['partner_name'] for r in selected}==set(names)
+          targets=q.discover_targets({'records':selected},{},{})
+          targets.sort(key=lambda t:names.index(t['partner']))
+          m.save(root/'targets.json', targets)
+          m.save(root/'catalog-provenance.json', {'run_id':41194911797,'artifact_id':13041115453,
+              'normalized_sha256':hashlib.sha256(catalog_path.read_bytes()).hexdigest(),
+              'observed_at':catalog.get('observed_at'),'note':'Saved collector snapshot, not a new catalogue fetch'})
+          state_path=Path('llm-state/state.json');state=q.read_state(state_path)
+          m.save(root/'before.json', {t['id']:copy.deepcopy(state['items'].get(t['id'],{})) for t in targets})
+          q.merge_targets(state,targets);q.write_state(state_path,state)
+          observations=[];documents=[]
+          async def run():
+              async with async_playwright() as pw:
+                  browser=await pw.chromium.launch(headless=True)
+                  try:
+                      for target in targets:
+                          try:
+                              spec=await asyncio.wait_for(q.capture_page(browser,target,out),timeout=240)
+                              m.save(out/'check.json',{'documents':[spec]}); loaded=m.load_manifest(out/'check.json')[0]
+                              assert loaded['source']['source_records']==target['source_records']
+                              documents.append(spec)
+                              observations.append({'id':target['id'],'partner':target['partner'],'status':'captured',
+                                  'images':len(spec['images']),'readiness':spec['capture']})
+                          except Exception as exc:
+                              state['items'][target['id']].update(capture_status='failed',capture_error=type(exc).__name__,last_checked=time.time())
+                              observations.append({'id':target['id'],'partner':target['partner'],'status':'capture_failed',
+                                  'error_type':type(exc).__name__,'error':str(exc)[:300]})
+                          q.write_state(state_path,state)
+                          m.save(out/'manifest.json',{'documents':documents})
+                          m.save(root/'capture-summary.json',observations)
+                          print(json.dumps(observations[-1],ensure_ascii=False),flush=True)
+                  finally:await browser.close()
+          asyncio.run(run())
+          m.save(out/'manifest.json',{'documents':documents})
+          PY
+      - name: At most one inference attempt per confirmed channel, on production queue state
+        env:
+          EXPERIENTAL_API_KEY: ${{ secrets.EXPERIENTAL_API_KEY || vars.EXPERIENTAL_API_KEY }}
+          KILO_API_KEY: ${{ secrets.KILO_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          AI_GATEWAY_API_KEY: ${{ secrets.AI_GATEWAY_API_KEY }}
+        run: |
+          set -euo pipefail
+          PYTHONPATH=loyalty python - <<'PY'
+          import json,os
+          from pathlib import Path
+          import merchant_queue as q
+          import merchant_extract as m
+          root=Path('live-output');path=Path('llm-state/state.json')
+          state=q.read_state(path); manifest=root/'captures/manifest.json'
+          docs=m.load_manifest(manifest) if json.loads(manifest.read_text())['documents'] else []
+          providers=('experiential','kilo','openrouter','vercel')
+          keys={p:os.environ.get(m.provider_config(p)['secret'],'') for p in providers}
+          summary=q.process_pool(docs,state,path,root/'results',keys,
+              json.loads(Path('loyalty/merchant_offer.schema.json').read_text()),
+              Path('loyalty/merchant_prompt.txt').read_text(),providers=providers,
+              max_requests=4,per_provider_requests=1,time_budget=900)
+          targets=json.loads((root/'targets.json').read_text())
+          m.save(root/'after.json',{t['id']:state['items'][t['id']] for t in targets})
+          print(json.dumps(summary,ensure_ascii=False,indent=2))
+          PY
+      - name: Persist progress and verify fetched remote state
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test -f llm-state/state.json || exit 0
+          python -m json.tool llm-state/state.json >/dev/null
+          cd llm-state
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- state.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Full offer input repair verification: $GITHUB_RUN_ID"
+            auth=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)
+            echo "::add-mask::$auth"
+            git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $auth" push origin HEAD:refs/heads/loyalty/llm-state
+            expected=$(git rev-parse HEAD)
+            git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $auth" fetch origin refs/heads/loyalty/llm-state
+            test "$(git rev-parse FETCH_HEAD)" = "$expected"
+            test "$(git show FETCH_HEAD:state.json | sha256sum | cut -d' ' -f1)" = "$(sha256sum state.json | cut -d' ' -f1)"
+            echo "$expected" > ../live-output/state-commit.txt
+            echo "Verified remote state: $expected"
+          fi
+      - name: Print actual answers and retain checksums
+        if: always()
+        run: |
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          root=Path('live-output')
+          for p in sorted(root.glob('results/*/*/direct/extracted.json')):
+              print(str(p));print(p.read_text())
+          for p in sorted(root.glob('results/*/*/direct/summary.json')):
+              print(str(p));print(p.read_text())
+          files={str(p.relative_to(root)):hashlib.sha256(p.read_bytes()).hexdigest() for p in root.rglob('*') if p.is_file()}
+          (root/'SHA256SUMS.json').write_text(json.dumps(files,indent=2))
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: merchant-offer-repair-live-${{ github.run_id }}
+          path: live-output/
+          retention-days: 30
+  readback:
+    needs: verify_live
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: merchant-offer-repair-live-${{ github.run_id }}
+          path: evidence
+      - name: Independently verify saved inputs and exact extracted answers
+        run: |
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          r=Path('evidence'); hashes=json.loads((r/'SHA256SUMS.json').read_text())
+          for name,expected in hashes.items():
+              p=(r/name).resolve();assert p.is_relative_to(r.resolve())
+              assert hashlib.sha256(p.read_bytes()).hexdigest()==expected,name
+          print('VERIFIED_FILES',len(hashes))
+          for n in ['commit.txt','state-commit.txt','capture-summary.json','results/summary.json']:
+              p=r/n
+              if p.exists(): print(n,p.read_text())
+          after=json.loads((r/'after.json').read_text()) if (r/'after.json').exists() else {}
+          report={}
+          for ident,item in after.items():
+              report[ident]={'partner':item['target']['partner'],'status':item.get('status'),
+                  'input_contract_version':item.get('input_contract_version'),'provider':item.get('inferred_provider'),
+                  'extracted':item.get('extracted'),'unresolved':item.get('unresolved_extraction'),
+                  'raw_source':item['target'].get('source_records',[])}
+          print('ACTUAL_RESULTS',json.dumps(report,ensure_ascii=False,indent=2))
+          Path('readback.json').write_text(json.dumps({'verified_files':len(hashes),'results':report},ensure_ascii=False,indent=2))
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: merchant-offer-repair-readback-${{ github.run_id }}
+          path: readback.json
+          retention-days: 30
