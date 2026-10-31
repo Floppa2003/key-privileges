@@ -40458,15 +40458,116 @@
         "url": "https://konsierge.com/benefits",
         "partner": "Memo",
         "program": "Konsierge — публичные привилегии",
-        "source_id": "konsierge_public"
+        "source_id": "konsierge_public",
+        "source_records": [
+          {
+            "schema_version": 2,
+            "adapter_version": "2.9.6",
+            "id": "f41d67b1fb3870d536ccffc5d50288731f35340cba884faa20f163821b67ec34",
+            "source_id": "konsierge_public",
+            "native_id": "2534",
+            "program": "Konsierge — публичные привилегии",
+            "record_kind": "partner_offer",
+            "partner_name": "Memo",
+            "title": "Memo",
+            "category": "Рестораны",
+            "benefit_text": "Скидка 20%",
+            "conditions_text": "Приоритетное размещение в ресторане и скидка 20%. \n\nПривилегия предоставляется при бронировании столов через консьерж-сервис.",
+            "redemption_text": "Привилегия предоставляется при бронировании столов через консьерж-сервис.",
+            "benefit_types": [
+              "discount"
+            ],
+            "rates": [
+              {
+                "kind": "discount",
+                "value": "20",
+                "unit": "percent",
+                "qualifier": "exact",
+                "basis_amount": null,
+                "basis_unit": null,
+                "evidence": "Скидка 20%"
+              }
+            ],
+            "promo_codes": [],
+            "valid_from": null,
+            "valid_until": null,
+            "validity_status": "not_stated",
+            "source_status": "public_catalogue_terms_unverified_eligibility",
+            "source_url": "https://konsierge.com/benefits",
+            "benefit_url": null,
+            "link_kind": "page_block",
+            "locator": "public benefit id=2534",
+            "tables": [],
+            "details": {
+              "collection_mode": "recurring_public_browser",
+              "robots_policy": "skip_konsierge_public_by_user_2026_09_19",
+              "retrieval_method": "konsierge_public_browser_capture_v1",
+              "public_item": {
+                "date_of_release": "2026-03-27T12:42:25.500Z",
+                "link": null,
+                "updated_at": "2026-03-27T12:42:26.169Z",
+                "description": "Приоритетное размещение в ресторане и скидка 20%. \n\nПривилегия предоставляется при бронировании столов через консьерж-сервис.",
+                "offer": "Скидка 20%",
+                "created_at": "2026-03-27T12:42:26.169Z",
+                "enabled": true,
+                "id": 2534,
+                "name": "Memo",
+                "date_of_expiry": null,
+                "rubrics": [
+                  {
+                    "id": 23
+                  },
+                  {
+                    "id": 92
+                  }
+                ]
+              },
+              "item_sha256": "7d2509d9ffeecf9cd0fbb82bc2db5b818f238e56b55ff85491ee8e6500dd0191",
+              "public_categories": [
+                {
+                  "id": 23,
+                  "name": "Рестораны",
+                  "url": "https://konsierge.com/benefits?rubric_id=23"
+                }
+              ],
+              "only_assist_equivalence": false,
+              "code_words": [],
+              "capture_sha256": "d46d8bfb02275c4ae3b628f35ebd4db8a64690dd3ce02c95ea954e4aaf9dbaec",
+              "source_run": "41194911797:1",
+              "_source": {
+                "source_id": "konsierge_public"
+              },
+              "lexical_conditions": [],
+              "promo_code_evidence": [],
+              "promo_code_delivery": [],
+              "promo_code_status": "not_mentioned",
+              "table_benefits": {
+                "components": [],
+                "issues": []
+              }
+            },
+            "normalization_status": "source_fields_extracted",
+            "warnings": [
+              "user_eligibility_not_verified",
+              "only_assist_equivalence_not_asserted",
+              "public_website_response_not_customer_account",
+              "full_description_scope_requires_review",
+              "robots_preflight_skipped_by_project_owner",
+              "source_cache_age_not_provided",
+              "customer_validity_not_established"
+            ],
+            "observed_at": "2026-10-31T11:00:15.824424+00:00",
+            "content_sha256": "1ef4dcc8ba31c2c5bb59866f9d2c1e3eabdf2f3e17c3a5d0436e97c3ad4f86fc"
+          }
+        ]
       },
       "status": "completed",
-      "last_checked": 1793445931.4493988,
+      "last_checked": 1793463613.4664001,
       "last_result": {
         "provider": "experiential",
         "requested_model": "deepseek-v4.1-flash:free",
         "endpoint": "https://api.experientiallabs.ai/v1/chat/completions",
-        "request_body_sha256": "1c047f89a77e85348f51fd31d4197445334d4810a9787015220c7049d4d47587",
+        "request_body_sha256": "d951a2faa9d45b37f4dedb21cdd84a1bb8b7bcf2ee677ea0f6dfb890e61ace1e",
         "status": "completed",
         "schema_valid": true,
         "publication_allowed": false,
@@ -40474,21 +40575,19 @@
         "attempts": [
           {
             "attempt": 1,
-            "request_body_sha256": "1c047f89a77e85348f51fd31d4197445334d4810a9787015220c7049d4d47587",
-            "seconds": 9.372838091999995,
+            "request_body_sha256": "d951a2faa9d45b37f4dedb21cdd84a1bb8b7bcf2ee677ea0f6dfb890e61ace1e",
+            "seconds": 38.854801549,
             "http_status": 200,
             "returned_model": "deepseek-v4.1-flash",
             "usage": {
-              "prompt_tokens": 1911,
-              "completion_tokens": 1139,
-              "total_tokens": 3050,
+              "prompt_tokens": 10444,
+              "completion_tokens": 4686,
+              "total_tokens": 15130,
               "prompt_tokens_details": {
-                "cached_tokens": 0,
-                "cache_write_tokens": 0
+                "cached_tokens": 0
               },
               "completion_tokens_details": {
-                "reasoning_tokens": 1037,
-                "image_tokens": 0
+                "reasoning_tokens": 4412
               },
               "cost": 0.0,
               "is_byok": false
@@ -40497,37 +40596,69 @@
         ],
         "returned_model": "deepseek-v4.1-flash",
         "usage": {
-          "prompt_tokens": 1911,
-          "completion_tokens": 1139,
-          "total_tokens": 3050,
+          "prompt_tokens": 10444,
+          "completion_tokens": 4686,
+          "total_tokens": 15130,
           "prompt_tokens_details": {
-            "cached_tokens": 0,
-            "cache_write_tokens": 0
+            "cached_tokens": 0
           },
           "completion_tokens_details": {
-            "reasoning_tokens": 1037,
-            "image_tokens": 0
+            "reasoning_tokens": 4412
           },
           "cost": 0.0,
           "is_byok": false
         },
-        "seconds": 9.378528351,
+        "seconds": 38.866124585999984,
         "http_attempts": 1
       },
-      "fingerprint": "f58811fe432bc4edbbb72ed6ad6301dc3edf5ea1361810e5adae7ff742eeed00",
+      "fingerprint": "cbacc0fdc494759e541113944caece8c0e07bb55dc4df69d4fa425c6a1237e25",
       "extracted": {
-        "has_offer": false,
-        "offers": [],
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "discount",
+            "value": 20,
+            "unit": "percent",
+            "basis": "в ресторане Memo",
+            "audience": "не указано",
+            "restrictions": [
+              "Привилегия предоставляется при бронировании столов через консьерж-сервис."
+            ],
+            "how_to_get": [
+              "Забронировать стол через консьерж-сервис."
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Скидка 20%",
+              "Приоритетное размещение в ресторане и скидка 20%.",
+              "Привилегия предоставляется при бронировании столов через консьерж-сервис."
+            ],
+            "practical_advice": [
+              {
+                "text": "Скидка, вероятно, применяется сразу при заказе, если бронирование сделано через консьерж-сервис.",
+                "basis": "inference"
+              },
+              {
+                "text": "Доступность привилегии для конкретного пользователя не подтверждена; eligibility нужно уточнять отдельно.",
+                "basis": "inference"
+              }
+            ]
+          }
+        ],
         "unknowns": [
-          "В блоке TARGET нет описания предложения, выгоды, условий получения или ограничений для партнёра Memo.",
-          "В предоставленном тексте и на страницах не найдено упоминаний партнёра Memo или его предложения в программе Konsierge — публичные привилегии."
+          "доступность для пользователя не подтверждена",
+          "срок действия не указан"
         ]
       },
       "inferred_as_of": "2026-10-31",
-      "inferred_at": 1793445931.4494689,
+      "inferred_at": 1793463613.4664075,
       "inferred_provider": "experiential",
       "returned_model": "deepseek-v4.1-flash",
-      "publication_allowed": false
+      "publication_allowed": false,
+      "source_repair_version": 2,
+      "input_contract_version": 2
     },
     "0c337fb1372288455b785c70b2621d64": {
       "target": {
@@ -40535,15 +40666,116 @@
         "url": "https://konsierge.com/benefits",
         "partner": "Hide",
         "program": "Konsierge — публичные привилегии",
-        "source_id": "konsierge_public"
+        "source_id": "konsierge_public",
+        "source_records": [
+          {
+            "schema_version": 2,
+            "adapter_version": "2.9.6",
+            "id": "215e68a7942f99e17a650597f0902d3131873a46ee4fab81c0b419407154d6c7",
+            "source_id": "konsierge_public",
+            "native_id": "2532",
+            "program": "Konsierge — публичные привилегии",
+            "record_kind": "partner_offer",
+            "partner_name": "Hide",
+            "title": "Hide",
+            "category": "Рестораны",
+            "benefit_text": "Скидка 20%",
+            "conditions_text": "Приоритетное размещение в ресторане и скидка 20%. \n\nПривилегия предоставляется при бронировании столов через консьерж-сервис.",
+            "redemption_text": "Привилегия предоставляется при бронировании столов через консьерж-сервис.",
+            "benefit_types": [
+              "discount"
+            ],
+            "rates": [
+              {
+                "kind": "discount",
+                "value": "20",
+                "unit": "percent",
+                "qualifier": "exact",
+                "basis_amount": null,
+                "basis_unit": null,
+                "evidence": "Скидка 20%"
+              }
+            ],
+            "promo_codes": [],
+            "valid_from": null,
+            "valid_until": null,
+            "validity_status": "not_stated",
+            "source_status": "public_catalogue_terms_unverified_eligibility",
+            "source_url": "https://konsierge.com/benefits",
+            "benefit_url": null,
+            "link_kind": "page_block",
+            "locator": "public benefit id=2532",
+            "tables": [],
+            "details": {
+              "collection_mode": "recurring_public_browser",
+              "robots_policy": "skip_konsierge_public_by_user_2026_09_19",
+              "retrieval_method": "konsierge_public_browser_capture_v1",
+              "public_item": {
+                "date_of_release": "2026-03-27T12:39:01.026Z",
+                "link": null,
+                "updated_at": "2026-03-27T12:39:01.702Z",
+                "description": "Приоритетное размещение в ресторане и скидка 20%. \n\nПривилегия предоставляется при бронировании столов через консьерж-сервис.",
+                "offer": "Скидка 20%",
+                "created_at": "2026-03-27T12:39:01.702Z",
+                "enabled": true,
+                "id": 2532,
+                "name": "Hide",
+                "date_of_expiry": null,
+                "rubrics": [
+                  {
+                    "id": 92
+                  },
+                  {
+                    "id": 23
+                  }
+                ]
+              },
+              "item_sha256": "62203d407aeb4acb8e47336020e504c98d702037aeebc1f16e048064fde1e2af",
+              "public_categories": [
+                {
+                  "id": 23,
+                  "name": "Рестораны",
+                  "url": "https://konsierge.com/benefits?rubric_id=23"
+                }
+              ],
+              "only_assist_equivalence": false,
+              "code_words": [],
+              "capture_sha256": "d46d8bfb02275c4ae3b628f35ebd4db8a64690dd3ce02c95ea954e4aaf9dbaec",
+              "source_run": "41194911797:1",
+              "_source": {
+                "source_id": "konsierge_public"
+              },
+              "lexical_conditions": [],
+              "promo_code_evidence": [],
+              "promo_code_delivery": [],
+              "promo_code_status": "not_mentioned",
+              "table_benefits": {
+                "components": [],
+                "issues": []
+              }
+            },
+            "normalization_status": "source_fields_extracted",
+            "warnings": [
+              "user_eligibility_not_verified",
+              "only_assist_equivalence_not_asserted",
+              "public_website_response_not_customer_account",
+              "full_description_scope_requires_review",
+              "robots_preflight_skipped_by_project_owner",
+              "source_cache_age_not_provided",
+              "customer_validity_not_established"
+            ],
+            "observed_at": "2026-10-31T11:00:15.824424+00:00",
+            "content_sha256": "18cf6c63046d02cebbca6fe472fec5f8a35b914631067cdf1b030047054eed2f"
+          }
+        ]
       },
       "status": "completed",
-      "last_checked": 1793445940.8816555,
+      "last_checked": 1793463632.5547793,
       "last_result": {
         "provider": "kilo",
         "requested_model": "nvidia/nemotron-3.5-super-vl:free",
         "endpoint": "https://ai-gateway.kilo.ai/api/v1/chat/completions",
-        "request_body_sha256": "7e94e6165396bfbb23afa47d1d1f46e4e71f3eee1328a204c0d8cec00ff1cf7a",
+        "request_body_sha256": "4a5a8a9b880459ba2209f7f33be747ce31a2be8171772c17b43bda02baa611bd",
         "status": "completed",
         "schema_valid": true,
         "publication_allowed": false,
@@ -40551,14 +40783,14 @@
         "attempts": [
           {
             "attempt": 1,
-            "request_body_sha256": "7e94e6165396bfbb23afa47d1d1f46e4e71f3eee1328a204c0d8cec00ff1cf7a",
-            "seconds": 9.344640311999996,
+            "request_body_sha256": "4a5a8a9b880459ba2209f7f33be747ce31a2be8171772c17b43bda02baa611bd",
+            "seconds": 18.98182743900003,
             "http_status": 200,
             "returned_model": "nvidia/nemotron-3.5-super-vl:free",
             "usage": {
-              "prompt_tokens": 4064,
-              "completion_tokens": 1168,
-              "total_tokens": 5232,
+              "prompt_tokens": 13306,
+              "completion_tokens": 2849,
+              "total_tokens": 16155,
               "cost": 0,
               "is_byok": false,
               "prompt_tokens_details": {
@@ -40573,7 +40805,7 @@
                 "upstream_inference_completions_cost": 0
               },
               "completion_tokens_details": {
-                "reasoning_tokens": 1144,
+                "reasoning_tokens": 2606,
                 "image_tokens": 0,
                 "audio_tokens": 0
               }
@@ -40582,9 +40814,9 @@
         ],
         "returned_model": "nvidia/nemotron-3.5-super-vl:free",
         "usage": {
-          "prompt_tokens": 4064,
-          "completion_tokens": 1168,
-          "total_tokens": 5232,
+          "prompt_tokens": 13306,
+          "completion_tokens": 2849,
+          "total_tokens": 16155,
           "cost": 0,
           "is_byok": false,
           "prompt_tokens_details": {
@@ -40599,25 +40831,50 @@
             "upstream_inference_completions_cost": 0
           },
           "completion_tokens_details": {
-            "reasoning_tokens": 1144,
+            "reasoning_tokens": 2606,
             "image_tokens": 0,
             "audio_tokens": 0
           }
         },
-        "seconds": 9.350095228000015,
+        "seconds": 18.98747356299998,
         "http_attempts": 1
       },
-      "fingerprint": "7589acf64bcbf03605546f823a1eb74f767a910e4a772dc193717f2e89c9b0e8",
+      "fingerprint": "9348359135643d55acc137f9908fbd30555dbb34459e6fefa5dc252f46349c19",
       "extracted": {
-        "has_offer": false,
-        "offers": [],
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "discount",
+            "value": 20,
+            "unit": "percent",
+            "basis": "Приоритетное размещение в ресторане и скидка 20%.",
+            "audience": "",
+            "restrictions": [
+              "Привилегия предоставляется при бронировании столов через консьерж-сервис."
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Скидка 20%",
+              "Приоритетное размещение в ресторане и скидка 20%.",
+              "Привилегия предоставляется при бронировании столов через консьерж-сервис."
+            ],
+            "practical_advice": [],
+            "how_to_get": [
+              "бронирование столов через консьерж-сервис"
+            ]
+          }
+        ],
         "unknowns": []
       },
       "inferred_as_of": "2026-10-31",
-      "inferred_at": 1793445940.8817232,
+      "inferred_at": 1793463632.5547848,
       "inferred_provider": "kilo",
       "returned_model": "nvidia/nemotron-3.5-super-vl:free",
-      "publication_allowed": false
+      "publication_allowed": false,
+      "source_repair_version": 2,
+      "input_contract_version": 2
     },
     "cab0a48b4529045adb8c1391430cb0b2": {
       "target": {
@@ -40625,15 +40882,116 @@
         "url": "https://konsierge.com/benefits",
         "partner": "El Copitas Bar",
         "program": "Konsierge — публичные привилегии",
-        "source_id": "konsierge_public"
+        "source_id": "konsierge_public",
+        "source_records": [
+          {
+            "schema_version": 2,
+            "adapter_version": "2.9.6",
+            "id": "057617754e9798fc22c52f47ca5763bc75c44855d6ac7acef0f9d54ff8a0c7d4",
+            "source_id": "konsierge_public",
+            "native_id": "2530",
+            "program": "Konsierge — публичные привилегии",
+            "record_kind": "partner_offer",
+            "partner_name": "El Copitas Bar",
+            "title": "El Copitas Bar",
+            "category": "Рестораны",
+            "benefit_text": "Скидка 10%",
+            "conditions_text": "Приоритетное размещение в ресторане и скидка 10%. \n\nПривилегия предоставляется при бронировании столов через консьерж-сервис.",
+            "redemption_text": "Привилегия предоставляется при бронировании столов через консьерж-сервис.",
+            "benefit_types": [
+              "discount"
+            ],
+            "rates": [
+              {
+                "kind": "discount",
+                "value": "10",
+                "unit": "percent",
+                "qualifier": "exact",
+                "basis_amount": null,
+                "basis_unit": null,
+                "evidence": "Скидка 10%"
+              }
+            ],
+            "promo_codes": [],
+            "valid_from": null,
+            "valid_until": null,
+            "validity_status": "not_stated",
+            "source_status": "public_catalogue_terms_unverified_eligibility",
+            "source_url": "https://konsierge.com/benefits",
+            "benefit_url": null,
+            "link_kind": "page_block",
+            "locator": "public benefit id=2530",
+            "tables": [],
+            "details": {
+              "collection_mode": "recurring_public_browser",
+              "robots_policy": "skip_konsierge_public_by_user_2026_09_19",
+              "retrieval_method": "konsierge_public_browser_capture_v1",
+              "public_item": {
+                "date_of_release": "2026-03-19T10:04:06.601Z",
+                "link": null,
+                "updated_at": "2026-03-19T10:04:07.280Z",
+                "description": "Приоритетное размещение в ресторане и скидка 10%. \n\nПривилегия предоставляется при бронировании столов через консьерж-сервис.",
+                "offer": "Скидка 10%",
+                "created_at": "2026-03-19T10:04:07.280Z",
+                "enabled": true,
+                "id": 2530,
+                "name": "El Copitas Bar",
+                "date_of_expiry": null,
+                "rubrics": [
+                  {
+                    "id": 23
+                  },
+                  {
+                    "id": 92
+                  }
+                ]
+              },
+              "item_sha256": "4c603584da47ee91a6ece855726597beed7ce069b6f19a62d63abc99ad7d6bfd",
+              "public_categories": [
+                {
+                  "id": 23,
+                  "name": "Рестораны",
+                  "url": "https://konsierge.com/benefits?rubric_id=23"
+                }
+              ],
+              "only_assist_equivalence": false,
+              "code_words": [],
+              "capture_sha256": "d46d8bfb02275c4ae3b628f35ebd4db8a64690dd3ce02c95ea954e4aaf9dbaec",
+              "source_run": "41194911797:1",
+              "_source": {
+                "source_id": "konsierge_public"
+              },
+              "lexical_conditions": [],
+              "promo_code_evidence": [],
+              "promo_code_delivery": [],
+              "promo_code_status": "not_mentioned",
+              "table_benefits": {
+                "components": [],
+                "issues": []
+              }
+            },
+            "normalization_status": "source_fields_extracted",
+            "warnings": [
+              "user_eligibility_not_verified",
+              "only_assist_equivalence_not_asserted",
+              "public_website_response_not_customer_account",
+              "full_description_scope_requires_review",
+              "robots_preflight_skipped_by_project_owner",
+              "source_cache_age_not_provided",
+              "customer_validity_not_established"
+            ],
+            "observed_at": "2026-10-31T11:00:15.824424+00:00",
+            "content_sha256": "0e6c990639421be8a43880b07f88b7747f6112d794ede9916624a0768aadb413"
+          }
+        ]
       },
       "status": "completed",
-      "last_checked": 1793445945.6743476,
+      "last_checked": 1793463663.2704453,
       "last_result": {
         "provider": "openrouter",
         "requested_model": "nvidia/nemotron-3.5-super-vl:free",
         "endpoint": "https://openrouter.ai/api/v1/chat/completions",
-        "request_body_sha256": "1ce2ea2062003e4a6f04e86f21cd65032863e6dceb5452315bc68341ed6568b8",
+        "request_body_sha256": "1f628b74fd2f0c9b5ab8923a8d4a0cf202f479b7476f146c6808e1096995dbc1",
         "status": "completed",
         "schema_valid": true,
         "publication_allowed": false,
@@ -40641,14 +40999,14 @@
         "attempts": [
           {
             "attempt": 1,
-            "request_body_sha256": "1ce2ea2062003e4a6f04e86f21cd65032863e6dceb5452315bc68341ed6568b8",
-            "seconds": 4.702170330999991,
+            "request_body_sha256": "1f628b74fd2f0c9b5ab8923a8d4a0cf202f479b7476f146c6808e1096995dbc1",
+            "seconds": 30.615750435999985,
             "http_status": 200,
             "returned_model": "nvidia/nemotron-3.5-super-vl:free",
             "usage": {
-              "prompt_tokens": 4067,
-              "completion_tokens": 833,
-              "total_tokens": 4900,
+              "prompt_tokens": 14060,
+              "completion_tokens": 2618,
+              "total_tokens": 16678,
               "cost": 0,
               "is_byok": false,
               "prompt_tokens_details": {
@@ -40663,7 +41021,7 @@
                 "upstream_inference_completions_cost": 0
               },
               "completion_tokens_details": {
-                "reasoning_tokens": 788,
+                "reasoning_tokens": 2335,
                 "image_tokens": 0,
                 "audio_tokens": 0
               }
@@ -40672,9 +41030,9 @@
         ],
         "returned_model": "nvidia/nemotron-3.5-super-vl:free",
         "usage": {
-          "prompt_tokens": 4067,
-          "completion_tokens": 833,
-          "total_tokens": 4900,
+          "prompt_tokens": 14060,
+          "completion_tokens": 2618,
+          "total_tokens": 16678,
           "cost": 0,
           "is_byok": false,
           "prompt_tokens_details": {
@@ -40689,27 +41047,55 @@
             "upstream_inference_completions_cost": 0
           },
           "completion_tokens_details": {
-            "reasoning_tokens": 788,
+            "reasoning_tokens": 2335,
             "image_tokens": 0,
             "audio_tokens": 0
           }
         },
-        "seconds": 4.707735377999995,
+        "seconds": 30.621576379999965,
         "http_attempts": 1
       },
-      "fingerprint": "666b02f38b9aa7f7a635411ec41d0cfeebee1317d24d62ff93ed48c487e67702",
+      "fingerprint": "f84a1264b93f6689a9f9f78072e090c29bf35930101eaa8a23379cf6a9247a61",
       "extracted": {
-        "has_offer": false,
-        "offers": [],
-        "unknowns": [
-          "Партнер El Copitas Bar не найден в предоставленном тексте"
-        ]
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "discount",
+            "value": 10,
+            "unit": "percent",
+            "basis": null,
+            "audience": "users booking via concierge service",
+            "restrictions": [
+              "Привилегия предоставляется при бронировании столов через консьерж-сервис."
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Скидка 10%",
+              "Приоритетное размещение в ресторане и скидка 10%.",
+              "Привилегия предоставляется при бронировании столов через консьерж-сервис."
+            ],
+            "practical_advice": [
+              {
+                "text": "Обратитесь в консьерж-сервис для бронирования стола в El Copitas Bar, чтобы получить скидку.",
+                "basis": "inference"
+              }
+            ],
+            "how_to_get": [
+              "Забронировать стол через консьерж-сервис"
+            ]
+          }
+        ],
+        "unknowns": []
       },
       "inferred_as_of": "2026-10-31",
-      "inferred_at": 1793445945.6744227,
+      "inferred_at": 1793463663.2704515,
       "inferred_provider": "openrouter",
       "returned_model": "nvidia/nemotron-3.5-super-vl:free",
-      "publication_allowed": false
+      "publication_allowed": false,
+      "source_repair_version": 2,
+      "input_contract_version": 2
     },
     "69f18e55b7f6f48311437c5227a7d41e": {
       "target": {
@@ -40717,15 +41103,113 @@
         "url": "https://konsierge.com/benefits",
         "partner": "Po’mestam",
         "program": "Konsierge — публичные привилегии",
-        "source_id": "konsierge_public"
+        "source_id": "konsierge_public",
+        "source_records": [
+          {
+            "schema_version": 2,
+            "adapter_version": "2.9.6",
+            "id": "6020d6966bfcb7d72bb9b08d407b5c72be20bb38b4757d3e7c510a72c37ffdfd",
+            "source_id": "konsierge_public",
+            "native_id": "2529",
+            "program": "Konsierge — публичные привилегии",
+            "record_kind": "partner_offer",
+            "partner_name": "Po’mestam",
+            "title": "Po’mestam",
+            "category": "Услуги и покупки",
+            "benefit_text": "Скидка 10%",
+            "conditions_text": "Скидка 10% на услуги бюро.\n\nПривилегия предоставляется при бронировании сервиса через консьерж-сервис.",
+            "redemption_text": "Привилегия предоставляется при бронировании сервиса через консьерж-сервис.",
+            "benefit_types": [
+              "discount"
+            ],
+            "rates": [
+              {
+                "kind": "discount",
+                "value": "10",
+                "unit": "percent",
+                "qualifier": "exact",
+                "basis_amount": null,
+                "basis_unit": null,
+                "evidence": "Скидка 10%"
+              }
+            ],
+            "promo_codes": [],
+            "valid_from": null,
+            "valid_until": null,
+            "validity_status": "not_stated",
+            "source_status": "public_catalogue_terms_unverified_eligibility",
+            "source_url": "https://konsierge.com/benefits",
+            "benefit_url": null,
+            "link_kind": "page_block",
+            "locator": "public benefit id=2529",
+            "tables": [],
+            "details": {
+              "collection_mode": "recurring_public_browser",
+              "robots_policy": "skip_konsierge_public_by_user_2026_09_19",
+              "retrieval_method": "konsierge_public_browser_capture_v1",
+              "public_item": {
+                "date_of_release": "2026-03-18T06:58:25.716Z",
+                "link": null,
+                "updated_at": "2026-03-18T06:58:26.410Z",
+                "description": "Скидка 10% на услуги бюро.\n\nПривилегия предоставляется при бронировании сервиса через консьерж-сервис.",
+                "offer": "Скидка 10%",
+                "created_at": "2026-03-18T06:58:26.410Z",
+                "enabled": true,
+                "id": 2529,
+                "name": "Po’mestam",
+                "date_of_expiry": null,
+                "rubrics": [
+                  {
+                    "id": 26
+                  }
+                ]
+              },
+              "item_sha256": "0fd9dce21413462140465a36d7ab24fde81d783a1bf1839713ed8a91c417e81b",
+              "public_categories": [
+                {
+                  "id": 26,
+                  "name": "Услуги и покупки",
+                  "url": "https://konsierge.com/benefits?rubric_id=26"
+                }
+              ],
+              "only_assist_equivalence": false,
+              "code_words": [],
+              "capture_sha256": "d46d8bfb02275c4ae3b628f35ebd4db8a64690dd3ce02c95ea954e4aaf9dbaec",
+              "source_run": "41194911797:1",
+              "_source": {
+                "source_id": "konsierge_public"
+              },
+              "lexical_conditions": [],
+              "promo_code_evidence": [],
+              "promo_code_delivery": [],
+              "promo_code_status": "not_mentioned",
+              "table_benefits": {
+                "components": [],
+                "issues": []
+              }
+            },
+            "normalization_status": "source_fields_extracted",
+            "warnings": [
+              "user_eligibility_not_verified",
+              "only_assist_equivalence_not_asserted",
+              "public_website_response_not_customer_account",
+              "full_description_scope_requires_review",
+              "robots_preflight_skipped_by_project_owner",
+              "source_cache_age_not_provided",
+              "customer_validity_not_established"
+            ],
+            "observed_at": "2026-10-31T11:00:15.824424+00:00",
+            "content_sha256": "6e6a80da41751dfb80a8b45344a5e0a766a9a9142bd8c41de178c7cab7fe0288"
+          }
+        ]
       },
       "status": "completed",
-      "last_checked": 1793445947.5193024,
+      "last_checked": 1793463666.7005465,
       "last_result": {
         "provider": "vercel",
         "requested_model": "nvidia/nemotron-3.5-super-vl",
         "endpoint": "https://ai-gateway.vercel.sh/v1/chat/completions",
-        "request_body_sha256": "c08934034eb779c5aab74c71661b47275c6ada0d51f8e75766ad1fe0c8734f46",
+        "request_body_sha256": "ff675cddc59f14712253a009be71760c67c49d8e3319912698cde9ba25b9b9ad",
         "status": "completed",
         "schema_valid": true,
         "publication_allowed": false,
@@ -40733,15 +41217,15 @@
         "attempts": [
           {
             "attempt": 1,
-            "request_body_sha256": "c08934034eb779c5aab74c71661b47275c6ada0d51f8e75766ad1fe0c8734f46",
-            "seconds": 1.0598731480000083,
+            "request_body_sha256": "ff675cddc59f14712253a009be71760c67c49d8e3319912698cde9ba25b9b9ad",
+            "seconds": 2.741209679000008,
             "http_status": 200,
             "returned_model": "nvidia/nemotron-3.5-super-vl",
             "usage": {
-              "prompt_tokens": 4038,
-              "completion_tokens": 23,
-              "total_tokens": 4061,
-              "cost": 0.0008191,
+              "prompt_tokens": 14054,
+              "completion_tokens": 273,
+              "total_tokens": 14327,
+              "cost": 0.0029473,
               "is_byok": false,
               "prompt_tokens_details": {
                 "cached_tokens": 0,
@@ -40758,24 +41242,24 @@
                 "image_tokens": 0
               },
               "cache_creation_input_tokens": 0,
-              "market_cost": 0.0008191,
-              "gateway_cost": 0.0008191
+              "market_cost": 0.0029473,
+              "gateway_cost": 0.0029473
             }
           }
         ],
         "credit_guard": {
           "allowed": true,
-          "balance_before": "4.99407365",
-          "total_used_before": "0.00592635",
+          "balance_before": "4.99325455",
+          "total_used_before": "0.00674545",
           "request_upper_bound_usd": "0.2179072",
           "reservation_usd": "0.25"
         },
         "returned_model": "nvidia/nemotron-3.5-super-vl",
         "usage": {
-          "prompt_tokens": 4038,
-          "completion_tokens": 23,
-          "total_tokens": 4061,
-          "cost": 0.0008191,
+          "prompt_tokens": 14054,
+          "completion_tokens": 273,
+          "total_tokens": 14327,
+          "cost": 0.0029473,
           "is_byok": false,
           "prompt_tokens_details": {
             "cached_tokens": 0,
@@ -40792,23 +41276,52 @@
             "image_tokens": 0
           },
           "cache_creation_input_tokens": 0,
-          "market_cost": 0.0008191,
-          "gateway_cost": 0.0008191
+          "market_cost": 0.0029473,
+          "gateway_cost": 0.0029473
         },
-        "seconds": 1.7629414300000121,
+        "seconds": 3.331921018999992,
         "http_attempts": 1
       },
-      "fingerprint": "006aa95945184b8170618588b37942ce3e839119f7f6662b7e9f7b6dc087cc97",
+      "fingerprint": "0b0e13250c052fd323be3c81e500a67993e037207f2f5283a8556d205ffd564a",
       "extracted": {
-        "has_offer": false,
-        "offers": [],
+        "has_offer": true,
+        "offers": [
+          {
+            "benefit_kind": "discount",
+            "value": 10,
+            "unit": "percent",
+            "basis": "услуги бюро",
+            "audience": "пользователи консьерж-сервиса",
+            "restrictions": [
+              "предоставляется при бронировании сервиса через консьерж-сервис"
+            ],
+            "promo_code": null,
+            "valid_until": null,
+            "accrual_timing": null,
+            "evidence": [
+              "Скидка 10% на услуги бюро.",
+              "Привилегия предоставляется при бронировании сервиса через консьерж-сервис."
+            ],
+            "practical_advice": [
+              {
+                "text": "Бронируйте услугу бюро через консьерж-сервис, чтобы получить скидку 10%",
+                "basis": "inference"
+              }
+            ],
+            "how_to_get": [
+              "Забронировать сервис через консьерж-сервис"
+            ]
+          }
+        ],
         "unknowns": []
       },
       "inferred_as_of": "2026-10-31",
-      "inferred_at": 1793445947.5193727,
+      "inferred_at": 1793463666.7005522,
       "inferred_provider": "vercel",
       "returned_model": "nvidia/nemotron-3.5-super-vl",
-      "publication_allowed": false
+      "publication_allowed": false,
+      "source_repair_version": 2,
+      "input_contract_version": 2
     },
     "963f79612a947287e5d4ea181a339e1b": {
       "target": {
@@ -45632,41 +46145,41 @@
     "experiential": {
       "usage": {
         "date": "2026-10-31",
-        "attempts": 1,
-        "tokens": 3050
+        "attempts": 2,
+        "tokens": 18180
       },
       "provider_not_before": 0,
-      "last_request_at": 1793445931.4493978
+      "last_request_at": 1793463613.466166
     },
     "kilo": {
       "usage": {
         "date": "2026-10-31",
-        "attempts": 1,
-        "tokens": 5232
+        "attempts": 2,
+        "tokens": 21387
       },
       "provider_not_before": 0,
-      "last_request_at": 1793445940.8816543
+      "last_request_at": 1793463632.5547004
     },
     "openrouter": {
       "usage": {
         "date": "2026-10-31",
-        "attempts": 1,
-        "tokens": 4900
+        "attempts": 2,
+        "tokens": 21578
       },
       "provider_not_before": 0,
-      "last_request_at": 1793445945.6743467
+      "last_request_at": 1793463663.270357
     },
     "vercel": {
       "usage": {
         "date": "2026-10-31",
-        "attempts": 1,
-        "tokens": 4061
+        "attempts": 2,
+        "tokens": 18388
       },
       "provider_not_before": 0,
-      "last_request_at": 1793445947.5193017,
+      "last_request_at": 1793463666.7004614,
       "credit_usage": {
         "month": "2026-10",
-        "reserved_usd": 0.0008191
+        "reserved_usd": 0.0037664
       }
     },
     "gemini": {
