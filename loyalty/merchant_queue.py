@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+from collections import deque
 import copy
 from datetime import datetime, timezone
 import hashlib
@@ -126,6 +127,28 @@ def pending_targets(state: dict) -> list[dict]:
     # Preserve insertion order within a cohort: newly discovered, then oldest checked.
     items.sort(key=lambda item: item.get('last_checked', 0))
     return [item['target'] for item in items]
+
+
+def capture_targets(state: dict):
+    """Round-robin public origins, preserving oldest-first order within each."""
+    origins = {}
+    for target in pending_targets(state):
+        try:
+            url = urlsplit(evidence.capture_url(target))
+            if url.scheme not in ('http', 'https') or not url.hostname:
+                raise ValueError('invalid_capture_origin')
+            port = url.port if url.port is not None else (443 if url.scheme == 'https' else 80)
+            origin = (url.scheme, url.hostname, port)
+        except (KeyError, TypeError, ValueError, AttributeError):
+            # Keep a malformed legacy URL isolated; capture records its own failure.
+            origin = ('invalid', target['id'])
+        origins.setdefault(origin, deque()).append(target)
+    active = deque(origins.values())
+    while active:
+        targets = active.popleft()
+        yield targets.popleft()
+        if targets:
+            active.append(targets)
 
 
 def fingerprint(document: dict, schema: dict, system: str) -> str:
@@ -384,16 +407,17 @@ async def prepare_queue(state_path: Path, catalog_path: Path, out: Path, max_pag
     merge_targets(state, targets)
     out.mkdir(parents=True, exist_ok=False)
     documents, observations = [], []
-    day = datetime.now(timezone.utc).date().isoformat()
     eligible = any(provider_eligible(state, provider, time.time()) for provider in providers)
     if eligible:
         async with async_playwright() as pw:
             browser = await pw.chromium.launch(headless=True)
             started = time.monotonic()
+            attempts = 0
             try:
-                for target in pending_targets(state)[:max_pages]:
-                    if time.monotonic() - started > 1200: break
+                for target in capture_targets(state):
+                    if attempts >= max_pages or time.monotonic() - started >= 1200: break
                     ident = target['id']
+                    attempts += 1
                     try:
                         document = await asyncio.wait_for(capture_page(browser, target, out), timeout=240)
                         # Validate this document alone: one oversized input must not block its neighbours.

@@ -1,0 +1,1763 @@
+{
+  "schema_version": 1,
+  "report_title": "Second frozen-input semantic replay — 2 November 2026",
+  "pass_number": 2,
+  "scope": {
+    "case_ids": [
+      "4790b53657300ce00b33f55a071e8469",
+      "1fb2504ab1758f4f653a96619a468134",
+      "a858d829fc08e6cb5a5648d57371ab2c",
+      "a3a0b774e12560861eb2faa6ace27bae",
+      "854bb98a899ccc6e79e8d3ed88776aa0"
+    ],
+    "cases": 5,
+    "method": "Same original saved source records, text, ordered images, target as_of, provider and selected route; changed prompt/schema descriptions and field order. One bounded HTTP attempt per case. No rewriting or filling of model outputs.",
+    "selection": "Five residual cases selected after the first nine-case replay. The unresolved Digital Mashka transport timeout was not retried. This is not a random sample or provider benchmark.",
+    "artifact_paths": "Every source, original and second_pass file path is relative to the second replay artifact root (artifact 13129585528). Every first_pass file path is relative to the first replay artifact root (artifact 13128188275). Review_source identifies a separate reviewer report by filename. No absolute execution paths are embedded."
+  },
+  "provenance": {
+    "code_sha": "b13ca14823eb68184eb5656ac8282a688cf6cd6d",
+    "run_id": 41418844177,
+    "run_url": "https://github.com/Floppa2003/key-privileges/actions/runs/41418844177",
+    "artifact_id": 13129585528,
+    "artifact_zip_sha256": "718621c14da2f650e99c0682924b9bdd73d8bd696f673e48cb0210a7e3e9394e",
+    "original_run_id": 41278067049,
+    "original_artifact_id": 13074097773,
+    "original_manifest_sha256": "939d38896c224ac92cce274217e6ff020ea1735e8321102563ba3248b63e7ebc",
+    "original_summary_sha256": "8f13370840ed8ee4bbed7eaac02527264122e2e2b53b35c252f29ca00d92d72e",
+    "first_pass_run_id": 41416676273,
+    "first_pass_artifact_id": 13128188275,
+    "first_pass_artifact_zip_sha256": "f17309c547344774cbc15185fef11daa0a628f3ac9e39ad68175e102ef0b20fc",
+    "first_pass_aggregate_filename": "replay-audit-20261102.json",
+    "first_pass_aggregate_sha256": "6f1ee7d7583a43bfd31cd5b0c37fd8327c3bb5ecf309d7ad3c259582b3f988f2",
+    "second_pass_source_manifest_sha256": "b9f4d2d35a279de76aa0077692ce534d12beb0aa0bc5c7ed6636d80e1533b609",
+    "second_pass_report_sha256": "1037186ced407be3fb31a0112034c7f2a025ebeb28c136ac21ae94bd5e2eefb0",
+    "artifact_sha256_manifest_sha256": "1e91d68c3a0037e2b0464f80bd569804c87ec74a3a148fab31c6c8cd3f49e330",
+    "prompt_path": "code/merchant_prompt.txt",
+    "prompt_sha256": "c9c166d26e71fb545f59e224c70ec1229d3562d0d219102ce334ed0c430f1062",
+    "schema_path": "code/merchant_offer.schema.json",
+    "schema_sha256": "be819c219f0c2f410eb0969571041b3c73f709ab3cc51bb6b03b0863ea38125d",
+    "schema_validation_constraints_unchanged_from_first_pass": true,
+    "schema_comparison_method": "Ignore description annotations and ordering within required arrays; compare every other schema keyword and value. Property-key ordering is not significant.",
+    "sources_refetched": false,
+    "as_of_changed": false,
+    "review_report_sha256": {
+      "followup-audit-b.json": "bc4e3611b299af89dfa17dd3822686b8fd189fdf8b2ecfdfd22cd1a8451fe931",
+      "followup-audit-root.json": "9df6b11d4e990f8e90f9ca65ded2adfa21aca7e8fb142ced8a4c8f84435f9eb0",
+      "followup-audit-ledger.json": "5eb42251d14d88aeb4522202dbeea9f2c8bdd3f7342a9f7f5f05b9576c077d19"
+    },
+    "canonical_source_records_hash_format": "UTF-8 JSON, ensure_ascii=false, sorted keys, compact comma/colon separators, no final newline. Contract hashes are retained separately exactly as recorded."
+  },
+  "counts": {
+    "case_count": 5,
+    "source_record_count": 5,
+    "source_png_count": 23,
+    "model_http_attempts": 5,
+    "original_has_offer_true": 5,
+    "original_offer_count": 5,
+    "first_pass_generation_status_on_selected_five": {
+      "completed": 4,
+      "failed_validation": 1
+    },
+    "first_pass_accepted_outputs_on_selected_five": 4,
+    "first_pass_accepted_offer_count_on_selected_five": 6,
+    "first_pass_accepted_program_restriction_count_on_selected_five": 4,
+    "second_pass_generation_status": {
+      "completed": 5
+    },
+    "second_pass_actual_extracted_outputs": 5,
+    "second_pass_has_offer_true_among_extracted": 5,
+    "second_pass_accepted_offer_count": 10,
+    "second_pass_accepted_program_restriction_count": 0,
+    "same_cases_completed_in_both_replays": {
+      "case_count": 4,
+      "original_offer_count": 4,
+      "first_pass_offer_count": 6,
+      "second_pass_offer_count": 6
+    },
+    "primary_target_defect_status": {
+      "target_fixed_minor_issues_remain": 1,
+      "target_fixed_no_material_regression_found": 1,
+      "target_fixed_minor_evidence_issues_remain": 1,
+      "partial_recovery_material_benefit_condition_error_remains": 1,
+      "component_separation_defect_remains_without_benefit_fact_loss": 1
+    },
+    "target_goals_fixed": 3,
+    "target_goals_with_remaining_component_separation_defect": 2,
+    "remaining_independent_benefit_miscast_as_condition_cases": 1,
+    "remaining_merged_benefits_without_benefit_fact_loss_cases": 1,
+    "interpretation": "The last two counts distinguish material meaning change from a structural contract violation. They are not interchangeable severity labels or a provider accuracy estimate. Minor findings remain in individual reviews."
+  },
+  "integrity_and_accounting": {
+    "artifact_files_hashed_locally": 184,
+    "source_records_targets_text_and_ordered_images_frozen_for_all_five": true,
+    "all_five_original_extraction_hashes_verified": true,
+    "five_embedded_extracted_objects_identical_to_saved_outputs": true,
+    "first_pass_report_unchanged": true,
+    "provider_attempt_counts": {
+      "openrouter": 1,
+      "tokenharbor": 1,
+      "vercel": 3
+    },
+    "provider_recorded_tokens": {
+      "openrouter": 16994,
+      "tokenharbor": 20057,
+      "vercel": 37354
+    },
+    "unselected_provider_ledgers_unchanged": [
+      "orcarouter",
+      "experiential",
+      "kilo",
+      "gemini"
+    ],
+    "same_original_provider_all_cases": true,
+    "fallback_used": false,
+    "retry_used": false,
+    "daily_rollover": false,
+    "cooldowns_unchanged_for_selected_providers": true,
+    "vercel_reported_credit_delta_usd": "0.00798620",
+    "vercel_reported_cost_sum_usd": "0.0079862",
+    "production_items_unchanged": true,
+    "production_items_invariance_evidence": "Independent complete remote commit diff (all 10+/10- lines match exactly the local ledger-only diff) corroborates checksummed runner invariants. Full production item snapshots were intentionally excluded from the artifact; their digest was not independently recomputed locally.",
+    "production_items_before_after_sha256": "7459ed9cd1a510eb8d901c1c41ac52d936e1db3cfc5d1e00e5cf068c25906f0b",
+    "ledger_state_commit_before": "e9f44604bac0d74087b0ae8328bef8e03668dc2b",
+    "ledger_state_commit_after": "20f9f4e16a81f75b6e39bd872a1c4056063708f1",
+    "production_baseline_matches_previous_replay_end": true,
+    "reviewed_remote_readback": {
+      "job_id": 125190862291,
+      "verified_files": 184,
+      "report_exact_match": true,
+      "state_commit_exact_match": true
+    },
+    "aggregation_model_calls": 0,
+    "aggregation_remote_operations": 0
+  },
+  "cases": [
+    {
+      "id": "4790b53657300ce00b33f55a071e8469",
+      "partner": "Атлас (Серпуховский Вал)",
+      "program": "Konsierge — публичные привилегии",
+      "provider": "openrouter",
+      "target_as_of": "2026-11-01",
+      "source": {
+        "manifest_path": "source/manifest.json",
+        "source_url": "https://konsierge.com/benefits",
+        "source_records": [
+          {
+            "schema_version": 2,
+            "adapter_version": "2.9.6",
+            "id": "0bc9f591bc466b0cd5a9e474efc5c6f7b99448597aa4ac3186e6574fb6653ed9",
+            "source_id": "konsierge_public",
+            "native_id": "2036",
+            "program": "Konsierge — публичные привилегии",
+            "record_kind": "partner_offer",
+            "partner_name": "Атлас (Серпуховский Вал)",
+            "title": "Атлас (Серпуховский Вал)",
+            "category": "Красота и здоровье",
+            "benefit_text": "Скидка до 20%",
+            "conditions_text": "Для вас доступны следующие привилегии:\n\n10% для отделения ЭМИД (кроме СПРС, Термаж, Альтера)\n-не суммируется с другими предложениями\n-мотивация врача с оказанных услуг - 25%\n-при направлении к эстетистам / массажистам - 0%\n10% для пластической хирургии на услуги доктора Крамаренко А.А.\n10% на услуги амбулаторного отделения, кроме чекапов\n\nУсловия предоставления привилегий:\n-не суммируется с другими предложениями\n-не распространяется на комплексные и сезонные предложения\n\nСроки предоставления акции: до 31.12.2026г\nПривилегии не распространяются на услуги-исключения\nПривилегии предоставляются по кодовому слово KONSIERGE, либо при предъявлении скриншота специального предложения из приложения консьерж-сервиса.\n\nПривилегия предоставляется только клиентам сервиса.\n\nСлужебное поле date_of_expiry (UTC): 2025-12-30T21:00:00.000Z",
+            "redemption_text": "Сроки предоставления акции: до 31.12.2026г\nПривилегии не распространяются на услуги-исключения\nПривилегии предоставляются по кодовому слово KONSIERGE, либо при предъявлении скриншота специального предложения из приложения консьерж-сервиса.",
+            "benefit_types": [
+              "discount"
+            ],
+            "rates": [
+              {
+                "kind": "discount",
+                "value": "20",
+                "unit": "percent",
+                "qualifier": "up_to",
+                "basis_amount": null,
+                "basis_unit": null,
+                "evidence": "Скидка до 20%"
+              }
+            ],
+            "promo_codes": [],
+            "valid_from": null,
+            "valid_until": null,
+            "validity_status": "not_stated",
+            "source_status": "public_catalogue_terms_unverified_eligibility",
+            "source_url": "https://konsierge.com/benefits",
+            "benefit_url": null,
+            "link_kind": "page_block",
+            "locator": "public benefit id=2036",
+            "tables": [],
+            "details": {
+              "collection_mode": "recurring_public_browser",
+              "robots_policy": "skip_konsierge_public_by_user_2026_09_19",
+              "retrieval_method": "konsierge_public_browser_capture_v1",
+              "public_item": {
+                "date_of_release": "2025-04-16T07:40:55.615Z",
+                "link": null,
+                "updated_at": "2026-09-09T09:55:56.976Z",
+                "description": "Для вас доступны следующие привилегии:\n\n10% для отделения ЭМИД (кроме СПРС, Термаж, Альтера)\n-не суммируется с другими предложениями\n-мотивация врача с оказанных услуг - 25%\n-при направлении к эстетистам / массажистам - 0%\n10% для пластической хирургии на услуги доктора Крамаренко А.А.\n10% на услуги амбулаторного отделения, кроме чекапов\n\nУсловия предоставления привилегий:\n-не суммируется с другими предложениями\n-не распространяется на комплексные и сезонные предложения\n\nСроки предоставления акции: до 31.12.2026г\nПривилегии не распространяются на услуги-исключения\nПривилегии предоставляются по кодовому слово KONSIERGE, либо при предъявлении скриншота специального предложения из приложения консьерж-сервиса.\n\nПривилегия предоставляется только клиентам сервиса.",
+                "offer": "Скидка до 20%",
+                "created_at": "2025-04-16T07:40:56.173Z",
+                "enabled": true,
+                "id": 2036,
+                "name": "Атлас (Серпуховский Вал)",
+                "date_of_expiry": "2025-12-30T21:00:00.000Z",
+                "rubrics": [
+                  {
+                    "id": 25
+                  }
+                ]
+              },
+              "item_sha256": "090ac88ca25d9d71c87bbf47d0355bf5b482f204583900f169ac526d574b4cba",
+              "public_categories": [
+                {
+                  "id": 25,
+                  "name": "Красота и здоровье",
+                  "url": "https://konsierge.com/benefits?rubric_id=25"
+                }
+              ],
+              "only_assist_equivalence": false,
+              "code_words": [
+                {
+                  "value": "KONSIERGE",
+                  "evidence": "кодовому слово KONSIERGE"
+                }
+              ],
+              "capture_sha256": "d46d8bfb02275c4ae3b628f35ebd4db8a64690dd3ce02c95ea954e4aaf9dbaec",
+              "source_run": "41194911797:1",
+              "_source": {
+                "source_id": "konsierge_public"
+              },
+              "lexical_conditions": [
+                {
+                  "kind": "stacking_restriction",
+                  "evidence": "-не суммируется с другими предложениями"
+                }
+              ],
+              "promo_code_evidence": [],
+              "promo_code_delivery": [],
+              "promo_code_status": "not_mentioned",
+              "table_benefits": {
+                "components": [],
+                "issues": []
+              }
+            },
+            "normalization_status": "source_fields_extracted",
+            "warnings": [
+              "user_eligibility_not_verified",
+              "only_assist_equivalence_not_asserted",
+              "public_website_response_not_customer_account",
+              "full_description_scope_requires_review",
+              "robots_preflight_skipped_by_project_owner",
+              "source_cache_age_not_provided",
+              "source_expiry_conflicts_with_description",
+              "source_expiry_timestamp_not_customer_timezone",
+              "source_expiry_timestamp_elapsed",
+              "customer_validity_not_established"
+            ],
+            "observed_at": "2026-10-31T11:00:15.824424+00:00",
+            "content_sha256": "f1fa3dee3295e0b9d29f5b09924d48cd95cc78c6680543a168e119220486deb1"
+          }
+        ],
+        "source_record_count": 1,
+        "source_records_contract_sha256": "20bae8bce732036967c1fa4bbc86643ea65ea18f1bfca22a02328fa69869f8f7",
+        "source_records_canonical_json_sha256": "20bae8bce732036967c1fa4bbc86643ea65ea18f1bfca22a02328fa69869f8f7",
+        "capture": {
+          "input_contract_version": 2,
+          "target_found": true,
+          "content_ready": true,
+          "scope": "catalogue_card",
+          "native_ids": [
+            "2036"
+          ],
+          "readiness": "native_cards_loaded"
+        },
+        "files": {
+          "text": {
+            "path": "source/4790b53657300ce00b33f55a071e8469/visible-text.txt",
+            "sha256": "407dc0425c2e85fd8fc628066186f67108859ceaf694640c006a12f79cd01965"
+          },
+          "images": [
+            {
+              "path": "source/4790b53657300ce00b33f55a071e8469/page-1.png",
+              "sha256": "564b080ee609897b0cba617a4da81151b62d1805cd03354e1e2c116d4f0dff33"
+            },
+            {
+              "path": "source/4790b53657300ce00b33f55a071e8469/page-2.png",
+              "sha256": "b73bb1abf05b0fc908a161107c618dffba5b3d0fa6ae8d129d8bf2faf30ad225"
+            },
+            {
+              "path": "source/4790b53657300ce00b33f55a071e8469/page-3.png",
+              "sha256": "513faed9d6406a8701d052320bc216c58a3ac044b5e262d1144596b69d41c1f9"
+            },
+            {
+              "path": "source/4790b53657300ce00b33f55a071e8469/page-4.png",
+              "sha256": "a0f695801586e8df95d4ede8bd7b0d19f3aca664f56acd1f985794510d87ead0"
+            },
+            {
+              "path": "source/4790b53657300ce00b33f55a071e8469/page-5.png",
+              "sha256": "561eb957da7679db646c5a93d95415067a15787985d7271beb432c34689d7083"
+            }
+          ]
+        },
+        "records_target_text_and_ordered_images_equal_to_original_and_first_pass": true
+      },
+      "original": {
+        "extracted_path": "old/openrouter/4790b53657300ce00b33f55a071e8469/direct/extracted.json",
+        "extracted_sha256": "ecb083501c354d94197d9ae9786be7384c0669307ea88bdfb4afec282d2f33b9",
+        "has_offer": true,
+        "offer_count": 1,
+        "program_restriction_count": 0,
+        "schema_family": "production_before_semantic_contract_changes"
+      },
+      "first_pass": {
+        "artifact_id": 13128188275,
+        "generation_status": "completed",
+        "extracted_path": "new/4790b53657300ce00b33f55a071e8469/openrouter/4790b53657300ce00b33f55a071e8469/direct/extracted.json",
+        "extracted_sha256": "3e7d504c2dca12f0bf01e395802499386cba6ba6966bec1fe379def189bfbb7f",
+        "accepted_extracted_object_exists": true,
+        "has_offer": true,
+        "accepted_offer_count": 3,
+        "accepted_program_restriction_count": 4,
+        "raw_generation_not_repaired": true
+      },
+      "second_pass": {
+        "generation_status": "completed",
+        "queue_status": "completed",
+        "driver_status": "completed",
+        "http_attempts": 1,
+        "extracted_path": "new/4790b53657300ce00b33f55a071e8469/openrouter/4790b53657300ce00b33f55a071e8469/direct/extracted.json",
+        "extracted_sha256": "ade8f42f9a1971d7cb2ce78adb2861e0dc9f36ee90cee00bf7b25a837537c069",
+        "extracted": {
+          "has_offer": true,
+          "offers": [
+            {
+              "benefit_kind": "discount",
+              "benefit_text": "10% для отделения ЭМИД (кроме СПРС, Термаж, Альтера)",
+              "value": 10,
+              "value_qualifier": "exact",
+              "unit": "percent",
+              "basis": "отделение ЭМИД (кроме СПРС, Термаж, Альтера)",
+              "audience": "клиенты сервиса",
+              "restrictions": [
+                "не суммируется с другими предложениями",
+                "не распространяется на комплексные и сезонные предложения",
+                "Привилегии не распространяются на услуги-исключения"
+              ],
+              "how_to_get": [
+                "предъявить кодовое слово KONSIERGE",
+                "предъявить скриншот специального предложения из приложения консьерж-сервиса"
+              ],
+              "promo_code": "KONSIERGE",
+              "valid_until": null,
+              "accrual_timing": null,
+              "evidence": [
+                "10% для отделения ЭМИД (кроме СПРС, Термаж, Альтера)",
+                "-не суммируется с другими предложениями",
+                "-не распространяется на комплексные и сезонные предложения",
+                "Сроки предоставления акции: до 31.12.2026г",
+                "Привилегии не распространяются на услуги-исключения",
+                "Привилегии предоставляются по кодовому слово KONSIERGE, либо при предъявлении скриншота специального предложения из приложения консьерж-сервиса.",
+                "Привилегия предоставляется только клиентам сервиса."
+              ],
+              "practical_advice": []
+            },
+            {
+              "benefit_kind": "discount",
+              "benefit_text": "10% для пластической хирургии на услуги доктора Крамаренко А.А.",
+              "value": 10,
+              "value_qualifier": "exact",
+              "unit": "percent",
+              "basis": "пластическая хирургия, услуги доктора Крамаренко А.А.",
+              "audience": "клиенты сервиса",
+              "restrictions": [
+                "не суммируется с другими предложениями",
+                "не распространяется на комплексные и сезонные предложения",
+                "Привилегии не распространяются на услуги-исключения"
+              ],
+              "how_to_get": [
+                "предъявить кодовое слово KONSIERGE",
+                "предъявить скриншот специального предложения из приложения консьерж-сервиса"
+              ],
+              "promo_code": "KONSIERGE",
+              "valid_until": null,
+              "accrual_timing": null,
+              "evidence": [
+                "10% для пластической хирургии на услуги доктора Крамаренко А.А.",
+                "-не суммируется с другими предложениями",
+                "-не распространяется на комплексные и сезонные предложения",
+                "Сроки предоставления акции: до 31.12.2026г",
+                "Привилегии не распространяются на услуги-исключения",
+                "Привилегии предоставляются по кодовому слово KONSIERGE, либо при предъявлении скриншота специального предложения из приложения консьерж-сервиса.",
+                "Привилегия предоставляется только клиентам сервиса."
+              ],
+              "practical_advice": []
+            },
+            {
+              "benefit_kind": "discount",
+              "benefit_text": "10% на услуги амбулаторного отделения, кроме чекапов",
+              "value": 10,
+              "value_qualifier": "exact",
+              "unit": "percent",
+              "basis": "услуги амбулаторного отделения (кроме чекапов)",
+              "audience": "клиенты сервиса",
+              "restrictions": [
+                "не суммируется с другими предложениями",
+                "не распространяется на комплексные и сезонные предложения",
+                "Привилегии не распространяются на услуги-исключения"
+              ],
+              "how_to_get": [
+                "предъявить кодовое слово KONSIERGE",
+                "предъявить скриншот специального предложения из приложения консьерж-сервиса"
+              ],
+              "promo_code": "KONSIERGE",
+              "valid_until": null,
+              "accrual_timing": null,
+              "evidence": [
+                "10% на услуги амбулаторного отделения, кроме чекапов",
+                "-не суммируется с другими предложениями",
+                "-не распространяется на комплексные и сезонные предложения",
+                "Сроки предоставления акции: до 31.12.2026г",
+                "Привилегии не распространяются на услуги-исключения",
+                "Привилегии предоставляются по кодовому слово KONSIERGE, либо при предъявлении скриншота специального предложения из приложения консьерж-сервиса.",
+                "Привилегия предоставляется только клиентам сервиса."
+              ],
+              "practical_advice": []
+            }
+          ],
+          "unknowns": [
+            "Расхождение сроков акции: в описании указано «до 31.12.2026г», в поле date_of_expiry источника — 2025-12-30T21:00:00.000Z"
+          ],
+          "program_restrictions": []
+        },
+        "has_offer": true,
+        "accepted_offer_count": 3,
+        "accepted_program_restriction_count": 0,
+        "model_measurement": {
+          "attempt": 1,
+          "request_body_sha256": "103b870e6764f75bdc928c8605f96f80d40fe1e4b8091b675844d0e701084581",
+          "seconds": 82.72912033500003,
+          "http_status": 200,
+          "returned_model": "nvidia/nemotron-3.5-super-vl:free"
+        },
+        "recorded_tokens": 16994,
+        "reported_cost_usd": 0,
+        "summary_evidence_path": "new/4790b53657300ce00b33f55a071e8469/openrouter/4790b53657300ce00b33f55a071e8469/direct/summary.json"
+      },
+      "primary_target_defect_status": "target_fixed_minor_issues_remain",
+      "first_pass_comparison": {
+        "target": "Do not select a nonnull expiry when the same offer has conflicting source dates.",
+        "result": "fixed",
+        "first_pass": "Three exact 10% components, each valid_until=2026-12-31 despite the reported expiry conflict.",
+        "second_pass": "The same three 10% components, all valid_until=null; both source date representations remain in unknowns.",
+        "new_or_persistent_limits": "The earlier headline up-to-20% versus detailed-10% explanation disappeared. Alternative redemption remains implicit in two how_to_get strings, though the quoted source still says either/or."
+      },
+      "semantic_review": {
+        "review_source": "followup-audit-b.json",
+        "id": "4790b53657300ce00b33f55a071e8469",
+        "partner": "Атлас (Серпуховский Вал)",
+        "program": "Konsierge — публичные привилегии",
+        "provider": "openrouter",
+        "source_url": "https://konsierge.com/benefits",
+        "original_offers": 1,
+        "first_pass_offers": 3,
+        "followup_offers": 3,
+        "paths_relative_to_respective_artifact_root": {
+          "original": "old/openrouter/4790b53657300ce00b33f55a071e8469/direct/extracted.json",
+          "first_pass": "new/4790b53657300ce00b33f55a071e8469/openrouter/4790b53657300ce00b33f55a071e8469/direct/extracted.json",
+          "followup": "new/4790b53657300ce00b33f55a071e8469/openrouter/4790b53657300ce00b33f55a071e8469/direct/extracted.json"
+        },
+        "sha256": {
+          "original": "ecb083501c354d94197d9ae9786be7384c0669307ea88bdfb4afec282d2f33b9",
+          "first_pass": "3e7d504c2dca12f0bf01e395802499386cba6ba6966bec1fe379def189bfbb7f",
+          "followup": "ade8f42f9a1971d7cb2ce78adb2861e0dc9f36ee90cee00bf7b25a837537c069"
+        },
+        "frozen_input_checks": {
+          "source_records_equal_to_first_pass_and_original": true,
+          "target_equal_to_first_pass_and_original": true,
+          "ordered_image_paths_equal_to_first_pass_and_original": true,
+          "manifest_hashes_equal_to_first_pass_and_original": true,
+          "followup_text_and_png_bytes_match_manifest": true,
+          "file_count_including_text": 6
+        },
+        "capture": {
+          "input_contract_version": 2,
+          "target_found": true,
+          "content_ready": true,
+          "scope": "catalogue_card",
+          "native_ids": [
+            "2036"
+          ],
+          "readiness": "native_cards_loaded"
+        },
+        "verdict": "target_date_defect_fixed_minor_issues_remain",
+        "primary_target_defect_status": "fixed",
+        "fixed": [
+          "All three valid_until fields are null; unknowns retains both conflicting source expiry representations. The first pass had selected 2026-12-31 despite acknowledging the conflict.",
+          "All three 10% exact client discounts remain separate, scoped to EMID, plastic surgery services of Dr Kramarenko A.A., and outpatient services. The advertising headline is not used as a 20% client rate.",
+          "EMID exceptions (SPRS, Thermage, Ulthera) and outpatient checkup exclusion remain explicit in benefit_text and basis. Shared no-stacking, complex/seasonal-offer and excluded-service restrictions are now attached to each applicable offer; none of these restrictions is lost despite program_restrictions becoming empty.",
+          "Only service clients are named as the audience. Staff compensation 25% and referral 0% are correctly absent from client benefits and restrictions.",
+          "Russian spelling is restored; the first-pass doktora/indicaт mixed-language artifacts and repeated practical advice are absent."
+        ],
+        "evidence": {
+          "source_rates": [
+            "10% для отделения ЭМИД (кроме СПРС, Термаж, Альтера)",
+            "10% для пластической хирургии на услуги доктора Крамаренко А.А.",
+            "10% на услуги амбулаторного отделения, кроме чекапов"
+          ],
+          "source_expiry_text": "Сроки предоставления акции: до 31.12.2026г",
+          "source_expiry_native": "2025-12-30T21:00:00.000Z",
+          "first_pass_valid_until": [
+            "2026-12-31",
+            "2026-12-31",
+            "2026-12-31"
+          ],
+          "followup_valid_until": [
+            null,
+            null,
+            null
+          ],
+          "followup_unknowns": [
+            "Расхождение сроков акции: в описании указано «до 31.12.2026г», в поле date_of_expiry источника — 2025-12-30T21:00:00.000Z"
+          ]
+        },
+        "remaining": [
+          {
+            "kind": "headline_detail_discrepancy_no_longer_reported",
+            "severity": "minor",
+            "change_from_first_pass": "regression",
+            "source_excerpt": "Скидка до 20%",
+            "first_pass_output_excerpt": "Заголовок indicaт 'Скидка до 20%', но в подробностях перечислены только ставки 10%. Условия получения скидки 20% не раскрыты.",
+            "output_excerpt": "unknowns contains only the expiry discrepancy",
+            "detail": "The first-pass explanation that the headline advertises up to 20% while all enumerated client rates are 10% disappeared. No 20% benefit was invented, and a 10% rate does not logically contradict an upper bound of 20%; this is lost source-discrepancy transparency, not an incorrect extracted 10% rate."
+          },
+          {
+            "kind": "alternative_redemption_not_explicit_in_how_to_get",
+            "severity": "minor",
+            "change_from_first_pass": "unchanged",
+            "source_excerpt": "Привилегии предоставляются по кодовому слово KONSIERGE, либо при предъявлении скриншота специального предложения из приложения консьерж-сервиса.",
+            "output_excerpt": [
+              "предъявить кодовое слово KONSIERGE",
+              "предъявить скриншот специального предложения из приложения консьерж-сервиса"
+            ],
+            "detail": "Two array strings omit the source connector либо. A list rendered as required steps could be read as cumulative, but the JSON array does not itself prove an AND requirement, and evidence quotes the full alternative exactly. Preserve alternatives explicitly in one how_to_get sentence or mark each as an alternative."
+          }
+        ],
+        "quote_check": {
+          "evidence_entries": 21,
+          "all_contiguous_in_frozen_source_after_nfkc_and_whitespace_normalization": true
+        },
+        "material_regressions_observed": false,
+        "minimal_general_followup": [
+          "Retain each material source discrepancy independently in unknowns; fixing an expiry conflict must not erase an unrelated unresolved headline/detail discrepancy.",
+          "Preserve logical connectors in activation instructions: A or B should remain one explicit alternative sentence, not two apparently successive steps."
+        ]
+      },
+      "publication_allowed": false
+    },
+    {
+      "id": "1fb2504ab1758f4f653a96619a468134",
+      "partner": "Додо Пицца",
+      "program": "T2 «Больше»",
+      "provider": "tokenharbor",
+      "target_as_of": "2026-11-01",
+      "source": {
+        "manifest_path": "source/manifest.json",
+        "source_url": "https://spb.t2.ru/bolshe/offers",
+        "source_records": [
+          {
+            "schema_version": 2,
+            "adapter_version": "2.9.6",
+            "id": "7285c7d8fd09f6c9bc497de32b52f522fba9707a71d2651a3efbee1582081546",
+            "source_id": "t2_bolshe",
+            "native_id": "46C418C0EED27B40E0630D06F60AE272",
+            "program": "T2 «Больше»",
+            "record_kind": "partner_offer",
+            "partner_name": "Додо Пицца",
+            "title": "Пицца за 1 рубль",
+            "category": "Еда",
+            "benefit_text": "Пицца «Ветчина и грибы» 25 см за 1 рубль при заказе от 1190 рублей",
+            "conditions_text": "Как получить подарок\nНажмите «Получить подарок» и вы получите SMS с промокодом.\nНа сайте или в приложении «Додо Пицца» добавьте в корзину позиции на сумму от 1190 рублей.\nВ поле «Промокод» введите код из SMS - пицца за 1 рубль появится в корзине.\nПри заказе в ресторане покажите SMS с промокодом сотруднику.\nУсловия предложения\nПромокод действует на доставку, самовывоз и на заказ в ресторане во всех пиццериях «Додо Пицца» в следующих городах: Санкт‑Петербург (кроме Петергофа, Пушкина, Ломоносова, Колпина, Красного Села, Кронштадта, Сестрорецка и Павловска), Мурино (Лаврики и Новое Девяткино), Парголово (Бугры, Корабсельки, Мистолово, Парнас, Порошкино, Энколово, Юкки), Шушары.\nАкция также распространяется на пиццерии Мурина, Кудрова и Шушар.\nОдин абонент может получить и активировать не более одного промокода в одну календарную неделю.\nАкция не действует при покупке комбо и на дополнительные ингредиенты.\nАкция действует, пока товар есть в наличии.\nПромокод не является средством платежа, не выдается в денежном эквиваленте и не может быть обменян на товары или услуги, не предусмотренные условиями акции.\nВсе претензии по качеству продукции направляются продавцу, которым является Общество с ограниченной ответственностью «Додо Франчайзинг» (ОГРН: 1131101001844, ИНН: 1101140415, КПП: 110101001), юр. адрес: 167001, Республика Коми, г. Сыктывкар, Октябрьский проспект, д. 16.",
+            "redemption_text": "Нажмите «Получить подарок» и вы получите SMS с промокодом.\nНа сайте или в приложении «Додо Пицца» добавьте в корзину позиции на сумму от 1190 рублей.\nВ поле «Промокод» введите код из SMS - пицца за 1 рубль появится в корзине.\nПри заказе в ресторане покажите SMS с промокодом сотруднику.",
+            "benefit_types": [],
+            "rates": [],
+            "promo_codes": [],
+            "valid_from": null,
+            "valid_until": "2026-12-31",
+            "validity_status": "within_published_period",
+            "source_status": "published",
+            "source_url": "https://spb.t2.ru/bolshe/offers",
+            "benefit_url": null,
+            "link_kind": "api_record",
+            "locator": "anonymous page response /api/loyalty/offers data.offers[id=46C418C0EED27B40E0630D06F60AE272]",
+            "tables": [],
+            "details": {
+              "source_partner_name": "Додо Пицца",
+              "source_categories": [
+                {
+                  "id": "food",
+                  "name": "Еда"
+                }
+              ],
+              "source_eligibility_flags": {
+                "availableForAll": true,
+                "forAllTariffs": true,
+                "offlineOffer": false,
+                "areaType": "REGIONAL",
+                "offerType": "DIRECT_DISCOUNT",
+                "promoCodeType": "TEXT",
+                "duration": 0
+              },
+              "source_date_to": "2026-12-31T23:59:00.000+03:00",
+              "region": "Санкт-Петербург и Ленинградская область",
+              "source_scope": "anonymous_catalog_response_not_personal_account",
+              "lexical_conditions": [
+                {
+                  "kind": "minimum_purchase",
+                  "evidence": "Пицца «Ветчина и грибы» 25 см за 1 рубль при заказе от 1190 рублей",
+                  "value": "1190",
+                  "unit": "RUB",
+                  "qualifier": "at_least"
+                }
+              ],
+              "promo_code_evidence": [],
+              "promo_code_delivery": [
+                {
+                  "kind": "delivery_reference",
+                  "method": "sms",
+                  "evidence": "Нажмите «Получить подарок» и вы получите SMS с промокодом."
+                },
+                {
+                  "kind": "delivery_reference",
+                  "method": "sms",
+                  "evidence": "В поле «Промокод» введите код из SMS - пицца за 1 рубль появится в корзине."
+                },
+                {
+                  "kind": "delivery_reference",
+                  "method": "sms",
+                  "evidence": "При заказе в ресторане покажите SMS с промокодом сотруднику."
+                }
+              ],
+              "promo_code_status": "mentioned_not_extracted",
+              "table_benefits": {
+                "components": [],
+                "issues": []
+              },
+              "catalog_regions": [
+                {
+                  "key": "spb",
+                  "region": "Санкт-Петербург и Ленинградская область",
+                  "source_url": "https://spb.t2.ru/bolshe/offers"
+                }
+              ]
+            },
+            "normalization_status": "source_fields_extracted",
+            "warnings": [
+              "full_terms_are_authoritative",
+              "activation_and_personal_code_not_requested",
+              "query_card_not_independently_opened",
+              "promo_code_mentioned_not_extracted",
+              "listing_region_is_not_a_guarantee_of_eligibility"
+            ],
+            "observed_at": "2026-10-31T11:00:15.824424+00:00",
+            "content_sha256": "6070e2a307b910643143c917d8188593d76fc199cc0a237302fc5c9341175bca"
+          }
+        ],
+        "source_record_count": 1,
+        "source_records_contract_sha256": "856cea075dc64560387ff48462956074fa26a03f1af37199a9df4ffd0cce9267",
+        "source_records_canonical_json_sha256": "856cea075dc64560387ff48462956074fa26a03f1af37199a9df4ffd0cce9267",
+        "capture": {
+          "input_contract_version": 2,
+          "target_found": false,
+          "content_ready": false,
+          "scope": "page",
+          "readiness": "target_text_not_loaded"
+        },
+        "files": {
+          "text": {
+            "path": "source/1fb2504ab1758f4f653a96619a468134/visible-text.txt",
+            "sha256": "68f522402289c83d3d1485f9a8f23970b1bd0e6413ca2db4b835b7df06887e9c"
+          },
+          "images": [
+            {
+              "path": "source/1fb2504ab1758f4f653a96619a468134/page-1.png",
+              "sha256": "15c9d66e00f25cc92be4fdf2aa95c65b7ff6572dca46e94e752cac0057fe3871"
+            },
+            {
+              "path": "source/1fb2504ab1758f4f653a96619a468134/page-2.png",
+              "sha256": "db9da967cc170e69040455d643ddf11b802fa406bc0dd2accfeb2bc5cf3b0a16"
+            }
+          ]
+        },
+        "records_target_text_and_ordered_images_equal_to_original_and_first_pass": true
+      },
+      "original": {
+        "extracted_path": "old/tokenharbor/1fb2504ab1758f4f653a96619a468134/direct/extracted.json",
+        "extracted_sha256": "8e0a534bd81805180fda7568618445d379f8d0cc04e173d34b2ab8fea13afe59",
+        "has_offer": true,
+        "offer_count": 1,
+        "program_restriction_count": 0,
+        "schema_family": "production_before_semantic_contract_changes"
+      },
+      "first_pass": {
+        "artifact_id": 13128188275,
+        "generation_status": "completed",
+        "extracted_path": "new/1fb2504ab1758f4f653a96619a468134/tokenharbor/1fb2504ab1758f4f653a96619a468134/direct/extracted.json",
+        "extracted_sha256": "49c12fdf930d6c76a2db8aecec0686ae82506677f44f0849d6a17bdaecbb75a3",
+        "accepted_extracted_object_exists": true,
+        "has_offer": true,
+        "accepted_offer_count": 1,
+        "accepted_program_restriction_count": 0,
+        "raw_generation_not_repaired": true
+      },
+      "second_pass": {
+        "generation_status": "completed",
+        "queue_status": "completed",
+        "driver_status": "completed",
+        "http_attempts": 1,
+        "extracted_path": "new/1fb2504ab1758f4f653a96619a468134/tokenharbor/1fb2504ab1758f4f653a96619a468134/direct/extracted.json",
+        "extracted_sha256": "9e0209c0f7cbea5c57b409a6b6c91208b22722a241a5214e7aca440f42b37407",
+        "extracted": {
+          "has_offer": true,
+          "offers": [
+            {
+              "benefit_kind": "other",
+              "benefit_text": "Пицца «Ветчина и грибы» 25 см за 1 ₽ при заказе от 1190 ₽ в пиццериях «Додо Пицца» в Санкт-Петербурге (кроме Петергофа, Пушкина, Ломоносова, Колпина, Красного Села, Кронштадта, Сестрорецка и Павловска), Мурино (Лаврики и Новое Девяткино), Парголово (Бугры, Корабсельки, Мистолово, Парнас, Порошкино, Энколово, Юкки), Шушарах, а также в пиццериях Мурина, Кудрова и Шушар.",
+              "value": null,
+              "value_qualifier": null,
+              "unit": null,
+              "basis": "Пицца «Ветчина и грибы» 25 см",
+              "audience": "",
+              "restrictions": [
+                "Заказ должен включать позиции на сумму от 1190 ₽.",
+                "Промокод действует на доставку, самовывоз и на заказ в ресторане во всех пиццериях «Додо Пицца» в следующих городах: Санкт‐Петербург (кроме Петергофа, Пушкина, Ломоносова, Колпина, Красного Села, Кронштадта, Сестрорецка и Павловска), Мурино (Лаврики и Новое Девяткино), Парголово (Бугры, Корабсельки, Мистолово, Парнас, Порошкино, Энколово, Юкки), Шушары.",
+                "Акция также распространяется на пиццерии Мурина, Кудрова и Шушар.",
+                "Один абонент может получить и активировать не более одного промокода в одну календарную неделю.",
+                "Акция не действует при покупке комбо и на дополнительные ингредиенты.",
+                "Акция действует, пока товар есть в наличии.",
+                "Промокод не является средством платежа, не выдается в денежном эквиваленте и не может быть обменян на товары или услуги, не предусмотренные условиями акции."
+              ],
+              "how_to_get": [
+                "Нажмите «Получить подарок» и получите SMS с промокодом.",
+                "На сайте или в приложении «Додо Пицца» добавьте в корзину позиции на сумму от 1190 ₽.",
+                "В поле «Промокод» введите код из SMS — пицца за 1 ₽ появится в корзине.",
+                "При заказе в ресторане покажите SMS с промокодом сотруднику."
+              ],
+              "promo_code": null,
+              "valid_until": "2026-12-31",
+              "accrual_timing": null,
+              "evidence": [
+                "Пицца «Ветчина и грибы» 25 см за 1 рубль при заказе от 1190 рублей",
+                "Нажмите «Получить подарок» и вы получите SMS с промокодом.",
+                "В поле «Промокод» введите код из SMS - пицца за 1 рубль появится в корзине.",
+                "При заказе в ресторане покажите SMS с промокодом сотруднику.",
+                "Промокод действует на доставку, самовывоз и на заказ в ресторане во всех пиццериях «Додо Пицца» в следующих городах: Санкт‐Петербург (кроме Петергофа, Пушкина, Ломоносова, Колпина, Красного Села, Кронштадта, Сестрорецка и Павловска), Мурино (Лаврики и Новое Девяткино), Парголово (Бугры, Корабсельки, Мистолово, Парнас, Порошкино, Энколово, Юкки), Шушары.",
+                "Акция также распространяется на пиццерии Мурина, Кудрова и Шушар.",
+                "Один абонент может получить и активировать не более одного промокода в одну календарную неделю.",
+                "Акция не действует при покупке комбо и на дополнительные ингредиенты.",
+                "Акция действует, пока товар есть в наличии.",
+                "Промокод не является средством платежа, не выдается в денежном эквиваленте и не может быть обменян на товары или услуги, не предусмотренные условиями акции."
+              ],
+              "practical_advice": []
+            }
+          ],
+          "unknowns": [
+            "Прямо не указано, распространяется ли выгода на всех абонентов T2 или только на участников программы T2 «Больше».",
+            "Не указан срок действия промокода после его выдачи; в источнике указан только общий срок акции до 31.12.2026.",
+            "Конкретный промокод не приведён: по условиям он приходит в SMS после нажатия «Получить подарок»."
+          ],
+          "program_restrictions": []
+        },
+        "has_offer": true,
+        "accepted_offer_count": 1,
+        "accepted_program_restriction_count": 0,
+        "model_measurement": {
+          "attempt": 1,
+          "request_body_sha256": "146557ffd403b041dbdd181156a037a2049ec8cf04a2aec597839d78255caae4",
+          "seconds": 86.196257564,
+          "http_status": 200,
+          "returned_model": "deepseek-v4.1-flash"
+        },
+        "recorded_tokens": 20057,
+        "reported_cost_usd": null,
+        "summary_evidence_path": "new/1fb2504ab1758f4f653a96619a468134/tokenharbor/1fb2504ab1758f4f653a96619a468134/direct/summary.json"
+      },
+      "primary_target_defect_status": "target_fixed_no_material_regression_found",
+      "first_pass_comparison": {
+        "target": "Distinguish a special purchase price from the numerical value of a free gift or saving.",
+        "result": "fixed",
+        "first_pass": "One gift with value=1, unit=RUB, value_qualifier=exact; benefit_text correctly stated a 1-ruble purchase.",
+        "second_pass": "One other offer with value/unit/value_qualifier=null; the 1-ruble price, 1190-ruble threshold, closed geography and exclusions remain explicit.",
+        "new_or_persistent_limits": "Additional cautious eligibility/code-lifetime unknowns are not established material errors. The frozen visible page did not load the target; the full source record supplied the offer."
+      },
+      "semantic_review": {
+        "review_source": "followup-audit-b.json",
+        "id": "1fb2504ab1758f4f653a96619a468134",
+        "partner": "Додо Пицца",
+        "program": "T2 «Больше»",
+        "provider": "tokenharbor",
+        "source_url": "https://spb.t2.ru/bolshe/offers",
+        "original_offers": 1,
+        "first_pass_offers": 1,
+        "followup_offers": 1,
+        "paths_relative_to_respective_artifact_root": {
+          "original": "old/tokenharbor/1fb2504ab1758f4f653a96619a468134/direct/extracted.json",
+          "first_pass": "new/1fb2504ab1758f4f653a96619a468134/tokenharbor/1fb2504ab1758f4f653a96619a468134/direct/extracted.json",
+          "followup": "new/1fb2504ab1758f4f653a96619a468134/tokenharbor/1fb2504ab1758f4f653a96619a468134/direct/extracted.json"
+        },
+        "sha256": {
+          "original": "8e0a534bd81805180fda7568618445d379f8d0cc04e173d34b2ab8fea13afe59",
+          "first_pass": "49c12fdf930d6c76a2db8aecec0686ae82506677f44f0849d6a17bdaecbb75a3",
+          "followup": "9e0209c0f7cbea5c57b409a6b6c91208b22722a241a5214e7aca440f42b37407"
+        },
+        "frozen_input_checks": {
+          "source_records_equal_to_first_pass_and_original": true,
+          "target_equal_to_first_pass_and_original": true,
+          "ordered_image_paths_equal_to_first_pass_and_original": true,
+          "manifest_hashes_equal_to_first_pass_and_original": true,
+          "followup_text_and_png_bytes_match_manifest": true,
+          "file_count_including_text": 3
+        },
+        "capture": {
+          "input_contract_version": 2,
+          "target_found": false,
+          "content_ready": false,
+          "scope": "page",
+          "readiness": "target_text_not_loaded"
+        },
+        "verdict": "target_special_price_defect_fixed_no_material_regression_found",
+        "primary_target_defect_status": "fixed",
+        "fixed": [
+          "The symbolic purchase price is now represented as benefit_kind=other with value, unit and value_qualifier all null. The previous gift/1 RUB/exact representation is gone.",
+          "The benefit text keeps the exact item (ham-and-mushroom pizza, 25 cm), the 1-ruble purchase price and minimum order 1190 rubles; no unstated saving is computed.",
+          "The full closed list of cities and eight Saint Petersburg exclusions is preserved, including the additional Murino/Kudrovo/Shushary sentence. No blanket Leningrad Oblast eligibility is asserted.",
+          "Delivery, pickup and restaurant orders; one code per subscriber per calendar week; combo/additional-ingredient exclusions; stock condition; noncash/nonexchangeable promo-code rule; and SMS activation are all preserved.",
+          "The common expiry 2026-12-31 remains consistent with source_date_to. No new code or audience restriction is invented; promo_code=null, audience empty and practical_advice empty."
+        ],
+        "evidence": {
+          "source_benefit": "Пицца «Ветчина и грибы» 25 см за 1 рубль при заказе от 1190 рублей",
+          "source_geography": "Промокод действует на доставку, самовывоз и на заказ в ресторане во всех пиццериях «Додо Пицца» в следующих городах: Санкт‑Петербург (кроме Петергофа, Пушкина, Ломоносова, Колпина, Красного Села, Кронштадта, Сестрорецка и Павловска), Мурино (Лаврики и Новое Девяткино), Парголово (Бугры, Корабсельки, Мистолово, Парнас, Порошкино, Энколово, Юкки), Шушары.",
+          "source_additional_geography": "Акция также распространяется на пиццерии Мурина, Кудрова и Шушар.",
+          "source_exclusions": "Акция не действует при покупке комбо и на дополнительные ингредиенты.",
+          "source_date_to": "2026-12-31T23:59:00.000+03:00",
+          "first_pass_numeric_representation": {
+            "benefit_kind": "gift",
+            "value": 1,
+            "unit": "RUB",
+            "value_qualifier": "exact"
+          },
+          "followup_numeric_representation": {
+            "benefit_kind": "other",
+            "value": null,
+            "unit": null,
+            "value_qualifier": null
+          }
+        },
+        "remaining": [],
+        "observations": [
+          {
+            "kind": "new_cautious_unknowns_not_established_errors",
+            "detail": "The response additionally asks about subscriber/program eligibility and the issued code lifetime. These are framed as unknowns, not new conditions. Source flags availableForAll/forAllTariffs are true, but this anonymous catalogue does not establish personal eligibility; duration=0 has no supplied semantics. The extra statements are not counted as confirmed material regressions."
+          },
+          {
+            "kind": "typography_only_quote_difference",
+            "detail": "The geography evidence uses a U+2010 hyphen where the source has U+2011; Unicode NFKC makes them equal. This is not counted as fabricated evidence."
+          }
+        ],
+        "quote_check": {
+          "evidence_entries": 10,
+          "all_contiguous_in_frozen_source_after_nfkc_and_whitespace_normalization": true
+        },
+        "material_regressions_observed": false,
+        "minimal_general_followup": []
+      },
+      "publication_allowed": false
+    },
+    {
+      "id": "a858d829fc08e6cb5a5648d57371ab2c",
+      "partner": "Four Seasons (Петербург)",
+      "program": "Konsierge — публичные привилегии",
+      "provider": "vercel",
+      "target_as_of": "2026-11-01",
+      "source": {
+        "manifest_path": "source/manifest.json",
+        "source_url": "https://konsierge.com/benefits",
+        "source_records": [
+          {
+            "schema_version": 2,
+            "adapter_version": "2.9.6",
+            "id": "e89598fe7d9e4708f41133ac7f8bea09e80855dc008b6d17d8940cc4d0a189d9",
+            "source_id": "konsierge_public",
+            "native_id": "1638",
+            "program": "Konsierge — публичные привилегии",
+            "record_kind": "partner_offer",
+            "partner_name": "Four Seasons (Петербург)",
+            "title": "Four Seasons (Петербург)",
+            "category": "Отели и курорты",
+            "benefit_text": "Привилегия",
+            "conditions_text": "При бронировании номеров через консьерж-сервис вам доступны следующие привилегии: \n \n- Комплиментарный завтрак для двоих\n- Повышение категории номера (upgrade)*\n- Ранний заезд и поздний выезд* \n- Комплименты от отеля \n \n*привилегии предоставляются при наличии свободных номеров",
+            "redemption_text": "При бронировании номеров через консьерж-сервис вам доступны следующие привилегии: \n \n- Комплиментарный завтрак для двоих\n- Повышение категории номера (upgrade)*\n- Ранний заезд и поздний выезд* \n- Комплименты от отеля \n \n*привилегии предоставляются при наличии свободных номеров",
+            "benefit_types": [],
+            "rates": [],
+            "promo_codes": [],
+            "valid_from": null,
+            "valid_until": null,
+            "validity_status": "not_stated",
+            "source_status": "public_catalogue_terms_unverified_eligibility",
+            "source_url": "https://konsierge.com/benefits",
+            "benefit_url": null,
+            "link_kind": "page_block",
+            "locator": "public benefit id=1638",
+            "tables": [],
+            "details": {
+              "collection_mode": "recurring_public_browser",
+              "robots_policy": "skip_konsierge_public_by_user_2026_09_19",
+              "retrieval_method": "konsierge_public_browser_capture_v1",
+              "public_item": {
+                "date_of_release": "2023-05-21T21:00:00.000Z",
+                "link": null,
+                "updated_at": "2024-10-10T08:13:28.506Z",
+                "description": "При бронировании номеров через консьерж-сервис вам доступны следующие привилегии: \n \n- Комплиментарный завтрак для двоих\n- Повышение категории номера (upgrade)*\n- Ранний заезд и поздний выезд* \n- Комплименты от отеля \n \n*привилегии предоставляются при наличии свободных номеров",
+                "offer": "Привилегия",
+                "created_at": "2023-05-22T10:10:12.437Z",
+                "enabled": true,
+                "id": 1638,
+                "name": "Four Seasons (Петербург)",
+                "date_of_expiry": null,
+                "rubrics": [
+                  {
+                    "id": 24
+                  }
+                ]
+              },
+              "item_sha256": "a49aeb0f397a59131c981d1b3fe63e3b2337e1b7a2e52fa50b2c3c297cbee462",
+              "public_categories": [
+                {
+                  "id": 24,
+                  "name": "Отели и курорты",
+                  "url": "https://konsierge.com/benefits?rubric_id=24"
+                }
+              ],
+              "only_assist_equivalence": false,
+              "code_words": [],
+              "capture_sha256": "d46d8bfb02275c4ae3b628f35ebd4db8a64690dd3ce02c95ea954e4aaf9dbaec",
+              "source_run": "41194911797:1",
+              "_source": {
+                "source_id": "konsierge_public"
+              },
+              "lexical_conditions": [],
+              "promo_code_evidence": [],
+              "promo_code_delivery": [],
+              "promo_code_status": "not_mentioned",
+              "table_benefits": {
+                "components": [],
+                "issues": []
+              }
+            },
+            "normalization_status": "source_fields_extracted",
+            "warnings": [
+              "user_eligibility_not_verified",
+              "only_assist_equivalence_not_asserted",
+              "public_website_response_not_customer_account",
+              "full_description_scope_requires_review",
+              "robots_preflight_skipped_by_project_owner",
+              "source_cache_age_not_provided",
+              "customer_validity_not_established"
+            ],
+            "observed_at": "2026-10-31T11:00:15.824424+00:00",
+            "content_sha256": "c0e1ee0e3fa43393ee59605a8fd36fc01e6f38382adc6ea09b18be760dcb9b49"
+          }
+        ],
+        "source_record_count": 1,
+        "source_records_contract_sha256": "b1856b113df86e62b08f87d4102d3eee511facebd285f679355202cd0c6e32e1",
+        "source_records_canonical_json_sha256": "b1856b113df86e62b08f87d4102d3eee511facebd285f679355202cd0c6e32e1",
+        "capture": {
+          "input_contract_version": 2,
+          "target_found": true,
+          "content_ready": true,
+          "scope": "catalogue_card",
+          "native_ids": [
+            "1638"
+          ],
+          "readiness": "native_cards_loaded"
+        },
+        "files": {
+          "text": {
+            "path": "source/a858d829fc08e6cb5a5648d57371ab2c/visible-text.txt",
+            "sha256": "cbe50ebd02850b205f4f50a148635344df5edbe47eb7251349e9af09979602d9"
+          },
+          "images": [
+            {
+              "path": "source/a858d829fc08e6cb5a5648d57371ab2c/page-1.png",
+              "sha256": "564b080ee609897b0cba617a4da81151b62d1805cd03354e1e2c116d4f0dff33"
+            },
+            {
+              "path": "source/a858d829fc08e6cb5a5648d57371ab2c/page-2.png",
+              "sha256": "b73bb1abf05b0fc908a161107c618dffba5b3d0fa6ae8d129d8bf2faf30ad225"
+            },
+            {
+              "path": "source/a858d829fc08e6cb5a5648d57371ab2c/page-3.png",
+              "sha256": "350fd7f3a455868bdb7c58c6eea18af406adfdd6f2f6b1180077034aa7222a79"
+            },
+            {
+              "path": "source/a858d829fc08e6cb5a5648d57371ab2c/page-4.png",
+              "sha256": "5f881d3cda702f367b83f9cc85d7d662cfbb1d5f3b10d2289bf5a7df798b7d3f"
+            },
+            {
+              "path": "source/a858d829fc08e6cb5a5648d57371ab2c/page-5.png",
+              "sha256": "ed5afc8c48981d2e32edaf1e386ca899efa5028380b1483e9b1e1d76db3b9c6f"
+            },
+            {
+              "path": "source/a858d829fc08e6cb5a5648d57371ab2c/page-6.png",
+              "sha256": "82fb44818fa6ecc20cddaa76f93e2d6266bcd2392d838d5561035a8e58ccbc11"
+            }
+          ]
+        },
+        "records_target_text_and_ordered_images_equal_to_original_and_first_pass": true
+      },
+      "original": {
+        "extracted_path": "old/vercel/a858d829fc08e6cb5a5648d57371ab2c/direct/extracted.json",
+        "extracted_sha256": "021e917c4d3993157100babb444e86f057b3c387291ed1a1e775e822349d87d2",
+        "has_offer": true,
+        "offer_count": 1,
+        "program_restriction_count": 0,
+        "schema_family": "production_before_semantic_contract_changes"
+      },
+      "first_pass": {
+        "artifact_id": 13128188275,
+        "generation_status": "failed_validation",
+        "extracted_path": null,
+        "extracted_sha256": null,
+        "accepted_extracted_object_exists": false,
+        "has_offer": null,
+        "accepted_offer_count": 0,
+        "accepted_program_restriction_count": 0,
+        "raw_generation_not_repaired": true
+      },
+      "second_pass": {
+        "generation_status": "completed",
+        "queue_status": "completed",
+        "driver_status": "completed",
+        "http_attempts": 1,
+        "extracted_path": "new/a858d829fc08e6cb5a5648d57371ab2c/vercel/a858d829fc08e6cb5a5648d57371ab2c/direct/extracted.json",
+        "extracted_sha256": "f8bfcf497e87f7cf6f2735b932e9516bfc11bcf894d172f0a957814f6f0a2805",
+        "extracted": {
+          "has_offer": true,
+          "offers": [
+            {
+              "benefit_kind": "gift",
+              "benefit_text": "Комплиментарный завтрак для двоих при бронировании номеров через консьерж-сервис Four Seasons (Петербург)",
+              "value": null,
+              "value_qualifier": null,
+              "unit": null,
+              "basis": "бронирование номеров через консьерж-сервис",
+              "audience": "",
+              "restrictions": [],
+              "how_to_get": [
+                "бронировать номер через консьерж-сервис"
+              ],
+              "promo_code": null,
+              "valid_until": null,
+              "accrual_timing": null,
+              "evidence": [
+                "При бронировании номеров через консьерж-сервис вам доступны следующие привилегии: - Комплиментарный завтрак для двоих"
+              ],
+              "practical_advice": []
+            },
+            {
+              "benefit_kind": "other",
+              "benefit_text": "Повышение категории номера (upgrade) при бронировании номеров через консьерж-сервис Four Seasons (Петербург)",
+              "value": null,
+              "value_qualifier": null,
+              "unit": null,
+              "basis": "бронирование номеров через консьерж-сервис",
+              "audience": "",
+              "restrictions": [
+                "при наличии свободных номеров"
+              ],
+              "how_to_get": [
+                "бронировать номер через консьерж-сервис"
+              ],
+              "promo_code": null,
+              "valid_until": null,
+              "accrual_timing": null,
+              "evidence": [
+                "При бронировании номеров через консьерж-сервис вам доступны следующие привилегии: - Повышение категории номера (upgrade)*",
+                "*привилегии предоставляются при наличии свободных номеров"
+              ],
+              "practical_advice": []
+            },
+            {
+              "benefit_kind": "other",
+              "benefit_text": "Ранний заезд и поздний выезд при бронировании номеров через консьерж-сервис Four Seasons (Петербург)",
+              "value": null,
+              "value_qualifier": null,
+              "unit": null,
+              "basis": "бронирование номеров через консьерж-сервис",
+              "audience": "",
+              "restrictions": [
+                "при наличии свободных номеров"
+              ],
+              "how_to_get": [
+                "бронировать номер через консьерж-сервис"
+              ],
+              "promo_code": null,
+              "valid_until": null,
+              "accrual_timing": null,
+              "evidence": [
+                "При бронировании номеров через консьерж-сервис вам доступны следующие привилегии: - Ранний заезд и поздний выезд*",
+                "*привилегии предоставляются при наличии свободных номеров"
+              ],
+              "practical_advice": []
+            },
+            {
+              "benefit_kind": "gift",
+              "benefit_text": "Комплименты от отеля Four Seasons (Петербург) при бронировании номеров через консьерж-сервис",
+              "value": null,
+              "value_qualifier": null,
+              "unit": null,
+              "basis": "бронирование номеров через консьерж-сервис",
+              "audience": "",
+              "restrictions": [],
+              "how_to_get": [
+                "бронировать номер через консьерж-сервис"
+              ],
+              "promo_code": null,
+              "valid_until": null,
+              "accrual_timing": null,
+              "evidence": [
+                "При бронировании номеров через консьерж-сервис вам доступны следующие привилегии: - Комплименты от отеля"
+              ],
+              "practical_advice": []
+            }
+          ],
+          "unknowns": [
+            "Срок действия привилегий не указан",
+            "Способ получения комплиментов от отеля не уточнён"
+          ],
+          "program_restrictions": []
+        },
+        "has_offer": true,
+        "accepted_offer_count": 4,
+        "accepted_program_restriction_count": 0,
+        "model_measurement": {
+          "attempt": 1,
+          "request_body_sha256": "f2a46529ee2740f603d1486a1a637a5da836a1922def979b4147b037923498a7",
+          "seconds": 2.455292214999986,
+          "http_status": 200,
+          "returned_model": "nvidia/nemotron-3.5-super-vl"
+        },
+        "recorded_tokens": 13575,
+        "reported_cost_usd": 0.0029919,
+        "summary_evidence_path": "new/a858d829fc08e6cb5a5648d57371ab2c/vercel/a858d829fc08e6cb5a5648d57371ab2c/direct/summary.json"
+      },
+      "primary_target_defect_status": "target_fixed_minor_evidence_issues_remain",
+      "first_pass_comparison": {
+        "target": "Return all required nullable keys and attach the availability footnote only to marked hotel benefits.",
+        "result": "fixed",
+        "first_pass": "No accepted extracted object: all four raw-final objects omitted required value_qualifier; the availability condition also spread to all four components.",
+        "second_pass": "Four accepted offers; all required null keys present. Availability applies only to upgrade and early check-in/late checkout, not breakfast or compliments.",
+        "new_or_persistent_limits": "Three evidence quotes stitch the introductory sentence to non-adjacent bullets; an unnecessary unknown questions the already stated booking method for compliments."
+      },
+      "semantic_review": {
+        "review_source": "followup-audit-root.json",
+        "id": "a858d829fc08e6cb5a5648d57371ab2c",
+        "partner": "Four Seasons (Петербург)",
+        "provider": "vercel",
+        "verdict": "original_material_defects_fixed_minor_evidence_issues_remain",
+        "baseline_offers": 1,
+        "first_pass_accepted": false,
+        "followup_offers": 4,
+        "fixed": [
+          "Four source groups now have their own benefit_text: breakfast for two, room upgrade, early check-in/late checkout, hotel compliments.",
+          "All four value, value_qualifier and unit fields are explicitly null; the actual output passes the unchanged validation constraints.",
+          "The room-availability restriction applies only to upgrade and early/late check-in. Breakfast and compliments have empty restrictions.",
+          "No repeated practical advice; unknown audience remains empty."
+        ],
+        "evidence": {
+          "source_description": "При бронировании номеров через консьерж-сервис вам доступны следующие привилегии: \n \n- Комплиментарный завтрак для двоих\n- Повышение категории номера (upgrade)*\n- Ранний заезд и поздний выезд* \n- Комплименты от отеля \n \n*привилегии предоставляются при наличии свободных номеров",
+          "restrictions_by_offer": [
+            [],
+            [
+              "при наличии свободных номеров"
+            ],
+            [
+              "при наличии свободных номеров"
+            ],
+            []
+          ]
+        },
+        "remaining": [
+          {
+            "kind": "nonverbatim_stitched_evidence",
+            "severity": "minor",
+            "detail": "Three quotes prepend the introductory sentence to non-adjacent later bullets. The facts are supported, but the quote strings are not contiguous source spans after whitespace normalization."
+          },
+          {
+            "kind": "unnecessary_unknown",
+            "severity": "minor",
+            "detail": "The output asks how to obtain hotel compliments although the source specifies concierge booking. The exact compliment content is unknown, not the shared booking method."
+          }
+        ]
+      },
+      "publication_allowed": false
+    },
+    {
+      "id": "a3a0b774e12560861eb2faa6ace27bae",
+      "partner": "Раковая (Новые Черемушки)",
+      "program": "Konsierge — публичные привилегии",
+      "provider": "vercel",
+      "target_as_of": "2026-11-01",
+      "source": {
+        "manifest_path": "source/manifest.json",
+        "source_url": "https://konsierge.com/benefits",
+        "source_records": [
+          {
+            "schema_version": 2,
+            "adapter_version": "2.9.6",
+            "id": "c108ae865f5c9d65a86d410a2eab14ab39ca130a653ca82c3c66590a7431e9a6",
+            "source_id": "konsierge_public",
+            "native_id": "2094",
+            "program": "Konsierge — публичные привилегии",
+            "record_kind": "partner_offer",
+            "partner_name": "Раковая (Новые Черемушки)",
+            "title": "Раковая (Новые Черемушки)",
+            "category": "Рестораны",
+            "benefit_text": "Скидка 10%",
+            "conditions_text": "Приоритетное размещение в ресторане и скидка 10%. Скидка распространяется на все меню, кроме раков Супер Биг, XL и живого краба. Не суммируется с другими предложениями и акциями.\n\nПривилегия предоставляется при бронировании столов через консьерж-сервис.",
+            "redemption_text": "Привилегия предоставляется при бронировании столов через консьерж-сервис.",
+            "benefit_types": [
+              "discount"
+            ],
+            "rates": [
+              {
+                "kind": "discount",
+                "value": "10",
+                "unit": "percent",
+                "qualifier": "exact",
+                "basis_amount": null,
+                "basis_unit": null,
+                "evidence": "Скидка 10%"
+              }
+            ],
+            "promo_codes": [],
+            "valid_from": null,
+            "valid_until": null,
+            "validity_status": "not_stated",
+            "source_status": "public_catalogue_terms_unverified_eligibility",
+            "source_url": "https://konsierge.com/benefits",
+            "benefit_url": null,
+            "link_kind": "page_block",
+            "locator": "public benefit id=2094",
+            "tables": [],
+            "details": {
+              "collection_mode": "recurring_public_browser",
+              "robots_policy": "skip_konsierge_public_by_user_2026_09_19",
+              "retrieval_method": "konsierge_public_browser_capture_v1",
+              "public_item": {
+                "date_of_release": "2025-08-07T07:23:37.761Z",
+                "link": null,
+                "updated_at": "2025-09-04T14:02:01.418Z",
+                "description": "Приоритетное размещение в ресторане и скидка 10%. Скидка распространяется на все меню, кроме раков Супер Биг, XL и живого краба. Не суммируется с другими предложениями и акциями.\n\nПривилегия предоставляется при бронировании столов через консьерж-сервис.",
+                "offer": "Скидка 10%",
+                "created_at": "2025-08-07T07:23:38.335Z",
+                "enabled": true,
+                "id": 2094,
+                "name": "Раковая (Новые Черемушки)",
+                "date_of_expiry": null,
+                "rubrics": [
+                  {
+                    "id": 92
+                  },
+                  {
+                    "id": 23
+                  }
+                ]
+              },
+              "item_sha256": "529bb1e1b0774853060acc771ae1c7c81c3384118588eb5f1cde5c45693212c6",
+              "public_categories": [
+                {
+                  "id": 23,
+                  "name": "Рестораны",
+                  "url": "https://konsierge.com/benefits?rubric_id=23"
+                }
+              ],
+              "only_assist_equivalence": false,
+              "code_words": [],
+              "capture_sha256": "d46d8bfb02275c4ae3b628f35ebd4db8a64690dd3ce02c95ea954e4aaf9dbaec",
+              "source_run": "41194911797:1",
+              "_source": {
+                "source_id": "konsierge_public"
+              },
+              "lexical_conditions": [
+                {
+                  "kind": "stacking_restriction",
+                  "evidence": "Не суммируется с другими предложениями и акциями."
+                }
+              ],
+              "promo_code_evidence": [],
+              "promo_code_delivery": [],
+              "promo_code_status": "not_mentioned",
+              "table_benefits": {
+                "components": [],
+                "issues": []
+              }
+            },
+            "normalization_status": "source_fields_extracted",
+            "warnings": [
+              "user_eligibility_not_verified",
+              "only_assist_equivalence_not_asserted",
+              "public_website_response_not_customer_account",
+              "full_description_scope_requires_review",
+              "robots_preflight_skipped_by_project_owner",
+              "source_cache_age_not_provided",
+              "customer_validity_not_established"
+            ],
+            "observed_at": "2026-10-31T11:00:15.824424+00:00",
+            "content_sha256": "9e62b7a99435fc018d4a2ae1894207cd320c069757b55c6854a66b7ac9712a26"
+          }
+        ],
+        "source_record_count": 1,
+        "source_records_contract_sha256": "d5b56fca07e16df0f85c77f487481c18d84f81d57b0bdb1dbe1dec96a0ef2690",
+        "source_records_canonical_json_sha256": "d5b56fca07e16df0f85c77f487481c18d84f81d57b0bdb1dbe1dec96a0ef2690",
+        "capture": {
+          "input_contract_version": 2,
+          "target_found": true,
+          "content_ready": true,
+          "scope": "catalogue_card",
+          "native_ids": [
+            "2094"
+          ],
+          "readiness": "native_cards_loaded"
+        },
+        "files": {
+          "text": {
+            "path": "source/a3a0b774e12560861eb2faa6ace27bae/visible-text.txt",
+            "sha256": "5610963fec276970b2a889b49d8c38c568c09593e75da7c11df8fa05f912af83"
+          },
+          "images": [
+            {
+              "path": "source/a3a0b774e12560861eb2faa6ace27bae/page-1.png",
+              "sha256": "564b080ee609897b0cba617a4da81151b62d1805cd03354e1e2c116d4f0dff33"
+            },
+            {
+              "path": "source/a3a0b774e12560861eb2faa6ace27bae/page-2.png",
+              "sha256": "b73bb1abf05b0fc908a161107c618dffba5b3d0fa6ae8d129d8bf2faf30ad225"
+            },
+            {
+              "path": "source/a3a0b774e12560861eb2faa6ace27bae/page-3.png",
+              "sha256": "350fd7f3a455868bdb7c58c6eea18af406adfdd6f2f6b1180077034aa7222a79"
+            },
+            {
+              "path": "source/a3a0b774e12560861eb2faa6ace27bae/page-4.png",
+              "sha256": "5b1d22306a551f90ed34a2a4336e51258f759f2976256dae4f29b1bbd572c635"
+            },
+            {
+              "path": "source/a3a0b774e12560861eb2faa6ace27bae/page-5.png",
+              "sha256": "be59fa99a68fbcea61a79deac574bbb57b046882bf9d2b97fba5223f3f503602"
+            }
+          ]
+        },
+        "records_target_text_and_ordered_images_equal_to_original_and_first_pass": true
+      },
+      "original": {
+        "extracted_path": "old/vercel/a3a0b774e12560861eb2faa6ace27bae/direct/extracted.json",
+        "extracted_sha256": "b78c1e4ce9a01e5c6542387e1f8a328de1234cd00c0069ce582a578b78e9b3a6",
+        "has_offer": true,
+        "offer_count": 1,
+        "program_restriction_count": 0,
+        "schema_family": "production_before_semantic_contract_changes"
+      },
+      "first_pass": {
+        "artifact_id": 13128188275,
+        "generation_status": "completed",
+        "extracted_path": "new/a3a0b774e12560861eb2faa6ace27bae/vercel/a3a0b774e12560861eb2faa6ace27bae/direct/extracted.json",
+        "extracted_sha256": "aec5c5fa7c03cd01f6bcf9bbb4690f67ef6c4206399ccf6af4836ec693bcf518",
+        "accepted_extracted_object_exists": true,
+        "has_offer": true,
+        "accepted_offer_count": 1,
+        "accepted_program_restriction_count": 0,
+        "raw_generation_not_repaired": true
+      },
+      "second_pass": {
+        "generation_status": "completed",
+        "queue_status": "completed",
+        "driver_status": "completed",
+        "http_attempts": 1,
+        "extracted_path": "new/a3a0b774e12560861eb2faa6ace27bae/vercel/a3a0b774e12560861eb2faa6ace27bae/direct/extracted.json",
+        "extracted_sha256": "f3695183110223999e2464ed125232c6586fcf6ee2daf370f9a33208eca264e9",
+        "extracted": {
+          "has_offer": true,
+          "offers": [
+            {
+              "benefit_kind": "discount",
+              "benefit_text": "Скидка 10% на все меню ресторана, кроме раков Супер Биг, XL и живого краба, при приоритетном размещении через консьерж-сервис.",
+              "value": 10,
+              "value_qualifier": "exact",
+              "unit": "percent",
+              "basis": "заказ/бронь стола в ресторане Раковая (Новые Черемушки) через консьерж-сервис Konsierge",
+              "audience": "",
+              "restrictions": [
+                "Не суммируется с другими предложениями и акциями",
+                "Приоритетное предоставление только при бронировании столов через консьерж-сервис",
+                "Скидка не распространяется на раков Супер Биг, XL и живого краба"
+              ],
+              "how_to_get": [
+                "Забронировать стол через консьерж-сервис Konsierge"
+              ],
+              "promo_code": null,
+              "valid_until": null,
+              "accrual_timing": null,
+              "evidence": [
+                "Скидка 10%",
+                "Приоритетное размещение в ресторане и скидка 10%. Скидка распространяется на все меню, кроме раков Супер Биг, XL и живого краба. Не суммируется с другими предложениями и акциями.\n\nПривилегия предоставляется при бронировании столов через консьерж-сервис.",
+                "valid_until: null"
+              ],
+              "practical_advice": []
+            }
+          ],
+          "unknowns": [
+            "Срок действия привилегии не указан (date_of_expiry: null, valid_until: null, validity_status: not_stated)."
+          ],
+          "program_restrictions": []
+        },
+        "has_offer": true,
+        "accepted_offer_count": 1,
+        "accepted_program_restriction_count": 0,
+        "model_measurement": {
+          "attempt": 1,
+          "request_body_sha256": "db23e06be3bf4cd3418e20a508a28b1e3ff940bb69020bb9db41a1b85b069f8d",
+          "seconds": 2.4943545149999977,
+          "http_status": 200,
+          "returned_model": "nvidia/nemotron-3.5-super-vl"
+        },
+        "recorded_tokens": 11968,
+        "reported_cost_usd": 0.0025307,
+        "summary_evidence_path": "new/a3a0b774e12560861eb2faa6ace27bae/vercel/a3a0b774e12560861eb2faa6ace27bae/direct/summary.json"
+      },
+      "primary_target_defect_status": "partial_recovery_material_benefit_condition_error_remains",
+      "first_pass_comparison": {
+        "target": "Represent priority seating and the 10% restaurant discount as two independent benefits.",
+        "result": "partially_addressed_material_error_remains",
+        "first_pass": "One discount offer; priority seating absent from the entire accepted object.",
+        "second_pass": "One discount offer still; priority seating is now present but phrased as a condition of the discount, without its own other offer.",
+        "new_or_persistent_limits": "A technical valid_until:null pseudo-quote and internal metadata appear in evidence/unknowns. Scope and menu exclusions remain preserved."
+      },
+      "semantic_review": {
+        "review_source": "followup-audit-root.json",
+        "id": "a3a0b774e12560861eb2faa6ace27bae",
+        "partner": "Раковая (Новые Черемушки)",
+        "provider": "vercel",
+        "verdict": "material_semantic_defect_remains",
+        "baseline_offers": 1,
+        "first_pass_offers": 1,
+        "followup_offers": 1,
+        "fixed": [
+          "Priority seating now appears in benefit_text and in a complete source quote; it is no longer absent from the entire JSON.",
+          "The 10% discount, named menu exclusions, no-stacking condition and concierge booking remain preserved.",
+          "Repeated practical advice was removed."
+        ],
+        "evidence": {
+          "source_excerpt": "Приоритетное размещение в ресторане и скидка 10%.",
+          "output_benefit_text": "Скидка 10% на все меню ресторана, кроме раков Супер Биг, XL и живого краба, при приоритетном размещении через консьерж-сервис.",
+          "output_restriction": "Приоритетное предоставление только при бронировании столов через консьерж-сервис"
+        },
+        "remaining": [
+          {
+            "kind": "independent_benefit_miscast_as_condition",
+            "severity": "material",
+            "detail": "Priority seating still lacks a separate other offer. The model makes it sound like a condition for the discount instead of the second benefit granted under concierge booking. The new contract's explicit compound-benefit instruction was not followed."
+          },
+          {
+            "kind": "technical_metadata_as_evidence_and_unknown",
+            "severity": "minor",
+            "output_excerpt": "valid_until: null",
+            "detail": "The evidence array includes a normalized technical field rather than an original human-readable source quote; unknowns also exposes date_of_expiry, valid_until and validity_status."
+          }
+        ],
+        "required_review_action": "Keep review-only; verify and split priority seating and the discount before any future publication."
+      },
+      "publication_allowed": false
+    },
+    {
+      "id": "854bb98a899ccc6e79e8d3ed88776aa0",
+      "partner": "Giorgio Suluguni",
+      "program": "Konsierge — публичные привилегии",
+      "provider": "vercel",
+      "target_as_of": "2026-11-01",
+      "source": {
+        "manifest_path": "source/manifest.json",
+        "source_url": "https://konsierge.com/benefits",
+        "source_records": [
+          {
+            "schema_version": 2,
+            "adapter_version": "2.9.6",
+            "id": "574efcd54f9c8d257135795975f86c9d22dd6b38b5c17de2cd3ad1ac0dd450c8",
+            "source_id": "konsierge_public",
+            "native_id": "2013",
+            "program": "Konsierge — публичные привилегии",
+            "record_kind": "partner_offer",
+            "partner_name": "Giorgio Suluguni",
+            "title": "Giorgio Suluguni",
+            "category": "Рестораны / Сочи",
+            "benefit_text": "Привилегия",
+            "conditions_text": "Приоритетное размещение в ресторане и комплимент от заведения.\n\nПривилегия предоставляется при бронировании столов через консьерж-сервис при сумме чека от 3000 рублей.",
+            "redemption_text": "Привилегия предоставляется при бронировании столов через консьерж-сервис при сумме чека от 3000 рублей.",
+            "benefit_types": [],
+            "rates": [],
+            "promo_codes": [],
+            "valid_from": null,
+            "valid_until": null,
+            "validity_status": "not_stated",
+            "source_status": "public_catalogue_terms_unverified_eligibility",
+            "source_url": "https://konsierge.com/benefits",
+            "benefit_url": null,
+            "link_kind": "page_block",
+            "locator": "public benefit id=2013",
+            "tables": [],
+            "details": {
+              "collection_mode": "recurring_public_browser",
+              "robots_policy": "skip_konsierge_public_by_user_2026_09_19",
+              "retrieval_method": "konsierge_public_browser_capture_v1",
+              "public_item": {
+                "date_of_release": "2025-02-06T10:25:58.879Z",
+                "link": null,
+                "updated_at": "2025-12-09T08:38:22.090Z",
+                "description": "Приоритетное размещение в ресторане и комплимент от заведения.\n\nПривилегия предоставляется при бронировании столов через консьерж-сервис при сумме чека от 3000 рублей.",
+                "offer": "Привилегия",
+                "created_at": "2025-02-06T10:25:59.369Z",
+                "enabled": true,
+                "id": 2013,
+                "name": "Giorgio Suluguni",
+                "date_of_expiry": null,
+                "rubrics": [
+                  {
+                    "id": 29
+                  },
+                  {
+                    "id": 23
+                  },
+                  {
+                    "id": 92
+                  }
+                ]
+              },
+              "item_sha256": "32856b8f15e1da0acac340fa2aa4c0104729bd7d73e18d49e80c041a91ab2cfa",
+              "public_categories": [
+                {
+                  "id": 23,
+                  "name": "Рестораны",
+                  "url": "https://konsierge.com/benefits?rubric_id=23"
+                },
+                {
+                  "id": 29,
+                  "name": "Сочи",
+                  "url": "https://konsierge.com/benefits?rubric_id=29"
+                }
+              ],
+              "only_assist_equivalence": false,
+              "code_words": [],
+              "capture_sha256": "d46d8bfb02275c4ae3b628f35ebd4db8a64690dd3ce02c95ea954e4aaf9dbaec",
+              "source_run": "41194911797:1",
+              "_source": {
+                "source_id": "konsierge_public"
+              },
+              "lexical_conditions": [
+                {
+                  "kind": "minimum_purchase",
+                  "evidence": "Привилегия предоставляется при бронировании столов через консьерж-сервис при сумме чека от 3000 рублей.",
+                  "value": "3000",
+                  "unit": "RUB",
+                  "qualifier": "at_least"
+                }
+              ],
+              "promo_code_evidence": [],
+              "promo_code_delivery": [],
+              "promo_code_status": "not_mentioned",
+              "table_benefits": {
+                "components": [],
+                "issues": []
+              }
+            },
+            "normalization_status": "source_fields_extracted",
+            "warnings": [
+              "user_eligibility_not_verified",
+              "only_assist_equivalence_not_asserted",
+              "public_website_response_not_customer_account",
+              "full_description_scope_requires_review",
+              "robots_preflight_skipped_by_project_owner",
+              "source_cache_age_not_provided",
+              "customer_validity_not_established"
+            ],
+            "observed_at": "2026-10-31T11:00:15.824424+00:00",
+            "content_sha256": "5d3c65f23b122b061596d4d413249241e9512745a6c6e19548d8df88b6c38d8c"
+          }
+        ],
+        "source_record_count": 1,
+        "source_records_contract_sha256": "f5941b5dc479b924da69135294c297af57820f0f24f7ed9205a53cb507376f7b",
+        "source_records_canonical_json_sha256": "f5941b5dc479b924da69135294c297af57820f0f24f7ed9205a53cb507376f7b",
+        "capture": {
+          "input_contract_version": 2,
+          "target_found": true,
+          "content_ready": true,
+          "scope": "catalogue_card",
+          "native_ids": [
+            "2013"
+          ],
+          "readiness": "native_cards_loaded"
+        },
+        "files": {
+          "text": {
+            "path": "source/854bb98a899ccc6e79e8d3ed88776aa0/visible-text.txt",
+            "sha256": "5610963fec276970b2a889b49d8c38c568c09593e75da7c11df8fa05f912af83"
+          },
+          "images": [
+            {
+              "path": "source/854bb98a899ccc6e79e8d3ed88776aa0/page-1.png",
+              "sha256": "564b080ee609897b0cba617a4da81151b62d1805cd03354e1e2c116d4f0dff33"
+            },
+            {
+              "path": "source/854bb98a899ccc6e79e8d3ed88776aa0/page-2.png",
+              "sha256": "b73bb1abf05b0fc908a161107c618dffba5b3d0fa6ae8d129d8bf2faf30ad225"
+            },
+            {
+              "path": "source/854bb98a899ccc6e79e8d3ed88776aa0/page-3.png",
+              "sha256": "350fd7f3a455868bdb7c58c6eea18af406adfdd6f2f6b1180077034aa7222a79"
+            },
+            {
+              "path": "source/854bb98a899ccc6e79e8d3ed88776aa0/page-4.png",
+              "sha256": "5b1d22306a551f90ed34a2a4336e51258f759f2976256dae4f29b1bbd572c635"
+            },
+            {
+              "path": "source/854bb98a899ccc6e79e8d3ed88776aa0/page-5.png",
+              "sha256": "be59fa99a68fbcea61a79deac574bbb57b046882bf9d2b97fba5223f3f503602"
+            }
+          ]
+        },
+        "records_target_text_and_ordered_images_equal_to_original_and_first_pass": true
+      },
+      "original": {
+        "extracted_path": "old/vercel/854bb98a899ccc6e79e8d3ed88776aa0/direct/extracted.json",
+        "extracted_sha256": "67036e736ecabd07c1a1f03311769374e43ab71383c6d096975266c8dc604b79",
+        "has_offer": true,
+        "offer_count": 1,
+        "program_restriction_count": 0,
+        "schema_family": "production_before_semantic_contract_changes"
+      },
+      "first_pass": {
+        "artifact_id": 13128188275,
+        "generation_status": "completed",
+        "extracted_path": "new/854bb98a899ccc6e79e8d3ed88776aa0/vercel/854bb98a899ccc6e79e8d3ed88776aa0/direct/extracted.json",
+        "extracted_sha256": "cae54fe78b531862914a9535a53ad55ab2baf39c25fd9e23a8c19c7ed5f42f58",
+        "accepted_extracted_object_exists": true,
+        "has_offer": true,
+        "accepted_offer_count": 1,
+        "accepted_program_restriction_count": 0,
+        "raw_generation_not_repaired": true
+      },
+      "second_pass": {
+        "generation_status": "completed",
+        "queue_status": "completed",
+        "driver_status": "completed",
+        "http_attempts": 1,
+        "extracted_path": "new/854bb98a899ccc6e79e8d3ed88776aa0/vercel/854bb98a899ccc6e79e8d3ed88776aa0/direct/extracted.json",
+        "extracted_sha256": "0ab40063f77c99efb32a53df7c704142c7d1826a784a9d5eb9c3cc84353e9e30",
+        "extracted": {
+          "has_offer": true,
+          "offers": [
+            {
+              "benefit_kind": "gift",
+              "benefit_text": "Приоритетное размещение в ресторане Giorgio Suluguni и комплимент от заведения при бронировании столов через консьерж-сервис при сумме чека от 3000 рублей.",
+              "value": null,
+              "value_qualifier": null,
+              "unit": null,
+              "basis": null,
+              "audience": "",
+              "restrictions": [
+                "бронирование столов через консьерж-сервис",
+                "сумма чека от 3000 рублей"
+              ],
+              "how_to_get": [
+                "забронировать стол через консьерж-сервис"
+              ],
+              "promo_code": null,
+              "valid_until": null,
+              "accrual_timing": null,
+              "evidence": [
+                "Приоритетное размещение в ресторане и комплимент от заведения.\n\nПривилегия предоставляется при бронировании столов через консьерж-сервис при сумме чека от 3000 рублей."
+              ],
+              "practical_advice": []
+            }
+          ],
+          "unknowns": [
+            "Срок действия привилегии не указан.",
+            "Неизвестно, какие именно блюда входят в комплимент и ограничения по меню."
+          ],
+          "program_restrictions": []
+        },
+        "has_offer": true,
+        "accepted_offer_count": 1,
+        "accepted_program_restriction_count": 0,
+        "model_measurement": {
+          "attempt": 1,
+          "request_body_sha256": "0a88ea178a048ee62e6bb81aea68b3d1ef18a69dabdacb073affa2306f8155bf",
+          "seconds": 2.237225188000025,
+          "http_status": 200,
+          "returned_model": "nvidia/nemotron-3.5-super-vl"
+        },
+        "recorded_tokens": 11811,
+        "reported_cost_usd": 0.0024636,
+        "summary_evidence_path": "new/854bb98a899ccc6e79e8d3ed88776aa0/vercel/854bb98a899ccc6e79e8d3ed88776aa0/direct/summary.json"
+      },
+      "primary_target_defect_status": "component_separation_defect_remains_without_benefit_fact_loss",
+      "first_pass_comparison": {
+        "target": "Represent priority seating and an unspecified compliment as separate other and gift components.",
+        "result": "not_fixed_without_benefit_fact_loss",
+        "first_pass": "Both benefits explicit, merged into one gift offer.",
+        "second_pass": "Both benefits still explicit, still merged into one gift offer; shared booking and total-bill threshold retained.",
+        "new_or_persistent_limits": "A new unknown assumes the unspecified compliment consists of dishes/menu items. Duplicate evidence and unrelated formatting instructions are absent."
+      },
+      "semantic_review": {
+        "review_source": "followup-audit-root.json",
+        "id": "854bb98a899ccc6e79e8d3ed88776aa0",
+        "partner": "Giorgio Suluguni",
+        "provider": "vercel",
+        "verdict": "component_separation_defect_remains_without_fact_loss",
+        "baseline_offers": 1,
+        "first_pass_offers": 1,
+        "followup_offers": 1,
+        "fixed": [
+          "Both priority seating and the complimentary item are explicit in benefit_text.",
+          "The unrelated formatting instruction remains absent; duplicate evidence from the first pass was removed.",
+          "The 3000-ruble threshold remains a bill total, not an invented per-person threshold. Concierge booking, empty unknown audience and empty practical advice are preserved."
+        ],
+        "evidence": {
+          "source_description": "Приоритетное размещение в ресторане и комплимент от заведения.\n\nПривилегия предоставляется при бронировании столов через консьерж-сервис при сумме чека от 3000 рублей.",
+          "output_benefit_kind": "gift",
+          "output_benefit_text": "Приоритетное размещение в ресторане Giorgio Suluguni и комплимент от заведения при бронировании столов через консьерж-сервис при сумме чека от 3000 рублей."
+        },
+        "remaining": [
+          {
+            "kind": "compound_benefits_merged",
+            "severity": "structural",
+            "detail": "Priority seating and the compliment remain one gift object instead of separate other and gift objects. No benefit fact is lost, but the extraction contract remains unmet."
+          },
+          {
+            "kind": "unsupported_specificity_in_unknown",
+            "severity": "minor",
+            "detail": "The model frames the unspecified compliment as dishes and menu limits; the source does not establish that it must be food."
+          }
+        ],
+        "required_review_action": "Keep review-only; split the two components while retaining the shared booking and total-bill conditions."
+      },
+      "publication_allowed": false
+    }
+  ],
+  "limits": [
+    "This report embeds exactly the five accepted second-pass extracted JSON objects without repairs. Provider response envelopes and nonfinal internal generation content are excluded.",
+    "The five source_records are copied without changes from public frozen source evidence. Their presence does not establish personal eligibility or current public availability.",
+    "The first-pass report remains unchanged. Four Seasons had no accepted first-pass output; its first-pass rejection is not replaced by the second-pass success.",
+    "Five completed schema-valid responses are not five semantically approved records. Rakovaya still changes an independent benefit into a condition; Giorgio still merges two benefits. Minor source-fidelity findings remain elsewhere.",
+    "A count of offers is a count of extracted objects, not a completeness or truth score. The same four cases completed in both passes contain six objects in each; Four Seasons adds four newly accepted objects in the second pass.",
+    "Ledger verification is a distinct engineering result, not semantic approval. Full production item snapshots were not included in the artifact, so item digests were not independently recomputed by this aggregation.",
+    "Recorded provider costs/credit deltas are measurement values, not an assertion about an invoiced payment. Null reported cost remains unknown.",
+    "One before/after generation does not isolate the prompt change from generation variability and does not establish generalization to untested offers or providers.",
+    "No third restaurant retry, fallback provider, model expansion, source-specific repair, or Sheets publication was performed by this audit."
+  ],
+  "publication_allowed": false,
+  "semantic_review": "case_specific_findings_preserved_two_component_failures_remain"
+}
