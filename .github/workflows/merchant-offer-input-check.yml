@@ -8,7 +8,11 @@ on:
       - loyalty/merchant_evidence.py
       - loyalty/merchant_queue.py
       - loyalty/merchant_extract.py
+      - loyalty/merchant_prompt.txt
+      - loyalty/merchant_offer.schema.json
       - loyalty/tests/test_merchant_evidence*.py
+      - loyalty/tests/test_merchant_offer_contract.py
+      - loyalty/tests/test_merchant_readiness.py
       - diagnostics/test_merchant_evidence_browser.py
       - .github/workflows/merchant-offer-input-check.yml
 permissions:

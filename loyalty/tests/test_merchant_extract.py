@@ -14,8 +14,9 @@ import merchant_extract as m
 
 SCHEMA = {'type': 'object', 'additionalProperties': False, 'properties': {
     'has_offer': {'type': 'boolean'}, 'offers': {'type': 'array'},
-    'unknowns': {'type': 'array'}}, 'required': ['has_offer', 'offers', 'unknowns']}
-EMPTY = {'has_offer': False, 'offers': [], 'unknowns': []}
+    'unknowns': {'type': 'array'}, 'program_restrictions': {'type': 'array'}},
+    'required': ['has_offer', 'offers', 'unknowns', 'program_restrictions']}
+EMPTY = {'has_offer': False, 'offers': [], 'unknowns': [], 'program_restrictions': []}
 
 
 MODEL = 'deepseek/deepseek-v4.1-flash-free'

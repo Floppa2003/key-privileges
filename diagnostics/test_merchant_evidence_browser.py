@@ -10,6 +10,7 @@ sys.path[:0] = [str(ROOT / 'loyalty'), str(ROOT / 'loyalty/tests')]
 from playwright.async_api import async_playwright
 import merchant_queue as q
 import merchant_extract as m
+import merchant_evidence as evidence
 from test_merchant_evidence import record
 
 
@@ -52,6 +53,29 @@ class BrowserEvidenceTests(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn('Загрузка', text)
         self.assertTrue(spec['capture']['target_found'])
         self.assertGreater(len(spec['images']), 0)
+
+    async def test_transient_missing_body_waits_for_target(self):
+        page = await self.browser.new_page()
+        try:
+            await page.set_content('<html><body>Loading</body></html>')
+            await page.evaluate('''() => {
+                const body = document.body;
+                body.remove();
+                setTimeout(() => {
+                    body.innerHTML = '<h1>Independent merchant</h1><p>Скидка 17%</p>';
+                    document.documentElement.append(body);
+                }, 500);
+            }''')
+            target = {'partner': 'Independent merchant', 'url': 'https://fixture.example/offer'}
+            try:
+                actual = await evidence.prepare_public_page(page, target)
+            except Exception as exc:
+                self.fail(f'Temporary missing body aborted readiness: {exc}')
+            self.assertTrue(actual['target_found'])
+            self.assertTrue(actual['content_ready'])
+            self.assertIn('Скидка 17%', await page.locator('body').inner_text())
+        finally:
+            await page.close()
 
     async def test_record_reaches_manifest_and_real_capture_uses_existing_detail_url(self):
         row = record(); row['benefit_url'] = 'https://example.org/benefits/actual-published-link'
