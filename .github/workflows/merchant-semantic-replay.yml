@@ -1,0 +1,416 @@
+name: Replay nine original semantic cases
+on:
+  push:
+    branches: [loyalty/semantic-replay-20261102]
+    paths: [.github/workflows/merchant-semantic-replay.yml]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: merchant-daily-orcarouter
+  cancel-in-progress: false
+jobs:
+  replay:
+    if: github.repository == 'Floppa2003/key-privileges' && github.ref == 'refs/heads/loyalty/semantic-replay-20261102' && github.run_attempt == '1'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions: {contents: write, actions: read}
+    env:
+      PYTHONPATH: loyalty
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: aa7a11b1e9ba818b90a4161ae305c33b00c994e8
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: loyalty/llm-state
+          path: llm-state
+          sparse-checkout: state.json
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with: {python-version: '3.12'}
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          repository: Floppa2003/key-privileges
+          run-id: '41278067049'
+          artifact-ids: '13074097773'
+          github-token: ${{ github.token }}
+          path: original
+          merge-multiple: true
+      - name: Materialize diagnostic helper without model keys
+        run: |
+          set -euo pipefail
+          cat > "$RUNNER_TEMP/semantic_replay.py" <<'PY'
+          """One bounded diagnostic replay; production items are never evaluation output."""
+          import argparse
+          import copy
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          import shutil
+          import subprocess
+          import time
+          
+          CODE_SHA = "aa7a11b1e9ba818b90a4161ae305c33b00c994e8"
+          MANIFEST_SHA = "939d38896c224ac92cce274217e6ff020ea1735e8321102563ba3248b63e7ebc"
+          SUMMARY_SHA = "8f13370840ed8ee4bbed7eaac02527264122e2e2b53b35c252f29ca00d92d72e"
+          CASES = {
+              "19696e3196b4bebd8b79707f310ebf5a": ("orcarouter", "88cbf761684aa68b82671103f8db544e8fa3b446c95908de311474c6a57162c7"),
+              "1fb2504ab1758f4f653a96619a468134": ("tokenharbor", "8e0a534bd81805180fda7568618445d379f8d0cc04e173d34b2ab8fea13afe59"),
+              "1777925f766ad477d1abaaa5e6ff988a": ("orcarouter", "791a4f9dd424fda801b2c04117ae5d38f80beeed12edb6a7bffcdb3410148dfd"),
+              "533981eee869248ea04c2d5f71861d7a": ("openrouter", "f6c4e61f01d1e98be28afc7542627cdaaf6a9dde71878e8fcac5b85ca47931c4"),
+              "4790b53657300ce00b33f55a071e8469": ("openrouter", "ecb083501c354d94197d9ae9786be7384c0669307ea88bdfb4afec282d2f33b9"),
+              "8609176638f706d051d05a492359c2e8": ("vercel", "512ca89ea8924fa4e11ed6d80464fa4a3112c96e15149c782aa5a645c1667af3"),
+              "a858d829fc08e6cb5a5648d57371ab2c": ("vercel", "021e917c4d3993157100babb444e86f057b3c387291ed1a1e775e822349d87d2"),
+              "a3a0b774e12560861eb2faa6ace27bae": ("vercel", "b78c1e4ce9a01e5c6542387e1f8a328de1234cd00c0069ce582a578b78e9b3a6"),
+              "854bb98a899ccc6e79e8d3ed88776aa0": ("vercel", "67036e736ecabd07c1a1f03311769374e43ab71383c6d096975266c8dc604b79"),
+          }
+          LEDGER_KEYS = ("usage", "provider_not_before", "last_request_at", "providers")
+          FATAL_STOPS = {"credential_echo", "nonzero_reported_cost", "invalid_reported_cost"}
+          
+          
+          def load(path):
+              return json.loads(Path(path).read_text(encoding="utf-8"))
+          
+          
+          def save(path, value):
+              path = Path(path)
+              path.parent.mkdir(parents=True, exist_ok=True)
+              temporary = path.with_suffix(path.suffix + ".tmp")
+              temporary.write_text(json.dumps(value, ensure_ascii=False, indent=2, allow_nan=False), encoding="utf-8")
+              temporary.replace(path)
+          
+          
+          def digest(value):
+              raw = json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False)
+              return hashlib.sha256(raw.encode()).hexdigest()
+          
+          
+          def file_hash(path):
+              return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+          
+          
+          def nonledger(state):
+              return {k: v for k, v in state.items() if k not in LEDGER_KEYS}
+          
+          
+          def ledgers(state):
+              return {k: copy.deepcopy(state[k]) for k in LEDGER_KEYS if k in state}
+          
+          
+          def check_code():
+              actual = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+              assert actual == CODE_SHA, "unpinned_code"
+              return actual
+          
+          
+          def prepare(source, state_path, out, work):
+              import merchant_extract as m
+              import merchant_queue as q
+              code = check_code()
+              assert state_path.is_file(), "durable_state_missing"
+              assert file_hash(source / "captures/manifest.json") == MANIFEST_SHA, "original_manifest_hash"
+              assert file_hash(source / "results/summary.json") == SUMMARY_SHA, "original_summary_hash"
+              manifest = m.strict_json((source / "captures/manifest.json").read_text())
+              summary = m.strict_json((source / "results/summary.json").read_text())
+              by_id = {d["id"]: d for d in manifest["documents"]}
+              assert len(by_id) == len(manifest["documents"]), "duplicate_original_id"
+              selected = [by_id[ident] for ident in CASES]
+              for spec in selected:
+                  ident = spec["id"]
+                  provider, expected = CASES[ident]
+                  matches = [p["provider"] for p in summary["providers"] for row in p["results"]
+                             if row["id"] == ident and row["status"] == "completed"]
+                  assert matches == [provider], "original_provider_mismatch"
+                  assert file_hash(source / "results" / provider / ident / "direct/extracted.json") == expected, "original_answer_hash"
+              work.mkdir(parents=True, exist_ok=False)
+              out.mkdir(parents=True, exist_ok=True)
+              for name in ("captures/manifest.json", "results/summary.json", "commit.txt"):
+                  target = out / "original" / name
+                  target.parent.mkdir(parents=True, exist_ok=True)
+                  shutil.copyfile(source / name, target)
+              for spec in selected:
+                  for name in [spec["text"], *spec["images"]]:
+                      original = (source / "captures" / name).resolve()
+                      assert original.is_relative_to((source / "captures").resolve()), "source_escape"
+                      target = out / "source" / name
+                      target.parent.mkdir(parents=True, exist_ok=True)
+                      shutil.copyfile(original, target)
+                  provider = CASES[spec["id"]][0]
+                  shutil.copytree(source / "results" / provider / spec["id"], out / "old" / provider / spec["id"])
+              save(out / "source/manifest.json", {"documents": selected})
+              # Verify every byte of full text and every PNG, plus source-record hashes, before keys are injected.
+              documents = m.load_manifest(out / "source/manifest.json", max_documents=9)
+              before = q.read_state(state_path)
+              shutil.copyfile(state_path, work / "production-before.json")
+              evaluation = copy.deepcopy(before)
+              for doc in documents:
+                  # Only the private evaluation copy gets historical targets / an empty result cache.
+                  evaluation["items"][doc["id"]] = {"target": {
+                      **copy.deepcopy(doc["target"]), "id": doc["id"],
+                      "url": doc["source"]["source_url"],
+                      "source_records": copy.deepcopy(doc["source"].get("source_records", []))}}
+              q.write_state(work / "evaluation-state.json", evaluation)
+              save(work / "baseline.json", {"file_sha256": file_hash(work / "production-before.json"),
+                                           "nonledger_sha256": digest(nonledger(before)),
+                                           "items_sha256": digest(before["items"])})
+              save(out / "ledger-before.json", ledgers(before))
+              save(out / "provenance.json", {
+                  "code_sha": code, "original_run_id": 41278067049, "original_artifact_id": 13074097773,
+                  "original_manifest_sha256": MANIFEST_SHA, "original_summary_sha256": SUMMARY_SHA,
+                  "publication_allowed": False, "semantic_review": "pending", "max_model_http_attempts": 9,
+                  "sources_refetched": False, "as_of_changed": False,
+                  "cases": [{"id": d["id"], "provider": CASES[d["id"]][0], **d["target"],
+                             "images": len(d["images"]), "source_records_sha256": d["source"].get("source_records_sha256"),
+                             "old_extracted_sha256": CASES[d["id"]][1]} for d in documents]})
+              code_dir = out / "code"
+              code_dir.mkdir()
+              for name in ("merchant_queue.py", "merchant_extract.py", "merchant_evidence.py",
+                           "merchant_channels.py", "merchant_prompt.txt", "merchant_offer.schema.json"):
+                  shutil.copyfile(Path("loyalty") / name, code_dir / name)
+              shutil.copyfile(__file__, code_dir / "semantic_replay.py")
+              print("PREPARED", len(documents), "cases;", sum(len(d["images"]) for d in documents), "original PNGs", flush=True)
+          
+          
+          def reconcile(state_path, out, work):
+              checkpoint = work / "evaluation-state.json"
+              if not checkpoint.exists():
+                  print("NO_EVALUATION_CHECKPOINT; no model calls were admitted", flush=True)
+                  return
+              baseline = load(work / "baseline.json")
+              assert file_hash(work / "production-before.json") == baseline["file_sha256"], "baseline_changed"
+              before, current, evaluation = load(work / "production-before.json"), load(state_path), load(checkpoint)
+              assert digest(nonledger(current)) == baseline["nonledger_sha256"], "production_nonledger_changed"
+              # The durable file is reconstructed from its ORIGINAL contents, never from evaluated items.
+              merged = copy.deepcopy(before)
+              for key in LEDGER_KEYS:
+                  if key in evaluation:
+                      merged[key] = copy.deepcopy(evaluation[key])
+                  else:
+                      merged.pop(key, None)
+              assert digest(merged["items"]) == baseline["items_sha256"], "production_items_changed"
+              assert digest(nonledger(merged)) == baseline["nonledger_sha256"], "production_nonledger_changed"
+              save(state_path, merged)
+              save(out / "ledger-after.json", ledgers(merged))
+              save(out / "state-invariants.json", {
+                  **baseline, "items_after_sha256": digest(merged["items"]),
+                  "nonledger_after_sha256": digest(nonledger(merged)),
+                  "items_unchanged": True, "nonledger_unchanged": True,
+                  "merged_keys": list(LEDGER_KEYS), "evaluation_checkpoint_sha256": file_hash(checkpoint),
+                  "durable_state_sha256": file_hash(state_path)})
+              save(out / "evaluation-items.json", {ident: evaluation["items"].get(ident) for ident in CASES})
+          
+          
+          def execute_cases(documents, state, state_path, out, work, keys, schema, system):
+              import merchant_queue as q
+              assert [d["id"] for d in documents] == list(CASES), "replay_case_set_or_order"
+              assert not (work / "started.json").exists(), "replay_already_started_no_regeneration"
+              save(work / "started.json", {"started_at": time.time()})
+              progress, blocked = [], set()
+              try:
+                  for doc in documents:
+                      ident, provider = doc["id"], CASES[doc["id"]][0]
+                      row = {"id": ident, "provider": provider}
+                      progress.append(row)
+                      if provider in blocked:
+                          row.update(status="not_attempted_provider_stopped", http_attempts=0)
+                          save(out / "progress.json", progress)
+                          continue
+                      row["status"] = "entered_queue"
+                      save(out / "progress.json", progress)
+                      result = q.process_pool([doc], state, work / "evaluation-state.json",
+                          out / "new" / ident, {provider: keys.get(provider, "")}, schema, system,
+                          providers=(provider,), max_requests=1, per_provider_requests=1, time_budget=240)
+                      assert 0 <= result["http_attempts"] <= 1, "per_case_attempt_bound"
+                      row.update(status=result["status"], http_attempts=result["http_attempts"])
+                      route_stops = {p.get("stop_reason") for p in result["providers"]} - {None}
+                      stops = route_stops | ({result["stop_reason"]} if result.get("stop_reason") else set())
+                      if stops:
+                          row["stop_reasons"] = sorted(stops)
+                          blocked.add(provider)
+                      save(out / "progress.json", progress)
+                      reconcile(state_path, out, work)
+                      if stops & FATAL_STOPS:
+                          break
+              except BaseException as exc:
+                  # Avoid logging exception messages that could contain transport credentials.
+                  save(out / "execution-error.json", {"error_type": type(exc).__name__, "no_retry": True})
+                  raise
+              finally:
+                  # Read the durable checkpoint, not potentially stale in-memory ledger values.
+                  # The queue writes its reservation BEFORE model I/O; that survives exceptions.
+                  reconcile(state_path, out, work)
+          
+          
+          def run(state_path, out, work):
+              import merchant_extract as m
+              import merchant_queue as q
+              check_code()
+              documents = m.load_manifest(out / "source/manifest.json", max_documents=9)
+              assert [d["source"] for d in documents] == [
+                  next(s for s in load(out / "original/captures/manifest.json")["documents"] if s["id"] == ident)
+                  for ident in CASES], "changed_original_source"
+              providers = {provider for provider, _ in CASES.values()}
+              keys = {p: os.environ.get(m.provider_config(p)["secret"], "") for p in providers}
+              execute_cases(documents, q.read_state(work / "evaluation-state.json"), state_path, out, work,
+                            keys, load(Path("loyalty/merchant_offer.schema.json")),
+                            Path("loyalty/merchant_prompt.txt").read_text())
+          
+          
+          def report(out):
+              if not (out / "provenance.json").exists():
+                  return
+              progress = {r["id"]: r for r in load(out / "progress.json")} if (out / "progress.json").exists() else {}
+              items = load(out / "evaluation-items.json") if (out / "evaluation-items.json").exists() else {}
+              rows = []
+              for case in load(out / "provenance.json")["cases"]:
+                  ident, provider = case["id"], case["provider"]
+                  direct = out / "new" / ident / provider / ident / "direct"
+                  stats = load(direct / "summary.json") if (direct / "summary.json").exists() else {}
+                  answer = load(direct / "extracted.json") if (direct / "extracted.json").exists() else {}
+                  row = {**case, "raw_generation_status": stats.get("status"),
+                         "queue_status": (items.get(ident) or {}).get("status"),
+                         "driver_status": progress.get(ident, {}).get("status", "not_attempted"),
+                         "http_attempts": stats.get("http_attempts", progress.get(ident, {}).get("http_attempts")),
+                         "has_offer": answer.get("has_offer"), "offers": len(answer.get("offers", [])),
+                         "program_restrictions": len(answer.get("program_restrictions", [])),
+                         "new_extracted_path": str((direct / "extracted.json").relative_to(out)) if answer else None}
+                  assert row["http_attempts"] in (None, 0, 1), "attempt_bound"
+                  rows.append(row)
+              # An interrupted case may have consumed its one reservation; never report it as zero.
+              upper = sum(1 if r["queue_status"] == "in_flight" else
+                          r["http_attempts"] if r["http_attempts"] is not None else
+                          int(r["driver_status"] == "entered_queue") for r in rows)
+              assert upper <= 9, "total_attempt_bound"
+              result = {"cases": rows, "recorded_http_attempts": sum(r["http_attempts"] or 0 for r in rows),
+                        "http_attempt_upper_bound": upper, "max_model_http_attempts": 9,
+                        "publication_allowed": False, "semantic_review": "pending"}
+              save(out / "report.json", result)
+              print(json.dumps(result, ensure_ascii=False, indent=2), flush=True)
+              save(out / "SHA256SUMS.json", {str(p.relative_to(out)): file_hash(p)
+                   for p in sorted(out.rglob("*")) if p.is_file() and p.name != "SHA256SUMS.json"})
+          
+          
+          if __name__ == "__main__":
+              parser = argparse.ArgumentParser(description=__doc__)
+              parser.add_argument("command", choices=("prepare", "run", "reconcile", "report"))
+              parser.add_argument("--source", type=Path, default=Path("original"))
+              parser.add_argument("--state", type=Path, default=Path("llm-state/state.json"))
+              parser.add_argument("--out", type=Path, default=Path("replay-output"))
+              parser.add_argument("--work", type=Path, default=Path("replay-work"))
+              args = parser.parse_args()
+              if args.command == "prepare":
+                  prepare(args.source, args.state, args.out, args.work)
+              elif args.command == "run":
+                  run(args.state, args.out, args.work)
+              elif args.command == "reconcile":
+                  reconcile(args.state, args.out, args.work)
+              else:
+                  report(args.out)
+          PY
+          python -m pip install -r loyalty/requirements.txt
+      - name: Verify and preserve exact original inputs before credentials
+        run: |
+          set -euo pipefail
+          python "$RUNNER_TEMP/semantic_replay.py" prepare
+          git -C llm-state rev-parse HEAD > replay-output/state-before-commit.txt
+      - name: One attempt per original case on its original approved channel
+        env:
+          ORCAROUTER_API_KEY: ${{ secrets.ORCAROUTER_API_KEY }}
+          TOKENHARBOR_API_KEY: ${{ secrets.TOKENHARBOR_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          AI_GATEWAY_API_KEY: ${{ secrets.AI_GATEWAY_API_KEY }}
+        run: |
+          set -euo pipefail
+          timeout --signal=TERM --kill-after=10s 1500s python -u "$RUNNER_TEMP/semantic_replay.py" run
+      - name: Always reconcile reserved usage only; preserve every production item
+        if: always()
+        run: |
+          set -euo pipefail
+          if test -f "$RUNNER_TEMP/semantic_replay.py"; then
+            python "$RUNNER_TEMP/semantic_replay.py" reconcile
+          fi
+      - name: Persist ledger-only progress and verify exact remote readback
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test -f replay-work/evaluation-state.json || exit 0
+          python "$RUNNER_TEMP/semantic_replay.py" reconcile
+          python -m json.tool llm-state/state.json > /dev/null
+          cd llm-state
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- state.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Semantic replay usage only: $GITHUB_RUN_ID"
+          fi
+          expected=$(git rev-parse HEAD)
+          auth=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)
+          echo "::add-mask::$auth"
+          git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $auth" push origin HEAD:refs/heads/loyalty/llm-state
+          git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $auth" fetch origin refs/heads/loyalty/llm-state
+          test "$(git rev-parse FETCH_HEAD)" = "$expected"
+          test "$(git show FETCH_HEAD:state.json | sha256sum | cut -d' ' -f1)" = "$(sha256sum state.json | cut -d' ' -f1)"
+          echo "$expected" > ../replay-output/state-commit.txt
+          echo "Verified remote ledger state: $expected"
+      - name: Print bounded report and checksum the complete evidence
+        if: always()
+        run: |
+          set -euo pipefail
+          if test -f "$RUNNER_TEMP/semantic_replay.py"; then
+            python "$RUNNER_TEMP/semantic_replay.py" report
+          fi
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: merchant-semantic-replay-${{ github.run_id }}
+          path: replay-output/
+          if-no-files-found: error
+          retention-days: 30
+  readback:
+    needs: replay
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: merchant-semantic-replay-${{ github.run_id }}
+          path: evidence
+      - name: Verify saved sources, results, code pin and production invariants
+        run: |
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          root=Path('evidence'); hashes=json.loads((root/'SHA256SUMS.json').read_text())
+          for name,expected in hashes.items():
+              path=(root/name).resolve()
+              assert path.is_relative_to(root.resolve()) and path.is_file(),name
+              assert hashlib.sha256(path.read_bytes()).hexdigest()==expected,name
+          actual={str(p.relative_to(root)) for p in root.rglob('*') if p.is_file() and p.name!='SHA256SUMS.json'}
+          assert actual==set(hashes),'unchecked_artifact_files'
+          provenance=json.loads((root/'provenance.json').read_text())
+          assert provenance['code_sha']=='aa7a11b1e9ba818b90a4161ae305c33b00c994e8'
+          invariant=json.loads((root/'state-invariants.json').read_text())
+          assert invariant['items_unchanged'] and invariant['nonledger_unchanged']
+          assert invariant['items_sha256']==invariant['items_after_sha256']
+          assert invariant['nonledger_sha256']==invariant['nonledger_after_sha256']
+          assert (root/'state-commit.txt').read_text().strip(),'remote_state_readback_missing'
+          report=json.loads((root/'report.json').read_text())
+          assert len(report['cases'])==9 and report['http_attempt_upper_bound']<=9
+          assert report['publication_allowed'] is False and report['semantic_review']=='pending'
+          result={'verified_files':len(hashes),'state_commit':(root/'state-commit.txt').read_text().strip(),
+                  'production_items_unchanged':True,'report':report}
+          Path('readback.json').write_text(json.dumps(result,ensure_ascii=False,indent=2))
+          print(json.dumps(result,ensure_ascii=False,indent=2))
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: merchant-semantic-replay-readback-${{ github.run_id }}
+          path: readback.json
+          retention-days: 30
