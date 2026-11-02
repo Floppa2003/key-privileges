@@ -193301,21 +193301,21 @@
     }
   },
   "usage": {
-    "date": "2026-11-01",
-    "attempts": 10,
-    "tokens": 70881
+    "date": "2026-11-02",
+    "attempts": 2,
+    "tokens": 8029
   },
   "provider_not_before": 1792886400.4816973,
-  "last_request_at": 1793513778.923337,
+  "last_request_at": 1793610000.5379958,
   "providers": {
     "tokenharbor": {
       "usage": {
-        "date": "2026-11-01",
-        "attempts": 13,
-        "tokens": 156711
+        "date": "2026-11-02",
+        "attempts": 1,
+        "tokens": 16971
       },
       "provider_not_before": 1793429365.2927306,
-      "last_request_at": 1793514420.3679368
+      "last_request_at": 1793609907.1980312
     },
     "experiential": {
       "usage": {
@@ -193337,24 +193337,24 @@
     },
     "openrouter": {
       "usage": {
-        "date": "2026-11-01",
-        "attempts": 18,
-        "tokens": 208042
+        "date": "2026-11-02",
+        "attempts": 2,
+        "tokens": 37077
       },
       "provider_not_before": 0,
-      "last_request_at": 1793516385.325048
+      "last_request_at": 1793610129.443294
     },
     "vercel": {
       "usage": {
-        "date": "2026-11-01",
-        "attempts": 30,
-        "tokens": 353963
+        "date": "2026-11-02",
+        "attempts": 4,
+        "tokens": 50681
       },
       "provider_not_before": 0,
-      "last_request_at": 1793516649.9559958,
+      "last_request_at": 1793610180.5676355,
       "credit_usage": {
         "month": "2026-11",
-        "reserved_usd": 0.07873432
+        "reserved_usd": 0.09022764
       }
     },
     "gemini": {
