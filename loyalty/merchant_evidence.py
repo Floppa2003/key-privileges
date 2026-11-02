@@ -187,7 +187,7 @@ async def prepare_public_page(page, target: dict) -> dict:
     try:
         await page.wait_for_function('''name => {
             const norm = s => (s || '').replace(/\\s+/g,' ').trim().toLocaleLowerCase();
-            return norm(document.body.innerText).includes(norm(name));
+            return norm(document.body?.innerText).includes(norm(name));
         }''', arg=target['partner'], timeout=10000)
         info.update(target_found=True, content_ready=True, readiness='target_text_loaded')
     except BrowserTimeout:
