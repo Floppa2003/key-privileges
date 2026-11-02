@@ -193311,11 +193311,11 @@
     "tokenharbor": {
       "usage": {
         "date": "2026-11-02",
-        "attempts": 1,
-        "tokens": 16971
+        "attempts": 2,
+        "tokens": 37028
       },
       "provider_not_before": 1793429365.2927306,
-      "last_request_at": 1793609907.1980312
+      "last_request_at": 1793610985.2110236
     },
     "experiential": {
       "usage": {
@@ -193338,23 +193338,23 @@
     "openrouter": {
       "usage": {
         "date": "2026-11-02",
-        "attempts": 2,
-        "tokens": 37077
+        "attempts": 3,
+        "tokens": 54071
       },
       "provider_not_before": 0,
-      "last_request_at": 1793610129.443294
+      "last_request_at": 1793610896.532269
     },
     "vercel": {
       "usage": {
         "date": "2026-11-02",
-        "attempts": 4,
-        "tokens": 50681
+        "attempts": 7,
+        "tokens": 88035
       },
       "provider_not_before": 0,
-      "last_request_at": 1793610180.5676355,
+      "last_request_at": 1793611000.889825,
       "credit_usage": {
         "month": "2026-11",
-        "reserved_usd": 0.09022764
+        "reserved_usd": 0.09821384
       }
     },
     "gemini": {
