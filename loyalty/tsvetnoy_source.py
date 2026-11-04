@@ -2,7 +2,6 @@
 from __future__ import annotations
 import io,re,subprocess,xml.etree.ElementTree as ET
 from bs4 import BeautifulSoup
-from pypdf import PdfReader
 from public_reward_projection import plain,one,make_record
 from expansion_common import compact,sha,identity,ExcludedOffer,reported,PROGRAMS
 
@@ -25,6 +24,7 @@ def matrix(data, tier_names):
     """
     if not data.startswith(b'%PDF-') or len(data)>6000000:raise ValueError('tsvetnoy_pdf_identity')
     if not tier_names or len(set(tier_names))!=len(tier_names):raise ValueError('tsvetnoy_tier_inventory')
+    from pypdf import PdfReader
     reader=PdfReader(io.BytesIO(data))
     if not 1<=len(reader.pages)<=20:raise ValueError('tsvetnoy_pdf_page_bound')
     proc=subprocess.run(['pdftotext','-bbox-layout','-','-'],input=data,capture_output=True,timeout=30,check=True)
@@ -227,6 +227,7 @@ def source_fields(e):
         warnings=['accumulation_mark_is_status_progress_not_cashback','source_pdf_creation_date_not_offer_valid_from','tier_boundary_wording_preserved_separately'])
 
 async def collect(client,cfg,report,now,limit):
+    from pypdf import PdfReader
     from read_budget import within_source_budget
     if cfg['id']!=SOURCE or cfg['url']!=ROOT:raise ValueError('tsvetnoy_config')
     doc=current_document(await within_source_budget(client,lambda:client.json('https://tsvetnoy.com/api/v1/documents')))

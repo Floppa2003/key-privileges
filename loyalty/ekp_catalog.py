@@ -152,8 +152,8 @@ def validate_record(record):
         raise ValueError('ekp_protected_terms_exposed')
 
 
-def validate_bundle(folder,*,run_id,commit,clock):
-    """Independent public artifact reconstruction before Google authorization."""
+def validate_bundle(folder,*,run_id,commit,clock,max_age_seconds=7200):
+    """Reconstruct evidence; publication defaults to 2h, linked discovery allows 7d."""
     from datetime import datetime
     from pathlib import Path
     from sheets_normalized import prepare
@@ -162,7 +162,8 @@ def validate_bundle(folder,*,run_id,commit,clock):
     if audit.get('run_id')!=run_id or audit.get('commit')!=commit or audit.get('source_account_used') is not False:
         raise ValueError('ekp_artifact_identity_mismatch')
     start=datetime.fromisoformat(audit['started_at']);end=datetime.fromisoformat(audit['finished_at'])
-    if start.tzinfo is None or end.tzinfo is None or not start<=end<=clock or (clock-start).total_seconds()>7200:
+    if (not 0<max_age_seconds<=604800 or start.tzinfo is None or end.tzinfo is None
+        or not start<=end<=clock or (clock-start).total_seconds()>max_age_seconds):
         raise ValueError('ekp_artifact_not_fresh')
     if bundle.get('run_id')!=run_id or bundle.get('observed_at')!=audit['started_at'] or [s['source_id'] for s in bundle['sources']]!=['ekp']:
         raise ValueError('ekp_bundle_identity_mismatch')

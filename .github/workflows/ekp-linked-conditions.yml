@@ -5,7 +5,11 @@ on:
     paths:
       - .github/workflows/ekp-linked-conditions.yml
       - loyalty/ekp_linked_rules.py
+      - loyalty/ekp_upstream.py
+      - loyalty/ekp_catalog.py
+      - loyalty/ekp_session_collect.py
       - loyalty/tests/test_ekp_linked_rules.py
+      - loyalty/tests/test_ekp_upstream.py
       - loyalty/tests/test_linked_read_regressions.py
       - loyalty/tests/test_ekp_html_stability.py
   workflow_dispatch:
@@ -61,28 +65,20 @@ jobs:
           python-version: '3.12'
       - run: python -m pip install -r loyalty/requirements.txt
       - run: sudo apt-get update -qq && sudo apt-get install -y poppler-utils tesseract-ocr tesseract-ocr-rus
-      - name: Locate recent successful EKP discovery without changing parent dates
+      - name: Select recent EKP collection independently of Sheets publication
         id: upstream
         env:
           GH_TOKEN: ${{ github.token }}
-        run: |
-          python - <<'PY'
-          import json,os,subprocess
-          from datetime import datetime,timezone
-          repo=os.environ['GITHUB_REPOSITORY']
-          data=json.loads(subprocess.check_output(['gh','api',f'repos/{repo}/actions/workflows/ekp-api.yml/runs?branch=main&status=success&per_page=1']))
-          run=data['workflow_runs'][0]
-          assert run['head_branch']=='main' and run['conclusion']=='success'
-          assert 0<=(datetime.now(timezone.utc)-datetime.fromisoformat(run['updated_at'].replace('Z','+00:00'))).total_seconds()<604800
-          with open(os.environ['GITHUB_OUTPUT'],'a') as f:
-              f.write(f"run_id={run['id']}\nname=ekp-public-{run['id']}-{run['run_attempt']}\n")
-          PY
+        run: python loyalty/ekp_upstream.py select
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
           github-token: ${{ github.token }}
           run-id: ${{ steps.upstream.outputs.run_id }}
-          name: ${{ steps.upstream.outputs.name }}
+          artifact-ids: ${{ steps.upstream.outputs.artifact_id }}
+          merge-multiple: true
           path: ekp-upstream
+      - name: Reconstruct complete upstream evidence and preserve original observation dates
+        run: python loyalty/ekp_upstream.py validate
       - name: Read public rules under the existing Free budget without Google credentials
         env:
           SCRAPINGANT_API_KEY: ${{ secrets.SCRAPINGANT_API_KEY }}

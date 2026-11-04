@@ -1,0 +1,22 @@
+{
+  "url": "https://msk.t2.ru/help/article/magnit-plus-premium",
+  "capture_run": "https://github.com/Floppa2003/key-privileges/actions/runs/41931973515",
+  "capture_commit": "cae086c33099b45259e3b3f684c85e4976bdc664",
+  "capture_method": "PublicSource.read(render=True), anonymous Chromium, same original URL, no interactions",
+  "retrieved_at": "2026-11-04T23:14:12.440964+00:00",
+  "response_status": 200,
+  "original_sha256": "3dcf297288a5292634829f726b1a1889e7c9070153c7cf3748c511b716a23bdd",
+  "original_bytes": 1010376,
+  "fixture": "t2-magnit-20261104.html",
+  "fixture_sha256": "5b2e79e1405b80814f039ae20b864735ba6977ac040080fc7a28f4420dc55fdc",
+  "fixture_bytes": 860,
+  "transformations": [
+    "Retain title and the two exact source-owned nodes selected by the existing known_rules configuration.",
+    "Serialize selected nodes with BeautifulSoup html.parser; preserve original text and links. Omit all unrelated document nodes."
+  ],
+  "selectors": [
+    ".support-article__article-title",
+    ".article-content"
+  ],
+  "regression_scope": "The controlled test simulates a delayed article; this fixture is real hydrated content. The historical failed DOM was not archived, so that exact historical hydration timing is not asserted."
+}

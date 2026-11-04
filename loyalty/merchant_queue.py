@@ -347,13 +347,27 @@ async def capture_page(browser, target: dict, out: Path) -> dict:
     sys.path.insert(0, str(HERE.parent))
     from diagnostics.deepseek_acceptance import tile_png, store
     from public_transport import PublicSource, check_response
+    from playwright.async_api import Error as BrowserError
     ident, url = target['id'], evidence.capture_url(target)
     folder = out / ident
     folder.mkdir()
     capture = {'scope': 'pdf', 'target_found': False, 'content_ready': True}
     async with PublicSource(browser, url) as source:
+        raw = None
         if urlsplit(url).path.lower().endswith('.pdf'):
             raw = await source.read_pdf(url)
+        else:
+            await source.page.set_viewport_size({'width': 1024, 'height': 1024})
+            try:
+                status, html = await source.navigate(url)
+            except BrowserError as exc:
+                if 'Page.goto: Download is starting' not in str(exc):
+                    raise
+                # Content-Type can trigger a download even without a .pdf suffix.
+                # Read the same anonymous URL; status, every redirect, size and
+                # the actual PDF signature remain mandatory in read_pdf().
+                raw = await source.read_pdf(url)
+        if raw is not None:
             pdf = folder / 'source.pdf'; pdf.write_bytes(raw)
             # Embedded text plus ALL rendered pages. No OCR or text-only substitution.
             subprocess.run(['pdftotext', '-layout', str(pdf), str(folder/'visible-text.txt')],
@@ -368,25 +382,29 @@ async def capture_page(browser, target: dict, out: Path) -> dict:
             capture['target_found'] = evidence.has_target(text, target['partner'])
             if not text.strip(): text = '[PDF without embedded text; use all attached rendered pages.]'
         else:
-            await source.page.set_viewport_size({'width': 1024, 'height': 1024})
-            status, html = await source.navigate(url)
-            check_response(status, html)
-            capture = await evidence.prepare_public_page(source.page, target)
-            # Reveal native HTML disclosures; no form submissions or account interaction.
-            await source.page.evaluate("document.querySelectorAll('details').forEach(n => n.open = true)")
-            for _ in range(40):
-                size = await source.page.evaluate('({y:scrollY,h:innerHeight,total:document.documentElement.scrollHeight})')
-                if size['total'] > 40960: raise ValueError('image_budget_no_truncation')
-                if size['y'] + size['h'] >= size['total'] - 2: break
-                await source.page.evaluate('window.scrollBy(0,900)')
-                await source.page.wait_for_timeout(100)
-            else: raise ValueError('scroll_budget_no_truncation')
-            await source.page.evaluate('window.scrollTo(0,0)')
-            await source.page.wait_for_timeout(700)
-            text = await source.page.locator('body').inner_text(timeout=15000)
-            if not text.strip(): raise ValueError('empty_page')
-            (folder/'source.html').write_text(await source.page.content(), encoding='utf-8')
-            images = tile_png(await source.page.screenshot(full_page=True, animations='disabled', timeout=30000))
+            with source.observe_navigation(include_current=True) as latest:
+                check_response(status, html)
+                capture = await evidence.prepare_public_page(source.page, target)
+                # Reveal native HTML disclosures; no form submissions or account interaction.
+                await source.page.evaluate("document.querySelectorAll('details').forEach(n => n.open = true)")
+                for _ in range(40):
+                    size = await source.page.evaluate('({y:scrollY,h:innerHeight,total:document.documentElement.scrollHeight})')
+                    if size['total'] > 40960: raise ValueError('image_budget_no_truncation')
+                    if size['y'] + size['h'] >= size['total'] - 2: break
+                    await source.page.evaluate('window.scrollBy(0,900)')
+                    await source.page.wait_for_timeout(100)
+                else: raise ValueError('scroll_budget_no_truncation')
+                await source.page.evaluate('window.scrollTo(0,0)')
+                await source.page.wait_for_timeout(700)
+                status, html = await source.document_content(latest)
+                check_response(status, html)
+                current_response, current_url = latest[-1], source.page.url
+                text = await source.page.locator('body').inner_text(timeout=15000)
+                if not text.strip(): raise ValueError('empty_page')
+                (folder/'source.html').write_text(html, encoding='utf-8')
+                images = tile_png(await source.page.screenshot(full_page=True, animations='disabled', timeout=30000))
+                if latest[-1] is not current_response or source.page.url != current_url:
+                    raise ValueError('page_navigation_unstable')
         spec = store(out, ident, {'partner': target['partner'], 'program': target['program'],
                                   'as_of': datetime.now(timezone.utc).date().isoformat()},
                      text, images, source_url=url)
