@@ -25,6 +25,26 @@ Dates in the evidence below are UTC; the work date is 5 November in Moscow.
 - Full 2 November public input replay without `pypdf`, `PIL`, `playwright` or `jsonschema` in the normalization process: **1180 inputs → 1180 records**.
 - Fresh Finuslugi PDF SHA256: `a24c1a8bf300087b8e8f93d9975b24acb9fb7bd9f574f1e6f2bd71f543e6a09e`. Raw replay preserves all three rendered pages and validates the evidence manifest. Live browser verification is a separate check in `parsing-repair-check.yml`.
 
+## Production verification and complete snapshot selection
+
+The first main release exposed a fresh incomplete EKP snapshot in run
+[41934551933](https://github.com/Floppa2003/key-privileges/actions/runs/41934551933).
+Four pages were accepted (480 records out of the declared 1019); reading the next
+response body failed before JSON parsing. Its `partial` status and original
+`2026-11-04T23:34:06.134052+00:00` observation time remain explicit. The publisher
+successfully verified all 480 accepted upserts and then 4252 normalized records,
+confirming the optional PDF dependency repair in the real publisher runtime.
+
+The linked workflow then correctly rejected that partial snapshot but initially
+stopped before considering an available complete snapshot. The follow-up selector
+validates at most five candidate ZIPs before choosing an input: exact archive
+digest and size, bounded flat JSON entries, full source reconstruction and the
+existing seven-day age limit. Each rejection is logged with its source status,
+counts and original date. The real two-artifact replay rejects 480/1019 and
+selects the complete 1017/1017 snapshot from 2 November. These dates are never
+promoted to the new execution date. Only saved GitHub artifacts are read during
+selection; source conditions are fetched by the existing linked collector later.
+
 ## Limits that remain explicit
 
 - FlyStation returns HTTP 200 with an empty promotions container in direct and
