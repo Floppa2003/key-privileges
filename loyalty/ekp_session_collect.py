@@ -182,8 +182,8 @@ def collect(reader,out,*,run_id,observed_at,commit):
     return bundle
 
 
-def validate_session_bundle(folder,*,run_id,commit,clock):
-    bundle=validate_bundle(folder,run_id=run_id,commit=commit,clock=clock)
+def validate_session_bundle(folder,*,run_id,commit,clock,max_age_seconds=7200):
+    bundle=validate_bundle(folder,run_id=run_id,commit=commit,clock=clock,max_age_seconds=max_age_seconds)
     audit=json.loads((Path(folder)/'report.json').read_text());meta=json.loads(bundle['sources'][0]['coverage'])
     if (audit.get('mode')!='one_anonymous_browser_public_api' or
         audit.get('script_sha256')!=hashlib.sha256(SCRIPT.read_bytes()).hexdigest() or

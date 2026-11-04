@@ -77,6 +77,25 @@ class FlyStation(unittest.TestCase):
             self.assertEqual(u.upgrade_formula(full.replace(all_names,names)),full)
         self.assertEqual(u.upgrade_formula(full),full)
 class FlyCollector(unittest.IsolatedAsyncioTestCase):
+    async def test_current_empty_source_cannot_be_reported_as_complete_inventory(self):
+        from unittest.mock import patch
+        import collect_normalized as collector
+        raw=Path(__file__).with_name('fixtures_live').joinpath('flystation-promotions-20261104-empty.html').read_text()
+        cfg=next(c for c in json.loads((Path(__file__).parents[1]/'sources_normalized.json').read_text())
+                 if c['id']==SOURCE)
+        class Client:
+            async def __aenter__(self):return self
+            async def __aexit__(self,*args):pass
+            async def read(self,url):return raw
+        with patch.object(collector,'PublicSource',return_value=Client()):
+            report,rows=await collector.one(None,cfg,NEW,500)
+        self.assertEqual(rows,[])
+        self.assertEqual(report['status'],'failed')
+        self.assertEqual(report['errors'][0]['reason'],'flystation_inventory_bound')
+        health=health_summary(dict(observed_at=NEW,sources=[report],records=rows),expected_sources=[SOURCE])[0]
+        self.assertFalse(health['healthy'])
+        self.assertFalse(health['inventory_complete'])
+        self.assertTrue(health['blocking'])
     async def test_actual_collector_full_inventory(self):
         class Client:
             async def read(self,url):return RAW

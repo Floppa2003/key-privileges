@@ -1,0 +1,19 @@
+{
+  "url": "https://flystation.net/promotions",
+  "final_url": "https://flystation.net/promotions",
+  "status": 200,
+  "content_type": "text/html; charset=UTF-8",
+  "retrieved_at": "2026-11-04T23:09:07.628724+00:00",
+  "sha256": "bbf2e7ae3c398bb243ef8fab22216c6a1d02ee4cd21e5319a6b94cd28a714c3d",
+  "bytes": 18214,
+  "fixture": "flystation-promotions-20261104-empty.html",
+  "fixture_sha256": "bbf2e7ae3c398bb243ef8fab22216c6a1d02ee4cd21e5319a6b94cd28a714c3d",
+  "capture_method": "Python urllib.request direct anonymous HTTPS GET; no cache request or response rewriting",
+  "transformations": [],
+  "observed_structure": {
+    "section.promotions": 1,
+    "promotions__slider-item-text": 0,
+    "empty_container": "section.promotions .promotions__accordion-inner"
+  },
+  "interpretation": "The requested public URL returned an empty promotions container, without an explicit no-active-promotions statement. This is not evidence of a complete empty catalogue or selector drift; source health must remain failed until a supported current inventory is read."
+}

@@ -3,7 +3,8 @@ from __future__ import annotations
 import asyncio
 import re
 import time
-from urllib.parse import urlsplit
+from contextlib import contextmanager
+from urllib.parse import urljoin, urlsplit
 from bs4 import BeautifulSoup
 from model import clean_url
 from normalized import BLOCKED
@@ -48,6 +49,7 @@ class PublicSource:
     def __init__(self,browser,url: str):
         self.browser=browser;self.host=urlsplit(url).hostname
         self.context=None;self.page=None;self.lock=asyncio.Lock();self.request_interval=0.25
+        self._document_response = None
 
     async def __aenter__(self):
         # Shared pacing remains independent of any auxiliary source file.
@@ -72,17 +74,70 @@ class PublicSource:
                 await asyncio.sleep(max(self.request_interval, 2 ** attempt))
         raise AssertionError('unreachable navigation retry state')
 
-    async def _navigate_once(self, url: str, *, ready_selector=None) -> tuple[int, str]:
-        """Observe the final main document; never click or solve access challenges."""
-        if not allowed_request(url, self.host):
-            raise RuntimeError('request_outside_public_source')
-        latest = []
+    @contextmanager
+    def observe_navigation(self, *, include_current=False):
+        """Keep status evidence for automatic main-document replacements."""
+        latest = [self._document_response] if include_current and self._document_response else []
         def observe(response):
             request = response.request
             if request.is_navigation_request() and request.frame == self.page.main_frame:
                 latest.append(response)
         self.page.on('response', observe)
         try:
+            yield latest
+        finally:
+            self.page.remove_listener('response', observe)
+
+    async def document_content(self, latest) -> tuple[int, str]:
+        """Retry only a DOM read interrupted by an already running navigation.
+
+        The response listener must span the read. A fresh status and URL are
+        checked after every wait; no GET is replayed and no refusal is retried.
+        """
+        for attempt in range(3):
+            if not latest:
+                raise RuntimeError('missing_navigation_response')
+            final, url = latest[-1], self.page.url
+            if not allowed_request(final.url, self.host) or not allowed_request(url, self.host):
+                raise RuntimeError('unexpected_redirect')
+            loaded = asyncio.get_running_loop().create_future()
+            def on_loaded(*_, pending=loaded):
+                if not pending.done():
+                    pending.set_result(None)
+            # Register before content(): the new event may happen during the
+            # failing read. wait_for_load_state alone can return the old state.
+            self.page.on('domcontentloaded', on_loaded)
+            try:
+                try:
+                    body = await self.page.content()
+                except BrowserError as exc:
+                    if 'Unable to retrieve content because the page is navigating and changing the content' not in str(exc):
+                        raise
+                else:
+                    if not allowed_request(latest[-1].url, self.host) or not allowed_request(self.page.url, self.host):
+                        raise RuntimeError('unexpected_redirect')
+                    if latest[-1] is final and self.page.url == url:
+                        self._document_response = final
+                        return final.status, body
+                if attempt == 2:
+                    break
+                try:
+                    await asyncio.wait_for(loaded, timeout=10)
+                except asyncio.TimeoutError:
+                    break
+            finally:
+                self.page.remove_listener('domcontentloaded', on_loaded)
+                if not loaded.done():
+                    loaded.cancel()
+        # Do not let navigate() treat a moving DOM as a transport timeout and
+        # start the URL again. Persistent navigation remains an explicit failure.
+        raise ParseError('page_navigation_unstable')
+
+    async def _navigate_once(self, url: str, *, ready_selector=None) -> tuple[int, str]:
+        """Observe the final main document; never click or solve access challenges."""
+        if not allowed_request(url, self.host):
+            raise RuntimeError('request_outside_public_source')
+        with self.observe_navigation() as latest:
             initial = await self.page.goto(url, wait_until='domcontentloaded', timeout=30000)
             if not initial:
                 raise RuntimeError('missing_navigation_response')
@@ -95,32 +150,21 @@ class PublicSource:
                 if latest[-1].status != 503 or getattr(latest[-1],'headers',{}).get('retry-after'):
                     break
                 await self.page.wait_for_timeout(1000)
-            final = latest[-1]
-            if not allowed_request(final.url, self.host) or not allowed_request(self.page.url, self.host):
-                raise RuntimeError('unexpected_redirect')
-            body = await self.page.content()
+            status, body = await self.document_content(latest)
             if ready_selector:
                 # Fail on refusals before waiting, then re-check the final main
                 # document: hydration can coincide with a redirect or an error.
-                check_response(final.status, body)
+                check_response(status, body)
                 try:
                     await self.page.wait_for_function(CONTENT_READY_JS, arg=ready_selector, timeout=10000)
                 except BrowserTimeout:
-                    final = latest[-1]
-                    if not allowed_request(final.url, self.host) or not allowed_request(self.page.url, self.host):
-                        raise RuntimeError('unexpected_redirect')
-                    body = await self.page.content()
-                    check_response(final.status, body)
+                    status, body = await self.document_content(latest)
+                    check_response(status, body)
                     raise ParseError('page_content_not_ready',
                                      selector=', '.join(ready_selector) if isinstance(ready_selector, list) else ready_selector) from None
-                final = latest[-1]
-                if not allowed_request(final.url, self.host) or not allowed_request(self.page.url, self.host):
-                    raise RuntimeError('unexpected_redirect')
-                body = await self.page.content()
-                check_response(final.status, body)
-            return final.status, body
-        finally:
-            self.page.remove_listener('response', observe)
+                status, body = await self.document_content(latest)
+                check_response(status, body)
+            return status, body
 
 
     def check_url(self,url):
@@ -168,7 +212,24 @@ class PublicSource:
         self.check_url(url)
         async with self.lock:
             await asyncio.sleep(self.request_interval)
-            response=await self.fetch_read(url,method='GET')
+            seen = set()
+            for _ in range(6):
+                if url in seen:
+                    raise RuntimeError('pdf_redirect_limit')
+                seen.add(url)
+                # Validate each Location before following it, including for
+                # extensionless browser downloads. Never fetch a foreign/login URL.
+                response=await self.fetch_read(url,method='GET',max_redirects=0)
+                if response.status not in (301,302,303,307,308):
+                    break
+                location = response.headers.get('location')
+                if not location:
+                    raise RuntimeError('pdf_redirect_missing_location')
+                url = urljoin(response.url, location)
+                if not allowed_request(url, self.host):
+                    raise RuntimeError('unexpected_redirect')
+            else:
+                raise RuntimeError('pdf_redirect_limit')
             if response.status != 200:raise RuntimeError(f'http_{response.status}')
             data=await response.body()
             if len(data)>6000000:raise RuntimeError('source_response_too_large')

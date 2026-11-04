@@ -24,6 +24,7 @@ CASES = [
     ('flystation', 'https://flystation.net/promotions'),
     ('t2-magnit', 'https://msk.t2.ru/help/article/magnit-plus-premium'),
 ]
+SOURCE_CONFIG = json.loads((ROOT / 'loyalty/sources_normalized.json').read_text())
 
 
 def save_dom(name, stage, raw, metadata):
@@ -52,7 +53,9 @@ async def probe(browser, name, url):
         try:
             for stage in ('initial', 'settled'):
                 if stage == 'initial':
-                    raw = await client.read(url, render=True)
+                    cfg = next((c for c in SOURCE_CONFIG if c['id'] == 't2_magnit_rules'), {}) if name == 't2-magnit' else {}
+                    readiness = {'ready_selector': cfg['ready_selector']} if cfg.get('ready_selector') else {}
+                    raw = await client.read(url, render=True, **readiness)
                 else:
                     # Observe the ordinary page after hydration without another
                     # request, interaction or an assumption about a CSS selector.
@@ -86,6 +89,31 @@ async def probe(browser, name, url):
     print(json.dumps(result, ensure_ascii=False))
 
 
+async def probe_capture(browser, source_id):
+    from known_rules import CONFIG
+    from merchant_queue import capture_page
+    from merchant_extract import load_manifest
+    cfg = CONFIG[source_id]
+    target = {'id': source_id, 'url': cfg['url'], 'partner': cfg['partner'], 'program': cfg['program']}
+    folder = OUT / 'raw-captures'
+    folder.mkdir(exist_ok=True)
+    result = {'source_id': source_id, 'url': cfg['url'], 'model_requests': 0}
+    try:
+        spec = await asyncio.wait_for(capture_page(browser, target, folder), timeout=240)
+        manifest = folder / f'{source_id}-manifest.json'
+        manifest.write_text(json.dumps({'documents': [spec]}, ensure_ascii=False, indent=2)+'\n')
+        documents = load_manifest(manifest)
+        text = (folder / spec['text']).read_text()
+        original = folder / source_id / ('source.pdf' if spec['capture']['scope'] == 'pdf' else 'source.html')
+        result.update(status='captured_and_manifest_validated', documents=len(documents),
+            capture=spec['capture'], images=len(spec['images']), text_characters=len(text),
+            source_sha256=hashlib.sha256(original.read_bytes()).hexdigest())
+    except Exception as exc:
+        result.update(status='failed', error=error_record(exc, 'capture', cfg['url']))
+    (OUT / f'{source_id}-capture.json').write_text(json.dumps(result, ensure_ascii=False, indent=2)+'\n')
+    print(json.dumps(result, ensure_ascii=False))
+
+
 async def main():
     OUT.mkdir(parents=True, exist_ok=True)
     async with async_playwright() as playwright:
@@ -93,6 +121,8 @@ async def main():
         try:
             for case in CASES:
                 await asyncio.wait_for(probe(browser, *case), timeout=180)
+            for source_id in ('rzd_finuslugi_rules', 'af_vipzal_rules'):
+                await probe_capture(browser, source_id)
         finally:
             await browser.close()
 

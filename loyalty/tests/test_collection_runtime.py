@@ -77,10 +77,30 @@ class RuntimeTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual([r['source_id'] for r,_ in results],['s7','slow','last'])
 
     async def test_waiting_in_queue_does_not_consume_source_timeout(self):
+        # Advance the event-loop clock while the first source holds the slot.
+        # Millisecond sleeps made a busy runner time out the second source even
+        # when its budget correctly started only after admission.
+        loop=asyncio.get_running_loop()
+        started=asyncio.Event();release=asyncio.Event()
         async def run(cfg):
-            await asyncio.sleep(.04 if cfg['id']=='s7' else .01)
+            if cfg['id']=='s7':
+                started.set();await release.wait()
             return good(cfg) if cfg['id']=='s7' else failed_result(cfg,NOW,'fixture_completed')
-        await collect_batch(CONFIGS[:2],run,lambda c:.2 if c['id']=='s7' else .03,self.save,NOW,concurrency=1)
+        task=asyncio.create_task(collect_batch(CONFIGS[:2],run,
+            lambda c:120 if c['id']=='s7' else 30,self.save,NOW,concurrency=1))
+        try:
+            await asyncio.wait_for(started.wait(),timeout=5)
+            with patch.object(loop,'time',return_value=loop.time()+40), \
+                    patch.object(loop,'slow_callback_duration',60):
+                # Let due timeout callbacks run while the slot is occupied.
+                await asyncio.sleep(0);await asyncio.sleep(0)
+            # Restore real time before waits so a regression cannot freeze the
+            # test's own watchdog along with the simulated source clock.
+            release.set();await asyncio.wait_for(task,timeout=5)
+        finally:
+            release.set()
+            if not task.done():task.cancel()
+            await asyncio.gather(task,return_exceptions=True)
         self.assertEqual(self.latest()['sources'][1]['coverage'],'fixture_completed')
 
     async def test_source_timeout_does_not_discard_another_source(self):

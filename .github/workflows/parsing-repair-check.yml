@@ -4,7 +4,7 @@ on:
     branches: [fix/parsing-errors-20261105]
     paths: [diagnostics/parsing_source_probe.py, .github/workflows/parsing-repair-check.yml]
   pull_request:
-    paths: [loyalty/**, diagnostics/parsing_source_probe.py, diagnostics/test_merchant_evidence_browser.py, .github/workflows/parsing-repair-check.yml]
+    paths: [loyalty/**, diagnostics/parsing_source_probe.py, diagnostics/test_merchant_evidence_browser.py, diagnostics/test_source_parsing_browser.py, .github/workflows/parsing-repair-check.yml]
 permissions:
   contents: read
 concurrency:
@@ -14,13 +14,14 @@ jobs:
   source-dom:
     if: github.event_name == 'push'
     runs-on: ubuntu-24.04
-    timeout-minutes: 12
+    timeout-minutes: 18
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with: {persist-credentials: false}
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with: {python-version: '3.12'}
       - run: python -m pip install -r loyalty/requirements.txt
+      - run: sudo apt-get update -qq && sudo apt-get install -y poppler-utils
       - run: python -m playwright install --with-deps chromium
       - name: Preserve code identity and inspect original public DOM
         run: |
@@ -53,6 +54,7 @@ jobs:
           git rev-parse HEAD > parsing-test-output/commit.txt
           python -m unittest discover -s loyalty/tests -v > parsing-test-output/python.log 2>&1
           python diagnostics/test_merchant_evidence_browser.py > parsing-test-output/browser.log 2>&1
+          python diagnostics/test_source_parsing_browser.py > parsing-test-output/source-browser.log 2>&1
           node --test key/refresh.test.mjs > parsing-test-output/key.log 2>&1
           git diff --exit-code
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
