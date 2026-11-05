@@ -40,7 +40,7 @@ PAGE_GEOMETRY_JS = '''({x:scrollX,y:scrollY,w:innerWidth,h:innerHeight,
 
 
 @contextmanager
-def capture_diagnostics(folder: Path, url: str):
+def capture_diagnostics(folder: Path, url: str, *, transport_snapshot=None):
     """Keep failed acquisition evidence separate from manifest admission."""
     info = {'version': 1, 'status': 'acquiring', 'stage': 'navigate', 'source_url': url,
             'started_at': datetime.now(timezone.utc).isoformat(), 'files': {},
@@ -57,6 +57,10 @@ def capture_diagnostics(folder: Path, url: str):
     else:
         info.update(status='complete', stage='complete')
     finally:
+        if transport_snapshot:
+            transport = transport_snapshot()
+            if transport:
+                info['transport'] = transport
         info['finished_at'] = datetime.now(timezone.utc).isoformat()
         save(folder / 'capture-diagnostics.json', info)
 

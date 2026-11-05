@@ -85,6 +85,10 @@ class PublicSource:
             return self._verified_transport.evidence()
         return None
 
+    def capture_transport_evidence(self):
+        """Return acquired receipts even after a failed or cancelled capture."""
+        return self._verified_transport.evidence() if self._verified_transport else None
+
     async def navigate(self, url: str, *, ready_selector=None) -> tuple[int, str]:
         # Preserve the same anonymous context/URL. Only failed connections retry;
         # actual HTTP refusals and access challenges remain terminal for this read.

@@ -165,7 +165,7 @@ class VerifiedBrowserTransport:
             raise ReadError(self.failures[0]['reason'])
 
     async def finish(self):
-        end = min(self.reader.deadline, time.monotonic() + 30)
+        end = self.reader.deadline
         while True:
             self.check()
             if time.monotonic() >= end:

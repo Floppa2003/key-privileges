@@ -4,11 +4,13 @@ Only HTTP/browser I/O is substituted. The trust bundle, source scope, routing,
 status checks and PublicSource acquisition path run their production code.
 """
 import hashlib
+import json
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 from playwright.async_api import Error as BrowserError
 import requests
@@ -16,6 +18,7 @@ import requests
 sys.path.insert(0, str(Path(__file__).parents[1]))
 from public_transport import PublicSource
 from recovered_contract import CA_FILES, SOURCES
+import merchant_queue
 
 URL = SOURCES['af_vtb_rules']['url']
 PDF_URL = SOURCES['af_primbank_rules']['url']
@@ -151,6 +154,44 @@ class CaptureTLSTests(unittest.IsolatedAsyncioTestCase):
                 async with PublicSource(browser, URL): pass
         self.assertEqual([u for u, _ in session.calls], [CA_FILES[0][0]])
         self.assertTrue(session.closed)
+
+    async def test_changed_ca_retains_setup_failure_and_trust_provenance(self):
+        session, browser = Session(bad_ca=True), Browser()
+        with tempfile.TemporaryDirectory() as temp, \
+             patch('recovered_sources.CA_FILES', FIXTURE_CAS), \
+             patch('recovered_sources.requests.Session', return_value=session), \
+             patch('recovered_sources.time.sleep'):
+            out = Path(temp)
+            with self.assertRaisesRegex(RuntimeError, 'official_ca_digest_changed_or_unavailable'):
+                await merchant_queue.capture_page(browser, {'id': 'failed', 'url': URL,
+                    'partner': 'Bank', 'program': 'Fixture'}, out)
+            diagnostic = json.loads((out / 'failed/capture-diagnostics.json').read_text())
+        self.assertEqual(diagnostic['status'], 'failed')
+        self.assertEqual(diagnostic['stage'], 'source_setup')
+        self.assertEqual(diagnostic['transport']['document_url'], URL)
+        self.assertFalse(diagnostic['transport']['browser_tls_verification_disabled'])
+        self.assertEqual(diagnostic['transport']['responses'], [])
+
+    async def test_refused_document_keeps_its_verified_response_and_failure_receipts(self):
+        raw = b'Original HTTP refusal'
+        session, browser = Session(page=Response(raw, status=403)), Browser()
+        with tempfile.TemporaryDirectory() as temp, \
+             patch('recovered_sources.CA_FILES', FIXTURE_CAS), \
+             patch('recovered_sources.requests.Session', return_value=session), \
+             patch('recovered_sources.time.sleep'), \
+             patch.object(Page, 'set_viewport_size', new=AsyncMock(), create=True):
+            out = Path(temp)
+            with self.assertRaisesRegex(RuntimeError, 'capture_tls_http_403'):
+                await merchant_queue.capture_page(browser, {'id': 'failed', 'url': URL,
+                    'partner': 'Bank', 'program': 'Fixture'}, out)
+            diagnostic = json.loads((out / 'failed/capture-diagnostics.json').read_text())
+        self.assertEqual(diagnostic['status'], 'failed')
+        self.assertEqual(diagnostic['stage'], 'navigate')
+        response, = diagnostic['transport']['responses']
+        self.assertEqual(response['url'], URL)
+        self.assertEqual(response['http_status'], 403)
+        self.assertEqual(response['entity_sha256'], hashlib.sha256(raw).hexdigest())
+        self.assertEqual(diagnostic['transport']['failures'][0]['reason'], 'capture_tls_http_403')
 
 
 if __name__ == '__main__': unittest.main()

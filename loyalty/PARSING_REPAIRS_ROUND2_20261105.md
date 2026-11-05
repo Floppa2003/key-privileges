@@ -25,6 +25,9 @@ queue policy or publication rules.
    browser TLS. No system CA installation or TLS verification bypass is used.
    Response hashes and trust provenance are recorded. Cascading resources,
    cancellation, redirects and late capture changes have regression coverage.
+   The initial live VTB probe exposed an additional 30-second readiness cap;
+   resource completion now uses the existing overall source deadline instead.
+   Failure diagnostics also retain response and refusal receipts after cleanup.
 4. **Wide screenshots failed despite fitting the total pixel budget.** PNG
    tiles now cover both axes in row-major order, without rescaling or dropping
    pixels. The existing maximum remains 40 images of at most 1024 by 1024
@@ -59,8 +62,8 @@ records or observation dates:
 
 Behavioral tests first reproduced the original failures. The repaired cases
 then passed, including 58 EKP targeted tests, 12 geometry/consistency tests,
-8 static-source tests and 9 TLS transport/review tests. The final local full
-run passed 1670 Python tests and 7 KEY tests. The complete suite is run again
+8 static-source tests and 13 TLS transport/review tests. The final local full
+run passed 1674 Python tests and 7 KEY tests. The complete suite is run again
 in the PR against its exact execution tree; real Chromium tests run there.
 
 ```bash
@@ -72,10 +75,19 @@ python diagnostics/test_verified_capture_browser.py
 node --test key/refresh.test.mjs
 ```
 
-The round-two branch workflow also records fresh, read-only observations for
-the two static pages and ten affected capture URLs. Probe completion means
+The initial round-two branch workflow recorded fresh, read-only observations
+for the two static pages and ten affected capture URLs. GLORIA and Istochnik
+each produced one valid record. Moskvich and all four merchant URLs captured
+successfully. The latter have actual widths 1035, 1137, 1027 and 1092 pixels,
+and are now represented without clipping. Primbank kept all four PDF pages;
+Uralsib captured successfully. HSE measured 50,087 pixels high and correctly
+failed the existing 40-tile limit. VTB exposed the readiness cap described
+above; NSPK timed out without producing a source document. These observations
+are in run 42049358910 at commit 6639c1eff784a81e7747a8b11971f8b9c84c2ba2.
+
+Only VTB and NSPK are selected for the follow-up probe. Probe completion means
 evidence was recorded, not that all sources succeeded. Actual sizes and source
-failures remain in the artifacts. The PR records final CI and live results.
+failures remain in the artifacts. The PR records final CI and follow-up results.
 
 After merge, the existing request workflow selects only `ural_gloria_rules`
 and `af_istochnik` for normal validated publication and destination readback.

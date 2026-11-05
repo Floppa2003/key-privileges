@@ -353,8 +353,12 @@ async def capture_page(browser, target: dict, out: Path) -> dict:
     folder = out / ident
     folder.mkdir()
     capture = {'scope': 'pdf', 'target_found': False, 'content_ready': True}
-    with capture_diagnostics(folder, url) as diagnostic:
-        async with PublicSource(browser, url) as source:
+    source = PublicSource(browser, url)
+    with capture_diagnostics(folder, url,
+                             transport_snapshot=getattr(source, 'capture_transport_evidence', None)) as diagnostic:
+        diagnostic['stage'] = 'source_setup'
+        async with source:
+            diagnostic['stage'] = 'navigate'
             finish = getattr(source, 'finish_capture', None)
             raw = None
             if urlsplit(url).path.lower().endswith('.pdf'):

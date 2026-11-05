@@ -37,6 +37,7 @@ GROUPS = {
             ('nspk_ekp_rules', 'ЕКП'), ('uralsib_rzd_rules', 'РЖД'))
     ],
 }
+GROUPS['banks_followup'] = [row for row in GROUPS['banks'] if row[0] in ('af_vtb_rules', 'nspk_ekp_rules')]
 
 
 def save(path, data):

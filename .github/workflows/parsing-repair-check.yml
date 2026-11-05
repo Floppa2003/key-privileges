@@ -18,7 +18,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        group: [static, catalogue, merchants, banks]
+        # The initial run preserved all twelve observations. Recheck only the
+        # two remaining bank failures after the resource-deadline correction.
+        group: [banks_followup]
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with: {persist-credentials: false}

@@ -42,6 +42,72 @@ class CaptureTLSReviewTests(unittest.IsolatedAsyncioTestCase):
         transport.reader.interval = 0
         return transport
 
+    async def finish_with_resource_delay(self, delay):
+        """Advance only the transport clock while a real route awaits browser I/O."""
+        entered, release = asyncio.Event(), asyncio.Event()
+
+        async def delayed_fulfill():
+            entered.set()
+            await release.wait()
+
+        session = Session()
+        with patch('recovered_sources.CA_FILES', FIXTURE_CAS), \
+             patch('recovered_sources.requests.Session', return_value=session):
+            transport = self.transport()
+            task = None
+            try:
+                await transport.start()
+                task = asyncio.create_task(transport.route(Route(ASSET_A, on_fulfill=delayed_fulfill)))
+                await asyncio.wait_for(entered.wait(), 2)
+                clock = SimpleNamespace(now=1000.0)
+                transport.reader.deadline = clock.now + 210
+                ready_at = clock.now + delay
+
+                async def controlled_wait(pending, *, timeout):
+                    until_ready = max(0, ready_at - clock.now)
+                    clock.now += min(timeout, until_ready)
+                    if until_ready <= timeout:
+                        release.set()
+                        await asyncio.gather(*pending)
+                        return set(pending), set()
+                    return set(), set(pending)
+
+                async def controlled_sleep(seconds):
+                    clock.now += seconds
+                    await asyncio.sleep(0)
+
+                # Replace module bindings, never stdlib time.monotonic or the
+                # event loop clock. No 30/210-second wall-clock wait is involved.
+                scheduler = SimpleNamespace(current_task=asyncio.current_task,
+                                            wait=controlled_wait, sleep=controlled_sleep)
+                with patch('capture_tls.time', SimpleNamespace(monotonic=lambda: clock.now)), \
+                     patch('capture_tls.asyncio', scheduler):
+                    failure = None
+                    try:
+                        await transport.finish()
+                    except ReadError as exc:
+                        failure = str(exc)
+                return {'failure': failure, 'elapsed': clock.now - 1000,
+                        'resource_completed': task.done()}
+            finally:
+                release.set()
+                if task is not None:
+                    await asyncio.gather(task, return_exceptions=True)
+                await transport.close()
+
+    async def test_resource_after_thirty_seconds_uses_existing_source_budget(self):
+        result = await self.finish_with_resource_delay(45)
+        self.assertIsNone(result['failure'])
+        self.assertTrue(result['resource_completed'])
+        self.assertGreaterEqual(result['elapsed'], 45)
+        self.assertLess(result['elapsed'], 210)
+
+    async def test_resource_after_source_deadline_stays_failed(self):
+        result = await self.finish_with_resource_delay(211)
+        self.assertEqual(result['failure'], 'capture_tls_resources_not_complete')
+        self.assertFalse(result['resource_completed'])
+        self.assertEqual(result['elapsed'], 210)
+
     async def test_finish_waits_for_cascaded_resource_and_reports_its_refusal(self):
         loop = asyncio.get_running_loop()
         a_fulfilled, release_a, b_requested = asyncio.Event(), asyncio.Event(), asyncio.Event()
