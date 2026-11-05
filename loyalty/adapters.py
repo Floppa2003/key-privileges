@@ -6,6 +6,7 @@ import re
 from datetime import datetime
 from urllib.parse import urljoin, urlsplit, parse_qsl, urlencode
 from bs4 import BeautifulSoup
+from html_text import html_text
 from normalized import make_offer, text, BLOCKED
 from partner_pages import CONFIG as PARTNER_PAGES,extract_partner_page,utair_partners,content as block_content
 from t2_source import page_records as t2_page_records,URLS as T2_URLS
@@ -19,7 +20,7 @@ BENEFIT = re.compile(r'скидк|подар|комплимент|кешбэк|�
 
 
 def node_text(n) -> str:
-    return text(n.get_text(' ',strip=True)) if n else ''
+    return html_text(n)
 
 
 def tables_in(n) -> list:

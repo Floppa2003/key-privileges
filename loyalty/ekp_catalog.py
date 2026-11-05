@@ -10,6 +10,7 @@ import json
 import re
 from urllib.parse import urlsplit
 from bs4 import BeautifulSoup
+from html_text import html_text
 
 ROOT='https://ekp.spb.ru/capabilities/loyalty/'
 API='https://ekp.spb.ru/api/portal/loyalty/partners'
@@ -52,12 +53,7 @@ def markup(value):
 
 
 def plain(raw):
-    soup=BeautifulSoup(raw,'html.parser')
-    for n in soup.select('br'):n.replace_with('\n')
-    # Preserve block boundaries so rates from separate clauses are not joined.
-    for n in soup.select('p,li,tr,div,h1,h2,h3,h4'):
-        n.insert_before('\n');n.insert_after('\n')
-    return '\n'.join(' '.join(line.split()) for line in soup.get_text(' ',strip=False).splitlines() if line.strip())
+    return html_text(raw)
 
 
 def public_row(row):
@@ -135,7 +131,7 @@ def validate_record(record):
     if not isinstance(row,dict) or set(row)-ROW_KEYS or public_row(row)!=row:
         raise ValueError('ekp_public_projection_invalid')
     f=fields(row)
-    if any(record[k]!=text(v) for k,v in f.items()):raise ValueError('ekp_owned_fields_mismatch')
+    if any(record[k]!=text(v, markup=False) for k,v in f.items()):raise ValueError('ekp_owned_fields_mismatch')
     if (record['source_url']!=API or record['native_id']!='partner:'+row['id']+':region:'+REGION
         or record['link_kind']!='page_block' or record['benefit_url'] is not None or record['category'] is not None
         or record['tables'] or record['valid_from'] is not None or record['valid_until'] is not None

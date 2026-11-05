@@ -35,6 +35,35 @@ class DirectDocumentTests(unittest.TestCase):
         entry=self.entries()[0]
         self.assertEqual(entry['kind'],'direct_pdf')
         self.assertEqual(entry['url'],URL)
+    def test_document_discovery_keeps_literal_labels_and_context(self):
+        raw=('<div>Скидка 1<span>0</span>%. '
+             '<a href="'+URL+'">Правила &lt;b&gt;VIP&lt;/b&gt;; &amp;lt;tag&amp;gt;</a></div>')
+        entry=m.discover_documents(raw)[0]
+        self.assertEqual(entry['labels'],['Правила <b>VIP</b>; &lt;tag&gt;'])
+        self.assertEqual(entry['contexts'],['Скидка 10%. Правила <b>VIP</b>; &lt;tag&gt;'])
+    def test_encoded_pdf_extension_is_discovered_without_rewriting_path(self):
+        for path in ('/utair-log/new%2Erules%2Epdf','/utair-log/new-rules.%70%64%66',
+                     '/utair-log/new-rules.%50%44%46'):
+            with self.subTest(path=path):
+                url=ORIGIN+path+'?X-Amz-Signature=FIRST%2BSECRET%2FVALUE'
+                try:entry=self.entries(url)[0]
+                except RuntimeError as exc:self.fail('Published encoded PDF was lost: '+str(exc))
+                self.assertEqual(entry['kind'],'direct_pdf')
+                self.assertEqual(entry['url'],url)
+                self.assertEqual(entry['resource']['path'],path)
+    def test_encoded_extension_read_preserves_signed_url_and_public_identity(self):
+        url=ORIGIN+'/utair-log/new%2Erules%2Epdf?X-Amz-Signature=FIRST%2BSECRET%2FVALUE'
+        try:row=self.fetch(url=url)[0]
+        except RuntimeError as exc:self.fail('Published encoded PDF was lost: '+str(exc))
+        self.assertIn('New current rules 27 percent.',row['conditions_text'])
+        self.assertEqual(row['details']['direct_document_resources'][0]['path'],'/utair-log/new%2Erules%2Epdf')
+        self.assertEqual(row['source_url'],m.ROOT)
+        self.assertNotIn('SECRET',json.dumps(row))
+        self.assertNotIn('X-Amz-',json.dumps(row))
+        validate_offer(row)
+    def test_encoded_pdf_extension_keeps_traversal_rejection(self):
+        with self.assertRaises((ValueError,RuntimeError)):
+            self.entries(ORIGIN+'/utair-log/%2e%2e/private%2Epdf')
     def test_new_paths_and_rotating_queries_are_not_a_fixed_inventory(self):
         a=self.entries()[0]; b=self.entries(URL.replace('FIRST_SECRET','SECOND_SECRET'))[0]
         c=self.entries(URL.replace('brand-new-rules','other-new-document'))[0]
@@ -67,6 +96,25 @@ class DirectDocumentTests(unittest.TestCase):
         self.assertEqual(len(merged),1);self.assertEqual(merged[0]['id'],rows[0]['id'])
         self.assertEqual(len(merged[0]['details']['direct_document_resources']),1)
         validate_offer(merged[0])
+    def test_identical_pdf_aliases_keep_all_discovery_labels_and_contexts(self):
+        raw=('<div>Only Bronze tier <a href="'+ORIGIN+'/utair-log/first.pdf">Hotel rules</a></div>'
+             '<div>Only Gold tier <a href="'+ORIGIN+'/utair-log/second.pdf">Transfer rules</a></div>')
+        entries=m.discover_documents(raw)
+        rows=[]
+        with patch.object(m.requests,'get',return_value=Response(pdf(['Same document rules for both links.']))):
+            for entry in entries:rows.extend(m.fetch_document(entry,NOW,'a'*64))
+        merged=m.merge_documents(rows)
+        self.assertEqual(len(merged),1)
+        row=merged[0]
+        self.assertEqual(row['id'],rows[0]['id'])
+        self.assertEqual(row['details']['discovery_label'],'Hotel rules')
+        self.assertEqual(row['details'].get('discovery_labels'),['Hotel rules','Transfer rules'])
+        self.assertEqual(row['details']['discovery_contexts'],
+                         ['Only Bronze tier Hotel rules','Only Gold tier Transfer rules'])
+        self.assertEqual(len(row['details']['direct_document_resources']),2)
+        self.assertEqual(row['conditions_text'],rows[0]['conditions_text'])
+        self.assertIn('Same document rules for both links.',row['conditions_text'])
+        validate_offer(row)
     def test_untrusted_direct_route_is_not_discovered(self):
         for url in ['https://evil.example/utair-log/a.pdf','https://eu-s3.beelinecloud.ru.evil/utair-log/a.pdf']:
             with self.assertRaisesRegex(RuntimeError,'no_public_document_links_discovered'):self.entries(url)

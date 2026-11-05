@@ -19,9 +19,13 @@ QUOTES = {'«': '»', '“': '”', '"': '"'}
 
 
 def candidate(value: str, position: int, prefix: str) -> tuple[str | None, int]:
-    gap = re.match(r'[ \t]*(?:(?P<delimiter>[:—–-])[ \t]*(?:\n[ \t]*)?)?', value[position:])
+    # A label and its value can occupy adjacent source lines without a colon.
+    # Do not cross a blank line into a different section.
+    gap = re.match(r'[ \t]*(?:(?P<delimiter>[:—–-])[ \t]*)?(?:\r?\n[ \t]*)?', value[position:])
     delimited = bool(gap['delimiter'])
     start = position + gap.end()
+    if '\n' in gap[0] and not delimited and not re.search(r'(?:^|\n)[ \t]*$', prefix):
+        return None, start
     tail = value[start:]
     quoted = tail[:1] in QUOTES
     if quoted:

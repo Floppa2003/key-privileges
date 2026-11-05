@@ -11,6 +11,7 @@ import re
 from datetime import datetime
 from urllib.parse import parse_qsl, unquote, urlencode, urlsplit
 from bs4 import BeautifulSoup
+from html_text import html_text
 
 HOST='https://www.aeroflot.ru'
 ROOT=HOST+'/ru-ru/afl_bonus/partners'
@@ -183,13 +184,10 @@ def plain(value, *, links=None, field=None):
         for anchor in soup.select('a[href]'):
             try:url,kind=published_link(anchor['href'])
             except (ValueError,TypeError):continue
-            label=plain(anchor.get_text(' ',strip=True))
+            label=html_text(anchor)
             entry={'field':field,'label':label,'url':url,'kind':kind,'target_read':False}
             if entry not in links:links.append(entry)
-    for br in soup.select('br'):br.replace_with('\n')
-    for tag in soup.select('p,div,li,tr,h1,h2,h3'):tag.insert_before('\n')
-    result=re.sub(r'[^\S\n]+',' ',soup.get_text(' ',strip=False)).strip()
-    return re.sub(r'\n[ \t]*\n+','\n',result)
+    return html_text(soup)
 
 
 def catalog(obs):
@@ -265,9 +263,9 @@ def semantic_fields(projection):
     for key,label in (('accumulation','Начисление: поля тарифов источника'),('spending','Использование: поля тарифов источника')):
         if p['awards'][key]:
             sections.append(label+'\n'+'\n'.join(f"Мили: {a['miles']:g}; {a['description']}" for a in p['awards'][key]))
-    full=text('\n\n'.join(x for x in sections if x))
+    full=text('\n\n'.join(x for x in sections if x), markup=False)
     if not full or len(full)>35000:raise ValueError('af_empty_or_oversized_terms')
-    return {'benefit':text(p['short_description']),'conditions':full,'redemption':''}
+    return {'benefit':text(p['short_description'], markup=False),'conditions':full,'redemption':''}
 
 
 def fields(projection):
@@ -281,7 +279,7 @@ def fields(projection):
             if address in full or address in seen:continue
             seen.add(address)
             addresses.append((link['label']+': ' if link['label'] else '')+address)
-        if addresses:full=text(full+'\n\nСсылки и контакты источника\n'+'\n'.join(addresses))
+        if addresses:full=text(full+'\n\nСсылки и контакты источника\n'+'\n'.join(addresses), markup=False)
     if len(full)>35000:raise ValueError('af_empty_or_oversized_terms')
     return source['benefit'],full
 
@@ -364,7 +362,7 @@ def validate_record(r):
         or r['title']!=p['title'] or r['partner_name']!=p['title'] or r['benefit_text']!=benefit or r['conditions_text']!=conditions
         or r['redemption_text']!='' or r['source_status']!='public_api_google_import' or r['record_kind']!='partner_offer'
         or r['link_kind']!='detail_page' or r['benefit_url']!=r['source_url'] or r['tables']!=[]
-        or r['category']!=text('; '.join(c['title'] for c in preview['categories']))
+        or r['category']!=text('; '.join(c['title'] for c in preview['categories']), markup=False)
         or r['valid_from'] is not None or r['valid_until'] is not None or not set(WARNINGS)<=set(r['warnings'])):
         raise ValueError('af_record_source_binding')
     if (d.get('retrieval_method')!=METHOD or d.get('permission_basis')!=PERMISSION or d.get('origin_http_status') is not None

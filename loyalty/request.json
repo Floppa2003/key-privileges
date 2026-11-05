@@ -1,9 +1,6 @@
 {
-  "request_id": "2026-11-05-parsing-round2-static-http",
-  "source_ids": [
-    "ural_gloria_rules",
-    "af_istochnik"
-  ],
-  "reason": "Read the two reviewed static partner pages through the existing validated HTTP transport after merge. Publish only freshly accepted GLORIA and Istochnik records through the existing Sheets writer and verify destination readback. Preserve source identity, refusal and challenge checks, previous observations for unavailable records, manual values and delivery budgets.",
+  "request_id": "2026-11-06-parsing-continuity",
+  "source_ids": [],
+  "reason": "Refresh registered public sources through the existing collector after the reviewed HTML, PDF, document discovery and literal numeric parsing fixes. Publish accepted fresh records and deterministic common views through the existing Sheets writers, then verify destination readback. Keep prior observations for unavailable sources, source identities, manual fields, access controls and collection budgets.",
   "publish": true
 }

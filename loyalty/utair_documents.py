@@ -5,11 +5,12 @@ import copy
 import hashlib
 import json
 import re
-from urllib.parse import urljoin,urlsplit
+from urllib.parse import unquote,urljoin,urlsplit
 import requests
 from bs4 import BeautifulSoup
 from document_text import extract_pdf,document_records,MAX_BYTES
-from normalized import content_hash,text
+from normalized import content_hash
+from html_text import html_text
 from read_budget import within_source_budget
 from practical_scope import follow_document_link
 
@@ -39,11 +40,11 @@ def discover_documents(raw):
         url=urljoin(ROOT,a['href'].strip());u=urlsplit(url)
         if u.hostname=='ut0.ru':
             key=checked_shortlink(url);kind='shortlink';resource=None
-        elif u.hostname=='eu-s3.beelinecloud.ru' and u.path.lower().endswith('.pdf'):
+        elif u.hostname=='eu-s3.beelinecloud.ru' and unquote(u.path).lower().endswith('.pdf'):
             resource=direct_resource(url);key='direct-'+resource['resource_id'];kind='direct_pdf'
         else:continue
         context=a.find_parent(class_='tn-atom__tip-text') or a.parent
-        label=text(a.get_text(' ',strip=True));context=text(context.get_text(' ',strip=True))
+        label=html_text(a);context=html_text(context)
         if re.search(r'X-Amz-|[?&](?:signature|token)=',label+' '+context,re.I):
             raise ValueError('transient_document_url_in_visible_context')
         if key not in result:
@@ -87,6 +88,7 @@ def fetch_document(entry,observed_at,parent_sha256):
             locator=('Current landing a[href] resource path: '+resource['path']) if direct else '',
             extra_details={'direct_document_resources':[resource]} if direct else None)
         for row in rows:
+            row['details']['discovery_labels']=entry['labels'].copy()
             row['details']['discovery_contexts']=entry['contexts']
             row['content_sha256']=content_hash(row)
         return rows
@@ -95,21 +97,63 @@ def fetch_document(entry,observed_at,parent_sha256):
 
 
 def merge_documents(rows):
-    result=[];by_hash={}
-    for original in rows:
-        row=copy.deepcopy(original);d=row['details']
-        key=(d['document_sha256'],d['document_part']['number'])
-        if key in by_hash:
-            first=by_hash[key]
-            if first['conditions_text']!=row['conditions_text']:
+    """Deduplicate live aliases using one coherent extraction of each PDF.
+
+    Recoverable OCR failures can change both text and part boundaries. Prefer
+    an extraction that completed every page, never whichever text is longest.
+    Equally complete but contradictory extractions still fail closed.
+    """
+    by_hash={}
+    for row in rows:by_hash.setdefault(row['details']['document_sha256'],[]).append(row)
+
+    def complete(parts):
+        detail=parts[0]['details'];total=detail['document_part']['total'];pages=detail['page_count']
+        return ([r['details']['document_part']['number'] for r in parts]==list(range(1,total+1))
+            and {p['number'] for r in parts for p in r['details']['pages']}==set(range(1,pages+1))
+            and all(r['details']['document_part']['total']==total and r['details']['page_count']==pages
+                and not r['details']['document_errors']
+                and all(p['method'] in ('native_pdf_text','ocr_unverified') for p in r['details']['pages'])
+                for r in parts))
+
+    def signature(parts):
+        return [(r['details']['document_part'],r['conditions_text']) for r in parts]
+
+    result=[]
+    for aliases in by_hash.values():
+        first=aliases[0];prefix=first['native_id'].split(':part:')[0]
+        variants={};merged={k:[] for k in ('public_aliases','direct_document_resources','discovery_labels','discovery_contexts')}
+        for row in aliases:
+            d=row['details'];key=(row['native_id'].split(':part:')[0],row['observed_at'])
+            parts=variants.setdefault(key,{});number=d['document_part']['number']
+            if number in parts and parts[number]['conditions_text']!=row['conditions_text']:
                 raise ValueError('same_document_digest_different_text')
-            for alias in d['public_aliases']:
-                if alias not in first['details']['public_aliases']:first['details']['public_aliases'].append(alias)
-            for resource in d.get('direct_document_resources',[]):
-                dest=first['details'].setdefault('direct_document_resources',[])
-                if resource not in dest:dest.append(resource)
-            first['content_sha256']=content_hash(first)
-        else:by_hash[key]=row;result.append(row)
+            parts.setdefault(number,row)
+            for field,values in merged.items():
+                source=d.get(field,[])
+                if field=='discovery_labels' and field not in d:
+                    source=[d['discovery_label']] if d.get('discovery_label') else []
+                for value in source:
+                    if value not in values:values.append(copy.deepcopy(value))
+        choices=[list(parts[n] for n in sorted(parts)) for parts in variants.values()]
+        preferred=[parts for parts in choices if complete(parts)] or choices
+        selected=preferred[0]
+        for candidate in preferred[1:]:
+            if signature(selected)!=signature(candidate):
+                raise ValueError('same_document_digest_different_text')
+        for source in selected:
+            row=copy.deepcopy(source);d=row['details'];part=d['document_part']
+            row['native_id']=prefix+(':part:'+str(part['number']) if part['total']>1 else '')
+            row['id']=hashlib.sha256((row['source_id']+'\n'+row['native_id']).encode()).hexdigest()
+            for field in ('source_url','benefit_url','link_kind','observed_at'):row[field]=first[field]
+            row['locator']=first['locator'].rsplit('PDF ',1)[0]+'PDF '+','.join(str(p['number']) for p in d['pages'])
+            for field in ('parent_source','parent_response_sha256','discovery_label'):d[field]=first['details'][field]
+            for field,values in merged.items():
+                if values or field in d:d[field]=copy.deepcopy(values)
+            warning='temporary_document_url_not_persisted_use_parent_locator'
+            if warning not in first['warnings']:row['warnings']=[w for w in row['warnings'] if w!=warning]
+            elif warning not in row['warnings']:row['warnings'].append(warning)
+            row['content_sha256']=content_hash(row)
+            result.append(row)
     return result
 
 

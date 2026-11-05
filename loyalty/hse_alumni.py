@@ -4,6 +4,7 @@ import hashlib,json,re
 from urllib.parse import urljoin,urlsplit
 from datetime import datetime
 from bs4 import BeautifulSoup,Comment,Tag
+from html_text import html_text
 from normalized import make_offer,text,normalize_rates,number
 from partner_pages import content
 from promo_codes import extract_promocodes,candidate
@@ -18,12 +19,12 @@ UNANCHORED_HEADINGS={'mordapechat':'Морда довольна. Студия п
 
 def heading_matches_name(heading, name):
     """An exact current card name, optionally followed by a delimited descriptor."""
-    h=text(heading).casefold();n=text(name).casefold()
+    h=text(heading, markup=False).casefold();n=text(name, markup=False).casefold()
     return bool(n) and (h==n or any(h.startswith(n+separator) for separator in ('. ', ': ', ' — ', ' – ')))
 
 
 def heading_identity(section, names):
-    titles={text(h.get_text(' ',strip=True)) for h in section.select('h1,h2,h3')}
+    titles={html_text(h) for h in section.select('h1,h2,h3')}
     matches=[(key,title) for key,name in names.items() for title in titles if heading_matches_name(title,name)]
     if len(matches)>1:raise ValueError('hse_ambiguous_heading_ownership')
     return matches[0] if matches else None
@@ -125,7 +126,7 @@ def _owned_blocks(dom):
     for item in cards:
         for label in item.select('.fa-person__name'):
             target=urlsplit(urljoin(ROOT,label.get('href','').strip()))
-            if target.fragment:names[target.fragment]=text(label.get_text(' ',strip=True))
+            if target.fragment:names[target.fragment]=html_text(label)
     # Reserve explicit-anchor sections before considering heading-only joins.
     # The first nonempty section after an anchor belongs to that anchor even
     # when its shorter display title also matches a different catalogue card.
@@ -137,13 +138,13 @@ def _owned_blocks(dom):
         owner=targets[0].find_parent('div',class_='builder-section')
         if owner is None or owner.parent is not root:raise ValueError('hse_anchor_owner')
         if len(owner.select('a[name]'))!=1:raise ValueError('hse_anchor_ambiguous')
-        parts=[owner] if text(owner.get_text(' ',strip=True)) else []
+        parts=[owner] if html_text(owner) else []
         visual_parts=[owner] if parts or _has_visual(owner) else []
         for node in owner.next_siblings:
             if not isinstance(node,Tag):continue
             if node.select('a[name]') or node.select('.nom h1'):break
             if node.select('.fa-person__item'):raise ValueError('hse_detail_reentered_inventory')
-            if not text(node.get_text(' ',strip=True)):
+            if not html_text(node):
                 if _has_visual(node):visual_parts.append(node)
                 continue
             if parts:
@@ -172,7 +173,7 @@ def _owned_blocks(dom):
         group=card.find_parent(class_='fa-card__group')
         headings=group.select('.builder-section__title') if group else []
         if len(labels)!=1 or len(summaries)!=1 or len(headings)!=1:raise ValueError('hse_card_fields')
-        label=labels[0];name=text(label.get_text(' ',strip=True));summary=text(summaries[0].get_text(' ',strip=True))
+        label=labels[0];name=html_text(label);summary=html_text(summaries[0])
         u=urlsplit(urljoin(ROOT,label.get('href','').strip()))
         if (u.scheme!='https' or u.netloc!='alumni.hse.ru' or u.path!=urlsplit(ROOT).path or u.query
             or not re.fullmatch('[A-Za-z0-9_-]{1,100}',u.fragment) or not name or not summary):raise ValueError('hse_card_identity')
@@ -187,7 +188,7 @@ def _owned_blocks(dom):
             matches=[];ambiguous=False
             for node in root.find_all('div',class_='builder-section',recursive=False):
                 if id(node) in reserved or node.select('a[name],.fa-person__item,.nom h1'):continue
-                titles={text(h.get_text(' ',strip=True)) for h in node.select('h1,h2,h3')}
+                titles={html_text(h) for h in node.select('h1,h2,h3')}
                 candidates=[(key,title) for key,name in names.items() for title in titles
                             if heading_matches_name(title,name)]
                 own=[title for key,title in candidates if key==anchor]
@@ -205,9 +206,9 @@ def _owned_blocks(dom):
             for link in part.select('a[href]'):
                 try:target=clean_url(urljoin(ROOT,link['href'].strip()))
                 except (ValueError,TypeError):continue
-                item={'label':text(link.get_text(' ',strip=True)),'url':target}
+                item={'label':html_text(link),'url':target}
                 if item not in links:links.append(item)
-        block={'anchor':anchor,'name':name,'category':text(headings[0].get_text(' ',strip=True)),
+        block={'anchor':anchor,'name':name,'category':html_text(headings[0]),
                'summary':summary,'body':body,'links':links,'detail_state':state,**identity}
         # Text and link projection stay historical; native capture also keeps
         # image-only sections whose ownership follows the same anchor boundary.
@@ -253,11 +254,11 @@ def validate_record(r):
     if (not re.fullmatch('[A-Za-z0-9_-]{1,100}',b.get('anchor','')) or r['native_id']!='anchor:'+b['anchor']
         or r['program']!=PROGRAM or r['partner_name']!=b.get('name') or r['title']!=b.get('name')
         or r['category']!=b.get('category') or r['benefit_text']!=(claim_text(b['body']) if full else '')
-        or r['conditions_text']!=text(b['body'] if full else b['summary'])
+        or r['conditions_text']!=text(b['body'] if full else b['summary'], markup=False)
         or r['source_url']!=source_url
         or r['benefit_url']!=(source_url if link_kind=='page_anchor' else None)
         or r['link_kind']!=link_kind or r['locator']!=locator
-        or r['redemption_text']!=text(b['body'] if full else '')
+        or r['redemption_text']!=text(b['body'] if full else '', markup=False)
         or r['valid_from'] is not None or r['valid_until']!=(explicit_end(b['body'])[0] if full else None)
         or r['details'].get('user_eligibility_verified') is not False
         or r['record_kind']!=('partner_offer' if full else 'source_observation')

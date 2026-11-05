@@ -163,7 +163,7 @@ def bank_fields(raw):
         for a in row.select('a[href]'):
             url=urljoin(BANK,a['href']);checked_url(url)
             if urlsplit(url).netloc!='www.unicreditbank.ru':raise ValueError('re_bank_pdf_host')
-            if url.endswith('.pdf') and url not in [d['url'] for d in docs]:docs.append({'url':url,'label':label})
+            if url.lower().endswith('.pdf') and url not in [d['url'] for d in docs]:docs.append({'url':url,'label':label})
     body=text(block.get_text('\n',strip=True))
     if not 100<=len(body)<=35000:raise ValueError('re_bank_text_bound')
     return {'title':titles[0],'text':body,'documents':docs,'rzd_mentions':bool(RZD.search(body))}

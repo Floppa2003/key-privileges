@@ -12,6 +12,7 @@ from urllib.parse import urlsplit, urljoin, parse_qs
 import certifi
 import requests
 from bs4 import BeautifulSoup
+from html_text import html_text
 from recovered_contract import (API, SOURCES, CA_FILES, HTTP_PROFILE, HTTP_WARNING,
     collection_url, http_url, checked_config, transport_evidence, linked_pdf_url)
 from normalized import make_offer, text, number, content_hash
@@ -172,7 +173,7 @@ def public_post_record(post, cfg, now, response_url, index, response_sha):
         if post.get(key):
             datetime.fromisoformat(post[key])
     soup = BeautifulSoup(post['content']['rendered'],'html.parser')
-    tables = [[[text(c.get_text(' ',strip=True)) for c in tr.find_all(['th','td'])]
+    tables = [[[html_text(c) for c in tr.find_all(['th','td'])]
         for tr in table.find_all('tr')] for table in soup.find_all('table')]
     details = {'_source':{'source_id':'loyals'},'transport':transport_evidence('loyals'),'public_post':post,
         'publisher_canonical_url':post['link'],'publisher_canonical_url_fetched':False,
@@ -286,7 +287,7 @@ def scoped_bank_sections(sid, raw):
 def parse_bank_page(sid, raw, now):
     spec=SOURCES[sid]
     nodes=scoped_bank_sections(sid,raw)
-    blocks=[text(n.get_text(' ',strip=True)) for n in nodes]
+    blocks=[html_text(n) for n in nodes]
     terms='\n'.join(blocks)
     details={'_source':{'source_id':sid},'transport':transport_evidence(sid),'evidence_role':'supplementary_rules_not_incremental_discount',
         'sections':blocks,'linked_documents':linked_documents(nodes,spec['url']),
@@ -321,7 +322,7 @@ def parse_bank_page(sid, raw, now):
         if not m:raise ValueError('uralsib_application_period_missing')
         start,end=[datetime.strptime(x,'%d.%m.%Y').date().isoformat() for x in m.groups()]
         details['validity_scope']='card_application_window';details['application_period_evidence']=m[0]
-        details['tables']=[[[text(c.get_text(' ',strip=True)) for c in tr.find_all(['th','td'])]
+        details['tables']=[[[html_text(c) for c in tr.find_all(['th','td'])]
             for tr in t.find_all('tr')] for n in nodes for t in n.find_all('table')]
         warnings.append('historical_campaign_not_current_card_offer')
         program='РЖД Бонус';partner='Уралсиб';title='Уралсиб — приветственные баллы РЖД (правила акции)'

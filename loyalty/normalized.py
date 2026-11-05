@@ -8,7 +8,7 @@ from datetime import datetime, date
 from decimal import Decimal
 from pathlib import Path
 from urllib.parse import urlsplit
-from bs4 import BeautifulSoup
+from html_text import html_text
 from model import clean_url
 from promo_codes import extract_promocodes
 from table_benefits import extract_table_benefits
@@ -73,21 +73,25 @@ HOSTS['ural_tiers']=['www.uralairlines.ru']
 for _sid,_spec in RECOVERED_SOURCES.items():
     HOSTS[_sid]=[urlsplit(_spec['url']).hostname]
 BLOCKED = re.compile(r'access denied|just a moment|captcha|доступ к сайту временно ограничен|проверка безопасности|доступ запрещ[её]н', re.I)
-NUMBER = r'\d+(?:[ .,\u00a0]\d{3})*(?:[.,]\d+)?'
+NUMBER = r'\d+(?:[ .,\u00a0\u202f]\d{3})*(?:[.,]\d+)?'
 TYPES = {'discount': r'[сc]кидк', 'cashback': r'к[еэ]шб[еэ]к', 'miles':r'мил[ьяиюе]',
          'points':r'балл|бонус', 'gift':r'подар|комплимент', 'special_price':r'спеццен|специальн\w* цен'}
 
 
-def text(value) -> str:
+def text(value, *, markup: bool = True) -> str:
+    """Normalize a source value, or already extracted text with markup=False.
+
+    Source-facing callers retain HTML/entity decoding. Normalized offer fields
+    are plain text, so their literal angle brackets and entities stay literal.
+    """
     if value is None:
         return ''
     value = str(value)
-    if '<' in value and re.search(r'</?[a-zA-Z][^>]*>', value):
-        soup = BeautifulSoup(value, 'html.parser')
-        for el in soup(['script','style']):
-            el.decompose()
-        value = soup.get_text(' ', strip=True)
-    return re.sub(r'[^\S\n]+', ' ', html.unescape(value)).strip()
+    if markup:
+        if '<' in value and re.search(r'</?[a-zA-Z][^>]*>', value):
+            return html_text(value)
+        value = html.unescape(value)
+    return re.sub(r'[^\S\n]+', ' ', value).strip()
 
 
 def canonical_url(value: str) -> str:
@@ -99,34 +103,63 @@ def canonical_url(value: str) -> str:
 
 
 def number(value: str) -> str:
-    raw = re.sub(r'[ \u00a0\u202f]', '', value).replace(',', '.')
+    raw = re.sub(r'[ \u00a0\u202f]', '', value)
+    # A single separator remains decimal for compatibility. Multiple complete
+    # groups, or grouping plus a different decimal mark, are unambiguous.
+    for grouping, decimal_mark in (('.', ','), (',', '.')):
+        group = re.escape(grouping)
+        decimal = re.escape(decimal_mark)
+        if (re.fullmatch(rf'\d{{1,3}}(?:{group}\d{{3}})+{decimal}\d+', raw)
+                or re.fullmatch(rf'\d{{1,3}}(?:{group}\d{{3}}){{2,}}', raw)):
+            raw = raw.replace(grouping, '')
+            break
+    raw = raw.replace(',', '.')
     decimal = Decimal(raw)
     result = format(decimal, 'f')
     return result.rstrip('0').rstrip('.') if '.' in result else result
 
 
-def normalize_rates(value: str) -> list[dict]:
+def normalize_rates(value: str, *, heading_context: str = '') -> list[dict]:
     """Only recognizable local rate phrases; context is mandatory for every value.
     Rates are NOT combinable without interpreting their evidence/conditions.
     Purchase thresholds, old prices and untyped percentages are not rates.
     """
     result = []
-    for clause in re.split(r'[\n;]', text(value)):
+    heading_kinds = [k for k in ('discount','cashback') if re.search(TYPES[k],heading_context,re.I)]
+    heading_kind = heading_kinds[0] if len(heading_kinds)==1 else None
+    for clause in re.split(r'[\n;]', text(value, markup=False)):
         clause = clause.strip()
         labels = [(m.start(), k) for k in ('discount','cashback') for m in re.finditer(TYPES[k],clause,re.I)]
         for m in re.finditer(r'(?:(?P<lo>\d+(?:[.,]\d+)?)\s*[–—-]\s*)?(?P<value>\d+(?:[.,]\d+)?)\s*%', clause):
             before = sorted((pos,k) for pos,k in labels if pos < m.start())
+            if before:
+                between = clause[before[-1][0]:m.start()]
+                # A reward label does not extend into another sentence.
+                # Parallel scopes within one sentence still share their label.
+                abbreviations = r'\b(?:физ|юр)\.(?=\s+лиц)|\bдоп\.(?=\s+\w)|\bв\s+т\.\s*ч\.(?=\s|$)'
+                scope_text = re.sub(abbreviations, lambda match: match[0].replace('.', ''), between, flags=re.I)
+                if re.search(r'[.!?](?:\s|$)', scope_text):
+                    before = []
             after = next((k for k in ('discount','cashback') if re.match(r'\s*'+TYPES[k],clause[m.end():],re.I)),None)
             if re.match(r'\s*мил(?:ями|и|ь)\b',clause[m.end():],re.I):
                 after='miles'
-            if not before and not after:
+            payment = r'\b(?:предоплат\w*|оплат\w*|аванс\w*|НДС|налог\w*|комисси\w*|штраф\w*)\b'
+            payment_context = bool((before and ('%' in between or re.search(r'\bпри\b|\bна условиях\b', between, re.I)))
+                                   or (heading_kind and not before))
+            discounted_commission = ((before[-1][1] if before else heading_kind)=='discount'
+                and re.search(r'(?:^|,|\bи)\s*на\s+комисси(?:ю|и)\s*(?:(?:—|–|:|до|от)\s*)*$', clause[:m.start()], re.I))
+            if payment_context and not after and not discounted_commission and (
+                    re.search(payment+r'\s*(?:(?:в размере|составляет|—|–|:|до|от)\s*)*$', clause[:m.start()], re.I)
+                    or re.match(r'\s*'+payment, clause[m.end():], re.I)):
                 continue
-            kind = after or before[-1][1]
+            if not before and not after and not heading_kind:
+                continue
+            kind = after or (before[-1][1] if before else heading_kind)
             amount = number(m['value'])
             if not 0 <= Decimal(amount) <= 100:
                 continue
             prefix = clause[max(0,m.start()-12):m.start()]
-            qualifier = 'range' if m['lo'] else 'up_to' if re.search(r'до\s*$',prefix,re.I) else 'at_least' if re.search(r'от\s*$',prefix,re.I) else 'exact'
+            qualifier = 'range' if m['lo'] else 'up_to' if re.search(r'\bдо\s*$',prefix,re.I) else 'at_least' if re.search(r'\bот\s*$',prefix,re.I) else 'exact'
             r = {'kind':kind,'value':amount,'unit':'percent','qualifier':qualifier,'basis_amount':None,'basis_unit':None,'evidence':clause}
             if m['lo']:
                 r['min_value'] = number(m['lo'])
@@ -148,7 +181,7 @@ def normalize_rates(value: str) -> list[dict]:
 def lexical_conditions(value: str) -> list[dict]:
     """Recognized clauses only; no claim to exhaust all eligibility conditions."""
     result=[]
-    for clause in re.split(r'\n|(?<=[.!?])\s+(?=[А-ЯA-Z])',text(value)):
+    for clause in re.split(r'\n|(?<=[.!?])\s+(?=[А-ЯA-Z])',text(value, markup=False)):
         clause=clause.strip()
         if not clause:continue
         def add(kind,**kwargs):result.append({'kind':kind,'evidence':clause,**kwargs})
@@ -170,6 +203,10 @@ def content_hash(record: dict) -> str:
 
 
 def offer_rates(source_id, value):
+    if source_id=='sacvoyage_loyalty':
+        heading,separator,body=value.partition(': ')
+        if separator:
+            return normalize_rates(body,heading_context=heading)
     if source_id in ('ekp_ladoga_public', 'flystation_public'):
         from content_discovery import literal_rates
         return literal_rates(value)
@@ -216,7 +253,7 @@ def make_offer(source_id: str, native_id: str, program: str, partner_name: str |
         validity = 'not_started'
     if valid_from and valid_until and valid_from>valid_until:
         raise ValueError('Reversed validity interval')
-    benefit,conditions,redemption = map(text,(benefit,conditions,redemption))
+    benefit,conditions,redemption = (text(v, markup=False) for v in (benefit,conditions,redemption))
     if not benefit and not conditions:
         raise ValueError('An offer needs source evidence')
     if any(len(s)>40000 for s in (benefit,conditions,redemption)):
@@ -230,9 +267,10 @@ def make_offer(source_id: str, native_id: str, program: str, partner_name: str |
     codes = promo['codes']
     r = {'schema_version':2,'adapter_version':VERSION,
          'id':hashlib.sha256((source_id+'\n'+native_id).encode()).hexdigest(),
-         'source_id':source_id,'native_id':native_id,'program':text(program),
-         'record_kind':record_kind,'partner_name':text(partner_name) or None,
-         'title':text(title) or text(partner_name) or native_id,'category':text(category) or None,
+         'source_id':source_id,'native_id':native_id,'program':text(program, markup=False),
+         'record_kind':record_kind,'partner_name':text(partner_name, markup=False) or None,
+         'title':text(title, markup=False) or text(partner_name, markup=False) or native_id,
+         'category':text(category, markup=False) or None,
          'benefit_text':benefit,'conditions_text':conditions,'redemption_text':redemption,
          'benefit_types':[k for k,p in TYPES.items() if re.search(p,benefit,re.I)],
          'rates':offer_rates(source_id,benefit),'promo_codes':codes,
