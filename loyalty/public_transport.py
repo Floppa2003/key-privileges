@@ -48,19 +48,46 @@ def check_response(status: int, body: str) -> None:
 class PublicSource:
     def __init__(self,browser,url: str):
         self.browser=browser;self.host=urlsplit(url).hostname
+        self.source_url = url
         self.context=None;self.page=None;self.lock=asyncio.Lock();self.request_interval=0.25
         self._document_response = None
+        self._verified_transport = None
 
     async def __aenter__(self):
         # Shared pacing remains independent of any auxiliary source file.
         locks=getattr(self.browser,'_loyalty_read_locks',None)
         if locks is not None:self.lock=locks.setdefault(self.host,asyncio.Lock())
-        self.context=await self.browser.new_context(locale='ru-RU')
-        self.page=await self.context.new_page()
-        return self
+        from capture_tls import profile_for, VerifiedBrowserTransport
+        profile = profile_for(self.source_url)
+        try:
+            if profile:
+                self._verified_transport = VerifiedBrowserTransport(profile, getattr(self, 'deadline', time.monotonic() + 210))
+                await self._verified_transport.start()
+            self.context=await self.browser.new_context(locale='ru-RU', **({'service_workers': 'block'} if profile else {}))
+            if self._verified_transport:
+                await self.context.route('**/*', self._verified_transport.route)
+            self.page=await self.context.new_page()
+            return self
+        except BaseException:
+            await self.__aexit__(None, None, None)
+            raise
 
     async def __aexit__(self,*_):
-        if self.context:await self.context.close()
+        try:
+            if self.context:await self.context.close()
+        finally:
+            if self._verified_transport:
+                await self._verified_transport.close()
+
+    async def finish_capture(self):
+        if self._verified_transport:
+            await self._verified_transport.finish()
+            return self._verified_transport.evidence()
+        return None
+
+    def capture_transport_evidence(self):
+        """Return acquired receipts even after a failed or cancelled capture."""
+        return self._verified_transport.evidence() if self._verified_transport else None
 
     async def navigate(self, url: str, *, ready_selector=None) -> tuple[int, str]:
         # Preserve the same anonymous context/URL. Only failed connections retry;
@@ -69,6 +96,7 @@ class PublicSource:
             try:
                 return await self._navigate_once(url, **({'ready_selector': ready_selector} if ready_selector else {}))
             except Exception as exc:
+                if self._verified_transport:self._verified_transport.check()
                 if not retryable_read_error(exc) or attempt == 2:
                     raise
                 await asyncio.sleep(max(self.request_interval, 2 ** attempt))
@@ -174,6 +202,8 @@ class PublicSource:
     async def fetch_read(self,url,**kwargs):
         # Only GETs / the validated read-only catalog POST reach this helper.
         # Never retry authorization, CAPTCHA or rate-limit responses.
+        if self._verified_transport:
+            return await self._verified_transport.fetch(url, method=kwargs.get('method', 'GET'))
         for attempt in range(3):
             try:
                 res=await self.context.request.fetch(url,timeout=20000,**kwargs)

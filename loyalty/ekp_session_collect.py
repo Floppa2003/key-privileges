@@ -23,6 +23,12 @@ from ekp_catalog import ROOT,API,query,page,public_row,make_record,validate_bund
 MAX_CREDITS=125  # One anonymous browser request.
 MAX_REQUESTS=1
 MAX_PAGES=11
+MAX_HTTP_ATTEMPTS=11
+TIMING_VERSION=2
+# The preceding deployed JS used the v1 timing contract and no retries. Keep its
+# immutable fingerprint so already published 1017/480-row evidence remains valid.
+LEGACY_SCRIPT_SHA256='f6d244c0b626e0c98bcfebb32805911dae76e0c6dfbf323a408d6976da78ee98'
+RETRYABLE_ERRORS={'source_headers_timeout','source_body_timeout','source_body_type_error'}
 SCRIPT=Path(__file__).with_name('ekp_session_ui.js')
 
 
@@ -79,15 +85,29 @@ class Reader:
         except ProbeError:return None
 
 
-def checked_timings(items,start,end):
-    """Keep bounded operational timings only, never headers or response bodies."""
-    if not isinstance(items,list) or len(items)>MAX_PAGES:raise ValueError('ekp_request_timing_invalid')
+def checked_timings(items,start,end,*,version=1):
+    """Check bounded metadata, never raw headers, bodies or exception messages.
+
+    V1 is only for the pinned historical script: one request per 120-row offset.
+    V2 has at most 11 total HTTP attempts inside the same 43-second session, with
+    <=15-second request timeouts and 1.1-second pacing. A failed page may repeat
+    once, only after a classified timeout/body TypeError; successful offsets are
+    contiguous. Each accepted attempt supplies a SHA for independent page binding.
+    elapsedMs includes validation after body read; timeoutMs bounds the HTTP read.
+    """
+    if (type(version) is not int or version not in (1,TIMING_VERSION) or
+        not isinstance(items,list) or len(items)>MAX_HTTP_ATTEMPTS):raise ValueError('ekp_request_timing_invalid')
+    if version==TIMING_VERSION and not 0<=(end-start).total_seconds()<=43:
+        raise ValueError('ekp_request_timing_invalid')
     previous=start
     required={'offset','timeoutMs','startedAt','finishedAt','elapsedMs'}
+    extra={'status','error'}
+    if version==TIMING_VERSION:
+        required=required|{'attempt','phase','outcome'};extra=extra|{'sourceSha'}
     for i,item in enumerate(items):
-        if not isinstance(item,dict) or not required<=set(item) or set(item)-required-{'status','error'}:
+        if not isinstance(item,dict) or not required<=set(item) or set(item)-required-extra:
             raise ValueError('ekp_request_timing_invalid')
-        if (type(item['offset']) is not int or item['offset']!=120*i or
+        if (type(item['offset']) is not int or
             type(item['timeoutMs']) is not int or not 1<=item['timeoutMs']<=15000 or
             type(item['elapsedMs']) is not int or not 0<=item['elapsedMs']<=65000 or
             ('status' in item and (type(item['status']) is not int or not 100<=item['status']<=599)) or
@@ -96,8 +116,55 @@ def checked_timings(items,start,end):
         a,b=instant(item['startedAt']),instant(item['finishedAt'])
         if not previous<=a<=b<=end or abs((b-a).total_seconds()*1000-item['elapsedMs'])>2:
             raise ValueError('ekp_request_timing_invalid')
+        if version==1:
+            if item['offset']!=120*i:raise ValueError('ekp_request_timing_invalid')
+        else:
+            if (type(item['attempt']) is not int or item['attempt'] not in (1,2) or
+                item['phase'] not in ('headers','body','json','schema','digest','accepted') or
+                item['outcome'] not in ('accepted','error') or
+                item['timeoutMs']<1000 or item['timeoutMs']>41500-(a-start).total_seconds()*1000+2 or
+                (i and (a-previous).total_seconds()<1.1)):
+                raise ValueError('ekp_request_timing_invalid')
+            if item['outcome']=='accepted':
+                if (item.get('status')!=200 or item['phase']!='accepted' or 'error' in item or
+                    not isinstance(item.get('sourceSha'),str) or not re.fullmatch('[a-f0-9]{64}',item['sourceSha'])):
+                    raise ValueError('ekp_request_timing_invalid')
+            elif (not item.get('error') or 'sourceSha' in item or item['phase']=='accepted' or
+                  (item['phase']!='headers' and item.get('status')!=200)):
+                raise ValueError('ekp_request_timing_invalid')
+            if item.get('error') in RETRYABLE_ERRORS:
+                phase='headers' if item['error']=='source_headers_timeout' else 'body'
+                if item['phase']!=phase or (phase=='headers' and 'status' in item):
+                    raise ValueError('ekp_request_timing_invalid')
+            expected_offset=0;expected_attempt=1
+            if i:
+                prior=items[i-1]
+                if prior['outcome']=='accepted':expected_offset=prior['offset']+120
+                elif prior.get('error') in RETRYABLE_ERRORS and prior['attempt']==1:
+                    expected_offset=prior['offset'];expected_attempt=2
+                else:raise ValueError('ekp_request_timing_invalid')
+            if item['offset']!=expected_offset or item['attempt']!=expected_attempt:
+                raise ValueError('ekp_request_timing_invalid')
         previous=b
     return items
+
+
+def checked_attempt_page(attempt,request,source_sha,completed_at):
+    """An accepted timing must bind the same page, response hash and completion."""
+    completed=instant(completed_at)
+    if (attempt['offset']!=request['pagination']['offset'] or attempt['sourceSha']!=source_sha or
+        not instant(attempt['startedAt'])<=completed<=instant(attempt['finishedAt'])):
+        raise ValueError('ekp_attempt_page_mismatch')
+
+
+def checked_session_outcome(timings,errors,complete):
+    """Recovered attempts stay in the trace; an unrecovered last error stays fatal."""
+    if (type(complete) is not bool or not isinstance(errors,list) or len(errors)>10 or
+        any(not isinstance(code,str) or not re.fullmatch('[a-zA-Z_]{1,100}',code) for code in errors) or
+        (complete and errors)):
+        raise ValueError('ekp_session_outcome_mismatch')
+    if timings and timings[-1]['outcome']=='error' and (complete or timings[-1]['error'] not in errors):
+        raise ValueError('ekp_session_outcome_mismatch')
 
 
 def accept_session(obj,out,audit,records,seen,errors):
@@ -113,13 +180,19 @@ def accept_session(obj,out,audit,records,seen,errors):
     if (not isinstance(source_errors,list) or len(source_errors)>10 or
         any(not isinstance(x,str) or not re.fullmatch('[a-zA-Z_]{1,100}',x) for x in source_errors)):
         raise ValueError('ekp_session_error_contract_changed')
+    if type(obj.get('timingVersion')) is not int or obj['timingVersion']!=TIMING_VERSION:
+        raise ValueError('ekp_session_timing_version')
     audit['session']={'started_at':obj['startedAt'],'finished_at':obj['finishedAt'],
                       'initial_url':obj['initialUrl'],'final_url':obj['finalUrl'],'errors':source_errors,
-                      'requests':checked_timings(obj.get('requests',[]),start,end)}
+                      'timing_version':TIMING_VERSION,
+                      'requests':checked_timings(obj.get('requests'),start,end,version=TIMING_VERSION)}
+    accepted=[item for item in audit['session']['requests'] if item['outcome']=='accepted']
     offset=0;total=None;previous=start
-    for src in obj['pages']:
+    for index,src in enumerate(obj['pages']):
         if (src.get('request')!=query(offset) or src.get('status')!=200 or src.get('url')!=API
             or not re.fullmatch('[a-f0-9]{64}',src.get('sourceSha',''))):raise ValueError('ekp_page_identity_invalid')
+        if index>=len(accepted):raise ValueError('ekp_attempt_page_mismatch')
+        checked_attempt_page(accepted[index],src['request'],src['sourceSha'],src['completedAt'])
         completed=instant(src['completedAt'])
         if not previous<=completed<=end:raise ValueError('ekp_page_time_invalid')
         previous=completed;ids=page(src,offset)
@@ -141,7 +214,9 @@ def accept_session(obj,out,audit,records,seen,errors):
             'origin_status':200,'completed_at':src['completedAt'],'source_response_sha256':src['sourceSha'],
             'public_projection_sha256':hashlib.sha256((out/file).read_bytes()).hexdigest()})
         offset+=len(ids);audit['reported_total']=total
+    if len(accepted)!=len(obj['pages']):raise ValueError('ekp_attempt_page_mismatch')
     if type(obj.get('complete')) is not bool:raise ValueError('ekp_completion_flag_invalid')
+    checked_session_outcome(audit['session']['requests'],source_errors,obj['complete'])
     finished=bool(obj['complete'] and total is not None and len(seen)==total and not source_errors)
     if obj['complete'] and not finished:raise ValueError('ekp_completion_count_mismatch')
     errors.extend({'phase':'session','reason':code} for code in source_errors)
@@ -185,14 +260,24 @@ def collect(reader,out,*,run_id,observed_at,commit):
 def validate_session_bundle(folder,*,run_id,commit,clock,max_age_seconds=7200):
     bundle=validate_bundle(folder,run_id=run_id,commit=commit,clock=clock,max_age_seconds=max_age_seconds)
     audit=json.loads((Path(folder)/'report.json').read_text());meta=json.loads(bundle['sources'][0]['coverage'])
-    if (audit.get('mode')!='one_anonymous_browser_public_api' or
-        audit.get('script_sha256')!=hashlib.sha256(SCRIPT.read_bytes()).hexdigest() or
+    script_sha=audit.get('script_sha256')
+    version=TIMING_VERSION if script_sha==hashlib.sha256(SCRIPT.read_bytes()).hexdigest() else 1 if script_sha==LEGACY_SCRIPT_SHA256 else None
+    if (audit.get('mode')!='one_anonymous_browser_public_api' or version is None or
         type(audit.get('reserved_credits')) is not int or not 0<=audit['reserved_credits']<=MAX_CREDITS or
         type(audit.get('provider_requests')) is not int or not 0<=audit['provider_requests']<=MAX_REQUESTS):
         raise ValueError('ekp_session_audit_mismatch')
     if 'session' in audit:
         session=audit['session']
-        checked_timings(session.get('requests',[]),instant(session['started_at']),instant(session['finished_at']))
+        if type(session.get('timing_version',1)) is not int or session.get('timing_version',1)!=version:
+            raise ValueError('ekp_session_audit_mismatch')
+        timings=checked_timings(session.get('requests',[]),instant(session['started_at']),instant(session['finished_at']),version=version)
+        if version==TIMING_VERSION:
+            accepted=[item for item in timings if item['outcome']=='accepted']
+            if len(accepted)!=len(audit['pages']):raise ValueError('ekp_attempt_page_mismatch')
+            for attempt,page in zip(accepted,audit['pages']):
+                checked_attempt_page(attempt,page['request'],page['source_response_sha256'],page['completed_at'])
+            checked_session_outcome(timings,session.get('errors'),audit['pagination_complete'])
+    elif audit['pages']:raise ValueError('ekp_attempt_page_mismatch')
     count=sum(x['source_count'] for x in audit['pages'])
     if (count!=audit['observed_ids'] or count!=meta['distinct_ids_observed'] or
         audit['pagination_complete']!=meta['catalogue_pagination_complete'] or

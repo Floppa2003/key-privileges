@@ -18,14 +18,30 @@ from free_access_probe import ProbeError
 from test_ekp_api import raw
 
 
-def session(total=245):
-    stamp=(datetime.now(timezone.utc)-timedelta(seconds=1)).isoformat()
+def session(total=245,*,started_at=None):
+    offsets=list(range(0,total,120));duration=timedelta(milliseconds=1200*(len(offsets)-1)+100)
+    start=started_at or datetime.now(timezone.utc)-duration-timedelta(seconds=1)
     obj={'initialUrl':e.ROOT+'tiles?region=98','finalUrl':e.ROOT+'tiles?region=98',
-         'startedAt':stamp,'finishedAt':stamp,'complete':True,'errors':[],'total':total,'observed':total,'pages':[]}
-    for offset in range(0,total,120):
+         'startedAt':start.isoformat(),'finishedAt':(start+duration).isoformat(),'timingVersion':2,
+         'complete':True,'errors':[],'total':total,'observed':total,'pages':[],'requests':[]}
+    for index,offset in enumerate(offsets):
+        requested=start+timedelta(milliseconds=1200*index);completed=requested+timedelta(milliseconds=100)
         rows=[raw(str(i),locked=i%3==0) for i in range(offset,min(offset+120,total))]
         obj['pages'].append({'request':e.query(offset),'total':total,'offset':offset,'partners':rows,
-            'sourceSha':'a'*64,'status':200,'url':e.API,'completedAt':stamp})
+            'sourceSha':'a'*64,'status':200,'url':e.API,'completedAt':completed.isoformat()})
+        obj['requests'].append({'offset':offset,'attempt':1,'timeoutMs':15000,'elapsedMs':100,
+            'startedAt':requested.isoformat(),'finishedAt':completed.isoformat(),'status':200,
+            'phase':'accepted','outcome':'accepted','sourceSha':'a'*64})
+    return obj
+
+
+def fail_after(obj,count=1,reason='source_http_refusal'):
+    """Synthetic browser response: accepted pages followed by one terminal read."""
+    obj['pages']=obj['pages'][:count];obj['requests']=obj['requests'][:count+1]
+    last=obj['requests'][-1];last.pop('sourceSha')
+    last.update(outcome='error',error=reason,phase='headers' if reason=='source_http_refusal' else 'body',
+                status=403 if reason=='source_http_refusal' else 200)
+    obj.update(complete=False,errors=[reason],observed=120*count,finishedAt=last['finishedAt'])
     return obj
 
 
@@ -41,7 +57,7 @@ class Fake:
 
 
 def run(reader,tmp):
-    observed=(datetime.now(timezone.utc)-timedelta(seconds=3)).isoformat()
+    observed=(datetime.fromisoformat(reader.obj['startedAt'])-timedelta(seconds=1)).isoformat()
     return c.collect(reader,tmp,run_id='fixture:1',observed_at=observed,commit='test')
 
 
@@ -54,7 +70,7 @@ class SessionTests(unittest.TestCase):
             self.assertEqual(c.validate_session_bundle(tmp,run_id='fixture:1',commit='test',clock=datetime.now(timezone.utc)),b)
 
     def test_source_refusal_after_good_pages_preserves_partial(self):
-        obj=session();obj['pages']=obj['pages'][:1];obj['complete']=False;obj['errors']=['source_http_refusal']
+        obj=fail_after(session())
         with tempfile.TemporaryDirectory() as tmp:
             b=run(Fake(obj),tmp)
             self.assertEqual(len(b['records']),120);self.assertEqual(b['sources'][0]['status'],'partial')
@@ -74,7 +90,7 @@ class SessionTests(unittest.TestCase):
                 self.assertFalse(json.loads(b['sources'][0]['coverage'])['catalogue_pagination_complete'])
 
     def test_forged_complete_flag_not_accepted_as_full(self):
-        obj=session();obj['pages']=obj['pages'][:1]
+        obj=session();obj['pages']=obj['pages'][:1];obj['requests']=obj['requests'][:1]
         with tempfile.TemporaryDirectory() as tmp:
             b=run(Fake(obj),tmp)
             self.assertEqual(b['sources'][0]['status'],'partial')

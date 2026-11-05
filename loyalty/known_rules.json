@@ -550,6 +550,7 @@
   },
   "ural_gloria_rules": {
     "url": "https://hotelamur.com/partners-bonus-ural-airlines/",
+    "render": false,
     "program": "Уральские авиалинии — «Крылья»",
     "partner": "GLORIA",
     "title": "GLORIA — подробные условия «Крыльев»",

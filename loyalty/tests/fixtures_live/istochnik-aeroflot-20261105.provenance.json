@@ -1,0 +1,17 @@
+{
+  "id": "af_istochnik",
+  "url": "https://istochnikspa.ru/kislovodsk/aeroflot-bonus/",
+  "retrieved_at": "2026-11-05T10:34:27.811517+00:00",
+  "method": "single anonymous urllib HTTPS GET; standard TLS; no redirects or retries",
+  "status": 200,
+  "final_url": "https://istochnikspa.ru/kislovodsk/aeroflot-bonus/",
+  "content_type": "text/html; charset=UTF-8",
+  "location": null,
+  "sha256": "f33dbb4304bc5715b07d4e99bc6cd0abec582e701c091a06d0e83c08f4a3dddd",
+  "bytes": 114413,
+  "elapsed_seconds": 8.846,
+  "fixture": "istochnik-aeroflot-20261105.html",
+  "fixture_sha256": "f33dbb4304bc5715b07d4e99bc6cd0abec582e701c091a06d0e83c08f4a3dddd",
+  "transformations": [],
+  "regression_scope": "The original static HTTP response is sufficient for the current reviewed parser; the historical CI navigation timeout cause is not asserted."
+}
