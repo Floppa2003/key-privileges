@@ -8,6 +8,7 @@ from datetime import date
 from pathlib import Path
 from urllib.parse import urlsplit
 from bs4 import BeautifulSoup
+from html_text import html_text
 from free_access_probe import FreeReader, ProbeError, sanitized_page, now
 from normalized import make_offer, text
 
@@ -33,14 +34,14 @@ def listing(raw, sid):
     soup = BeautifulSoup(raw, 'html.parser')
     heading = soup.select('h1')
     expected = 'Клуб привилегий' if sid == 'coral' else 'Акции'
-    if len(heading) != 1 or text(heading[0].get_text(' ', strip=True)) != expected:
+    if len(heading) != 1 or html_text(heading[0]) != expected:
         raise ValueError('coral_listing_identity')
     selector = '.category-box-menu h5 a[href]' if sid == 'coral' else '.sale-item-description h5 a[href]'
     prefix = '/klub-privilegii/' if sid == 'coral' else '/promo/'
     result = {}
     for a in soup.select(selector):
         url = checked_url(a['href'], prefix, 2)
-        label = text(a.get_text(' ', strip=True))
+        label = html_text(a)
         if not label or (url in result and result[url]['title'] != label):
             raise ValueError('coral_listing_label_conflict')
         result[url] = {'url': url, 'title': label}
@@ -55,7 +56,7 @@ def category_cards(raw, entry, categories=None):
     categories = categories or {entry["url"]: entry["title"]}
     soup = BeautifulSoup(raw, 'html.parser')
     headings = soup.select('h1'); grids = soup.select('#categoryProductsList')
-    if len(headings) != 1 or text(headings[0].get_text(' ', strip=True)) != entry['title'] or len(grids) != 1:
+    if len(headings) != 1 or html_text(headings[0]) != entry['title'] or len(grids) != 1:
         raise ValueError('coral_category_identity')
     result = {}; excluded = 0
     for box in grids[0].select('.product-box'):
@@ -79,7 +80,7 @@ def category_cards(raw, entry, categories=None):
 
 
 def own_text(node):
-    return text(node.get_text('\n', strip=True))
+    return html_text(node)
 
 
 def explicit_end(body):
@@ -101,7 +102,7 @@ def detail(raw, sid, entry, observed_at, retrieval):
         h = candidates[0]; editorial = True
     else:
         h = headings[0]
-    title = text(h.get_text(' ', strip=True))
+    title = html_text(h)
     section = h.find_parent('section')
     if section is None or not title or '{{' in title:
         raise ValueError('coral_detail_not_ready')

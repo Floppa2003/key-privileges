@@ -3,8 +3,9 @@ from __future__ import annotations
 import json,re
 from pathlib import Path
 from datetime import datetime
-from urllib.parse import urlsplit
+from urllib.parse import urljoin,urlsplit
 from bs4 import BeautifulSoup
+from html_text import html_text
 from normalized import make_offer,text,canonical_url
 from source_diagnostics import ParseError
 
@@ -17,12 +18,7 @@ def content(nodes):
     # Block boundaries matter; <strong>60 руб</strong> is inline, not a new clause.
     output=[]
     for n in nodes:
-        clone=BeautifulSoup(str(n),'html.parser')
-        for br in clone.select('br'):br.replace_with('\n')
-        for block in clone.find_all(['p','li','div','section','h1','h2','h3','h4','tr']):
-            block.insert_before('\n');block.insert_after('\n')
-        value=text(clone.get_text(' ',strip=False))
-        value=re.sub(r' *\n[ \n]*','\n',value).strip()
+        value=html_text(n)
         if value:output.append(value)
     return '\n'.join(output)
 
@@ -151,26 +147,41 @@ def utair_partners(soup,url,observed_at):
     if not panel:raise ValueError('Utair partner panel missing')
     names={'utair.tvil.ru':'ТВИЛ.РУ','otello.2gis.ru':'Otello','utair.ostrovok.ru':'Островок!',
            'utair.iway.ru':'i’way','utair.sutochno.ru':'Суточно.ру'}
-    rows=[];seen=set()
+    grouped={}
     for a in panel.select('a[href]'):
-        claim=text(a.get_text(' ',strip=True))
+        claim=html_text(a)
         if not re.search(r'\d[,.\d]*%\s+милями',claim,re.I):continue
-        target=canonical_url(a['href']);host=urlsplit(target).hostname
-        if target in seen:continue
-        seen.add(target)
+        target=canonical_url(urljoin(url,a['href'].strip()));destination=urlsplit(target)
+        host=destination.hostname;native=host+destination.path
         # Display aliases preserve existing IDs; an unseen destination is data,
         # not permission to visit it. This function never fetches the link.
-        display=names.get(host) or text(a.get('aria-label')) or host
+        entry=grouped.setdefault(native,{'display':names.get(host) or text(a.get('aria-label')) or host,
+                                         'claims':[],'locators':[],'urls':[],'published_claims':[]})
+        if target not in entry['urls']:entry['urls'].append(target)
+        if claim not in entry['claims']:entry['claims'].append(claim)
+        locator='#rec774882292 a[href="'+a['href']+'"]'
+        if locator not in entry['locators']:entry['locators'].append(locator)
+        published={'url':target,'claim':claim,'locator':locator}
+        if published not in entry['published_claims']:entry['published_claims'].append(published)
+    rows=[]
+    for native,entry in grouped.items():
         tier_rates=[]
-        for clause in re.split(r'(?<=[.!])\s+',claim):
-            scope=re.search(r'для уровн(?:я|ей)\s+(.+?)(?:\s+[—–-]|$)',clause,re.I)
-            tiers=re.findall(r'\b[A-Za-z][A-Za-z0-9-]*\b',scope[1]) if scope else []
-            rate=re.search(r'(\d+(?:[.,]\d+)?)%\s+милями',clause)
-            if tiers and rate:tier_rates.append({'tiers':tiers,'value':rate[1].replace(',','.'),'unit':'percent_miles','evidence':clause})
-        native=host+urlsplit(target).path
-        rows.append(make_offer('utair_media',native,'Utair Status',display,claim,url,observed_at,
+        # Different cards can describe different tiers at one destination.
+        # Parse each claim separately so a tier cannot leak into another rate.
+        for claim in entry['claims']:
+            for clause in re.split(r'\n|(?<=[.!])\s+',claim):
+                scope=re.search(r'для уровн(?:я|ей)\s+(.+?)(?:\s+[—–-]|$)',clause,re.I)
+                tiers=re.findall(r'\b[A-Za-z][A-Za-z0-9-]*\b',scope[1]) if scope else []
+                rate=re.search(r'(\d+(?:[.,]\d+)?)%\s+милями',clause)
+                if tiers and rate:tier_rates.append({'tiers':tiers,'value':rate[1].replace(',','.'),'unit':'percent_miles','evidence':clause})
+        claim='\n'.join(entry['claims'])
+        details={'partner_url':entry['urls'][0],'tier_rates':tier_rates,
+                 'partner_identity_origin':'published_destination_not_independently_verified'}
+        if len(entry['urls'])>1:
+            details.update(partner_urls=entry['urls'],published_claims=entry['published_claims'])
+        rows.append(make_offer('utair_media',native,'Utair Status',entry['display'],claim,url,observed_at,
             conditions=claim,redemption='Переход по опубликованной ссылке партнёра; полные условия на стороне партнёра не проверены.',
-            link_kind='page_block',locator='#rec774882292 a[href="'+a['href']+'"]',
-            details={'partner_url':target,'tier_rates':tier_rates,'partner_identity_origin':'published_destination_not_independently_verified'},
+            link_kind='page_block',locator=', '.join(entry['locators']),
+            details=details,
             warnings=['public_partner_card_summary_not_full_partner_terms']))
     return rows

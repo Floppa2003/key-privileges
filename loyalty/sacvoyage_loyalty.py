@@ -2,7 +2,7 @@
 from __future__ import annotations
 import re
 from bs4 import BeautifulSoup, Comment, Tag
-from normalized import make_offer, normalize_rates, text
+from normalized import make_offer, offer_rates, text
 from content_discovery import label_id, literal_benefits
 from partner_pages import content
 
@@ -46,14 +46,15 @@ def extract_sacvoyage(source, soup, url, observed_at, cfg):
         # The current page heading can supply a discount label; figures from
         # another section never supply a missing rate in this audience.
         benefit=text(titles[0].get_text())+': '+re.sub(r'\s+',' ',own)
-        rates=normalize_rates(benefit)
+        rates=offer_rates(source,benefit)
         claims,_=literal_benefits(own)
         kind='partner_offer' if rates or claims else 'source_observation'
         result.append(make_offer(source, native, cfg['program'], cfg['partner'], benefit,
             url, observed_at, title=heading, category=cfg['category'],
             conditions='\n'.join(filter(None,(own,common_text))), redemption=own,record_kind=kind,
             locator='main .services__text; section ' + heading,
-            details={'source_scope': 'hotel_owned_loyalty_not_RZD',
+            details={'_source': {'source_id': source},
+                     'source_scope': 'hotel_owned_loyalty_not_RZD',
                      'partner_identity_origin': 'reviewed_exact_partner_owned_url',
                      'audience': native, 'source_heading_context': text(titles[0].get_text()),
                      'source_account_used': False, 'personal_referral_link_obtained': False,

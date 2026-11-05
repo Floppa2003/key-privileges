@@ -63,6 +63,10 @@ DOCS = [
 ]
 BY_URL = {x["url"]: x for x in DOCS}
 BY_ID = {x["native_id"]: x for x in DOCS}
+BY_RECORD_ID = {
+    hashlib.sha256((SOURCE_ID + "\n" + x["native_id"]).encode()).hexdigest(): x
+    for x in DOCS
+}
 
 MONTHS = {
     "января": 1, "февраля": 2, "марта": 3, "апреля": 4,
@@ -323,6 +327,63 @@ def validate_partner_record(row: dict) -> None:
             or details.get("activation") != row.get("redemption_text")
             or details.get("limitations") != clauses["territory"]):
         raise ValueError("alfa_partner_pdf_practical_clauses_mismatch")
+
+
+def project_common(raw, n, benefit, condition, code):
+    """Project the reviewed rule clause, including its unresolved reward choice."""
+    from unified_normalization import digest as common_digest, validate_normalized
+
+    spec = BY_URL.get(raw.get("source_url"))
+    if (not spec or BY_RECORD_ID.get(raw["id"]) != spec
+            or raw.get("origin") != "parser_offers"
+            or raw.get("source_id") not in ("parser_offers", SOURCE_ID)):
+        raise ValueError("alfa_partner_pdf_common_identity")
+    d = raw["details"]
+    validate_partner_record({
+        "source_id": SOURCE_ID, "native_id": spec["native_id"],
+        "source_url": raw["source_url"], "program": raw["program"],
+        "partner_name": raw["partner"], "source_status": raw["source_status"],
+        "record_kind": raw["kind"], "link_kind": raw["link_kind"],
+        "benefit_url": raw["benefit_url"], "details": d,
+        "conditions_text": raw["conditions"], "redemption_text": raw["activation"],
+        "warnings": raw["source_warnings"],
+    })
+    # Serialized rates and the promotion's "up to" title are not the source
+    # of the exact rate. Re-derive it from the owned 3.2 clause itself.
+    rates = partner_rates(raw["benefit"])
+    if len(rates) != 1:
+        raise ValueError("alfa_partner_pdf_common_rate_missing")
+    rate = rates[0]
+    clause = rate["evidence"]
+    if clause not in raw["benefit"] or partner_rates(clause) != rates:
+        raise ValueError("alfa_partner_pdf_common_rate_evidence_mismatch")
+    reward = re.search(r"получают\s*(Альфа\s*-\s*Баллы/\s*Бонусные\s*Мили)", clause, re.I)
+    transactions = re.search(r"от\s*суммы\s*(всех|первой)\s*Расходн[а-я]+\s*операц[а-я]+", clause, re.I)
+    if not reward or not transactions:
+        raise ValueError("alfa_partner_pdf_common_reward_scope_missing")
+    transaction_scope = ("first_transaction_each_calendar_month" if transactions[1].casefold() == "первой"
+                         else "all_transactions_in_calendar_month")
+    if d["transaction_scope"] != transaction_scope:
+        raise ValueError("alfa_partner_pdf_common_transaction_scope_mismatch")
+    scope = {"transaction_scope": transaction_scope, "eligibility_not_verified": True}
+    rules = [
+        condition("owned_partner_rules", "/conditions", scope=scope),
+        condition("activation", "/activation", scope=scope),
+        condition("limitations", "/details/limitations", scope=scope),
+        condition("reward_transaction_rules", "/benefit", fragment=clause, scope=scope),
+    ]
+    b = benefit("earn_rewards", "/benefit", value=rate["value"], unit=rate["unit"],
+                qualifier=rate["qualifier"], reward_unit=reward[1], fragment=clause,
+                scope=scope, method="structured_source")
+    b.update(condition_ids=[r["id"] for r in rules], condition_linkage="full_owned_record_rules",
+             remaining_record_rules_require_review=True)
+    for i, value in enumerate(raw["codes"]):
+        code(value, f"/codes/{i}", scope)
+    n["quality"]["level"] = "structured_with_review"
+    n["quality"]["issues"].append("exact_partner_rate_requires_full_owned_conditions")
+    n["content_sha256"] = common_digest({k: v for k, v in n.items() if k != "content_sha256"})
+    validate_normalized(n)
+    return n
 
 
 async def collect(cfg, report, observed_at: str, limit: int) -> list[dict]:

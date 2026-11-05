@@ -87,14 +87,18 @@ def needs_page_ocr(native_text, image_count):
     return not native_text or (image_count>0 and characters<40) or (image_count>=10 and characters<500)
 
 
-def page_image_count(page):
+def _prepare_pdf_page(page):
     """Inspect Form resources before native extraction can recurse into them.
 
     Shared resource dictionaries may refer back to their own Forms. Visit
     their objects once; only a cycle of actual Do calls is recursive drawing.
+    Legacy Forms without Resources use this page's resources, including when
+    the same Form is used on another page with different fonts or XObjects.
     """
-    from pypdf.generic import ContentStream
+    from copy import copy
+    from pypdf.generic import ContentStream,DictionaryObject,NameObject
     images=set();seen=set();seen_resources=set();references=0
+    resources={};forms={}
 
     def resolve(value):
         return value.get_object() if hasattr(value,'get_object') else value
@@ -106,9 +110,12 @@ def page_image_count(page):
         if not isinstance(result,dict):raise ValueError('pdf_xobject_resource_shape')
         return result
 
-    pending=[page.get('/Resources',{})]
+    page_resources=resolve(page.get('/Resources',{}))
+    pending=[page_resources]
     while pending:
-        objects=xobjects(pending.pop())
+        resource=resolve(pending.pop())
+        objects=xobjects(resource)
+        resources[id(resource)]=(resource,objects)
         if id(objects) in seen_resources:continue
         seen_resources.add(id(objects))
         for reference in objects.values():
@@ -123,12 +130,32 @@ def page_image_count(page):
                 images.add(ident)
             elif obj.get('/Subtype')=='/Form':
                 if not hasattr(obj,'get_data'):raise ValueError('pdf_xobject_resource_shape')
-                pending.append(obj.get('/Resources',{}))
+                forms[ident]=obj
+                pending.append(obj.get('/Resources',page_resources))
 
-    calls={};active=set();invocations=0
+    if any('/Resources' not in form for form in forms.values()):
+        # Copy only the bounded resource graph. Stream bytes and non-Form
+        # objects stay shared; page-specific bindings never mutate the reader.
+        bound_forms={ident:copy(form) for ident,form in forms.items()}
+        bound_resources={}
+        for ident,(resource,objects) in resources.items():
+            bound=DictionaryObject(resource)
+            bound_objects=DictionaryObject(objects)
+            for name,reference in objects.items():
+                form=bound_forms.get(id(resolve(reference)))
+                if form is not None:bound_objects[name]=form
+            bound[NameObject('/XObject')]=bound_objects
+            bound_resources[ident]=bound
+        for ident,form in forms.items():
+            resource=resolve(form.get('/Resources',page_resources))
+            bound_forms[ident][NameObject('/Resources')]=bound_resources[id(resource)]
+        page=copy(page)
+        page[NameObject('/Resources')]=bound_resources[id(page_resources)]
+
+    calls={};active=set();invocations=0;inline_images=0
 
     def drawing(obj,stream,depth):
-        nonlocal invocations
+        nonlocal invocations,inline_images
         if depth>MAX_FORM_DEPTH:raise ValueError('pdf_xobject_depth_limit')
         key=id(obj)
         if key not in calls:
@@ -137,6 +164,10 @@ def page_image_count(page):
                 if len(stream.get_data())>MAX_CONTENT_STREAM_BYTES:raise ValueError('pdf_content_stream_limit')
                 objects=xobjects(obj.get('/Resources',{}))
                 for operands,operator in ContentStream(stream,page.pdf,'bytes').operations:
+                    if operator==b'INLINE IMAGE':
+                        # Each stream is parsed once, including reused Forms.
+                        inline_images+=1
+                        continue
                     if operator!=b'Do':continue
                     if len(operands)!=1 or not isinstance(operands[0],str):raise ValueError('pdf_xobject_resource_shape')
                     target=resolve(objects.get(operands[0]))
@@ -152,7 +183,11 @@ def page_image_count(page):
             active.remove(ident)
 
     drawing(page,page.get_contents(),0)
-    return len(images)
+    return page,len(images)+inline_images
+
+
+def page_image_count(page):
+    return _prepare_pdf_page(page)[1]
 
 
 def extract_pdf(data, *, allow_ocr=True):
@@ -166,7 +201,7 @@ def extract_pdf(data, *, allow_ocr=True):
     with tempfile.TemporaryDirectory() as temp:
         pdf_path=Path(temp)/'document.pdf';pdf_path.write_bytes(data)
         for number,page in enumerate(reader.pages,1):
-            images=page_image_count(page)
+            page,images=_prepare_pdf_page(page)
             value=(page.extract_text() or '').strip()
             item={'number':number,'text':value,'sha256':sha(value.encode()),'method':'native_pdf_text'}
             if needs_page_ocr(value,images):
@@ -253,7 +288,7 @@ def validate_document_record(record):
     if (record['record_kind'] not in ('program_rules','source_observation')
         or d.get('evidence_role')!='supplementary_rules_not_incremental_discount'
         or not re.fullmatch('[a-f0-9]{64}',d.get('document_sha256',''))
-        or not pages or record['conditions_text']!=text(page_text(pages))):
+        or not pages or record['conditions_text']!=text(page_text(pages),markup=False)):
         raise ValueError('live_document_identity_or_text_mismatch')
     for page in pages:
         if (type(page.get('number')) is not int or not 1<=page['number']<=d['page_count']
