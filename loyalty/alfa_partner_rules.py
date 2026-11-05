@@ -14,7 +14,6 @@ from datetime import date
 from urllib.parse import urlsplit
 
 import requests
-from pypdf import PdfReader
 
 from normalized import make_offer, validate_offer
 
@@ -119,6 +118,10 @@ def fetch_pdf(url: str, *, get=requests.get) -> bytes:
 
 
 def pdf_text(data: bytes) -> str:
+    # Stored-text projection also imports this module in publishers that do
+    # not decode documents and intentionally install no PDF dependencies.
+    from pypdf import PdfReader
+
     if not data.startswith(b"%PDF-") or len(data) > MAX_BYTES:
         raise ValueError("alfa_partner_pdf_identity")
     reader = PdfReader(io.BytesIO(data))
