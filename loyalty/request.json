@@ -1,10 +1,9 @@
 {
-  "request_id": "2026-11-05-deterministic-parsing-repair",
+  "request_id": "2026-11-05-parsing-round2-static-http",
   "source_ids": [
-    "t2_magnit_rules",
-    "af_vipzal_rules",
-    "rzd_finuslugi_rules"
+    "ural_gloria_rules",
+    "af_istochnik"
   ],
-  "reason": "Verify the repaired deterministic article readiness and document reading on the three existing public rule sources after merge. Publish only freshly collected accepted rows through the existing validated Sheets writer and verify destination readback. Preserve failed-source coverage, previous observation dates for unavailable records, source identities, manual values and existing delivery budgets.",
+  "reason": "Read the two reviewed static partner pages through the existing validated HTTP transport after merge. Publish only freshly accepted GLORIA and Istochnik records through the existing Sheets writer and verify destination readback. Preserve source identity, refusal and challenge checks, previous observations for unavailable records, manual values and delivery budgets.",
   "publish": true
 }

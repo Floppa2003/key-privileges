@@ -1,0 +1,17 @@
+{
+  "id": "ural_gloria_rules",
+  "url": "https://hotelamur.com/partners-bonus-ural-airlines/",
+  "retrieved_at": "2026-11-05T10:34:27.813626+00:00",
+  "method": "single anonymous urllib HTTPS GET; standard TLS; no redirects or retries",
+  "status": 200,
+  "final_url": "https://hotelamur.com/partners-bonus-ural-airlines/",
+  "content_type": "text/html; charset=UTF-8",
+  "location": null,
+  "sha256": "a5227616adcd0e0f15fe9bfa854393e026e7059e54c8d338145534174b649637",
+  "bytes": 120188,
+  "elapsed_seconds": 8.553,
+  "fixture": "gloria-krylya-20261105.html",
+  "fixture_sha256": "a5227616adcd0e0f15fe9bfa854393e026e7059e54c8d338145534174b649637",
+  "transformations": [],
+  "regression_scope": "The original static HTTP response is sufficient for the current reviewed parser; the historical CI navigation timeout cause is not asserted."
+}

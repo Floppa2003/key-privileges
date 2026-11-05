@@ -15,7 +15,7 @@ import zipfile
 
 sys.path.insert(0, str(Path(__file__).parents[1]))
 from ekp_upstream import main, select_upstream, validate_upstream
-from test_ekp_session import Fake, run, session
+from test_ekp_session import Fake, fail_after, run, session
 from ekp_session_collect import collect, validate_session_bundle
 
 REPOSITORY = 'Floppa2003/key-privileges'
@@ -36,13 +36,9 @@ def recent_run():
 def source_archive(run_id, commit, *, partial=False, observed='2026-11-02T17:05:19+00:00'):
     """Real collector/projection; only source responses and the clock are fakes."""
     start = datetime.fromisoformat(observed)
-    obj = session(121 if partial else 2)
-    obj['startedAt'] = (start + timedelta(seconds=1)).isoformat()
-    obj['finishedAt'] = (start + timedelta(seconds=3)).isoformat()
-    for page in obj['pages']:
-        page['completedAt'] = (start + timedelta(seconds=2)).isoformat()
+    obj = session(121 if partial else 2, started_at=start + timedelta(seconds=1))
     if partial:
-        obj.update(pages=obj['pages'][:1], complete=False, errors=['source_body_error'])
+        fail_after(obj, reason='source_body_error')
     with tempfile.TemporaryDirectory() as folder:
         with patch('ekp_session_collect.now', return_value=(start + timedelta(seconds=4)).isoformat()):
             collect(Fake(obj), folder, run_id=f'{run_id}:1', observed_at=observed, commit=commit)
@@ -282,10 +278,7 @@ class EkpUpstreamValidation(unittest.TestCase):
                 validate_session_bundle(folder, run_id='fixture:1', commit='test', clock=clock)
 
     def test_partial_successful_job_is_not_usable_as_complete_catalogue(self):
-        obj = session(245)
-        obj['pages'] = obj['pages'][:1]
-        obj['complete'] = False
-        obj['errors'] = ['source_http_refusal']
+        obj = fail_after(session(245))
         with tempfile.TemporaryDirectory() as folder:
             bundle = run(Fake(obj), folder)
             self.assertEqual(bundle['sources'][0]['status'], 'partial')

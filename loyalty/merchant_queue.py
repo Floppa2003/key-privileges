@@ -345,73 +345,101 @@ def process_pool(documents: list[dict], state: dict, state_path: Path, out: Path
 async def capture_page(browser, target: dict, out: Path) -> dict:
     # Reuse the existing lossless evidence recorder. No acceptance case list is used.
     sys.path.insert(0, str(HERE.parent))
-    from diagnostics.deepseek_acceptance import tile_png, store
+    from diagnostics.deepseek_acceptance import (capture_diagnostics, record_capture_text,
+                                                 scroll_full_page, screenshot_tiles, store)
     from public_transport import PublicSource, check_response
     from playwright.async_api import Error as BrowserError
     ident, url = target['id'], evidence.capture_url(target)
     folder = out / ident
     folder.mkdir()
     capture = {'scope': 'pdf', 'target_found': False, 'content_ready': True}
-    async with PublicSource(browser, url) as source:
-        raw = None
-        if urlsplit(url).path.lower().endswith('.pdf'):
-            raw = await source.read_pdf(url)
-        else:
-            await source.page.set_viewport_size({'width': 1024, 'height': 1024})
-            try:
-                status, html = await source.navigate(url)
-            except BrowserError as exc:
-                if 'Page.goto: Download is starting' not in str(exc):
-                    raise
-                # Content-Type can trigger a download even without a .pdf suffix.
-                # Read the same anonymous URL; status, every redirect, size and
-                # the actual PDF signature remain mandatory in read_pdf().
+    with capture_diagnostics(folder, url) as diagnostic:
+        async with PublicSource(browser, url) as source:
+            finish = getattr(source, 'finish_capture', None)
+            raw = None
+            if urlsplit(url).path.lower().endswith('.pdf'):
+                diagnostic['stage'] = 'pdf_read'
                 raw = await source.read_pdf(url)
-        if raw is not None:
-            pdf = folder / 'source.pdf'; pdf.write_bytes(raw)
-            # Embedded text plus ALL rendered pages. No OCR or text-only substitution.
-            subprocess.run(['pdftotext', '-layout', str(pdf), str(folder/'visible-text.txt')],
-                           check=True, timeout=60, capture_output=True)
-            subprocess.run(['pdftoppm', '-scale-to', '1024', '-png', str(pdf), str(folder/'pdf')],
-                           check=True, timeout=180, capture_output=True)
-            pages = sorted(folder.glob('pdf-*.png'), key=lambda p: int(p.stem.split('-')[-1]))
-            if not 1 <= len(pages) <= 40:
-                raise ValueError('image_count_budget_no_truncation')
-            images = [p.read_bytes() for p in pages]
-            text = (folder/'visible-text.txt').read_text(encoding='utf-8')
-            capture['target_found'] = evidence.has_target(text, target['partner'])
-            if not text.strip(): text = '[PDF without embedded text; use all attached rendered pages.]'
-        else:
-            with source.observe_navigation(include_current=True) as latest:
-                check_response(status, html)
-                capture = await evidence.prepare_public_page(source.page, target)
-                # Reveal native HTML disclosures; no form submissions or account interaction.
-                await source.page.evaluate("document.querySelectorAll('details').forEach(n => n.open = true)")
-                for _ in range(40):
-                    size = await source.page.evaluate('({y:scrollY,h:innerHeight,total:document.documentElement.scrollHeight})')
-                    if size['total'] > 40960: raise ValueError('image_budget_no_truncation')
-                    if size['y'] + size['h'] >= size['total'] - 2: break
-                    await source.page.evaluate('window.scrollBy(0,900)')
-                    await source.page.wait_for_timeout(100)
-                else: raise ValueError('scroll_budget_no_truncation')
-                await source.page.evaluate('window.scrollTo(0,0)')
-                await source.page.wait_for_timeout(700)
-                status, html = await source.document_content(latest)
-                check_response(status, html)
-                current_response, current_url = latest[-1], source.page.url
-                text = await source.page.locator('body').inner_text(timeout=15000)
-                if not text.strip(): raise ValueError('empty_page')
-                (folder/'source.html').write_text(html, encoding='utf-8')
-                images = tile_png(await source.page.screenshot(full_page=True, animations='disabled', timeout=30000))
-                if latest[-1] is not current_response or source.page.url != current_url:
-                    raise ValueError('page_navigation_unstable')
-        spec = store(out, ident, {'partner': target['partner'], 'program': target['program'],
-                                  'as_of': datetime.now(timezone.utc).date().isoformat()},
-                     text, images, source_url=url)
-        spec = evidence.attach(spec, target, capture)
-        extractor.save(folder / 'source-records.json', spec['source_records'])
-        extractor.save(folder / 'capture-readiness.json', capture)
-        return spec
+            else:
+                await source.page.set_viewport_size({'width': 1024, 'height': 1024})
+                try:
+                    status, html = await source.navigate(url)
+                except BrowserError as exc:
+                    if 'Page.goto: Download is starting' not in str(exc):
+                        raise
+                    # Content-Type can trigger a download even without a .pdf suffix.
+                    # The same public URL keeps all status, redirect and PDF checks.
+                    diagnostic['stage'] = 'pdf_read'
+                    raw = await source.read_pdf(url)
+            if raw is not None:
+                diagnostic['stage'] = 'pdf_render'
+                pdf = folder / 'source.pdf'; pdf.write_bytes(raw)
+                # Embedded text plus ALL rendered pages. No OCR or text-only substitution.
+                subprocess.run(['pdftotext', '-layout', str(pdf), str(folder/'visible-text.txt')],
+                               check=True, timeout=60, capture_output=True)
+                subprocess.run(['pdftoppm', '-scale-to', '1024', '-png', str(pdf), str(folder/'pdf')],
+                               check=True, timeout=180, capture_output=True)
+                pages = sorted(folder.glob('pdf-*.png'), key=lambda p: int(p.stem.split('-')[-1]))
+                if not 1 <= len(pages) <= 40:
+                    raise ValueError('image_count_budget_no_truncation')
+                images = [p.read_bytes() for p in pages]
+                text = (folder/'visible-text.txt').read_text(encoding='utf-8')
+                capture['target_found'] = evidence.has_target(text, target['partner'])
+                if not text.strip(): text = '[PDF without embedded text; use all attached rendered pages.]'
+            else:
+                diagnostic.update(http_status=status, final_url=source.page.url)
+                record_capture_text(folder, 'source.html', html, diagnostic)
+                with source.observe_navigation(include_current=True) as latest:
+                    check_response(status, html)
+                    diagnostic['stage'] = 'content_readiness'
+                    capture = await evidence.prepare_public_page(source.page, target)
+                    # Reveal native HTML disclosures; no form submissions or account interaction.
+                    await source.page.evaluate("document.querySelectorAll('details').forEach(n => n.open = true)")
+                    await scroll_full_page(source.page, diagnostic)
+                    await source.page.evaluate('window.scrollTo({left:0,top:0,behavior:"instant"})')
+                    await source.page.wait_for_timeout(700)
+                    diagnostic['stage'] = 'transport_readiness'
+                    before = await finish() if finish else None
+                    generation = before['resource_generation'] if before else None
+                    if before:
+                        diagnostic['transport_generation_before'] = generation
+                    diagnostic['stage'] = 'final_document'
+                    status, html = await source.document_content(latest)
+                    diagnostic.update(http_status=status, final_url=source.page.url)
+                    check_response(status, html)
+                    current_response, current_url = latest[-1], source.page.url
+                    record_capture_text(folder, 'source.html', html, diagnostic)
+                    diagnostic['stage'] = 'text'
+                    text = await source.page.locator('body').inner_text(timeout=15000)
+                    if not text.strip(): raise ValueError('empty_page')
+                    record_capture_text(folder, 'visible-text.txt', text, diagnostic)
+                    images = await screenshot_tiles(source.page, diagnostic)
+                    diagnostic['stage'] = 'transport_validation'
+                    transport = await finish() if finish else None
+                    if transport:
+                        diagnostic['transport'] = transport
+                    if before and (not transport or transport['resource_generation'] != generation):
+                        raise ValueError('capture_resources_changed')
+                    if transport:
+                        capture['transport'] = transport
+                    if latest[-1] is not current_response or source.page.url != current_url:
+                        raise ValueError('page_navigation_unstable')
+            if raw is not None and finish:
+                # PDF bytes are already fixed; HTML additionally freezes resources
+                # before the DOM/text/screenshot read and checks the generation after.
+                diagnostic['stage'] = 'transport_validation'
+                transport = await finish()
+                if transport:
+                    capture['transport'] = transport
+                    diagnostic['transport'] = transport
+            diagnostic['stage'] = 'store'
+            spec = store(out, ident, {'partner': target['partner'], 'program': target['program'],
+                                      'as_of': datetime.now(timezone.utc).date().isoformat()},
+                         text, images, source_url=url, image_layout=diagnostic.get('image_layout'))
+            spec = evidence.attach(spec, target, capture)
+            extractor.save(folder / 'source-records.json', spec['source_records'])
+            extractor.save(folder / 'capture-readiness.json', capture)
+            return spec
 
 
 async def prepare_queue(state_path: Path, catalog_path: Path, out: Path, max_pages: int,
