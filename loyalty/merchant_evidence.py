@@ -49,8 +49,13 @@ def cache_records(records: list[dict]) -> list[dict]:
 def request_text(document: dict, *, for_cache: bool = False) -> str:
     source = document.get('source', {})
     records = source.get('source_records', [])
+    scoped = source.get('capture', {}).get('scope') == 'hse_partner_sections'
+    label = ('Текст выбранных разделов исходной страницы HSE; изображения показывают '
+             'те же разделы отдельно, в порядке фрагментов. context — контекст программы '
+             'или категории, card — карточка, detail — принадлежащие ей условия.\n'
+             if scoped else '')
     if not records:
-        return document['text']
+        return label + document['text']
     if for_cache:
         records = cache_records(records)
     # No filtering or hand-authored summary of the original offer. The normalized
@@ -61,7 +66,8 @@ def request_text(document: dict, *, for_cache: bool = False) -> str:
         'нормализованные поля — результат сборщика, а не независимое подтверждение. '
         'observed_at — время получения записи, не срок акции.\n'
         + json.dumps(records, ensure_ascii=False, sort_keys=True, allow_nan=False)
-        + '\nEND_COLLECTOR_RECORDS\n\nПолный видимый текст захваченной страницы:\n'
+        + '\nEND_COLLECTOR_RECORDS\n\n'
+        + (label if scoped else 'Полный видимый текст захваченной страницы:\n')
     )
     return supplement + document['text']
 
@@ -145,6 +151,12 @@ async def prepare_public_page(page, target: dict) -> dict:
     info = {'target_found': False, 'content_ready': False,
             'scope': 'catalogue_card' if catalogue else 'page'}
     await page.evaluate("document.querySelectorAll('details').forEach(n => n.open = true)")
+    from hse_alumni import ROOT as HSE_ROOT
+    if target['url'].split('#', 1)[0] == HSE_ROOT:
+        from hse_capture_plan import selection
+        plan = selection(await page.content(), target)
+        return {'scope': 'hse_partner_sections', 'target_found': True, 'content_ready': True,
+                'readiness': 'owned_partner_sections', 'selection': plan}
     if catalogue:
         info['native_ids'] = ids
         try:

@@ -386,6 +386,9 @@ def load_manifest(path: Path, *, max_documents: int = 30) -> list[dict]:
             with Image.open(io.BytesIO(raw)) as im:
                 if im.format != 'PNG': raise ValueError('source_not_png')
                 im.verify()
+        if spec.get('capture', {}).get('scope') == 'hse_partner_sections' or 'source_html' in spec:
+            from hse_capture import validate_capture
+            validate_capture(spec, read, text, images)
         documents.append({'id': case, 'target': copy.deepcopy(target), 'text': text,
                           'images': images, 'source': copy.deepcopy(spec)})
     return documents

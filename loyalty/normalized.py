@@ -182,6 +182,15 @@ def offer_rates(source_id, value):
     return normalize_rates(value)
 
 
+def source_extraction_text(source_id, benefit, conditions, redemption, details):
+    if source_id=='aeroflot':
+        from aeroflot_import_catalog import semantic_fields_for_details
+        source=semantic_fields_for_details(details or {})
+        if source is not None:
+            return '\n'.join(source[k] for k in ('benefit','conditions','redemption'))
+    return '\n'.join((benefit,conditions,redemption))
+
+
 def make_offer(source_id: str, native_id: str, program: str, partner_name: str | None,
                benefit: str, url: str, observed_at: str, *, conditions: str = '',
                redemption: str = '', title: str = '', category: str | None = None,
@@ -212,7 +221,7 @@ def make_offer(source_id: str, native_id: str, program: str, partner_name: str |
         raise ValueError('An offer needs source evidence')
     if any(len(s)>40000 for s in (benefit,conditions,redemption)):
         raise ValueError('Oversized text; refusing to truncate conditions')
-    all_text = '\n'.join((benefit,conditions,redemption))
+    all_text = source_extraction_text(source_id,benefit,conditions,redemption,details)
     if source_id=='hse_alumni':
         from hse_alumni import hse_codes
         promo=hse_codes(all_text,tables,preview=record_kind=='source_observation')
@@ -268,11 +277,13 @@ def validate_offer(r: dict) -> None:
         raise ValueError('Evidence hash mismatch')
     if r.get('rates')!=offer_rates(r['source_id'],r.get('benefit_text','')):
         raise ValueError('Rate evidence mismatch')
+    all_text=source_extraction_text(r['source_id'],r.get('benefit_text',''),r.get('conditions_text',''),
+                                    r.get('redemption_text',''),r.get('details',{}))
     if r['source_id']=='hse_alumni':
         from hse_alumni import hse_codes
-        promo=hse_codes('\n'.join(r.get(k,'') for k in ('benefit_text','conditions_text','redemption_text')),r.get('tables',[]),preview=r['record_kind']=='source_observation')
+        promo=hse_codes(all_text,r.get('tables',[]),preview=r['record_kind']=='source_observation')
     else:
-        promo=extract_promocodes('\n'.join(r.get(k,'') for k in ('benefit_text','conditions_text','redemption_text')),r.get('tables',[]))
+        promo=extract_promocodes(all_text,r.get('tables',[]))
     if (r.get('promo_codes')!=promo['codes']
         or r.get('details',{}).get('promo_code_evidence')!=promo['evidence']
         or r.get('details',{}).get('promo_code_delivery')!=promo['delivery']

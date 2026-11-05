@@ -179,14 +179,30 @@ def make_input(raw):
 
 def _clauses(raw):
     seen=set()
-    for name in ('benefit','conditions','activation'):
-        value=raw.get(name) or ''
+    source_fields=[('/'+name,raw.get(name) or '') for name in ('benefit','conditions','activation')]
+    details=raw.get('details',{})
+    partner=details.get('public_partner')
+    # Published Sheets rows can identify their adapter by retrieval method
+    # without a separate source_id. The version marker also prevents downgrade.
+    if (raw.get('source_id')=='aeroflot'
+            or details.get('retrieval_method')=='aeroflot_public_api_google_import_v1'
+            or isinstance(partner,dict) and 'link_projection_version' in partner):
+        from aeroflot_import_catalog import fields,semantic_fields_for_details
+        source=semantic_fields_for_details(details)
+        if source is not None:
+            benefit,conditions=fields(details['public_partner'])
+            if (raw.get('benefit')!=benefit or raw.get('conditions')!=conditions
+                    or raw.get('activation')!=source['redemption']):
+                raise ValueError('af_record_semantic_display_binding')
+            source_fields=[('/details/semantic_fields/'+name,source[name])
+                           for name in ('benefit','conditions','redemption')]
+    for path,value in source_fields:
         # Preserve decimal periods, URLs, dates and the actual original substring.
         for m in re.finditer(r'[^\n;]+',value):
             clause=m.group().strip()
             if not clause or clause in seen:continue
             seen.add(clause)
-            yield '/'+name,clause
+            yield path,clause
 
 
 def _scope(clause):

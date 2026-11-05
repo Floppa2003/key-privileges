@@ -105,10 +105,18 @@ def claim_text(body):
     return '\n'.join(dict.fromkeys(line for line in body.splitlines() if CLAIM.search(line)))
 
 
-def blocks(raw):
-    dom=BeautifulSoup(raw,'html.parser')
+def _clean_dom(dom):
     for n in dom.select('script,style,noscript,form,input,textarea,iframe,[hidden],[aria-hidden="true"]'):n.decompose()
     for n in dom.find_all(string=lambda s:isinstance(s,Comment)):n.extract()
+
+
+def _has_visual(node):
+    return node.name in ('img','picture','svg','canvas','video') or bool(node.select('img,picture,svg,canvas,video'))
+
+
+def _owned_blocks(dom):
+    """Shared ownership, retaining nodes for native source-region capture."""
+    _clean_dom(dom)
     roots=dom.select('.post__text.builder_content')
     if len(roots)!=1:raise ValueError('hse_programme_body')
     root=roots[0];cards=root.select('.fa-person__item')
@@ -121,7 +129,7 @@ def blocks(raw):
     # Reserve explicit-anchor sections before considering heading-only joins.
     # The first nonempty section after an anchor belongs to that anchor even
     # when its shorter display title also matches a different catalogue card.
-    explicit_parts={};reserved=set()
+    explicit_parts={};capture_parts={};reserved=set()
     for anchor in names:
         targets=root.find_all('a',attrs={'name':anchor})
         if len(targets)>1:raise ValueError('hse_duplicate_target')
@@ -130,18 +138,23 @@ def blocks(raw):
         if owner is None or owner.parent is not root:raise ValueError('hse_anchor_owner')
         if len(owner.select('a[name]'))!=1:raise ValueError('hse_anchor_ambiguous')
         parts=[owner] if text(owner.get_text(' ',strip=True)) else []
+        visual_parts=[owner] if parts or _has_visual(owner) else []
         for node in owner.next_siblings:
             if not isinstance(node,Tag):continue
             if node.select('a[name]') or node.select('.nom h1'):break
             if node.select('.fa-person__item'):raise ValueError('hse_detail_reentered_inventory')
-            if not text(node.get_text(' ',strip=True)):continue
+            if not text(node.get_text(' ',strip=True)):
+                if _has_visual(node):visual_parts.append(node)
+                continue
             if parts:
                 try:owned=heading_identity(node,names)
                 except ValueError:break  # An ambiguous next heading is a boundary.
                 if owned and owned[0]!=anchor:break
             parts.append(node)
+            visual_parts.append(node)
         explicit_parts[anchor]=parts
-        reserved.update(id(node) for node in parts)
+        capture_parts[anchor]=visual_parts
+        reserved.update(id(node) for node in visual_parts)
     # A named section not in today's catalogue is still not ownerless. Never
     # use it to fill an unrelated card whose explicit anchor is missing.
     for marker in root.select('a[name]'):
@@ -194,9 +207,16 @@ def blocks(raw):
                 except (ValueError,TypeError):continue
                 item={'label':text(link.get_text(' ',strip=True)),'url':target}
                 if item not in links:links.append(item)
-        result.append({'anchor':anchor,'name':name,'category':text(headings[0].get_text(' ',strip=True)),
-                       'summary':summary,'body':body,'links':links,'detail_state':state,**identity})
-    return result
+        block={'anchor':anchor,'name':name,'category':text(headings[0].get_text(' ',strip=True)),
+               'summary':summary,'body':body,'links':links,'detail_state':state,**identity}
+        # Text and link projection stay historical; native capture also keeps
+        # image-only sections whose ownership follows the same anchor boundary.
+        result.append((block,card,capture_parts.get(anchor,parts),headings[0]))
+    return root,result,reserved
+
+
+def blocks(raw):
+    return [entry[0] for entry in _owned_blocks(BeautifulSoup(raw,'html.parser'))[1]]
 
 
 def block_hash(block):
