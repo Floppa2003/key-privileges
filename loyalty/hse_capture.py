@@ -9,6 +9,7 @@ import re
 from PIL import Image
 
 SCOPE = 'hse_partner_sections'
+OCCLUSION_CHECK = 'outside_positioned_overlap_v1'
 
 
 def flat_text(value):
@@ -19,6 +20,68 @@ def flat_text(value):
 def joined_text(regions):
     return '\n\n'.join(f"[Фрагмент {index}; {region['role']}]\n{region['text']}"
                        for index, region in enumerate(regions, 1))
+
+
+async def dismiss_overlays(page, diagnostic):
+    """Use the page's native dismissal controls; never remove or restyle its DOM."""
+    closed = await page.evaluate('''() => {
+        const ids = new Set();
+        for (const frame of document.querySelectorAll('.tally-popup iframe[src]')) {
+            const url = new URL(frame.src);
+            const match = url.pathname.match(/^\\/popup\\/([A-Za-z0-9]+)\\/?$/);
+            if (url.origin === 'https://tally.so' && match) ids.add(match[1]);
+        }
+        if (ids.size && typeof window.Tally?.closePopup !== 'function')
+            throw new Error('hse_popup_native_close_missing');
+        for (const id of ids) window.Tally.closePopup(id);
+        return Array.from(ids);
+    }''')
+    if closed:
+        await page.wait_for_function('''() =>
+            Array.from(document.querySelectorAll('.tally-popup iframe')).every(node => {
+                const box = node.getBoundingClientRect();
+                return !box.width || !box.height || getComputedStyle(node).visibility === 'hidden';
+            })''', timeout=5000)
+        diagnostic.setdefault('native_dismissals', []).extend(
+            {'control': 'Tally.closePopup', 'form_id': ident} for ident in closed)
+    banner = page.locator('.gdpr_bar')
+    if await banner.count():
+        if await banner.count() != 1:
+            raise ValueError('hse_cookie_close_ambiguous')
+        if await banner.is_visible():
+            close = banner.locator('.gdpr_bar__close')
+            if await close.count() != 1:
+                raise ValueError('hse_cookie_native_close_missing')
+            await close.click(timeout=5000)
+            await banner.wait_for(state='hidden', timeout=5000)
+            diagnostic.setdefault('native_dismissals', []).append({'control': 'gdpr_bar__close'})
+
+
+async def check_occlusion(locator, diagnostic, phase):
+    # A clip can have valid dimensions and complete innerText while a floating
+    # sibling covers its pixels. Check positioned outsiders before and after it.
+    blockers = await locator.evaluate('''root => {
+        const box = root.getBoundingClientRect();
+        const hseOccluders = [];
+        for (const node of document.body.querySelectorAll('*')) {
+            if (root.contains(node) || node.contains(root)) continue;
+            const style = getComputedStyle(node);
+            if (!['fixed', 'sticky', 'absolute'].includes(style.position)
+                    || style.visibility === 'hidden' || style.display === 'none'
+                    || Number(style.opacity) === 0) continue;
+            const r = node.getBoundingClientRect();
+            if (r.width > 1 && r.height > 1 && r.right > box.left + 1
+                    && r.left < box.right - 1 && r.bottom > box.top + 1
+                    && r.top < box.bottom - 1) {
+                hseOccluders.push({tag: node.tagName, id: node.id,
+                    class: String(node.className).slice(0, 160), position: style.position});
+            }
+        }
+        return hseOccluders;
+    }''')
+    if blockers:
+        diagnostic['occlusion'] = {'phase': phase, 'elements': blockers}
+        raise ValueError('hse_scope_region_occluded')
 
 
 async def prepare_regions(page, plan):
@@ -41,6 +104,7 @@ async def capture_regions(page, plan, diagnostic):
 
     images, regions = [], []
     for expected in plan['regions']:
+        await dismiss_overlays(page, diagnostic)
         locator = page.locator(expected['locator'])
         if await locator.count() != 1 or not await locator.is_visible():
             raise ValueError('hse_scope_region_missing_or_hidden')
@@ -67,7 +131,9 @@ async def capture_regions(page, plan, diagnostic):
                 or flat_text(text) != flat_text(expected['source_text'])):
             raise ValueError('hse_scope_visible_text_mismatch')
         diagnostic['stage'] = 'hse_region_screenshot'
+        await check_occlusion(locator, diagnostic, 'before_screenshot')
         raw = await locator.screenshot(animations='disabled', timeout=30000)
+        await check_occlusion(locator, diagnostic, 'after_screenshot')
         tile_info = {}
         parts = tile_png(raw, diagnostics=tile_info)
         if len(images) + len(parts) > MAX_TILES:
@@ -76,6 +142,7 @@ async def capture_regions(page, plan, diagnostic):
         if after != before:
             raise ValueError('hse_scope_region_changed')
         regions.append({'role': expected['role'], 'locator': expected['locator'], 'text': text,
+                        'occlusion_check': OCCLUSION_CHECK,
                         'image_start': len(images), 'image_count': len(parts),
                         'layout': tile_info['image_layout']})
         images.extend(parts)
@@ -104,6 +171,8 @@ def validate_capture(spec, read, text, images):
         raise ValueError('hse_scope_regions_mismatch')
     cursor = 0
     for region, expected in zip(regions, plan['regions']):
+        if region.get('occlusion_check') != OCCLUSION_CHECK:
+            raise ValueError('hse_scope_occlusion_check_missing')
         if (region.get('role') != expected['role'] or region.get('locator') != expected['locator']
                 or not isinstance(region.get('text'), str)
                 or (not region['text'].strip() and expected.get('visual_only') is not True)

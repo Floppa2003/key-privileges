@@ -8,7 +8,7 @@ import sys
 import tempfile
 from types import SimpleNamespace
 import unittest
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, patch
 
 from PIL import Image
 
@@ -55,6 +55,8 @@ class HseReadinessTests(unittest.IsolatedAsyncioTestCase):
             async def is_visible(self): return True
             async def scroll_into_view_if_needed(self, **kwargs): pass
             async def evaluate(self, expression):
+                if 'hseOccluders' in expression:
+                    return []
                 if 'outerHTML' in expression:
                     return raw
                 if 'getBoundingClientRect' in expression:
@@ -70,13 +72,50 @@ class HseReadinessTests(unittest.IsolatedAsyncioTestCase):
         plan = {'regions': [{'role': 'detail', 'locator': 'div', 'visual_only': True,
                              **fragment_evidence(raw)}]}
         try:
-            text, images, regions = await capture_regions(SimpleNamespace(locator=locate), plan, {})
+            with patch('hse_capture.dismiss_overlays', new=AsyncMock()):
+                text, images, regions = await capture_regions(SimpleNamespace(locator=locate), plan, {})
         except ValueError as exc:
             self.fail(f'Owned image-only terms were discarded: {exc}')
         self.assertEqual(len(images), 1)
         self.assertEqual(regions[0]['text'], '')
         self.assertEqual(regions[0]['image_count'], 1)
         self.assertNotIn('Скидка', text)
+
+    async def test_external_overlay_before_or_during_screenshot_refuses_capture(self):
+        from hse_capture import capture_regions
+        from hse_capture_plan import fragment_evidence
+        raw = '<div>Полные условия</div>'
+        output = io.BytesIO()
+        Image.new('RGB', (2, 2), 'white').save(output, format='PNG')
+
+        class Element:
+            def __init__(self, delayed):
+                self.delayed, self.screenshots = delayed, 0
+            async def count(self): return 1
+            async def is_visible(self): return True
+            async def scroll_into_view_if_needed(self, **kwargs): pass
+            async def evaluate(self, expression):
+                if 'hseOccluders' in expression:
+                    return [{'tag': 'DIV', 'id': 'feedback'}] if not self.delayed or self.screenshots else []
+                if 'outerHTML' in expression: return raw
+                if 'getBoundingClientRect' in expression:
+                    return {'width': 2, 'height': 2, 'scrollWidth': 2, 'scrollHeight': 2}
+                raise AssertionError('Unexpected browser operation')
+            async def inner_text(self, **kwargs): return 'Полные условия'
+            async def screenshot(self, **kwargs):
+                self.screenshots += 1
+                return output.getvalue()
+
+        plan = {'regions': [{'role': 'detail', 'locator': 'div', **fragment_evidence(raw)}]}
+        for delayed in (False, True):
+            with self.subTest(delayed=delayed):
+                element = Element(delayed)
+                diagnostic = {}
+                with patch('hse_capture.dismiss_overlays', new=AsyncMock()), \
+                        self.assertRaisesRegex(ValueError, 'hse_scope_region_occluded'):
+                    await capture_regions(SimpleNamespace(locator=lambda selector: element), plan, diagnostic)
+                self.assertEqual(element.screenshots, int(delayed))
+                self.assertEqual(diagnostic['occlusion']['elements'][0]['id'], 'feedback')
 
 
 class HseManifestTests(unittest.TestCase):
@@ -96,6 +135,7 @@ class HseManifestTests(unittest.TestCase):
             (root / name).write_bytes(output.getvalue())
             names.append(name)
             regions.append({'role': selected['role'], 'locator': selected['locator'],
+                'occlusion_check': 'outside_positioned_overlap_v1',
                 'text': selected['source_text'], 'image_start': index, 'image_count': 1,
                 'layout': {'order': 'row_major_left_to_right_then_top_to_bottom',
                            'width': 2, 'height': 2,

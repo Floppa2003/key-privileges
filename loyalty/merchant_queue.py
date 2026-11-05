@@ -401,7 +401,7 @@ async def capture_page(browser, target: dict, out: Path) -> dict:
                     await source.page.evaluate("document.querySelectorAll('details').forEach(n => n.open = true)")
                     scoped = capture['scope'] == 'hse_partner_sections'
                     if scoped:
-                        from hse_capture import prepare_regions, capture_regions
+                        from hse_capture import prepare_regions, capture_regions, dismiss_overlays
                         from hse_capture_plan import selection
                         await prepare_regions(source.page, capture['selection'])
                     else:
@@ -413,6 +413,8 @@ async def capture_page(browser, target: dict, out: Path) -> dict:
                     generation = before['resource_generation'] if before else None
                     if before:
                         diagnostic['transport_generation_before'] = generation
+                    if scoped:
+                        await dismiss_overlays(source.page, diagnostic)
                     diagnostic['stage'] = 'final_document'
                     status, html = await source.document_content(latest)
                     diagnostic.update(http_status=status, final_url=source.page.url)

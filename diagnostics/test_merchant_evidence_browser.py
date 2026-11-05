@@ -25,15 +25,16 @@ from hse_alumni import ROOT as HSE_ROOT, PROGRAM as HSE_PROGRAM
 
 
 class RoutedBrowser:
-    def __init__(self, real, html):
-        self.real = real; self.html = html; self.visited = []
+    def __init__(self, real, html, frames=None):
+        self.real = real; self.html = html; self.frames = frames or {}; self.visited = []
 
     async def new_context(self, **kwargs):
         context = await self.real.new_context(**kwargs)
         async def route(r):
             if r.request.resource_type == 'document':
                 self.visited.append(r.request.url)
-                await r.fulfill(status=200, content_type='text/html; charset=utf-8', body=self.html)
+                body = self.frames.get(r.request.url, self.html)
+                await r.fulfill(status=200, content_type='text/html; charset=utf-8', body=body)
             else:
                 await r.abort()
         await context.route('**/*', route)
@@ -255,6 +256,82 @@ class BrowserEvidenceTests(unittest.IsolatedAsyncioTestCase):
         manifest.write_text(json.dumps({'documents': [changed]}))
         with self.assertRaisesRegex(ValueError, 'hse_scope_source_missing'):
             m.load_manifest(manifest)
+
+    async def test_hse_native_overlay_dismissals_keep_full_terms_without_submission(self):
+        frame_url = 'https://tally.so/popup/fixtureForm'
+        raw = hse_page(cards=hse_card('a'), details=hse_section('a',
+            '<h2>A</h2><p>Скидка 13% по карте выпускника.</p>'
+            '<p>Не суммируется с другими акциями. Действует только при оплате на месте.</p>'))
+        html = '''<html><body data-cookie-close-count="0" data-tally-close-count="0" data-submits="0">
+        <div class="gdpr_bar" style="position:fixed;bottom:0;left:0;width:100%;height:120px;
+             z-index:10000;background:rgb(255,0,255)">
+          <div class="gdpr_bar__inner"><p>Мы используем файлы cookies.</p>
+            <span class="gdpr_bar__close" onclick="
+              document.body.dataset.cookieCloseCount = String(Number(document.body.dataset.cookieCloseCount) + 1);
+              this.closest('.gdpr_bar').style.display = 'none';">✖</span>
+          </div>
+        </div>
+        <div class="tally-popup" style="position:fixed;right:0;top:0;width:50%;height:70%;
+             z-index:9999;background:rgb(255,0,255)">
+          <iframe src="''' + frame_url + '''" title="Столкнулись с проблемой?"></iframe>
+        </div>
+        <script>
+          window.Tally = {closePopup(formId) {
+            if (formId !== 'fixtureForm') throw new Error('Incorrect popup identity');
+            document.body.dataset.tallyCloseCount = String(Number(document.body.dataset.tallyCloseCount) + 1);
+            document.body.dataset.closedForm = formId;
+            document.querySelector('.tally-popup').remove();
+          }};
+          addEventListener('message', event => {
+            if (event.origin === 'https://tally.so' && event.data === 'fixture-submit') {
+              document.body.dataset.submits = String(Number(document.body.dataset.submits) + 1);
+            }
+          });
+        </script>''' + raw + '</body></html>'
+        frame_html = '''<html><body><form onsubmit="event.preventDefault();
+          parent.postMessage('fixture-submit', '*'); return false;">
+          <p>Обратная связь</p><button type="submit">Отправить</button>
+        </form></body></html>'''
+        browser = RoutedBrowser(self.browser, html, frames={frame_url: frame_html})
+        target = {'id': 'hse_overlays', 'url': HSE_ROOT, 'partner': 'a', 'program': HSE_PROGRAM}
+        spec = await q.capture_page(browser, target, self.root)
+        source = (self.root / spec['source_html']).read_text()
+        self.assertIn('data-cookie-close-count="1"', source)
+        self.assertIn('data-tally-close-count="1"', source)
+        self.assertIn('data-closed-form="fixtureForm"', source)
+        self.assertIn('data-submits="0"', source)
+        self.assertEqual(browser.visited.count(frame_url), 1)
+        text = (self.root / spec['text']).read_text()
+        self.assertIn('Скидка 13% по карте выпускника.', text)
+        self.assertIn('Не суммируется с другими акциями. Действует только при оплате на месте.', text)
+        self.assertNotIn('Мы используем файлы cookies.', text)
+        self.assertTrue(spec['images'])
+        for path in spec['images']:
+            with Image.open(self.root / path) as screenshot:
+                self.assertNotIn((255, 0, 255), screenshot.convert('RGB').getdata())
+        for region in spec['capture']['regions']:
+            self.assertEqual(region['occlusion_check'], 'outside_positioned_overlap_v1')
+        manifest = self.root / 'hse-overlay-manifest.json'
+        manifest.write_text(json.dumps({'documents': [spec]}))
+        self.assertEqual(len(m.load_manifest(manifest)), 1)
+
+    async def test_hse_unknown_overlay_fails_without_admitting_images_or_manifest(self):
+        raw = hse_page(cards=hse_card('a'), details=hse_section('a',
+            '<h2>A</h2><p>Скидка 13% и полные условия партнёра.</p>'))
+        html = '<html><body>' + raw + '''<div id="unknown-overlay"
+            style="position:fixed;inset:0;z-index:999999;background:rgb(255,0,255)">
+            Неизвестное перекрывающее окно без кнопки закрытия.
+        </div></body></html>'''
+        target = {'id': 'hse_occluded', 'url': HSE_ROOT, 'partner': 'a', 'program': HSE_PROGRAM}
+        with self.assertRaisesRegex(ValueError, 'hse_scope_region_occluded'):
+            await q.capture_page(RoutedBrowser(self.browser, html), target, self.root)
+        folder = self.root / 'hse_occluded'
+        self.assertIn('unknown-overlay', (folder / 'source.html').read_text())
+        diagnostic = json.loads((folder / 'capture-diagnostics.json').read_text())
+        self.assertEqual(diagnostic['status'], 'failed')
+        self.assertFalse(list(folder.glob('page-*.png')))
+        self.assertFalse((folder / 'capture-readiness.json').exists())
+        self.assertFalse(list(self.root.rglob('*manifest*.json')))
 
     async def test_hse_preview_keeps_failed_source_without_admitting_offer(self):
         raw = hse_page(cards=hse_card('missing'), details='')
