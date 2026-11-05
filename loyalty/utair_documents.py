@@ -137,7 +137,9 @@ async def collect_documents(client,cfg,report,now,limit):
             # strings can contain temporary signed download URLs.
             safe_codes={'unreviewed_document_redirect','unreviewed_public_shortlink','unreviewed_direct_document_link',
                         'document_size_limit','invalid_or_oversized_pdf','pdf_encrypted_or_page_limit',
-                        'pdf_content_stream_limit','pdf_total_text_limit'}
+                        'pdf_content_stream_limit','pdf_total_text_limit','pdf_xobject_cycle',
+                        'pdf_xobject_depth_limit','pdf_xobject_reference_limit',
+                        'pdf_xobject_resource_shape','pdf_xobject_invocation_limit'}
             reason=str(exc) if ((isinstance(exc,RuntimeError) and re.fullmatch(
                 r'(?:shortlink_http_\d+|document_http_\d+|public_document_transport_failed|source_time_budget_reached|record_limit)',str(exc)))
                 or str(exc) in safe_codes) else type(exc).__name__

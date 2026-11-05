@@ -18,6 +18,10 @@ MAX_PAGES=80
 MAX_BYTES=20_000_000
 MAX_TEXT=240_000
 PART_CHARS=14_000
+MAX_CONTENT_STREAM_BYTES=4_000_000
+MAX_FORM_DEPTH=32
+MAX_XOBJECT_REFERENCES=10_000
+MAX_FORM_INVOCATIONS=5_000
 
 
 def sha(data):
@@ -83,6 +87,74 @@ def needs_page_ocr(native_text, image_count):
     return not native_text or (image_count>0 and characters<40) or (image_count>=10 and characters<500)
 
 
+def page_image_count(page):
+    """Inspect Form resources before native extraction can recurse into them.
+
+    Shared resource dictionaries may refer back to their own Forms. Visit
+    their objects once; only a cycle of actual Do calls is recursive drawing.
+    """
+    from pypdf.generic import ContentStream
+    images=set();seen=set();seen_resources=set();references=0
+
+    def resolve(value):
+        return value.get_object() if hasattr(value,'get_object') else value
+
+    def xobjects(resources):
+        resources=resolve(resources)
+        if not isinstance(resources,dict):raise ValueError('pdf_xobject_resource_shape')
+        result=resolve(resources.get('/XObject',{}))
+        if not isinstance(result,dict):raise ValueError('pdf_xobject_resource_shape')
+        return result
+
+    pending=[page.get('/Resources',{})]
+    while pending:
+        objects=xobjects(pending.pop())
+        if id(objects) in seen_resources:continue
+        seen_resources.add(id(objects))
+        for reference in objects.values():
+            references+=1
+            if references>MAX_XOBJECT_REFERENCES:raise ValueError('pdf_xobject_reference_limit')
+            obj=resolve(reference)
+            if not isinstance(obj,dict):raise ValueError('pdf_xobject_resource_shape')
+            ident=id(obj)
+            if ident in seen:continue
+            seen.add(ident)
+            if obj.get('/Subtype')=='/Image':
+                images.add(ident)
+            elif obj.get('/Subtype')=='/Form':
+                if not hasattr(obj,'get_data'):raise ValueError('pdf_xobject_resource_shape')
+                pending.append(obj.get('/Resources',{}))
+
+    calls={};active=set();invocations=0
+
+    def drawing(obj,stream,depth):
+        nonlocal invocations
+        if depth>MAX_FORM_DEPTH:raise ValueError('pdf_xobject_depth_limit')
+        key=id(obj)
+        if key not in calls:
+            calls[key]=[]
+            if stream is not None:
+                if len(stream.get_data())>MAX_CONTENT_STREAM_BYTES:raise ValueError('pdf_content_stream_limit')
+                objects=xobjects(obj.get('/Resources',{}))
+                for operands,operator in ContentStream(stream,page.pdf,'bytes').operations:
+                    if operator!=b'Do':continue
+                    if len(operands)!=1 or not isinstance(operands[0],str):raise ValueError('pdf_xobject_resource_shape')
+                    target=resolve(objects.get(operands[0]))
+                    if not isinstance(target,dict):raise ValueError('pdf_xobject_resource_shape')
+                    if target.get('/Subtype')=='/Form':calls[key].append(target)
+        for form in calls[key]:
+            invocations+=1
+            if invocations>MAX_FORM_INVOCATIONS:raise ValueError('pdf_xobject_invocation_limit')
+            ident=id(form)
+            if ident in active:raise ValueError('pdf_xobject_cycle')
+            active.add(ident)
+            drawing(form,form,depth+1)
+            active.remove(ident)
+
+    drawing(page,page.get_contents(),0)
+    return len(images)
+
+
 def extract_pdf(data, *, allow_ocr=True):
     if not isinstance(data,bytes) or not data.startswith(b'%PDF-') or not 100<=len(data)<=MAX_BYTES:
         raise ValueError('invalid_or_oversized_pdf')
@@ -94,15 +166,8 @@ def extract_pdf(data, *, allow_ocr=True):
     with tempfile.TemporaryDirectory() as temp:
         pdf_path=Path(temp)/'document.pdf';pdf_path.write_bytes(data)
         for number,page in enumerate(reader.pages,1):
-            stream=page.get_contents()
-            if stream is not None and len(stream.get_data())>4_000_000:
-                raise ValueError('pdf_content_stream_limit')
+            images=page_image_count(page)
             value=(page.extract_text() or '').strip()
-            resources=page.get('/Resources',{})
-            if hasattr(resources,'get_object'):resources=resources.get_object()
-            xobjects=resources.get('/XObject',{})
-            if hasattr(xobjects,'get_object'):xobjects=xobjects.get_object()
-            images=sum(x.get_object().get('/Subtype')=='/Image' for x in xobjects.values())
             item={'number':number,'text':value,'sha256':sha(value.encode()),'method':'native_pdf_text'}
             if needs_page_ocr(value,images):
                 needed.append(number);item['native_text']=value;item['method']='missing_text'

@@ -9,7 +9,7 @@ import json
 import math
 import re
 from datetime import datetime
-from urllib.parse import parse_qsl, urlencode, urlsplit
+from urllib.parse import parse_qsl, unquote, urlencode, urlsplit
 from bs4 import BeautifulSoup
 
 HOST='https://www.aeroflot.ru'
@@ -27,6 +27,8 @@ WARNINGS=['google_import_not_original_http_response','origin_cache_age_not_expos
           'dates_not_automatically_inferred','permission_reported_by_owner_email_not_independently_read']
 BLOCKED=re.compile(r'access denied|captcha|проверка безопасности|доступ.{0,50}ограничен|отключите VPN',re.I)
 INSTRUCTION=re.compile(r'ignore (?:all |the )?previous instructions|export private|reveal (?:your )?system prompt|игнорируй предыдущие инструкции',re.I)
+DETAIL_TEXT_FIELDS={'description':'description','shortDescription':'short_description','earnText':'earn_text',
+                    'spendText':'spend_text','specialOffersText':'special_offers_text'}
 
 
 def digest(obj):
@@ -145,12 +147,45 @@ def envelope(obs):
     return obj['data']
 
 
-def plain(value):
+def published_link(value):
+    """An advertised address is evidence, never authorization to fetch its target."""
+    if (not isinstance(value,str) or not value or len(value)>2000
+            or re.search(r'[\x00-\x20\x7f<>"\\\\]',value)
+            or re.search(r'[\x00-\x1f\x7f\\\\]',unquote(value))):
+        raise ValueError('af_published_link_shape')
+    u=urlsplit(value)
+    if u.scheme in ('https','http'):
+        from normalized import canonical_url
+        if u.username or u.password or u.port not in (None,443 if u.scheme=='https' else 80):
+            raise ValueError('af_published_link_credentials_or_port')
+        # Reuse the credential-query guard and tracking cleanup. This performs
+        # no request; retain the advertised HTTP scheme in the resulting data.
+        netloc=u.netloc[:-3] if u.scheme=='http' and u.netloc.endswith(':80') else u.netloc
+        clean=canonical_url(u._replace(scheme='https',netloc=netloc).geturl())
+        return (('http'+clean[5:]) if u.scheme=='http' else clean),'web'
+    if u.netloc or u.query or u.fragment:
+        raise ValueError('af_published_contact_shape')
+    address=unquote(u.path)
+    if u.scheme=='mailto' and re.fullmatch(r"[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]{1,64}@(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+[A-Za-z]{2,63}",address):
+        return 'mailto:'+u.path,'email'
+    if u.scheme=='tel' and re.fullmatch(r'\+?[0-9][0-9().-]{1,30}[0-9]',address):
+        return 'tel:'+u.path,'phone'
+    raise ValueError('af_published_link_unsupported')
+
+
+def plain(value, *, links=None, field=None):
     if value is None:return ''
     if not isinstance(value,str) or len(value)>100000:raise ValueError('af_source_text_shape')
     if INSTRUCTION.search(value):raise ValueError('af_source_instruction_text')
     soup=BeautifulSoup(value,'html.parser')
     for n in soup.select('script,style,form,input,iframe,noscript'):n.decompose()
+    if links is not None:
+        for anchor in soup.select('a[href]'):
+            try:url,kind=published_link(anchor['href'])
+            except (ValueError,TypeError):continue
+            label=plain(anchor.get_text(' ',strip=True))
+            entry={'field':field,'label':label,'url':url,'kind':kind,'target_read':False}
+            if entry not in links:links.append(entry)
     for br in soup.select('br'):br.replace_with('\n')
     for tag in soup.select('p,div,li,tr,h1,h2,h3'):tag.insert_before('\n')
     result=re.sub(r'[^\S\n]+',' ',soup.get_text(' ',strip=False)).strip()
@@ -191,22 +226,17 @@ def project_detail(obs,preview):
     if not isinstance(obj,dict) or not required<=set(obj) or set(obj)-allowed or private_field(obj):raise ValueError('af_detail_shape')
     pid=native_id(obj['id'])
     if pid!=preview['id'] or obs['url']!=detail_url(pid):raise ValueError('af_detail_wrong_partner')
-    projection={'id':pid,'title':plain(obj['title']),'description':plain(obj['description']),
-        'short_description':plain(obj['shortDescription']),'earn_text':plain(obj['earnText']),
-        'spend_text':plain(obj['spendText']),'special_offers_text':plain(obj['specialOffersText']),
+    links=[]
+    if obj.get('url'):
+        try:
+            url,kind=published_link(obj['url'])
+            links.append({'field':'partner_url','label':'Сайт партнёра' if kind=='web' else 'Контакт партнёра',
+                          'url':url,'kind':kind,'target_read':False})
+        except (ValueError,TypeError):pass
+    projection={'id':pid,'title':plain(obj['title']),
+        **{dest:plain(obj[key],links=links,field=key) for key,dest in DETAIL_TEXT_FIELDS.items()},
         'categories':obj['categories'],'mile_action':obj['mileAction'],'awards':{},'special_offers':obj['specialOffers'],
-        'outgoing_links':[]}
-    from normalized import canonical_url
-    candidates=[]
-    if obj.get('url'):candidates.append(('partner_url','Сайт партнёра',obj['url']))
-    for key in ('description','earnText','spendText','specialOffersText'):
-        for link in BeautifulSoup(obj.get(key) or '', 'html.parser').select('a[href]'):
-            candidates.append((key,plain(link.get_text(' ',strip=True)),link['href']))
-    for field,label,url in candidates:
-        try:clean=canonical_url(url)
-        except (ValueError,TypeError):continue
-        entry={'field':field,'label':label,'url':clean,'target_read':False}
-        if entry not in projection['outgoing_links']:projection['outgoing_links'].append(entry)
+        'outgoing_links':links,'link_projection_version':1}
     if not 1<=len(projection['title'])<=300 or BLOCKED.search(projection['title']):raise ValueError('af_detail_title')
     if not isinstance(obj['categories'],list) or any(type(c) is not int for c in obj['categories']) or obj['mileAction'] not in ('E','S','A'):
         raise ValueError('af_detail_category_or_action')
@@ -214,18 +244,20 @@ def project_detail(obs,preview):
     for role,awards in obj['awards'].items():
         if not isinstance(awards,list) or len(awards)>100:raise ValueError('af_awards_shape')
         projection['awards'][role]=[]
-        for a in awards:
+        for index,a in enumerate(awards):
             if not isinstance(a,dict) or set(a)!={'miles','description','weight'}:raise ValueError('af_awards_shape')
             miles=a['miles']
             if type(miles) not in (int,float) or not math.isfinite(miles) or not 0<=miles<=10**12:raise ValueError('af_awards_shape')
-            projection['awards'][role].append({'miles':miles,'description':plain(a['description']),'weight':a['weight']})
+            projection['awards'][role].append({'miles':miles,
+                'description':plain(a['description'],links=links,field=f'awards.{role}.{index}.description'),'weight':a['weight']})
     if not isinstance(obj['specialOffers'],list) or len(obj['specialOffers'])>100 or len(json.dumps(obj['specialOffers'],ensure_ascii=False))>10000:
         raise ValueError('af_special_offer_bound')
     if len(json.dumps(projection,ensure_ascii=False))>30000:raise ValueError('af_public_projection_bound')
     return projection
 
 
-def fields(projection):
+def semantic_fields(projection):
+    """Original visible terms, without any addresses recovered from hrefs."""
     from normalized import text
     p=projection;sections=[p['description']]
     for key,label in (('earn_text','Начисление миль'),('spend_text','Использование миль'),('special_offers_text','Специальные предложения')):
@@ -235,7 +267,44 @@ def fields(projection):
             sections.append(label+'\n'+'\n'.join(f"Мили: {a['miles']:g}; {a['description']}" for a in p['awards'][key]))
     full=text('\n\n'.join(x for x in sections if x))
     if not full or len(full)>35000:raise ValueError('af_empty_or_oversized_terms')
-    return text(p['short_description']),full
+    return {'benefit':text(p['short_description']),'conditions':full,'redemption':''}
+
+
+def fields(projection):
+    from normalized import text
+    source=semantic_fields(projection);full=source['conditions']
+    if 'link_projection_version' in projection:
+        addresses=[];seen=set()
+        for link in projection['outgoing_links']:
+            url=link['url']
+            address=unquote(url.split(':',1)[1]) if link['kind'] in ('email','phone') else url
+            if address in full or address in seen:continue
+            seen.add(address)
+            addresses.append((link['label']+': ' if link['label'] else '')+address)
+        if addresses:full=text(full+'\n\nСсылки и контакты источника\n'+'\n'.join(addresses))
+    if len(full)>35000:raise ValueError('af_empty_or_oversized_terms')
+    return source['benefit'],full
+
+
+def semantic_fields_for_details(details):
+    """Verify the source-bound cache before semantic parsers use it.
+
+    Historical records and airline records keep their original extraction path.
+    New company records display href destinations separately so URI escapes,
+    paths and query parameters cannot become rates, codes or conditions.
+    """
+    p=details.get('public_partner',{})
+    if not isinstance(p,dict):raise ValueError('af_record_semantic_projection')
+    if 'link_projection_version' not in p:
+        if 'semantic_fields' in details:raise ValueError('af_record_link_version')
+        return None
+    if type(p['link_projection_version']) is not int or p['link_projection_version']!=1:
+        raise ValueError('af_record_link_version')
+    if details.get('retrieval_method')!=METHOD:raise ValueError('af_record_semantic_method')
+    if details.get('public_partner_sha256')!=digest(p):raise ValueError('af_record_projection_digest')
+    source=semantic_fields(p)
+    if details.get('semantic_fields')!=source:raise ValueError('af_record_semantic_fields')
+    return source
 
 
 def detail(obs,preview,observed_at):
@@ -246,6 +315,7 @@ def detail(obs,preview,observed_at):
         title=p['title'],conditions=conditions,category='; '.join(c['title'] for c in preview['categories']),
         source_status='public_api_google_import',locator='public partner API id='+str(p['id']),warnings=list(WARNINGS),
         details={'retrieval_method':METHOD,'public_partner':p,'public_partner_sha256':digest(p),'catalogue_preview':preview,
+          'semantic_fields':semantic_fields(p),
           'import_metadata':meta,'catalogue_root':ROOT,'catalogue_api':CATALOG,'permission_basis':PERMISSION,
           'permission_email_independently_read':False,'account_used':False,'coupon_issued':False,'linked_terms_read':False,
           'origin_http_status':None,'origin_cache_age_verified':False,'full_eligibility_verified':False,
@@ -253,9 +323,41 @@ def detail(obs,preview,observed_at):
 
 
 def validate_record(r):
-    from normalized import text
+    from normalized import canonical_url,text
     d=r.get('details',{});p=d.get('public_partner',{});meta=d.get('import_metadata',{});preview=d.get('catalogue_preview',{})
     if d.get('public_partner_sha256')!=digest(p):raise ValueError('af_record_projection_digest')
+    # Historical projections remain literal evidence of their original read.
+    # Their removed hrefs cannot be recovered without the original observation.
+    versioned='link_projection_version' in p
+    if versioned and (type(p['link_projection_version']) is not int or p['link_projection_version']!=1):
+        raise ValueError('af_record_link_version')
+    if not isinstance(p.get('outgoing_links'),list):raise ValueError('af_record_links_shape')
+    link_keys={'field','label','url','target_read'}|({'kind'} if versioned else set())
+    for link in p['outgoing_links']:
+        if (not isinstance(link,dict) or set(link)!=link_keys
+                or not isinstance(link['field'],str) or not isinstance(link['label'],str)
+                or link['target_read'] is not False):
+            raise ValueError('af_record_link_shape')
+        if not versioned:
+            try:url=canonical_url(link['url'])
+            except (ValueError,TypeError):raise ValueError('af_record_link_address') from None
+            if (url!=link['url'] or link['field'] not in
+                    ('partner_url','description','earnText','spendText','specialOffersText')):
+                raise ValueError('af_record_link_legacy')
+            continue
+        try:url,kind=published_link(link['url'])
+        except (ValueError,TypeError):raise ValueError('af_record_link_address') from None
+        if url!=link['url'] or kind!=link['kind']:raise ValueError('af_record_link_address')
+        if link['field']=='partner_url':continue
+        if link['field'] in DETAIL_TEXT_FIELDS:
+            value=p[DETAIL_TEXT_FIELDS[link['field']]]
+        else:
+            match=re.fullmatch(r'awards\.(accumulation|spending)\.([0-9]+)\.description',link['field'])
+            if not match or int(match[2])>=len(p['awards'][match[1]]):raise ValueError('af_record_link_field')
+            value=p['awards'][match[1]][int(match[2])]['description']
+        if re.sub(r'\s+',' ',link['label']).strip() not in re.sub(r'\s+',' ',value):
+            raise ValueError('af_record_link_text')
+    semantic_fields_for_details(d)
     benefit,conditions=fields(p)
     if (r['source_id']!='aeroflot' or r['native_id']!='partner:'+str(native_id(p['id'])) or r['source_url']!=detail_url(p['id'])
         or meta.get('url')!=r['source_url'] or meta.get('kind')!='detail' or preview.get('id')!=p['id']

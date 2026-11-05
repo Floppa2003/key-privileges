@@ -1,0 +1,126 @@
+{
+  "schema_version": 2,
+  "adapter_version": "2.9.6",
+  "id": "9246cfdc403c3ab68176af747e538899b8340476a0040bf281f4e56bfe293dde",
+  "source_id": "aeroflot",
+  "native_id": "partner:71",
+  "program": "Аэрофлот Бонус",
+  "record_kind": "partner_offer",
+  "partner_name": "Новый партнер 71",
+  "title": "Новый партнер 71",
+  "category": "Новая категория",
+  "benefit_text": "17 миль за каждые 100 ₽",
+  "conditions_text": "Описание партнера, включая запятые и «кавычки».\n\nНачисление миль\nБронируйте по электронной почте или по ссылке .\n\nИспользование миль\nДля использования миль требуется вход.\n\nНачисление: поля тарифов источника\nМили: 17; За каждые 100 ₽",
+  "redemption_text": "",
+  "benefit_types": [
+    "miles"
+  ],
+  "rates": [
+    {
+      "kind": "miles",
+      "value": "17",
+      "unit": "miles",
+      "qualifier": "exact",
+      "basis_amount": "100",
+      "basis_unit": "RUB",
+      "evidence": "17 миль за каждые 100 ₽"
+    }
+  ],
+  "promo_codes": [],
+  "valid_from": null,
+  "valid_until": null,
+  "validity_status": "not_stated",
+  "source_status": "public_api_google_import",
+  "source_url": "https://www.aeroflot.ru/partners/ws/v.0.0.3/json/partner/get?id=71&lang=ru",
+  "benefit_url": "https://www.aeroflot.ru/partners/ws/v.0.0.3/json/partner/get?id=71&lang=ru",
+  "link_kind": "detail_page",
+  "locator": "public partner API id=71",
+  "tables": [],
+  "details": {
+    "retrieval_method": "aeroflot_public_api_google_import_v1",
+    "public_partner": {
+      "id": 71,
+      "title": "Новый партнер 71",
+      "description": "Описание партнера, включая запятые и «кавычки».",
+      "short_description": "17 миль за каждые 100 ₽",
+      "earn_text": "Бронируйте по электронной почте или по ссылке .",
+      "spend_text": "Для использования миль требуется вход.",
+      "special_offers_text": "",
+      "categories": [
+        9
+      ],
+      "mile_action": "A",
+      "awards": {
+        "accumulation": [
+          {
+            "miles": 17,
+            "description": "За каждые 100 ₽",
+            "weight": 1
+          }
+        ],
+        "spending": []
+      },
+      "special_offers": [],
+      "outgoing_links": [
+        {
+          "field": "partner_url",
+          "label": "Сайт партнёра",
+          "url": "https://public.example/offer",
+          "target_read": false
+        }
+      ]
+    },
+    "public_partner_sha256": "03d6d2b95b7b7e457a3ee994d19c78adb4cb965b115dd2bc47c0e3943e7e5829",
+    "catalogue_preview": {
+      "id": 71,
+      "title": "Новый партнер 71",
+      "short_description": "17 миль за каждые 100 ₽",
+      "miles_action": "all",
+      "categories": [
+        {
+          "id": 9,
+          "title": "Новая категория"
+        }
+      ]
+    },
+    "import_metadata": {
+      "url": "https://www.aeroflot.ru/partners/ws/v.0.0.3/json/partner/get?id=71&lang=ru",
+      "kind": "detail",
+      "requested_at": "2026-09-16T12:00:00+00:00",
+      "calculated_at": "2026-09-16T12:00:00+00:00",
+      "cells_sha256": "df25a34e4133b46e181a55cbc6f5a6f91d4eaaad0e237c70e4752d0c2d044c57",
+      "formula_sha256": "8179ce46243ce0c51d62fd46d59cff51f2c3ea8191074bebae5c8e226a7e8398"
+    },
+    "catalogue_root": "https://www.aeroflot.ru/ru-ru/afl_bonus/partners",
+    "catalogue_api": "https://www.aeroflot.ru/partners/ws/v.0.0.2/json/partner/categories?lang=ru",
+    "permission_basis": "owner_reported_source_permission_2026-09-16",
+    "permission_email_independently_read": false,
+    "account_used": false,
+    "coupon_issued": false,
+    "linked_terms_read": false,
+    "origin_http_status": null,
+    "origin_cache_age_verified": false,
+    "full_eligibility_verified": false,
+    "special_offers_links_individually_read": false,
+    "human_detail_url_verified": false,
+    "lexical_conditions": [],
+    "promo_code_evidence": [],
+    "promo_code_delivery": [],
+    "promo_code_status": "not_mentioned",
+    "table_benefits": {
+      "components": [],
+      "issues": []
+    }
+  },
+  "normalization_status": "source_fields_extracted",
+  "warnings": [
+    "google_import_not_original_http_response",
+    "origin_cache_age_not_exposed",
+    "user_eligibility_not_verified",
+    "linked_special_offers_and_image_rules_not_read",
+    "dates_not_automatically_inferred",
+    "permission_reported_by_owner_email_not_independently_read"
+  ],
+  "observed_at": "2026-09-16T12:00:00+00:00",
+  "content_sha256": "abb8569f78096bbd4a14365da3181e8e72cd935385b16539f4e31f7b9abfef12"
+}

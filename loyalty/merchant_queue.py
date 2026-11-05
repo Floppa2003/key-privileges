@@ -399,9 +399,15 @@ async def capture_page(browser, target: dict, out: Path) -> dict:
                     capture = await evidence.prepare_public_page(source.page, target)
                     # Reveal native HTML disclosures; no form submissions or account interaction.
                     await source.page.evaluate("document.querySelectorAll('details').forEach(n => n.open = true)")
-                    await scroll_full_page(source.page, diagnostic)
-                    await source.page.evaluate('window.scrollTo({left:0,top:0,behavior:"instant"})')
-                    await source.page.wait_for_timeout(700)
+                    scoped = capture['scope'] == 'hse_partner_sections'
+                    if scoped:
+                        from hse_capture import prepare_regions, capture_regions
+                        from hse_capture_plan import selection
+                        await prepare_regions(source.page, capture['selection'])
+                    else:
+                        await scroll_full_page(source.page, diagnostic)
+                        await source.page.evaluate('window.scrollTo({left:0,top:0,behavior:"instant"})')
+                        await source.page.wait_for_timeout(700)
                     diagnostic['stage'] = 'transport_readiness'
                     before = await finish() if finish else None
                     generation = before['resource_generation'] if before else None
@@ -413,11 +419,22 @@ async def capture_page(browser, target: dict, out: Path) -> dict:
                     check_response(status, html)
                     current_response, current_url = latest[-1], source.page.url
                     record_capture_text(folder, 'source.html', html, diagnostic)
-                    diagnostic['stage'] = 'text'
-                    text = await source.page.locator('body').inner_text(timeout=15000)
-                    if not text.strip(): raise ValueError('empty_page')
-                    record_capture_text(folder, 'visible-text.txt', text, diagnostic)
-                    images = await screenshot_tiles(source.page, diagnostic)
+                    if scoped:
+                        capture['selection'] = selection(html, target)
+                        text, images, capture['regions'] = await capture_regions(
+                            source.page, capture['selection'], diagnostic)
+                        record_capture_text(folder, 'visible-text.txt', text, diagnostic)
+                        status, final_html = await source.document_content(latest)
+                        check_response(status, final_html)
+                        if selection(final_html, target) != capture['selection']:
+                            raise ValueError('hse_scope_source_changed')
+                        record_capture_text(folder, 'source.html', final_html, diagnostic)
+                    else:
+                        diagnostic['stage'] = 'text'
+                        text = await source.page.locator('body').inner_text(timeout=15000)
+                        if not text.strip(): raise ValueError('empty_page')
+                        record_capture_text(folder, 'visible-text.txt', text, diagnostic)
+                        images = await screenshot_tiles(source.page, diagnostic)
                     diagnostic['stage'] = 'transport_validation'
                     transport = await finish() if finish else None
                     if transport:
@@ -441,6 +458,9 @@ async def capture_page(browser, target: dict, out: Path) -> dict:
                                       'as_of': datetime.now(timezone.utc).date().isoformat()},
                          text, images, source_url=url, image_layout=diagnostic.get('image_layout'))
             spec = evidence.attach(spec, target, capture)
+            if capture['scope'] == 'hse_partner_sections':
+                from hse_capture import attach_source_html
+                spec = attach_source_html(spec, folder, ident)
             extractor.save(folder / 'source-records.json', spec['source_records'])
             extractor.save(folder / 'capture-readiness.json', capture)
             return spec

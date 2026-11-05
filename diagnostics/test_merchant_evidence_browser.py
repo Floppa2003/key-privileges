@@ -1,5 +1,8 @@
 """Real Chromium tests with controlled HTTP only; no source/provider network."""
 import asyncio
+import base64
+import copy
+import io
 import json
 from pathlib import Path
 import sys
@@ -7,6 +10,7 @@ import tempfile
 import unittest
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
+from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT / 'loyalty'), str(ROOT / 'loyalty/tests')]
@@ -16,6 +20,8 @@ import merchant_extract as m
 import merchant_evidence as evidence
 from public_transport import PublicSource
 from test_merchant_evidence import record
+from test_hse_alumni import page as hse_page, card as hse_card, section as hse_section
+from hse_alumni import ROOT as HSE_ROOT, PROGRAM as HSE_PROGRAM
 
 
 class RoutedBrowser:
@@ -207,6 +213,67 @@ class BrowserEvidenceTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(spec['capture']['native_ids'], ['9876'])
         self.assertTrue(spec['capture']['target_found'])
         self.assertEqual(spec['source_records'][0]['native_id'], '9876')
+
+    async def test_hse_owned_sections_beyond_large_catalogue_keep_common_terms_and_full_detail(self):
+        image = io.BytesIO()
+        Image.new('RGB', (20, 20), 'black').save(image, format='PNG')
+        source_image = 'data:image/png;base64,' + base64.b64encode(image.getvalue()).decode('ascii')
+        details = hse_section('b', '<h2>B</h2><div style="height:51000px">Соседняя скидка 99%</div>')
+        details += hse_section('a', '<h2>A</h2><p>Скидка 13% по карте</p>')
+        details += '<div class="builder-section"><p>Не суммируется с другими акциями.</p></div>'
+        details += '<div class="builder-section"><img src="' + source_image + '"></div>'
+        raw = hse_page(details=details).replace(
+            '<div class="post__text builder_content">',
+            '<div class="post__text builder_content"><div class="builder-section">'
+            '<p>Общие условия: карта выпускника предъявляется до оплаты.</p></div>')
+        browser = RoutedBrowser(self.browser, '<html><body>' + raw + '</body></html>')
+        target = {'id': 'hse_owned', 'url': HSE_ROOT, 'partner': 'a', 'program': HSE_PROGRAM}
+        spec = await q.capture_page(browser, target, self.root)
+        text = (self.root / spec['text']).read_text()
+        self.assertIn('карта выпускника предъявляется до оплаты', text)
+        self.assertIn('Скидка 13% по карте', text)
+        self.assertIn('Не суммируется с другими акциями', text)
+        self.assertNotIn('Соседняя скидка 99%', text)
+        self.assertIn('Соседняя скидка 99%', (self.root / spec['source_html']).read_text())
+        self.assertEqual(spec['capture']['scope'], 'hse_partner_sections')
+        self.assertEqual(sum(r['role'] == 'detail' for r in spec['capture']['regions']), 3)
+        visual_regions = [r for r in spec['capture']['regions'] if r['text'] == '']
+        self.assertEqual(len(visual_regions), 1)
+        self.assertEqual(visual_regions[0]['image_count'], 1)
+        self.assertNotIn('image_layout', spec, 'Separate regions are not one continuous page image')
+        manifest = self.root / 'hse-manifest.json'
+        manifest.write_text(json.dumps({'documents': [spec]}))
+        loaded = m.load_manifest(manifest)[0]
+        self.assertIn('выбранных разделов', evidence.request_text(loaded))
+        changed = copy.deepcopy(spec)
+        changed['capture']['selection']['blocks'][0]['body'] = 'Подменённые условия'
+        manifest.write_text(json.dumps({'documents': [changed]}))
+        with self.assertRaisesRegex(ValueError, 'hse_scope_selection_mismatch'):
+            m.load_manifest(manifest)
+        changed = copy.deepcopy(spec)
+        changed['capture']['scope'] = 'page'
+        manifest.write_text(json.dumps({'documents': [changed]}))
+        with self.assertRaisesRegex(ValueError, 'hse_scope_source_missing'):
+            m.load_manifest(manifest)
+
+    async def test_hse_preview_keeps_failed_source_without_admitting_offer(self):
+        raw = hse_page(cards=hse_card('missing'), details='')
+        target = {'id': 'hse_preview', 'url': HSE_ROOT, 'partner': 'missing', 'program': HSE_PROGRAM}
+        with self.assertRaisesRegex(ValueError, 'hse_detail_missing'):
+            await q.capture_page(RoutedBrowser(self.browser, raw), target, self.root)
+        self.assertTrue((self.root / 'hse_preview/source.html').exists())
+        diagnostic = json.loads((self.root / 'hse_preview/capture-diagnostics.json').read_text())
+        self.assertEqual(diagnostic['status'], 'failed')
+        self.assertFalse(list((self.root / 'hse_preview').glob('page-*.png')))
+
+    async def test_hse_selected_region_still_obeys_image_budget(self):
+        raw = hse_page(cards=hse_card('a'), details=hse_section('a',
+            '<h2>A</h2><div style="height:41500px">Полные условия</div>'))
+        target = {'id': 'hse_large', 'url': HSE_ROOT, 'partner': 'a', 'program': HSE_PROGRAM}
+        with self.assertRaisesRegex(ValueError, 'image_budget_no_truncation'):
+            await q.capture_page(RoutedBrowser(self.browser, raw), target, self.root)
+        diagnostic = json.loads((self.root / 'hse_large/capture-diagnostics.json').read_text())
+        self.assertEqual(diagnostic['status'], 'failed')
 
 
 if __name__ == '__main__':
