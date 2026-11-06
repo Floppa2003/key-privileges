@@ -1,0 +1,79 @@
+name: Read native source states (2026-11-06)
+on:
+  push:
+    branches: [diagnostics/parsing-artifact-review-20261106]
+    paths:
+      - .github/workflows/native-source-review-20261106.yml
+      - diagnostics/native_source_review_20261106.py
+permissions:
+  contents: read
+concurrency:
+  group: native-source-review-20261106-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  observe:
+    if: github.repository == 'Floppa2003/key-privileges' && github.ref == 'refs/heads/diagnostics/parsing-artifact-review-20261106'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    strategy:
+      fail-fast: false
+      matrix:
+        source: [rgo, hse_alumni, flystation_public, af_vtb_rules]
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - name: Install the repository's pinned dependencies
+        run: python -m pip install -r loyalty/requirements.txt
+      - name: Install Chromium for the pinned Playwright version
+        if: matrix.source != 'af_vtb_rules'
+        run: python -m playwright install --with-deps chromium
+      - name: Observe the selected public source within its existing budget
+        run: python diagnostics/native_source_review_20261106.py ${{ matrix.source }}
+  read-bank-red-artifact:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - name: Download the identified bank boundary RED artifact
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          github-token: ${{ github.token }}
+          run-id: 42142006443
+          artifact-ids: 13467469690
+          merge-multiple: true
+          path: .bank-red-artifact
+      - name: Read only targeted failures and final counts
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          import re
+          root = Path(".bank-red-artifact")
+          commit = (root / "commit.txt").read_text().strip()
+          if not re.fullmatch(r"[0-9a-f]{40}", commit):
+              raise SystemExit("invalid_commit_identity")
+          path = root / "tests.log"
+          if path.is_symlink() or path.stat().st_size > 8 * 1024 * 1024:
+              raise SystemExit("invalid_test_log_size")
+          lines = path.read_text(encoding="utf-8").splitlines()
+          details = []
+          active = False
+          for line in lines:
+              if line.startswith(("FAIL: ", "ERROR: ")):
+                  active = "test_recovered_bank_html_boundaries" in line
+              elif re.fullmatch(r"={10,}", line) or line.startswith(("Ran ", "FAILED ")):
+                  active = False
+              if active:
+                  details.append(line[:800])
+          summary = [line[:300] for line in lines
+                     if re.fullmatch(r"Ran \d+ tests? in [0-9.]+s|FAILED(?: \([^)\r\n]+\))?", line)]
+          selected = ["commit.txt: " + commit] + details[:max(0, 99 - len(summary))] + summary[:4]
+          for line in selected[:100]:
+              print("BANK_RED " + json.dumps(line, ensure_ascii=False))
+          PY
