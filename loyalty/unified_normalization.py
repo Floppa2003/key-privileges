@@ -223,7 +223,7 @@ def _structured_mile_evidence(details):
     return result
 
 
-def _clauses(raw):
+def _clauses(raw, *, extra_covered_quotes=None):
     seen=set()
     source_fields=[('/'+name,raw.get(name) or '') for name in ('benefit','conditions','activation')]
     details=raw.get('details',{})
@@ -245,7 +245,7 @@ def _clauses(raw):
     structured_quotes=[] if details.get('pages') else _structured_mile_evidence(details)
     for path,value in source_fields:
         spans=[]
-        for literal in structured_quotes:
+        for literal in [*structured_quotes, *(extra_covered_quotes or {}).get(path, [])]:
             start=value.find(literal)
             # Repeated quotes have no unambiguous structural owner. Keep the
             # prior lexical projection rather than choosing an occurrence.
@@ -432,6 +432,16 @@ def normalize_record(raw, *, as_of):
         n['content_sha256']=digest({k:v for k,v in n.items() if k!='content_sha256'})
         validate_normalized(n);return n
     # Existing structure is more precise than the legacy top-level lexical arrays.
+    covered_quotes={}
+    if raw.get('source_id')=='af_vtb_rules':
+        from vtb_card_projection import project_stored_card
+        owned=project_stored_card(raw)
+        if owned:
+            covered_quotes=owned['covered_quotes']
+            cashback=owned['cashback']
+            benefit('cashback',cashback['path'],value=cashback['value'],unit=cashback['unit'],
+                    qualifier=cashback['qualifier'],scope=cashback['scope'],
+                    fragment=cashback['evidence'],method='owned_source_clause')
     structured_evidence=set()
     airline_rules=d.get('retrieval_method')=='aeroflot_airline_api_google_import_v1'
     if airline_rules:
@@ -550,7 +560,7 @@ def normalize_record(raw, *, as_of):
             and isinstance(heading,str) and heading
             and raw.get('benefit','').startswith(heading+': ')):
         owned_heading=heading
-    for path,clause,rate_clause in (() if airline_rules else _clauses(raw)):
+    for path,clause,rate_clause in (() if airline_rules else _clauses(raw,extra_covered_quotes=covered_quotes)):
         scope=_scope(clause);recognized=rate_clause!=clause
         # Do not derive benefits from unassigned raw PDF table text.
         # The hotel's published heading labels only its owned benefit section;
