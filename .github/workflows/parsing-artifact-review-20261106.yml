@@ -1,0 +1,40 @@
+name: Read saved parsing artifacts (2026-11-06)
+on:
+  push:
+    branches: [diagnostics/parsing-artifact-review-20261106]
+    paths:
+      - .github/workflows/parsing-artifact-review-20261106.yml
+      - diagnostics/parsing_artifact_review_20261106.py
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: saved-parsing-artifact-review-20261106-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  inspect-saved-artifacts:
+    if: github.repository == 'Floppa2003/key-privileges' && github.ref == 'refs/heads/diagnostics/parsing-artifact-review-20261106'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Download the identified public collection artifact
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          github-token: ${{ github.token }}
+          run-id: 42131727166
+          artifact-ids: 13466762585
+          merge-multiple: true
+          path: .artifact-review/source
+      - name: Download the identified final regression artifact
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          github-token: ${{ github.token }}
+          run-id: 42139537232
+          artifact-ids: 13467921175
+          merge-multiple: true
+          path: .artifact-review/ci
+      - name: Read four source reports and bounded CI summaries
+        run: python3 diagnostics/parsing_artifact_review_20261106.py .artifact-review/source .artifact-review/ci
