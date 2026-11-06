@@ -66,6 +66,30 @@ class NumericLiteralTests(unittest.TestCase):
 
 
 class PercentageRoleTests(unittest.TestCase):
+    def test_postfix_reward_label_does_not_own_a_later_payment_rate(self):
+        cases = [('10% скидка, 100% предоплата.', [('discount', '10')]),
+                 ('5% кешбэк, комиссия 2%.', [('cashback', '5')]),
+                 ('10% скидка, 20% НДС.', [('discount', '10')])]
+        for body, expected in cases:
+            with self.subTest(body=body):
+                row = record(body)
+                validate_offer(row)
+                self.assertEqual([(r['kind'], r['value']) for r in row['rates']], expected)
+                self.assertEqual(row['benefit_text'], body)
+
+    def test_postfix_label_keeps_explicit_new_rewards_and_sentence_boundaries(self):
+        cases = [
+            ('10% скидка. Комиссия 2%.', [('discount', '10')]),
+            ('10% скидка, кэшбэк 5% оплаты за проживание.',
+             [('discount', '10'), ('cashback', '5')]),
+            ('10% скидка, на комиссию 50%.', [('discount', '10'), ('discount', '50')]),
+        ]
+        for body, expected in cases:
+            with self.subTest(body=body):
+                row = record(body)
+                validate_offer(row)
+                self.assertEqual([(r['kind'], r['value']) for r in row['rates']], expected)
+
     def test_tax_or_prepayment_in_later_sentence_is_not_another_discount(self):
         for suffix in ['НДС 20%.', 'Предоплата 30%.', 'предоплата 30%.']:
             with self.subTest(suffix=suffix):
@@ -110,7 +134,8 @@ class PercentageRoleTests(unittest.TestCase):
 
     def test_reward_applied_to_a_fee_or_payment_keeps_its_own_rate(self):
         cases = [('Скидка на комиссию 50%.', [('discount', '50')]),
-                 ('Кэшбэк 5% оплаты за проживание.', [('cashback', '5')])]
+                 ('Кэшбэк 5% оплаты за проживание.', [('cashback', '5')]),
+                 ('Кэшбэк за проживание — 5% оплаты.', [('cashback', '5')])]
         for body, expected in cases:
             with self.subTest(body=body):
                 row = record(body)
@@ -126,8 +151,13 @@ class PercentageRoleTests(unittest.TestCase):
                 self.assertEqual([r['value'] for r in row['rates']], expected)
 
     def test_payment_condition_without_a_published_discount_amount_stays_untyped(self):
-        row = record('Скидка при 30% предоплате.')
-        self.assertEqual(row['rates'], [])
+        for body in ['Скидка при 30% предоплате.',
+                     'Скидки при 100% предоплате.',
+                     'Скидки с учетом НДС 20%.',
+                     'Скидки за 100% предоплату.']:
+            with self.subTest(body=body):
+                row = record(body)
+                self.assertEqual(row['rates'], [])
 
     def test_explicit_abbreviations_preserve_rates_through_html_pipeline(self):
         cases = [('Скидка на доп. услуги 10%.', ['10']),

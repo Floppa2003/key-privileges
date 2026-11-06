@@ -26,6 +26,16 @@ INPUT_TABS = {
 }
 NUM = NUMBER
 MONEY = r'(?:₽|руб(?:лей|ля|ль|\.)?|RUB)'
+ENGLISH_RATE_LABEL = re.compile(r'\b(?:discount|off|cashback)(?=\W|\d|$)', re.I)
+ENGLISH_RATE_ALIASES = {
+    'discount': 'скидка', 'off': 'скидка', 'cashback': 'кешбэк',
+    'prepayment': 'предоплата', 'prepayments': 'предоплата',
+    'payment': 'оплата', 'payments': 'оплата',
+    'tax': 'налог', 'taxes': 'налог', 'vat': 'НДС',
+    'commission': 'комиссия', 'commissions': 'комиссия',
+    'fee': 'комиссия', 'fees': 'комиссия', 'with': 'при', 'and': 'и',
+}
+ENGLISH_RATE_WORD = re.compile(r'\b(?:'+'|'.join(ENGLISH_RATE_ALIASES)+r')(?=\W|\d|$)', re.I)
 KIND = {'discount':'discount','cashback':'cashback','miles':'earn_miles','points':'earn_points',
         'gift':'gift','special_price':'special_price'}
 ALIASES = {
@@ -211,6 +221,19 @@ def _scope(clause):
     if re.search(r'последующ|повторн|repeat|subsequent',clause,re.I):
         scope['purchase_stage']='multiple_stages' if 'purchase_stage' in scope else 'repeat'
     return scope
+
+
+def _english_rates(clause, *, heading_context=''):
+    """Use the same local ownership rules for English and mixed source text."""
+    # These are parser-token aliases in a temporary buffer. The source clause
+    # remains unchanged, and every returned rate keeps its original evidence.
+    working = ENGLISH_RATE_WORD.sub(lambda m: ENGLISH_RATE_ALIASES[m[0].casefold()], clause)
+    working = re.sub(r'\bon\s+комиссия(?=\W|\d|$)', 'на комиссию', working, flags=re.I)
+    working = re.sub(r'\bup\s+to(?=\W|\d|$)', 'до', working, flags=re.I)
+    working = re.sub(r'\b(предоплат\w*|оплат\w*|налог\w*|НДС|комисси\w*)\s+'
+                     r'(?:(?:of|is|at|equals)\s+)+', r'\1 ', working, flags=re.I)
+    return [{**rate, 'evidence': clause}
+            for rate in normalize_rates(working, heading_context=heading_context)]
 
 
 def normalize_record(raw, *, as_of):
@@ -480,15 +503,18 @@ def normalize_record(raw, *, as_of):
         # common conditions and unrelated sources cannot inherit that label.
         heading_context=owned_heading if path=='/benefit' else ''
         rate_text=clause.removeprefix(heading_context+': ') if heading_context else clause
-        rates=[] if d.get('pages') else normalize_rates(rate_text,heading_context=heading_context)
-        if (re.search(r'\b(?:discount|off|cashback)\b',clause,re.I) or
-            (raw['origin'] in ('yandex_discounts_complete_all','VG_community_offers') and re.fullmatch(r'\s*'+NUM+r'\s*%\s*',clause))):
-            for m in re.finditer(r'(?:up to\s+)?('+NUM+r')\s*%',clause,re.I):
-                rates.append({'kind':'cashback' if re.search('cashback',clause,re.I) else 'discount','value':decimal(m[1]),'unit':'percent','qualifier':'up_to' if re.search('up to',m[0],re.I) else 'exact'})
+        rates=[]
         if not d.get('pages'):
+            rate_parser = _english_rates if ENGLISH_RATE_LABEL.search(rate_text) else normalize_rates
+            rates = rate_parser(rate_text, heading_context=heading_context)
+            # Only the known legacy Discount column supplies an implicit
+            # label. A bare percent in Notes or another source does not.
+            if (path=='/benefit' and raw['origin'] in ('yandex_discounts_complete_all','VG_community_offers')
+                    and (m:=re.fullmatch(r'\s*('+NUM+r')\s*%\s*',clause))):
+                rates.append({'kind':'discount','value':decimal(m[1]),'unit':'percent','qualifier':'exact','evidence':clause})
             for m in re.finditer(r'(?:up to\s+)?('+NUM+r')\s*RUB\s+(?:off|discount)\b',clause,re.I):
-                rates.append({'kind':'discount','value':decimal(m[1]),'unit':'RUB','qualifier':'up_to' if re.search('up to',m[0],re.I) else 'exact'})
-        if re.search(r'\d\s*%.*милями',clause,re.I) and not rates:
+                rates.append({'kind':'discount','value':decimal(m[1]),'unit':'RUB','qualifier':'up_to' if re.search('up to',m[0],re.I) else 'exact','evidence':clause})
+        if not d.get('pages') and re.search(r'\d\s*%.*милями',clause,re.I) and not rates:
             m=re.search(r'('+NUM+r')\s*%',clause)
             rates=[{'kind':'miles','value':decimal(m[1]),'unit':'percent','qualifier':'up_to' if re.search('до',clause[:m.start()],re.I) else 'exact'}]
         for rr in rates:
