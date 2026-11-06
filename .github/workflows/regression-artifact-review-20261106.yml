@@ -1,0 +1,66 @@
+name: Review saved parser regression results (2026-11-06)
+on:
+  push:
+    branches: [diagnostics/parsing-artifact-review-20261106]
+    paths: [.github/workflows/regression-artifact-review-20261106.yml]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: regression-artifact-review-20261106-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  review:
+    if: github.repository == 'Floppa2003/key-privileges' && github.ref == 'refs/heads/diagnostics/parsing-artifact-review-20261106'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          github-token: ${{ github.token }}
+          run-id: 42142630296
+          artifact-ids: 13469095963
+          merge-multiple: true
+          path: .regression-review
+      - name: Read bounded test failures and summary
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          import re
+          root = Path('.regression-review')
+          def emit(kind, value):
+              print(kind + ' ' + json.dumps(value, ensure_ascii=False), flush=True)
+          commit_path = root / 'commit.txt'
+          if commit_path.is_symlink() or commit_path.stat().st_size > 128:
+              raise SystemExit('invalid_commit_file')
+          commit = commit_path.read_text().strip()
+          if not re.fullmatch(r'[a-f0-9]{40}', commit):
+              raise SystemExit('invalid_commit_identity')
+          emit('TEST_COMMIT', commit)
+          path = root / 'tests.log'
+          if path.is_symlink() or path.stat().st_size > 8 * 1024 * 1024:
+              raise SystemExit('invalid_test_log')
+          lines = path.read_text(encoding='utf-8').splitlines()
+          blocks = []
+          active = None
+          for line in lines:
+              if line.startswith(('FAIL: ', 'ERROR: ')):
+                  active = [line[:800], []]
+                  blocks.append(active)
+              elif re.fullmatch(r'={10,}', line) or line.startswith(('Ran ', 'FAILED ', 'OK')):
+                  active = None
+              elif active is not None and line.strip():
+                  active[1].append(line[:800])
+          if len(blocks) > 40:
+              raise SystemExit('failure_count_bound_exceeded')
+          for header, detail in blocks:
+              emit('TEST_FAILURE', {'header': header, 'tail': detail[-10:]})
+          summary = [line for line in lines if re.fullmatch(
+              r'Ran \d+ tests? in [0-9.]+s|OK(?: \([^)\r\n]+\))?|FAILED(?: \([^)\r\n]+\))?', line)]
+          if not 1 <= len(summary) <= 8:
+              raise SystemExit('missing_test_summary')
+          emit('TEST_SUMMARY', summary)
+          targeted = [line[:800] for line in lines if 'test_recovered_bank_html_boundaries.' in line and line.endswith(' ... ok')]
+          emit('BANK_PASSED', targeted[:32])
+          PY
