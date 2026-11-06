@@ -1,6 +1,6 @@
 """Source-linked public Gorod partner/coupon inventories, preserving reward units."""
 from __future__ import annotations
-import json,re
+import json,math,re
 from urllib.parse import urlencode
 from bs4 import BeautifulSoup
 from normalized import number
@@ -30,8 +30,9 @@ def source_fields(e):
             and price.get('old') is None):raise ExcludedOffer('no_concrete_partner_benefit')
         if not isinstance(currencies,list) or not set(currencies)<=set(CURRENCIES) or type(price.get('new')) not in (int,float):raise ValueError('gorod_coupon_cost')
         amount=price['new']
+        if type(amount) is float and not math.isfinite(amount):raise ValueError('gorod_coupon_cost')
         if amount<0 or (amount>0 and not currencies):raise ValueError('gorod_coupon_cost_currency_missing')
-        cost='Получение купона бесплатно.' if amount==0 else f'Цена купона: {amount:g}; допустимые средства оплаты: '+', '.join(CURRENCIES[x]for x in currencies)+'.'
+        cost='Получение купона бесплатно.' if amount==0 else f'Цена купона: {number(str(amount))}; допустимые средства оплаты: '+', '.join(CURRENCIES[x]for x in currencies)+'.'
         message=d.get('message') or {}
         cost+='\n'+plain(message.get('title',''))+' '+plain(message.get('body',''))
         dates=[iso(d.get(k)) for k in ('endAt','couponEndAt','countdown') if d.get(k)]

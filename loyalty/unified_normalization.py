@@ -186,7 +186,7 @@ def make_input(raw):
                  category=_text(raw,'Category'),validity_raw=_field(raw,'Validity'),source_url=_text(raw,'Link') or None,
                  source_status='stored_legacy_not_reverified')
         d=raw['fields'].get('Discount',{});v=d.get('value')
-        if isinstance(v,(int,float)) and '%' in d.get('format',''):
+        if isinstance(v,(int,float)) and not isinstance(v,bool) and '%' in d.get('format',''):
             r['benefit']='Discount '+decimal(Decimal(str(v))*100)+'%'
         else:r['benefit']='' if v is None else str(v)
         r['valid_until']=iso_date(_field(raw,'Validity'))

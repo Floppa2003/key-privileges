@@ -26,6 +26,16 @@ REDEMPTION_ALIASES = {
 TABLE_LABELS = ('Сумма покупок за год', 'Начисление бонусов', 'Списание бонусов')
 
 
+class PartnerSourceError(ValueError):
+    """Keep the failed member of the source pair in the coverage report."""
+
+    def __init__(self, source_url, cause, *, source_urls=None):
+        self.source_url = source_url
+        self.source_urls = source_urls
+        reason = str(cause)[:140] if isinstance(cause, (RuntimeError, ValueError)) else type(cause).__name__
+        super().__init__(reason)
+
+
 def compact(value):
     return re.sub(r'\s+', ' ', value).strip()
 
@@ -116,8 +126,16 @@ def parse_resort(raw):
     soup = BeautifulSoup(raw, 'html.parser')
     if 'Мантера Моменты' not in plain(one(soup, 'h1')):
         raise ValueError('mantera_resort_page_identity')
-    clauses = [compact(plain(n)) for n in soup.select('.markdown p')
-               if 'Уже сейчас в отелях' in plain(n)]
+    marker = 'Уже сейчас в отелях'
+    candidates = [(node, compact(plain(node))) for node in soup.select('.markdown p, .markdown li')]
+    matches = [(node, text) for node, text in candidates if marker in text]
+    # A paragraph inside a list item owns its clause. Drop only an ancestor
+    # whose matching occurrences all belong to that descendant; a separate
+    # clause on the ancestor or a sibling remains ambiguous.
+    clauses = [text for node, text in matches if not any(
+        child is not node and text.count(marker) == child_text.count(marker)
+        and any(parent is node for parent in child.parents)
+        for child, child_text in matches)]
     if len(clauses) != 1:
         raise ValueError('mantera_resort_redemption_clause')
     table = [[compact(plain(c)) for c in row.select('.content-tables-accordions-desktop-cell')]
@@ -277,8 +295,17 @@ def source_fields(e):
 
 
 def parse_pair(roster_raw, resort_raw, observed_at):
-    roster, resort = parse_roster(roster_raw), parse_resort(resort_raw)
-    validate_evidence(roster, resort)
+    evidence = []
+    for url, parse, raw in ((ROSTER_URL, parse_roster, roster_raw), (RESORT_URL, parse_resort, resort_raw)):
+        try:
+            evidence.append(parse(raw))
+        except Exception as exc:
+            raise PartnerSourceError(url, exc) from exc
+    roster, resort = evidence
+    try:
+        validate_evidence(roster, resort)
+    except Exception as exc:
+        raise PartnerSourceError(ROSTER_URL, exc, source_urls=[ROSTER_URL, RESORT_URL]) from exc
     records = [make_record('mantera_moments', {'projection_version':2,'kind':'public_partner', 'url':ROSTER_URL,
                'name':name, 'roster':roster, 'resort':resort}, observed_at)
                for name in roster['names'] if name != CONGRESS]
@@ -293,9 +320,12 @@ async def collect(browser, deadline, observed_at):
     from read_budget import within_source_budget
     pages = []
     for url in (ROSTER_URL, RESORT_URL):
-        async with PublicSource(browser, url) as client:
-            client.deadline = deadline
-            pages.append(await within_source_budget(client, lambda:client.read(url)))
+        try:
+            async with PublicSource(browser, url) as client:
+                client.deadline = deadline
+                pages.append(await within_source_budget(client, lambda:client.read(url)))
+        except Exception as exc:
+            raise PartnerSourceError(url, exc) from exc
     return parse_pair(*pages, observed_at)
 
 

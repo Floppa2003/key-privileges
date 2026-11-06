@@ -193,8 +193,12 @@ async def collect(client, cfg, report, observed_at, limit):
         records.extend(partners)
         report['mantera_public_inventory'] = inventory
     except Exception as exc:
-        report['errors'].append({'phase':'public_partner_inventory', 'url':mantera_partners.ROSTER_URL,
-            'reason':str(exc)[:140] if isinstance(exc,(RuntimeError,ValueError)) else type(exc).__name__})
+        failed_url = exc.source_url if isinstance(exc, mantera_partners.PartnerSourceError) else mantera_partners.ROSTER_URL
+        error = {'phase':'public_partner_inventory', 'url':failed_url,
+            'reason':str(exc)[:140] if isinstance(exc,(RuntimeError,ValueError)) else type(exc).__name__}
+        if isinstance(exc, mantera_partners.PartnerSourceError) and exc.source_urls:
+            error['source_urls'] = exc.source_urls
+        report['errors'].append(error)
     report['discovered'] = len(records)+len(report['errors'])
     report['coverage'] = 'all_current_FAQ_tiers;independent_Congress_page;public_named_participants_and_scoped_resort_redemption;not_all_group_businesses'
     return records
