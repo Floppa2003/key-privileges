@@ -8,7 +8,7 @@ import hashlib
 import io
 import re
 from datetime import datetime
-from normalized import make_offer,number
+from normalized import make_offer,NUMERIC_TOKEN,literal_number,number_starts_here
 from read_budget import within_source_budget
 
 PDF_RULES={
@@ -33,21 +33,34 @@ def require(pattern,value):
     return found
 
 
+def required_integer(match,group=1):
+    """Reviewed numeric fields require a complete, whole-number source token."""
+    value=literal_number(match[group])
+    if (value is None or not value.isdecimal()
+        or not number_starts_here(match.string,match.start(group))):
+        raise ValueError('pdf_rule_invalid_number')
+    return value
+
+
 def pdf_pages(data: bytes) -> list[str]:
     if not isinstance(data,bytes) or not data.startswith(b'%PDF-') or not 100<=len(data)<=3000000:
         raise ValueError('invalid_or_oversized_pdf')
     # Imported only in collection, never needed by the Google publisher.
     from pypdf import PdfReader
+    from document_text import _prepare_pdf_page, needs_page_ocr
     reader=PdfReader(io.BytesIO(data),strict=True)
     if reader.is_encrypted or not 1<=len(reader.pages)<=80:
         raise ValueError('pdf_encrypted_or_page_limit')
     pages=[]
     for page_number,page in enumerate(reader.pages,1):
+        page,images=_prepare_pdf_page(page)
         stream=page.get_contents()
         if stream is None or len(stream.get_data())>4000000:
             raise ValueError('pdf_content_stream_empty_or_oversized')
         value=page.extract_text()
-        if not value or not value.strip():
+        # This reviewed route is native-only: an image page with a readable
+        # footer still needs review, rather than losing its main conditions.
+        if needs_page_ocr((value or '').strip(),images):
             raise ValueError('pdf_missing_text_layer_review_required')
         pages.append(value)
     if sum(map(len,pages))>35000:
@@ -77,22 +90,23 @@ def parse_pdf_pages(source: str,pages: list[str],observed_at: str,*,document_sha
         if not 1<=len(clauses)<=50 or any(not x for x in clauses):raise ValueError('deposit_tiers_missing_or_unbounded')
         tiers=[]
         for clause in clauses:
-            reward=require(r'(\d+) баллов только за первый вклад',clause)
-            interval=require(r'на сумму от ([\d ]+)\s*\([^)]*\)(?:\s+до ([\d ]+)\s*\([^)]*\))? рублей',clause)
-            months=require(r'не менее чем на (\d+)\s*\([^)]*\) календарный месяц',clause)
-            lo,hi=number(interval[1].strip()),number(interval[2].strip()) if interval[2] else None
-            if int(lo)<=0 or (hi is not None and int(hi)<int(lo)) or int(months[1])<1:
+            reward=require(rf'({NUMERIC_TOKEN}) баллов только за первый вклад',clause)
+            interval=require(rf'на сумму от ({NUMERIC_TOKEN})\s*\([^)]*\)(?:\s+до ({NUMERIC_TOKEN})\s*\([^)]*\))? рублей',clause)
+            months=require(rf'не менее чем на ({NUMERIC_TOKEN})\s*\([^)]*\) календарный месяц',clause)
+            lo,hi=required_integer(interval),required_integer(interval,2) if interval[2] else None
+            term=int(required_integer(months))
+            if int(lo)<=0 or (hi is not None and int(hi)<int(lo)) or term<1:
                 raise ValueError('invalid_deposit_interval')
-            tiers.append({'points':number(reward[1]),'deposit_min_rub':lo,'deposit_max_rub':hi,
-                          'term_min_months':int(months[1]),'reward_unit':'RZD_Bonus_points',
+            tiers.append({'points':required_integer(reward),'deposit_min_rub':lo,'deposit_max_rub':hi,
+                          'term_min_months':term,'reward_unit':'RZD_Bonus_points',
                           'evidence':clause})
         if len({t['deposit_min_rub'] for t in tiers})!=len(tiers):raise ValueError('duplicate_deposit_tier')
         period=require(r'Акция проводится в рамках срока с (\d{2}\.\d{2}\.\d{4}) г\. по (\d{2}\.\d{2}\.\d{4}) г\.',all_text)
         start,end=[datetime.strptime(s,'%d.%m.%Y').date().isoformat() for s in period.groups()]
-        credit=require(r'в течение (\d+) календарных дней после истечения Периода охлаждения',all_text)
-        cooling=require(r'Период охлаждения\s*[–—-].{0,100}?по (\d+)\s*\(',all_text)
-        details.update(deposit_reward_tiers=tiers,credit_wait_days=int(credit[1]),
-                       cooling_days=int(cooling[1]),validity_evidence=period[0],
+        credit=require(rf'в течение ({NUMERIC_TOKEN}) календарных дней после истечения Периода охлаждения',all_text)
+        cooling=require(rf'Период охлаждения\s*[–—-].{{0,100}}?по ({NUMERIC_TOKEN})\s*\(',all_text)
+        details.update(deposit_reward_tiers=tiers,credit_wait_days=int(required_integer(credit)),
+                       cooling_days=int(required_integer(cooling)),validity_evidence=period[0],
                        credit_wait_evidence=credit[0],cooling_evidence=cooling[0])
         benefit=section
         warnings.append('loyalty_account_number_is_not_a_public_promocode')
@@ -100,12 +114,12 @@ def parse_pdf_pages(source: str,pages: list[str],observed_at: str,*,document_sha
         p=compact(' '.join(pages))
         section=p.split('За каждые потраченные на покупки',1)[1].split('Дополнительные привилегии',1)[0]
         section='За каждые потраченные на покупки'+section
-        basis=require(r'За каждые потраченные на покупки (\d+) руб',section)
+        basis=require(rf'За каждые потраченные на покупки ({NUMERIC_TOKEN}) руб',section)
         tiers=[]
-        for m in re.finditer(r'(\d+) мил[яи] при сумме покупок по карте в месяц от ([\d ]+) руб\.\s+до ([\d ]+) руб',section):
-            lo,hi=number(m[2].strip()),number(m[3].strip())
+        for m in re.finditer(rf'({NUMERIC_TOKEN}) мил[яи] при сумме покупок по карте в месяц от ({NUMERIC_TOKEN}) руб\.\s+до ({NUMERIC_TOKEN}) руб',section):
+            lo,hi=required_integer(m,2),required_integer(m,3)
             if int(lo)>=int(hi):raise ValueError('invalid_card_spend_interval')
-            tiers.append({'miles':m[1],'monthly_spend_from_rub':lo,'monthly_spend_to_rub':hi,
+            tiers.append({'miles':required_integer(m),'monthly_spend_from_rub':lo,'monthly_spend_to_rub':hi,
                           'lower_inclusive':None,'upper_inclusive':None,'evidence':m[0]})
         # Every earning-tier clause must be recognized, including newly added tiers.
         # No fixed number of rows and no silent dropping of unsupported rows.
@@ -113,12 +127,12 @@ def parse_pdf_pages(source: str,pages: list[str],observed_at: str,*,document_sha
         if (not 1<=len(tiers)<=50 or len(tiers)!=expected
                 or len({t['monthly_spend_from_rub'] for t in tiers})!=len(tiers)):
             raise ValueError('card_tiers_missing_duplicate_or_unparsed')
-        cap=require(r'Максимальный лимит выплаты кешбэк/миль в месяц[^\d]*([\d ]+) миль',section)
-        welcome=require(r'(\d+) приветственных миль',section)
+        cap=require(rf'Максимальный лимит выплаты кешбэк/миль в месяц[^\d]*({NUMERIC_TOKEN}) миль',section)
+        welcome=require(rf'({NUMERIC_TOKEN}) приветственных миль',section)
         service=p.split('Обслуживание карты',1)[1].split('Обслуживание платежного стикера',1)[0] if 'Обслуживание платежного стикера' in p else p.split('Обслуживание карты',1)[1].split('Начисление кешбэк/миль',1)[0]
-        details.update(spend_reward_tiers=tiers,earning_basis_rub=basis[1],earning_basis_evidence=basis[0],
-                       monthly_miles_cap=number(cap[1].strip()),monthly_miles_cap_evidence=cap[0],
-                       welcome_miles=welcome[1],welcome_miles_evidence=welcome[0],service_fee_conditions=service)
+        details.update(spend_reward_tiers=tiers,earning_basis_rub=required_integer(basis),earning_basis_evidence=basis[0],
+                       monthly_miles_cap=required_integer(cap),monthly_miles_cap_evidence=cap[0],
+                       welcome_miles=required_integer(welcome),welcome_miles_evidence=welcome[0],service_fee_conditions=service)
         benefit=section
         warnings.extend(['boundary_inclusivity_not_resolved','spend_outside_published_ranges_not_inferred',
                          'card_lifetime_is_not_offer_expiry'])

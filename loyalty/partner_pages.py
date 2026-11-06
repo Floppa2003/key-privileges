@@ -86,7 +86,7 @@ def extract_partner_page(source,soup,url,observed_at):
     details={'source_scope':'reviewed_partner_page_not_program_catalog',
              'partner_identity_origin':'reviewed_exact_partner_owned_url'}
     if cfg.get('publication_selector'):
-        publication=text(content(select([cfg['publication_selector']])))
+        publication=content(select([cfg['publication_selector']]))
         details['article_published_at']=datetime.strptime(publication,'%d.%m.%Y').date().isoformat()
         details['publication_date_is_not_validity']=True
     date_from,date_until,date_evidence=explicit_period(terms,cfg.get('date_rule'))
@@ -96,7 +96,7 @@ def extract_partner_page(source,soup,url,observed_at):
     if cfg.get('link_selectors'):
         links=[]
         for node in select(cfg['link_selectors']):
-            item={'label':text(node.get_text(' ',strip=True)),'href':node.get('href','')}
+            item={'label':html_text(node),'href':node.get('href','')}
             if item not in links:links.append(item)
         details['published_links']=links
     warnings=['publication_is_not_confirmation_of_current_user_eligibility']+cfg.get('warnings',[])
@@ -122,13 +122,13 @@ def extract_partner_page(source,soup,url,observed_at):
                              details={'rate_scope':'temporary_multiplier','validity_evidence':promo[0]}))
         return rows
     if source=='ekp_rostelecom':
-        paragraph=next((p for p in blocks[0].select('p') if 'новые клиенты' in text(p.get_text(' ',strip=True))),None)
+        paragraph=next((p for p in blocks[0].select('p') if re.search(r'новые\s+клиенты',html_text(p))),None)
         if paragraph is None:raise ValueError('Rostelecom audience paragraph missing')
-        prose=text(paragraph.get_text(' ',strip=True))
-        m=re.fullmatch(r'(.*?новые клиенты.*?) (Для действующих абонентов.*?) (Подробная информация.*)',prose,re.S)
+        prose=html_text(paragraph,br_separator=' ')
+        m=re.fullmatch(r'(.*?новые\s+клиенты.*?)\s+(Для\s+действующих\s+абонентов.*?)\s+(Подробная\s+информация.*)',prose,re.S)
         if not m:raise ValueError('Rostelecom audience boundaries changed')
         publication=soup.select_one('.newsdata')
-        publication=datetime.strptime(text(publication.get_text()),'%d.%m.%Y').date().isoformat() if publication else None
+        publication=datetime.strptime(html_text(publication),'%d.%m.%Y').date().isoformat() if publication else None
         return [make(audience,claim,redemption=m[3],details={'audience':audience,'article_published_at':publication,
               'limitations':'press_release_not_full_partner_card_rules'})
                 for audience,claim in [('new_customers',m[1]),('existing_customers',m[2])]]

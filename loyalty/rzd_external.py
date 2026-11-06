@@ -6,7 +6,8 @@ from pathlib import Path
 from urllib.parse import urljoin, urlsplit
 import requests
 from bs4 import BeautifulSoup
-from normalized import make_offer, text, content_hash
+from html_text import html_text
+from normalized import make_offer, content_hash
 from document_text import extract_pdf, document_records
 
 TOUR='https://rzdtour.com/'
@@ -118,7 +119,7 @@ def tour_links(raw,base):
     return out,sorted(set(unread))
 
 def tables(block):
-    return [[[text(c.get_text(' ',strip=True)) for c in row.find_all(['td','th'],recursive=False)]
+    return [[[html_text(c) for c in row.find_all(['td','th'],recursive=False)]
              for row in t.find_all('tr')] for t in block.find_all('table')]
 
 def tour_fields(raw,url):
@@ -127,14 +128,14 @@ def tour_fields(raw,url):
     if len(blocks)!=1:raise ValueError('re_tour_owned_structure')
     block=blocks[0]
     # A price-block heading is a condition, not the tour's identity heading.
-    titles=[text(h.get_text(' ',strip=True)) for h in soup.select('h1')
+    titles=[html_text(h) for h in soup.select('h1')
             if h.get_text(strip=True) and block not in h.parents]
     if len(titles)!=1:raise ValueError('re_tour_owned_structure')
-    body=text(block.get_text('\n',strip=True))
+    body=html_text(block)
     if not 40<=len(body)<=35000:raise ValueError('re_tour_text_bound')
     clauses=[]
     for node in block.find_all(['p','li']):
-        value=text(node.get_text(' ',strip=True))
+        value=html_text(node,br_separator=' ')
         if RZD.search(value) and value not in clauses:clauses.append(value)
     # If the supported owning elements changed, do not claim a missing benefit.
     if RZD.search(body) and not clauses:raise ValueError('re_tour_clause_structure')
@@ -153,18 +154,18 @@ def tour_record(raw,url,parent,observed):
 def bank_fields(raw):
     soup=BeautifulSoup(raw,'html.parser');blocks=soup.select('.ucr-contentpage-parsys')
     if len(blocks)!=1:raise ValueError('re_bank_owned_structure')
-    block=blocks[0];titles=[text(h.get_text(' ',strip=True)) for h in block.select('h1') if h.get_text(strip=True)]
+    block=blocks[0];titles=[html_text(h) for h in block.select('h1') if h.get_text(strip=True)]
     if len(titles)!=1 or 'CASH' not in titles[0].upper():raise ValueError('re_bank_identity')
     docs=[]
     for row in block.select('table.downloadlist tr'):
         cells=row.find_all('td',recursive=False)
-        label=text(cells[0].get_text(' ',strip=True)) if cells else ''
-        if not re.search(r'Правил.*(?:вознагражден|лояльност)',label,re.I):continue
+        label=html_text(cells[0]) if cells else ''
+        if not re.search(r'Правил.*(?:вознагражден|лояльност)',' '.join(label.split()),re.I):continue
         for a in row.select('a[href]'):
             url=urljoin(BANK,a['href']);checked_url(url)
             if urlsplit(url).netloc!='www.unicreditbank.ru':raise ValueError('re_bank_pdf_host')
             if url.lower().endswith('.pdf') and url not in [d['url'] for d in docs]:docs.append({'url':url,'label':label})
-    body=text(block.get_text('\n',strip=True))
+    body=html_text(block)
     if not 100<=len(body)<=35000:raise ValueError('re_bank_text_bound')
     return {'title':titles[0],'text':body,'documents':docs,'rzd_mentions':bool(RZD.search(body))}
 

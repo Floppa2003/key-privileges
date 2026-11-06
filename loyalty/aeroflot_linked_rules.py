@@ -12,6 +12,7 @@ from urllib.parse import urljoin, urlsplit, urlunsplit, parse_qsl
 import requests
 from bs4 import BeautifulSoup
 from normalized import make_offer, text, content_hash
+from html_text import html_text
 from sheets_normalized import prepare
 from document_text import extract_pdf, document_records
 
@@ -102,17 +103,17 @@ def clean_html(data,url):
 def catalog_fields(raw,url):
     checked_url(url);host=urlsplit(url).netloc;dom=BeautifulSoup(raw,'html.parser');main=dom.find('main')
     if host not in CATALOG_HOSTS or main is None:raise ValueError('al_catalog_structure')
-    titles=[text(h.get_text(' ',strip=True)) for h in main.select('h1')]
+    titles=[html_text(h) for h in main.select('h1')]
     counts=main.select('.app-main-title_count')
     note_class='CatalogSlugs_bottomText' if host=='samson-pharma.ru' else 'CatalogSlugsPage_headerSubText'
     notes=main.select('[class*="'+note_class+'"]')
-    if len(titles)!=1 or not re.search(r'товар.*исключен',titles[0],re.I) or len(counts)!=1 or len(notes)!=1:raise ValueError('al_catalog_structure')
-    count=re.fullmatch(r'([0-9 ]+)\s+товар\w*',text(counts[0].get_text(' ',strip=True)))
+    if len(titles)!=1 or not re.search(r'товар.*исключен',' '.join(titles[0].split()),re.I) or len(counts)!=1 or len(notes)!=1:raise ValueError('al_catalog_structure')
+    count=re.fullmatch(r'([0-9 ]+)\s*товар\w*',' '.join(html_text(counts[0]).split()))
     if not count:raise ValueError('al_catalog_count')
     total=int(count[1].replace(' ',''))
     products={}
     for a in main.select('a.product-name'):
-        name=text(a.get_text(' ',strip=True));link=a.get('href','');u=urlsplit(link)
+        name=html_text(a);link=a.get('href','');u=urlsplit(link)
         if not name or u.scheme!='https' or u.netloc!=host or not u.path.startswith('/catalog/') or u.query or u.fragment:raise ValueError('al_product_identity')
         if link in products and products[link]!=name:raise ValueError('al_product_conflict')
         products[link]=name
@@ -123,7 +124,7 @@ def catalog_fields(raw,url):
         if urlsplit(link).netloc!=host or urlsplit(link).path!=STOLETOV:raise ValueError('al_pagination_scope')
         if link not in next_links:next_links.append(link)
     page=int(dict(parse_qsl(urlsplit(url).query)).get('page','1'))
-    return {'title':titles[0],'total':total,'note':text(notes[0].get_text(' ',strip=True)),
+    return {'title':titles[0],'total':total,'note':html_text(notes[0]),
             'products':[{'url':k,'name':v} for k,v in products.items()],'next_links':next_links,'page':page}
 
 class Reader:
@@ -209,7 +210,7 @@ def make_rows(entry,fetch,data,observed,*,fields=None,doc=None,complete=None):
             parent_source=parents[0]['source_url'],parent_sha256=parents[0]['content_sha256'],label=parents[0]['label'],extra_details=details)
     f=fields
     value=f['title']+'\n'+f['note']+'\n\n'+'\n'.join(p['name']+' — '+p['url'] for p in f['products'])
-    value=text(value)
+    value=text(value,markup=False)
     return [make_offer(SID,'html:'+sha(entry['url'].encode())+':page:'+str(f['page']),PROGRAM,partner,'',entry['url'],observed,
         title=f['title']+' — страница '+str(f['page']),conditions=value,record_kind='program_rules',source_status='public_linked_rules_text',
         details={**details,'public_rule_text':value,'catalogue_page':f,'products_are_exclusions_not_offers':True},

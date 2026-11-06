@@ -10,6 +10,7 @@ import re
 from datetime import datetime, timedelta
 from urllib.parse import urljoin, urlsplit, parse_qs
 from bs4 import BeautifulSoup
+from html_text import html_text
 from normalized import canonical_url, make_offer
 
 CHANNELS = {'ekp_announcements':'ekpcard', 'rzd_announcements':'fpcrussia',
@@ -136,7 +137,7 @@ def parse_feed(html: str, cfg: dict, observed_at: str) -> dict:
                 url = canonical_url(html_module.unescape(a['href']))
             except (TypeError, ValueError):
                 continue
-            link={'label':a.get_text(' ',strip=True), 'url':url}
+            link={'label':html_text(a), 'url':url}
             if link not in outgoing:
                 outgoing.append(link)
             u=urlsplit(url)

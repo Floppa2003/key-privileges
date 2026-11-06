@@ -7,6 +7,7 @@ from __future__ import annotations
 import re
 from urllib.parse import urljoin,urlsplit
 from bs4 import BeautifulSoup
+from html_text import html_text
 import rzd_import_catalog as m
 from normalized import make_offer,text
 
@@ -59,10 +60,9 @@ def previews(obs):
             summary=desc.select_one(':scope > .bonuse');category=desc.select_one(':scope > p:not(.bonuse)')
             body=desc.select_one('.more__inf');element=node.get('id','')
             if not re.fullmatch(r'bx_[0-9]+_[0-9]+',element):continue
-            for br in desc.select('br'):br.replace_with('\n')
-            card={'url':url,'element_id':element,'category':text(category.get_text(' ',strip=True)) if category else '',
-                'summary':text(summary.get_text(' ',strip=True)) if summary else '',
-                'conditions':text(body.get_text('\n',strip=True)) if body else ''}
+            card={'url':url,'element_id':element,'category':html_text(category) if category else '',
+                'summary':html_text(summary) if summary else '',
+                'conditions':html_text(body) if body else ''}
             if not card['summary'] or not card['conditions']:continue
             if len(card['summary'])>1000 or len(card['conditions'])>25000:raise ValueError('rzd_preview_bound')
             if m.RESTRICTION.search(card['summary']) or m.INSTRUCTION.search(card['conditions']):raise ValueError('rzd_preview_content')
@@ -105,8 +105,8 @@ def validate_record(r):
         or not p['summary'] or not p['conditions'] or m.INSTRUCTION.search(p['summary']+' '+p['conditions'])):raise ValueError('rzd_preview_card_shape')
     if (r['source_id']!='rzd' or r['native_id']!='catalogue:'+urlsplit(target).path
         or r['source_url']!=url+'#'+p['element_id'] or r['benefit_url']!=r['source_url']
-        or r['title']!=text(p['summary'][:300]) or r['category']!=(text(p['category']) or None) or r['partner_name'] is not None
-        or r['conditions_text']!=text(p['summary']+'\n\n'+p['conditions']) or r['benefit_text'] or r['redemption_text']
+        or r['title']!=text(p['summary'][:300],markup=False) or r['category']!=(text(p['category'],markup=False) or None) or r['partner_name'] is not None
+        or r['conditions_text']!=text(p['summary']+'\n\n'+p['conditions'],markup=False) or r['benefit_text'] or r['redemption_text']
         or r['record_kind']!='source_observation' or r['source_status']!='public_catalogue_preview_detail_unread'
         or r['link_kind']!='page_anchor' or r['locator']!='article__item#'+p['element_id'] or r['rates'] or r['tables']
         or r['valid_from'] is not None or r['valid_until'] is not None or not set(WARNINGS)<=set(r['warnings'])):raise ValueError('rzd_preview_record_binding')

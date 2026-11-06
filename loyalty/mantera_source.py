@@ -3,7 +3,7 @@ from __future__ import annotations
 import hashlib, re
 from bs4 import BeautifulSoup
 from public_reward_projection import plain, one, make_record
-from normalized import number
+from normalized import number, percent_spans
 
 SOURCE = 'mantera_moments'
 URL = 'https://lk.manteratravel.ru/faq'
@@ -98,16 +98,29 @@ def source_fields(e):
         raise ValueError('mantera_tier_inventory')
     validate_faq(e.get('faq'))
     terms=[]
-    for kind,pattern,qualifier in (
-        ('earn_points',r'начисл\w*\s+(\d+(?:[.,]\d+)?)\s*%','exact'),
-        ('redeem_points',r'списан\w*\s+(?:до\s+)?(\d+(?:[.,]\d+)?)\s*%','up_to')):
-        found=list(re.finditer(pattern,body,re.I))
+    labels=list(re.finditer(r'\b(начисл\w*|списан\w*)\s+',body,re.I))
+    for kind,prefix,qualifier in (
+        ('earn_points','начисл','exact'), ('redeem_points','списан','up_to')):
+        found=[]
+        for index,label in enumerate(labels):
+            if not label[1].casefold().startswith(prefix):continue
+            end=labels[index+1].start() if index+1<len(labels) else len(body)
+            fragment=body[label.end():end]
+            spans=percent_spans(fragment)
+            if not spans or fragment[:spans[0]['start']].strip().casefold() not in ('','до','от'):
+                if re.match(r'(?:(?:до|от)\s+)?\d',fragment,re.I) and '%' in fragment:
+                    raise ValueError('mantera_invalid_tier_rate')
+                continue
+            if len(spans)!=1:raise ValueError('mantera_ambiguous_tier_rate')
+            found.append(spans[0])
         if len(found)>1:raise ValueError('mantera_ambiguous_tier_rate')
         if found:
-            value=number(found[0][1])
-            if not 0<=float(value)<=100:raise ValueError('mantera_invalid_tier_rate')
-            terms.append(dict(kind=kind,value=value,unit='percent',qualifier=qualifier,
-                              reward_unit='Mantera_bonus_not_cash',fragment=e['tier_clause']))
+            span=found[0]
+            term=dict(kind=kind,value=span['value'],unit='percent',
+                      qualifier=qualifier if span['qualifier']=='exact' else span['qualifier'],
+                      reward_unit='Mantera_bonus_not_cash',fragment=e['tier_clause'])
+            if span['min_value'] is not None:term['value_min']=span['min_value']
+            terms.append(term)
     warnings=['bonus_redemption_cap_not_discount','programme_eligibility_not_verified']
     if not terms:
         warnings.append('tier_rates_unclassified_original_clause_preserved')

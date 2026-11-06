@@ -6,6 +6,7 @@ import json
 import time
 from urllib.parse import urljoin
 from bs4 import BeautifulSoup
+from html_text import html_text
 from model import clean_url
 from normalized import make_offer, text
 from read_budget import within_source_budget
@@ -17,7 +18,11 @@ ARTICLE='[class*="SupportWidgets_content"]'
 def own_label(tab):
     labels=[n for n in tab.select('.tab-label') if n.find_parent(class_='accordion-tab') is tab]
     if len(labels)!=1:raise ValueError('utair_leaf_label_ambiguous')
-    return text(labels[0].get_text(' ',strip=True))
+    return html_text(labels[0])
+
+
+def _partner_path(path):
+    return any(' '.join(label.split())=='Копить мили' for label in path)
 
 
 def article_blocks(raw):
@@ -33,7 +38,7 @@ def article_blocks(raw):
         if not label or len(contents)!=1:raise ValueError('utair_leaf_structure_changed')
         content=BeautifulSoup(str(contents[0]),'html.parser')
         for node in content.select('script,style,form,input,textarea,iframe'):node.decompose()
-        body=text(content.get_text(' ',strip=True))
+        body=html_text(content,br_separator=' ')
         if not body:raise ValueError('utair_leaf_text_missing')
         ancestors=[]
         for parent in tab.parents:
@@ -45,7 +50,7 @@ def article_blocks(raw):
         for a in content.select('a[href]'):
             try:target=clean_url(urljoin(ROOT,a['href']))
             except (ValueError,TypeError):rejected+=1;continue
-            link={'label':text(a.get_text(' ',strip=True)),'url':target}
+            link={'label':html_text(a),'url':target}
             if link not in links:links.append(link)
         blocks.append({'section_path':path,'title':label,'text':body,'links':links,
                        'rejected_links':rejected,'native_id':'leaf:'+hashlib.sha256(identity.encode()).hexdigest()[:32]})
@@ -58,7 +63,7 @@ def parse_article(raw,observed_at):
     rows=[];blocks=article_blocks(raw)
     page_sha=hashlib.sha256(raw.encode()).hexdigest()
     for block in blocks:
-        partner='Копить мили' in block['section_path']
+        partner=_partner_path(block['section_path'])
         details={'scope':'one_leaf_of_public_support_article','public_article_block':block,
             'source_document_sha256':page_sha,'retrieval_method':'disposable_installed_chrome_CDP',
             'linked_terms_checked':False,'full_program_catalog':False}
@@ -80,12 +85,12 @@ def validate_support_record(row):
     if not isinstance(path,list) or not all(isinstance(x,str) for x in path) or not isinstance(label,str):
         raise ValueError('utair_support_identity_missing')
     native='leaf:'+hashlib.sha256(json.dumps([path,label],ensure_ascii=False).encode()).hexdigest()[:32]
-    partner='Копить мили' in path
+    partner=_partner_path(path)
     if (row['source_url']!=ROOT or row['link_kind']!='page_block' or row['benefit_url'] is not None
         or row['source_status']!='public_support_article' or row['native_id']!=native
-        or row['title']!=label or row['conditions_text']!=text(block.get('text'))
+        or row['title']!=label or row['conditions_text']!=text(block.get('text'),markup=False)
         or row['partner_name']!=(label if partner else None)
-        or row['benefit_text']!=(text(block.get('text')) if partner else label)
+        or row['benefit_text']!=(text(block.get('text'),markup=False) if partner else label)
         or row['record_kind']!=('partner_offer' if partner else 'program_rules')
         or row['details'].get('linked_terms_checked') is not False
         or row['details'].get('full_program_catalog') is not False):

@@ -274,7 +274,7 @@ def scoped_bank_sections(sid, raw):
                 if n.find_parent('section') is None]
     selected=[]
     for n in candidates:
-        body=text(n.get_text(' ',strip=True))
+        body=html_text(n)
         if (n.get('id') in ('how','widget-panel') or n.select_one('[class*="Container-footer-new"]') is not None):
             continue
         if body:

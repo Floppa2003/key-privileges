@@ -1,13 +1,10 @@
 {
-  "request_id": "2026-11-06-parsing-boundaries-final",
+  "request_id": "2026-11-06-parsing-boundary-completion",
   "source_ids": [
-    "rgo",
-    "af_vtb_rules",
-    "nspk_ekp_rules",
-    "uralsib_rzd_rules",
-    "hse_alumni",
-    "utair_media"
+    "utair",
+    "ural_angara_rules",
+    "hse_alumni"
   ],
-  "reason": "Refresh the six registered sources affected by the reviewed bank HTML boundaries, source section ownership, wrapped Utair tier scopes and RGO load-more progress fixes. Publish accepted fresh observations and deterministic common views through the existing writers, with destination readback. Retain existing unavailable-source handling, manual fields, access controls and collection budgets.",
+  "reason": "Refresh the three registered public sources containing the verified TVIL reward-unit error and lost range bounds for Angara, REBOOT and Tochnaya Optika. Publish accepted fresh observations and deterministic common views through the existing writers, with destination readback. Retain existing unavailable-source handling, manual fields, access controls and collection budgets.",
   "publish": true
 }

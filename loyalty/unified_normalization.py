@@ -14,7 +14,8 @@ from collections import Counter, defaultdict
 from datetime import date, datetime, timedelta
 from decimal import Decimal, InvalidOperation
 from urllib.parse import urlsplit, urlunsplit, parse_qsl, urlencode
-from normalized import normalize_rates, number, NUMBER, TYPES
+from normalized import (normalize_rates, percent_spans, number, NUMBER, TYPES,
+                        NUMERIC_TOKEN, literal_number, number_starts_here)
 from promo_codes import extract_promocodes
 
 VERSION = '1.0.1'
@@ -36,6 +37,15 @@ ENGLISH_RATE_ALIASES = {
     'fee': 'комиссия', 'fees': 'комиссия', 'with': 'при', 'and': 'и',
 }
 ENGLISH_RATE_WORD = re.compile(r'\b(?:'+'|'.join(ENGLISH_RATE_ALIASES)+r')(?=\W|\d|$)', re.I)
+RATE_LABEL = re.compile(TYPES['discount']+'|'+TYPES['cashback']+'|'+ENGLISH_RATE_LABEL.pattern,re.I)
+REWARD_UNIT_WORDING = {
+    'earn_points': r'\b(?:баллами|бонусами|в\s+(?:бонусных\s+)?баллах|в\s+бонусах|'
+                   r'в\s+(?:виде|форме)\s+(?:баллов|бонусов|бонусных\s+баллов)|'
+                   r'(?:in|as)\s+(?:(?:reward|bonus)\s+)?points)\b',
+    'earn_miles': r'\b(?:милями|в\s+милях|в\s+(?:виде|форме)\s+(?:бонусных\s+)?миль|'
+                  r'(?:in|as)\s+(?:(?:reward|bonus)\s+)?miles)\b',
+    'cashback': r'\b(?:рублями|деньгами|в\s+рублях|(?:in|as)\s+cash)\b',
+}
 KIND = {'discount':'discount','cashback':'cashback','miles':'earn_miles','points':'earn_points',
         'gift':'gift','special_price':'special_price'}
 ALIASES = {
@@ -223,8 +233,7 @@ def _structured_mile_evidence(details):
     return result
 
 
-def _clauses(raw, *, extra_covered_quotes=None):
-    seen=set()
+def _source_fields(raw):
     source_fields=[('/'+name,raw.get(name) or '') for name in ('benefit','conditions','activation')]
     details=raw.get('details',{})
     partner=details.get('public_partner')
@@ -242,8 +251,14 @@ def _clauses(raw, *, extra_covered_quotes=None):
                 raise ValueError('af_record_semantic_display_binding')
             source_fields=[('/details/semantic_fields/'+name,source[name])
                            for name in ('benefit','conditions','redemption')]
+    return source_fields
+
+
+def _clauses(raw, *, extra_covered_quotes=None):
+    seen=set()
+    details=raw.get('details',{})
     structured_quotes=[] if details.get('pages') else _structured_mile_evidence(details)
-    for path,value in source_fields:
+    for path,value in _source_fields(raw):
         spans=[]
         for literal in [*structured_quotes, *(extra_covered_quotes or {}).get(path, [])]:
             start=value.find(literal)
@@ -277,7 +292,7 @@ def _scope(clause):
     return scope
 
 
-def _english_rates(clause, *, heading_context=''):
+def _english_rates(clause, *, heading_context='', with_spans=False):
     """Use the same local ownership rules for English and mixed source text."""
     # These are parser-token aliases in a temporary buffer. The source clause
     # remains unchanged, and every returned rate keeps its original evidence.
@@ -287,7 +302,63 @@ def _english_rates(clause, *, heading_context=''):
     working = re.sub(r'\b(предоплат\w*|оплат\w*|налог\w*|НДС|комисси\w*)\s+'
                      r'(?:(?:of|is|at|equals)\s+)+', r'\1 ', working, flags=re.I)
     return [{**rate, 'evidence': clause}
-            for rate in normalize_rates(working, heading_context=heading_context)]
+            for rate in normalize_rates(working, heading_context=heading_context,with_spans=with_spans)]
+
+
+def _cashback_kind(clause,rate,spans):
+    """Bind reward units to one occurrence, retaining the original rate schema."""
+    index=rate.get('_percent_index')
+    if (not isinstance(index,int) or not 0<=index<len(spans)
+            or spans[index]['value']!=rate['value']
+            or spans[index]['min_value']!=rate.get('min_value')):
+        return 'cashback'
+    def preposed_unit(i):
+        if i==0:return None
+        left=spans[i-1]['end']
+        fragment=clause[left:spans[i]['start']]
+        boundaries=list(re.finditer(r'[,;+]|\b(?:и|and)\b',fragment,re.I))
+        if not boundaries:return None
+        boundary=boundaries[-1];local=fragment[boundary.end():]
+        if any(re.search(pattern,local,re.I) for pattern in REWARD_UNIT_WORDING.values()):
+            return left+boundary.start(),local
+        return None
+
+    span=spans[index];labels=list(RATE_LABEL.finditer(clause))
+    before=[label for label in labels if label.start()<span['start']]
+    after=[label for label in labels if label.start()>=span['end']]
+    postfix=(after[0] if after and not clause[span['end']:after[0].start()].strip() else None)
+    # A shared prefix such as "кешбэк в баллах" can label several rates, but
+    # another rate's postfix ("10% баллами") cannot label its neighbour.
+    prefix=''
+    if before and postfix is None:
+        label=before[-1]
+        labels_previous=any(item['end']<=label.start() and
+                            not clause[item['end']:label.start()].strip()
+                            for item in spans[:index])
+        if not labels_previous:
+            first=next(item for item in spans if item['start']>=label.start())
+            prefix=clause[label.start():first['start']]
+    right=spans[index+1]['start'] if index+1<len(spans) else len(clause)
+    next_prefix=preposed_unit(index+1) if index+1<len(spans) else None
+    if next_prefix:right=min(right,next_prefix[0])
+    later=[label.start() for label in after if label is not postfix]
+    if later:right=min(right,later[0])
+    suffix=re.split(r'[.!?](?:\s|$)|;',clause[span['end']:right],maxsplit=1)[0]
+    local_prefix=preposed_unit(index)
+    for local in (suffix,local_prefix[1] if local_prefix else '',prefix):
+        kinds=[kind for kind,pattern in REWARD_UNIT_WORDING.items() if re.search(pattern,local,re.I)]
+        if kinds:return kinds[0] if len(kinds)==1 else 'cashback'
+    return 'cashback'
+
+
+def _amount_matches(pattern,clause):
+    """Validate the entire captured numeric token before deriving an amount."""
+    for match in re.finditer(pattern,clause,re.I):
+        if not number_starts_here(clause,match.start(1)):
+            continue
+        value=literal_number(match[1])
+        if value is not None:
+            yield match,value
 
 
 def normalize_record(raw, *, as_of):
@@ -545,9 +616,23 @@ def normalize_record(raw, *, as_of):
             code(value,'/details/explicit_code_cell',scope,fragment=item)
     for i,c in enumerate(d.get('promo_code_delivery',[])):
         add('codes','code_delivery',f'/details/promo_code_delivery/{i}',delivery=c.get('method'))
+    # A label and its literal coupon may occupy adjacent lines of one field.
+    # Recover these before clause splitting, keeping the same local context and
+    # never joining separate fields, blank sections or repeated ambiguous quotes.
+    if not d.get('pages'):
+        for path,value in _source_fields(raw):
+            for item in extract_promocodes(value)['evidence']:
+                literal=item['evidence']
+                if ('\n' not in literal or value.count(literal)!=1
+                        or any(c['value']==item['code'] for c in n['codes'])):
+                    continue
+                start=value.index(literal);stop=start+len(literal)
+                left=max(value.rfind('\n',0,start),value.rfind(';',0,start))+1
+                ends=[p for separator in ('\n',';') if (p:=value.find(separator,stop))>=0]
+                fragment=value[left:min(ends) if ends else len(value)].strip()
+                code(item['code'],path,_scope(fragment),fragment=fragment)
     # Lexical projections are attached to the full original clause, never to every
     # partner in a roundup or every price in a source table.
-    numeric_pattern=re.compile(NUM)
     owned_heading=''
     heading=d.get('source_heading_context')
     # Older published hotel rows predate the explicit adapter ID. Recognize
@@ -567,20 +652,26 @@ def normalize_record(raw, *, as_of):
         # common conditions and unrelated sources cannot inherit that label.
         heading_context=owned_heading if path=='/benefit' else ''
         rate_text=rate_clause.removeprefix(heading_context+': ') if heading_context else rate_clause
+        spans=percent_spans(rate_text)
         rates=[]
         if not d.get('pages'):
             rate_parser = _english_rates if ENGLISH_RATE_LABEL.search(rate_text) else normalize_rates
-            rates = rate_parser(rate_text, heading_context=heading_context)
+            rates = rate_parser(rate_text, heading_context=heading_context,with_spans=True)
             # Only the known legacy Discount column supplies an implicit
             # label. A bare percent in Notes or another source does not.
             if (path=='/benefit' and raw['origin'] in ('yandex_discounts_complete_all','VG_community_offers')
-                    and (m:=re.fullmatch(r'\s*('+NUM+r')\s*%\s*',rate_clause))):
-                rates.append({'kind':'discount','value':decimal(m[1]),'unit':'percent','qualifier':'exact','evidence':clause})
-            for m in re.finditer(r'(?:up to\s+)?('+NUM+r')\s*RUB\s+(?:off|discount)\b',rate_clause,re.I):
-                rates.append({'kind':'discount','value':decimal(m[1]),'unit':'RUB','qualifier':'up_to' if re.search('up to',m[0],re.I) else 'exact','evidence':clause})
+                    and re.fullmatch(r'\s*('+NUM+r')\s*%\s*',rate_clause)
+                    and len(spans)==1 and spans[0]['min_value'] is None):
+                rates.append({'kind':'discount','value':spans[0]['value'],'unit':'percent','qualifier':'exact','evidence':clause})
+            for m,value in _amount_matches(r'(?:up to\s+)?('+NUMERIC_TOKEN+r')\s*RUB\s+(?:off|discount)\b',rate_clause):
+                rates.append({'kind':'discount','value':value,'unit':'RUB','qualifier':'up_to' if re.search('up to',m[0],re.I) else 'exact','evidence':clause})
         if not d.get('pages') and re.search(r'\d\s*%.*милями',rate_clause,re.I) and not rates:
-            m=re.search(r'('+NUM+r')\s*%',rate_clause)
-            rates=[{'kind':'miles','value':decimal(m[1]),'unit':'percent','qualifier':'up_to' if re.search('до',rate_clause[:m.start()],re.I) else 'exact'}]
+            for span in spans:
+                tail=re.split(r'%|[.!?](?:\s|$)|;',rate_text[span['end']:],maxsplit=1)[0]
+                if (re.search(r'\bмилями\b',tail,re.I)
+                        and not re.match(r'\s*(?:предоплат|аванс|НДС|налог|комисси|штраф)',tail,re.I)):
+                    rates.append({'kind':'miles','value':span['value'],'min_value':span['min_value'],
+                                  'unit':'percent','qualifier':span['qualifier'],'evidence':clause})
         for rr in rates:
             if rate_clause!=clause:rr['evidence']=clause
             if rr.get('evidence') in structured_evidence:continue
@@ -596,36 +687,29 @@ def normalize_record(raw, *, as_of):
             kind=KIND.get(rr['kind'],rr['kind'])
             # A marketing "bonus" or a program name does not state the reward
             # unit. Require literal wording for payment/credit in points.
-            if kind=='cashback' and re.search(
-                    r'\b(?:баллами|бонусами|в\s+(?:бонусных\s+)?баллах|в\s+бонусах|'
-                    r'в\s+(?:виде|форме)\s+(?:баллов|бонусов|бонусных\s+баллов)|'
-                    r'(?:in|as)\s+(?:(?:reward|bonus)\s+)?points)\b',clause,re.I):
-                kind='earn_points'
-            elif kind=='cashback' and re.search(
-                    r'\b(?:милями|в\s+милях|в\s+(?:виде|форме)\s+(?:бонусных\s+)?миль|'
-                    r'(?:in|as)\s+(?:(?:reward|bonus)\s+)?miles)\b',clause,re.I):
-                kind='earn_miles'
+            if kind=='cashback':
+                kind=_cashback_kind(rate_text,rr,spans)
             benefit(kind,path,value=rr['value'],unit=rr['unit'],qualifier=rr.get('qualifier','unspecified'),value_min=rr.get('min_value'),
                     basis_value=rr.get('basis_amount'),basis_unit=rr.get('basis_unit'),scope=scope,fragment=clause,
                     method='clause_candidate',reward_unit='miles' if kind=='earn_miles' else 'points' if kind=='earn_points' else None)
             recognized=True
         if not d.get('pages') and re.search(r'получ\w*|начисл\w*',clause,re.I) and not re.search(r'спис|оплат\w* балл|комисси',clause,re.I):
-            for m in re.finditer(r'('+NUM+r')\s+(?:бонус(?:ов|а)?|балл(?:ов|а)?)\b',clause,re.I):
+            for m,value in _amount_matches(r'('+NUMERIC_TOKEN+r')\s+(?:бонус(?:ов|а)?|балл(?:ов|а)?)\b',clause):
                 prefix=clause[:m.start()]
                 if re.search(r'\(\s*до\s*$',prefix,re.I):
-                    condition('benefit_cap',path,value=decimal(m[1]),unit='points',qualifier='up_to',
+                    condition('benefit_cap',path,value=value,unit='points',qualifier='up_to',
                               scope=scope,fragment=clause,method='clause_candidate')
                 else:
                     qualifier='up_to' if re.search(r'\bдо\s*$',prefix,re.I) else 'at_least' if re.search(r'\bот\s*$',prefix,re.I) else 'unspecified'
-                    benefit('earn_points',path,value=decimal(m[1]),unit='points',qualifier=qualifier,
+                    benefit('earn_points',path,value=value,unit='points',qualifier=qualifier,
                             scope=scope,fragment=clause,method='clause_candidate',reward_unit='points')
                 recognized=True
         if not d.get('pages') and re.search(r'в подарок|комплиментар|подарок при|gift (?:with|on|for)|complimentary',clause,re.I):
             benefit('gift',path,scope=scope,fragment=clause,method='clause_candidate');recognized=True
-        for m in re.finditer(rf'(?:заказ\w*|покупк\w*|чек\w*|бронировани\w*)\s+(?:на\s+сумму\s+)?от\s+({NUM})\s*{MONEY}',clause,re.I):
-            condition('minimum_purchase',path,value=decimal(m[1]),unit='RUB',qualifier='at_least',scope=scope,fragment=clause,method='clause_candidate');recognized=True
-        for m in re.finditer(rf'(?:максимум(?:\s+скидки)?|максимальн\w*\s+(?:размер\s+)?(?:скидк\w*|к[еэ]шб[еэ]к\w*)|не более)\s*[:—–-]?\s*({NUM})\s*{MONEY}',clause,re.I):
-            condition('benefit_cap' if re.search(r'скид|к[еэ]шб[еэ]к',clause,re.I) else 'maximum_amount_reference',path,value=decimal(m[1]),unit='RUB',qualifier='up_to',scope=scope,fragment=clause,method='clause_candidate');recognized=True
+        for m,value in _amount_matches(rf'(?:заказ\w*|покупк\w*|чек\w*|бронировани\w*)\s+(?:на\s+сумму\s+)?от\s+({NUMERIC_TOKEN})\s*{MONEY}',clause):
+            condition('minimum_purchase',path,value=value,unit='RUB',qualifier='at_least',scope=scope,fragment=clause,method='clause_candidate');recognized=True
+        for m,value in _amount_matches(rf'(?:максимум(?:\s+скидки)?|максимальн\w*\s+(?:размер\s+)?(?:скидк\w*|к[еэ]шб[еэ]к\w*)|не более)\s*[:—–-]?\s*({NUMERIC_TOKEN})\s*{MONEY}',clause):
+            condition('benefit_cap' if re.search(r'скид|к[еэ]шб[еэ]к',clause,re.I) else 'maximum_amount_reference',path,value=value,unit='RUB',qualifier='up_to',scope=scope,fragment=clause,method='clause_candidate');recognized=True
         classifiers={
             'stacking_restriction':r'не\s+суммир|не\s+сочета|not combin',
             'exclusion':r'исключ|кроме|не действует|не предоставля|не начисля|not valid|exclud',

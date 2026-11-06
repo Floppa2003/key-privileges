@@ -4,7 +4,8 @@ import hashlib
 import re
 from urllib.parse import urljoin
 from bs4 import Tag
-from normalized import make_offer, text
+from html_text import html_text
+from normalized import make_offer
 from model import clean_url
 from content_discovery import clean_dom, literal_benefits, action_clauses
 
@@ -12,14 +13,10 @@ PROGRAM = re.compile(r"\bЕКП\b|Един\w*\s+карт\w*\s+петербурж
 # An identity alias for the previously published card, not a discovery allowlist.
 LEGACY_PRODUCT_IDS = {'1775716014651': 'ekp'}
 GIFT = re.compile(
-    r"При бронировании от (?P<days>\d+)(?:-?[хx])? суток любого из домов "
-    r"(?P<hours>\d+) час(?:а|ов)? проката "
-    r"(?P<bikes>\d+)(?:-?[хx])? велосипедов или "
-    r"(?P<sups>\d+)(?:-?[хx])? сапбордов на выбор в ПОДАРОК\s*!", re.I)
-
-
-def compact(node):
-    return text(node.get_text(' ', strip=True))
+    r"При\s+бронировании\s+от\s+(?P<days>\d+)(?:-?[хx])?\s+суток\s+любого\s+из\s+домов\s+"
+    r"(?P<hours>\d+)\s+час(?:а|ов)?\s+проката\s+"
+    r"(?P<bikes>\d+)(?:-?[хx])?\s+велосипедов\s+или\s+"
+    r"(?P<sups>\d+)(?:-?[хx])?\s+сапбордов\s+на\s+выбор\s+в\s+ПОДАРОК\s*!", re.I)
 
 
 def extract_stay(source, soup, url, observed_at, cfg):
@@ -29,7 +26,7 @@ def extract_stay(source, soup, url, observed_at, cfg):
     cards = []
     for card in dom.select('.js-product[data-product-lid]'):
         titles = card.select('.js-product-name')
-        if any(PROGRAM.search(compact(n)) for n in titles):
+        if any(PROGRAM.search(html_text(n)) for n in titles):
             if len(titles) != 1:
                 raise ValueError('ekp_ladoga_ambiguous_card_title')
             cards.append(card)
@@ -44,7 +41,7 @@ def extract_stay(source, soup, url, observed_at, cfg):
         descriptions = card.select('.t778__descr')
         if len(descriptions) != 1:
             raise ValueError('ekp_ladoga_description_boundary')
-        description = compact(descriptions[0])
+        description = html_text(descriptions[0],br_separator=' ')
         if not description:
             raise ValueError('ekp_ladoga_empty_description')
         claims, _ = literal_benefits(description)
@@ -54,7 +51,7 @@ def extract_stay(source, soup, url, observed_at, cfg):
         match = matches[0] if len(matches) == 1 else None
         if match and any(int(match[k]) <= 0 for k in ('days', 'hours', 'bikes', 'sups')):
             raise ValueError('ekp_ladoga_invalid_gift_quantity')
-        title = compact(card.select_one('.js-product-name'))
+        title = html_text(card.select_one('.js-product-name'))
         links, unsafe_links = set(), 0
         for anchor in card.select('a[href]'):
             try:
@@ -67,7 +64,7 @@ def extract_stay(source, soup, url, observed_at, cfg):
             for sibling in record.next_siblings:
                 if not isinstance(sibling, Tag):
                     continue
-                note = compact(sibling)
+                note = html_text(sibling)
                 if not note.startswith('*ВНИМАНИЕ!'):
                     break
                 if note not in notes:

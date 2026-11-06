@@ -6,7 +6,8 @@ from pathlib import Path
 from urllib.parse import urlsplit, urlunsplit, urljoin
 import requests
 from bs4 import BeautifulSoup
-from normalized import make_offer, text, content_hash
+from normalized import make_offer, content_hash
+from html_text import html_text
 from document_text import extract_pdf, document_records
 from free_access_probe import FreeReader, free_plan, LOCATION_JS
 from sheets_normalized import prepare
@@ -59,7 +60,7 @@ def discover(base,clock,*,practical_only=False):
         if not row['active']:continue
         for field in ('loyaltyDescription','discountScheme'):
             for a in BeautifulSoup(row.get(field,''),'html.parser').select('a[href]'):
-                original=a['href'];label=a.get_text(' ',strip=True)
+                original=a['href'];label=html_text(a)
                 entry=inventory.setdefault(original,{'url':original,'labels':[],'classification':'merchant_or_redemption_reference'})
                 if label not in entry['labels']:entry['labels'].append(label)
                 if practical_only and urlsplit(original).path.lower().endswith('.pdf'):
@@ -93,11 +94,11 @@ def clean_html(data):
 def html_fields(data):
     soup=BeautifulSoup(data,'html.parser');body=soup.find('main') or soup.body
     if body is None:raise ValueError('el_no_content')
-    headings=[text(h.get_text(' ',strip=True)) for h in body.select('h1') if h.get_text(strip=True)]
+    headings=[html_text(h) for h in body.select('h1') if h.get_text(strip=True)]
     if not headings and soup.title and soup.title.get_text(strip=True):
-        headings=[text(soup.title.get_text(' ',strip=True))]
-    if len(set(headings))!=1:raise ValueError('el_html_needs_render_or_scope_review')
-    value=text(body.get_text('\n',strip=True))
+        headings=[html_text(soup.title)]
+    if len({' '.join(heading.split()) for heading in headings})!=1:raise ValueError('el_html_needs_render_or_scope_review')
+    value=html_text(body)
     if not 120<=len(value)<=35000 or DENIAL.search(value[:500]):raise ValueError('el_html_needs_render_or_scope_review')
     return headings[0],value
 
@@ -184,7 +185,7 @@ class Reader:
                 raw=clean_html(raw).encode()
                 dom=BeautifulSoup(raw,'html.parser');body=dom.find('main') or dom.body
                 receipt['html_structure']={'h1_count':len(body.select('h1')) if body else 0,
-                    'text_chars':len(text(body.get_text('\n',strip=True))) if body else 0}
+                    'text_chars':len(html_text(body)) if body else 0}
                 html_fields(raw)
                 return raw,receipt
             except ValueError as exc:

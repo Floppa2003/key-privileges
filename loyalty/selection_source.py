@@ -5,7 +5,8 @@ import json
 import re
 from datetime import date
 from bs4 import BeautifulSoup
-from normalized import content_hash, make_offer, text
+from html_text import html_text
+from normalized import content_hash, make_offer
 from public_transport import PublicSource
 from read_budget import within_source_budget
 from t2_regions import regional_comparison
@@ -28,7 +29,7 @@ def preview_record(snapshot, region, observed_at):
     titles, names = card.select(TITLE), card.select(PARTNER)
     if len(titles) != 1 or len(names) != 1:
         raise ValueError('ambiguous_selection_card')
-    title, partner = text(titles[0].get_text(' ',strip=True)), text(names[0].get_text(' ',strip=True))
+    title, partner = html_text(titles[0]), html_text(names[0])
     if not title or not partner:
         raise ValueError('empty_selection_identity')
     popup = BeautifulSoup(snapshot['popup_html'], 'html.parser')
@@ -36,20 +37,21 @@ def preview_record(snapshot, region, observed_at):
     if len(panels) != 1:
         raise ValueError('ambiguous_selection_popup')
     headers, bodies = panels[0].select('h2'), panels[0].select('.more-offer-info-popup')
-    if len(headers) != 1 or len(bodies) != 1 or text(headers[0].get_text()).casefold() != title.casefold():
+    if (len(headers) != 1 or len(bodies) != 1
+        or ' '.join(html_text(headers[0]).split()).casefold() != ' '.join(title.split()).casefold()):
         raise ValueError('selection_popup_does_not_match_card')
     body = bodies[0]
     descriptions = body.select('[data-element="Text"]')
     if len(descriptions) != 1:
         raise ValueError('missing_selection_public_description')
-    description = text(descriptions[0].get_text('\n',strip=True))
+    description = html_text(descriptions[0])
     if not description:
         raise ValueError('empty_selection_public_description')
-    evidence = text(body.get_text('\n',strip=True))
-    hints = [text(x.get_text(' ',strip=True)) for x in body.select('.more-offer-info-popup__hint')]
+    evidence = html_text(body)
+    hints = [html_text(x) for x in body.select('.more-offer-info-popup__hint')]
     ends = set()
     for hint in hints:
-        match = re.fullmatch(r'Акция действует до (\d{1,2}) ([а-яё]+) (\d{4})',hint,re.I)
+        match = re.fullmatch(r'Акция действует до (\d{1,2}) ([а-яё]+) (\d{4})',' '.join(hint.split()),re.I)
         if match and match[2].lower() in MONTHS:
             ends.add(date(int(match[3]), MONTHS[match[2].lower()], int(match[1])).isoformat())
     if len(ends) > 1:
@@ -65,7 +67,7 @@ def preview_record(snapshot, region, observed_at):
         record_kind='tier_benefit', details={
             'required_program':'T2 Selection', 'public_scope':'landing_card_and_public_popup_only',
             'identity_method':'synthetic_partner_label_not_vendor_id', 'region':REGIONS[region]['region'],
-            'popup_title':text(headers[0].get_text()), 'published_hints':hints,
+            'popup_title':html_text(headers[0]), 'published_hints':hints,
             'full_catalog_access':'authentication_required',
         }, warnings=['not_full_personalized_offer_rules','user_selection_status_not_verified',
                      'private_code_not_requested','listing_region_is_not_a_guarantee_of_eligibility'])

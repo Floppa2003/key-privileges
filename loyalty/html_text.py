@@ -12,15 +12,19 @@ BLOCKS = frozenset(('address', 'article', 'aside', 'blockquote', 'div', 'dl', 'd
                    'section', 'table', 'thead', 'tbody', 'tfoot', 'tr', 'ul'))
 
 
-def html_text(value: str | Tag | None) -> str:
+def html_text(value: str | Tag | None, *, br_separator: str = '\n') -> str:
     """Read HTML or a parsed DOM node without mutating it.
 
     The result is plain source text: inline tags add no whitespace, block tags
     and BR add newlines, PRE retains line breaks, and table cells add spaces.
+    An adapter reading one owned claim may opt into a space for BR. Paragraphs,
+    list items and other block boundaries still remain separate in that mode.
     Entity references are decoded by the HTML parser exactly once; callers must
     not parse the result as HTML again. This follows HTML structure, not CSS
     visibility or layout.
     """
+    if br_separator not in (' ', '\n'):
+        raise ValueError('HTML BR separator must be whitespace')
     if value is None:
         return ''
     node = BeautifulSoup(value, 'html.parser') if isinstance(value, str) and not isinstance(value, NavigableString) else value
@@ -39,7 +43,8 @@ def html_text(value: str | Tag | None) -> str:
         elif isinstance(item, Tag):
             if item.name in ('script', 'style', 'template'):
                 continue
-            boundary = '\n' if item.name in BLOCKS or item.name == 'br' else ' ' if item.name in ('td', 'th') else ''
+            boundary = (br_separator if item.name == 'br' else '\n' if item.name in BLOCKS
+                        else ' ' if item.name in ('td', 'th') else '')
             if boundary:
                 pieces.append(boundary)
                 stack.append((None, False, boundary))

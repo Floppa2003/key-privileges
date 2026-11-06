@@ -5,7 +5,7 @@ import html
 import json
 import re
 from datetime import datetime, date
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from urllib.parse import urlsplit
 from html_text import html_text
@@ -74,6 +74,13 @@ for _sid,_spec in RECOVERED_SOURCES.items():
     HOSTS[_sid]=[urlsplit(_spec['url']).hostname]
 BLOCKED = re.compile(r'access denied|just a moment|captcha|доступ к сайту временно ограничен|проверка безопасности|доступ запрещ[её]н', re.I)
 NUMBER = r'\d+(?:[ .,\u00a0\u202f]\d{3})*(?:[.,]\d+)?'
+# Consume a complete numeric token before validating it. Otherwise an invalid
+# group such as "1 00%" can be rediscovered as the apparently valid suffix 00%.
+NUMERIC_TOKEN = r'\d+(?:(?:[.,]|[^\S\r\n]+)\d+)*'
+_HSPACE = r'[^\S\r\n]'
+_PERCENT = re.compile(
+    rf'\bот{_HSPACE}+(?P<word_lo>{NUMERIC_TOKEN}){_HSPACE}*%?{_HSPACE}+до{_HSPACE}+(?P<word_hi>{NUMERIC_TOKEN}){_HSPACE}*%'
+    rf'|(?<![\d.])(?:(?P<lo>{NUMERIC_TOKEN}){_HSPACE}*%?{_HSPACE}*[–—-]{_HSPACE}*)?(?P<value>{NUMERIC_TOKEN}){_HSPACE}*%', re.I)
 TYPES = {'discount': r'[сc]кидк', 'cashback': r'к[еэ]шб[еэ]к', 'miles':r'мил[ьяиюе]',
          'points':r'балл|бонус', 'gift':r'подар|комплимент', 'special_price':r'спеццен|специальн\w* цен'}
 
@@ -119,12 +126,64 @@ def number(value: str) -> str:
     return result.rstrip('0').rstrip('.') if '.' in result else result
 
 
-def normalize_rates(value: str, *, heading_context: str = '') -> list[dict]:
+def literal_number(value: str) -> str | None:
+    """Canonical value of a complete numeric token, or None if malformed."""
+    normalized = re.sub(r'[^\S\r\n]+', ' ', value)
+    if not re.fullmatch(NUMBER, normalized):
+        return None
+    try:
+        return number(normalized)
+    except InvalidOperation:
+        return None
+
+
+def number_starts_here(value: str, start: int) -> bool:
+    """Exclude numeric suffixes while retaining punctuation-separated list items."""
+    prefix = value[:start]
+    if re.search(r',[ \t\u00a0\u202f]+\Z', prefix):
+        # A comma followed by space separates list values, not decimal digits.
+        return True
+    if re.search(r'\d[., \t\u00a0\u202f]*\Z', prefix):
+        # A numbered list item is a boundary, not a malformed decimal prefix.
+        return bool(re.search(r'(?:^|[:,;\n])[ \t]*\d+[.)][ \t]+\Z', prefix))
+    return True
+
+
+def percent_spans(value: str) -> list[dict]:
+    """Valid literal percentage spans; positions refer to the unchanged input.
+
+    Recognition does not assign a reward type or make an untyped percentage an
+    entitlement. Invalid ranges and malformed groups are consumed as a whole.
+    """
+    result = []
+    for match in _PERCENT.finditer(value):
+        upper_key = 'word_hi' if match['word_hi'] is not None else 'value'
+        lower_key = 'word_lo' if match['word_lo'] is not None else 'lo'
+        first_key = lower_key if match[lower_key] is not None else upper_key
+        if not number_starts_here(value, match.start(first_key)):
+            continue
+        upper = literal_number(match[upper_key])
+        lower = literal_number(match[lower_key]) if match[lower_key] is not None else None
+        if (upper is None or not 0 <= Decimal(upper) <= 100
+                or (match[lower_key] is not None and
+                    (lower is None or not 0 <= Decimal(lower) <= Decimal(upper)))):
+            continue
+        prefix = value[max(0, match.start() - 12):match.start()]
+        qualifier = ('range' if lower is not None else
+                     'up_to' if re.search(r'\bдо[^\S\r\n]*$', prefix, re.I) else
+                     'at_least' if re.search(r'\bот[^\S\r\n]*$', prefix, re.I) else 'exact')
+        result.append({'start': match.start(), 'end': match.end(), 'value': upper,
+                       'min_value': lower, 'qualifier': qualifier})
+    return result
+
+
+def normalize_rates(value: str, *, heading_context: str = '', with_spans: bool = False) -> list[dict]:
     """Only recognizable local rate phrases; context is mandatory for every value.
     Rates are NOT combinable without interpreting their evidence/conditions.
     Purchase thresholds, old prices and untyped percentages are not rates.
     """
     result = []
+    percent_index = 0
     heading_kinds = [k for k in ('discount','cashback') if re.search(TYPES[k],heading_context,re.I)]
     heading_kind = heading_kinds[0] if len(heading_kinds)==1 else None
     for clause in re.split(r'[\n;]', text(value, markup=False)):
@@ -132,24 +191,26 @@ def normalize_rates(value: str, *, heading_context: str = '') -> list[dict]:
         # In an explicit price band, "от 1000 руб. — 10%", the currency dot
         # is an abbreviation. Other sentence endings remain boundaries.
         # Keep character positions stable for the original label/rate spans.
-        percent = r'\d+(?:[.,]\d+)?'
         price_band = rf'\b(?:до|от|свыше|более|менее)\s+{NUMBER}\s*руб\.'
-        ruble_band = rf'{price_band}(?=\s*[-–—:]\s*(?:(?:до|от)\s+)?{percent}(?:\s*[-–—]\s*{percent})?\s*%)'
+        ruble_band = rf'{price_band}(?=\s*[-–—:]\s*(?:(?:до|от)\s+)?(?:{_PERCENT.pattern}))'
         scoped_clause = re.sub(ruble_band, lambda match: match[0][:-1] + ' ', clause, flags=re.I)
         labels = [(m.start(), k) for k in ('discount','cashback') for m in re.finditer(TYPES[k],clause,re.I)]
-        for m in re.finditer(r'(?:(?P<lo>\d+(?:[.,]\d+)?)\s*[–—-]\s*)?(?P<value>\d+(?:[.,]\d+)?)\s*%', clause):
-            before = sorted((pos,k) for pos,k in labels if pos < m.start())
+        for span in percent_spans(clause):
+            index = percent_index
+            percent_index += 1
+            start, end = span['start'], span['end']
+            before = sorted((pos,k) for pos,k in labels if pos < start)
             if before:
-                between = clause[before[-1][0]:m.start()]
+                between = clause[before[-1][0]:start]
                 # A reward label does not extend into another sentence.
                 # Parallel scopes within one sentence still share their label.
                 abbreviations = r'\b(?:физ|юр)\.(?=\s+лиц)|\bдоп\.(?=\s+\w)|\bв\s+т\.\s*ч\.(?=\s|$)'
                 scope_text = re.sub(abbreviations, lambda match: match[0].replace('.', ''),
-                                    scoped_clause[before[-1][0]:m.start()], flags=re.I)
+                                    scoped_clause[before[-1][0]:start], flags=re.I)
                 if re.search(r'[.!?](?:\s|$)', scope_text):
                     before = []
-            after = next((k for k in ('discount','cashback') if re.match(r'\s*'+TYPES[k],clause[m.end():],re.I)),None)
-            if re.match(r'\s*мил(?:ями|и|ь)\b',clause[m.end():],re.I):
+            after = next((k for k in ('discount','cashback') if re.match(r'\s*'+TYPES[k],clause[end:],re.I)),None)
+            if re.match(r'\s*мил(?:ями|и|ь)\b',clause[end:],re.I):
                 after='miles'
             payment = r'\b(?:предоплат\w*|оплат\w*|аванс\w*|НДС|налог\w*|комисси\w*|штраф\w*)\b'
             # A postfix reward label belongs to the percentage just before it;
@@ -160,37 +221,39 @@ def normalize_rates(value: str, *, heading_context: str = '') -> list[dict]:
                                    or (heading_kind and not before))
             price_tail = rf'(?:{price_band}\s*[-–—:]\s*)?'
             discounted_commission = ((before[-1][1] if before else heading_kind)=='discount'
-                and re.search(rf'(?:^|,|\bи)\s*на\s+комисси(?:ю|и)\s*{price_tail}(?:(?:—|–|:|до|от)\s*)*$', clause[:m.start()], re.I))
+                and re.search(rf'(?:^|,|\bи)\s*на\s+комисси(?:ю|и)\s*{price_tail}(?:(?:—|–|:|до|от)\s*)*$', clause[:start], re.I))
             # A fee/prepayment band does not become a reward because an earlier
             # discount exists. Ordinary purchase/payment thresholds still can.
             charge_band = (r'\b(?:предоплат\w*|аванс\w*|НДС|налог\w*|комисси\w*|штраф\w*)\b'
                            rf'[^%.,;\n]*?{price_band}\s*[-–—:]\s*(?:(?:до|от)\s+)?$')
             if payment_context and not after and not discounted_commission and (
-                    re.search(payment+r'\s*(?:(?:в размере|составляет|—|–|:|до|от)\s*)*$', clause[:m.start()], re.I)
-                    or re.search(charge_band, clause[:m.start()], re.I)
-                    or re.match(r'\s*'+payment, clause[m.end():], re.I)):
+                    re.search(payment+r'\s*(?:(?:в размере|составляет|—|–|:|до|от)\s*)*$', clause[:start], re.I)
+                    or re.search(charge_band, clause[:start], re.I)
+                    or re.match(r'\s*'+payment, clause[end:], re.I)):
                 continue
             if not before and not after and not heading_kind:
                 continue
             kind = after or (before[-1][1] if before else heading_kind)
-            amount = number(m['value'])
-            if not 0 <= Decimal(amount) <= 100:
-                continue
-            prefix = clause[max(0,m.start()-12):m.start()]
-            qualifier = 'range' if m['lo'] else 'up_to' if re.search(r'\bдо\s*$',prefix,re.I) else 'at_least' if re.search(r'\bот\s*$',prefix,re.I) else 'exact'
-            r = {'kind':kind,'value':amount,'unit':'percent','qualifier':qualifier,'basis_amount':None,'basis_unit':None,'evidence':clause}
-            if m['lo']:
-                r['min_value'] = number(m['lo'])
+            r = {'kind':kind,'value':span['value'],'unit':'percent','qualifier':span['qualifier'],'basis_amount':None,'basis_unit':None,'evidence':clause}
+            if span['min_value'] is not None:
+                r['min_value'] = span['min_value']
+            if with_spans:
+                r['_percent_index'] = index
             result.append(r)
-        pattern = rf'(?P<qual>до\s+)?(?P<value>{NUMBER})\s*мил[ьяиюе]\w*(?:\s+(?:начисля\w+\s+)?за\s+(?:кажды[еий]\s+)?(?:потраченн\w+\s+)?(?P<basis>{NUMBER})\s*(?:₽|руб\w*))?'
+        pattern = rf'(?P<qual>до\s+)?(?P<value>{NUMERIC_TOKEN})\s*мил[ьяиюе]\w*(?:\s+(?:начисля\w+\s+)?за\s+(?:кажды[еий]\s+)?(?:потраченн\w+\s+)?(?P<basis>{NUMERIC_TOKEN})\s*(?:₽|руб\w*))?'
         for m in re.finditer(pattern,clause,re.I):
             basis=m['basis']
             if not basis:
-                preceding=re.search(rf'за\s+кажды[еий]\s+(?:потраченн\w+\s+)?({NUMBER})\s*(?:₽|руб\w*\.?)[^0-9;]{{0,120}}(?:начисля\w+|получаете|получите)\s*$',clause[:m.start()],re.I)
+                preceding=re.search(rf'за\s+кажды[еий]\s+(?:потраченн\w+\s+)?({NUMERIC_TOKEN})\s*(?:₽|руб\w*\.?)[^0-9;]{{0,120}}(?:начисля\w+|получаете|получите)\s*$',clause[:m.start()],re.I)
                 if preceding:basis=preceding[1]
-            result.append({'kind':'miles','value':number(m['value']),'unit':'miles','qualifier':'up_to' if m['qual'] else 'exact','basis_amount':number(basis) if basis else None,'basis_unit':'RUB' if basis else None,'evidence':clause})
-        for m in re.finditer(rf'скидк\w*\s+(?P<qual>до\s+)?(?P<value>{NUMBER})\s*(?:₽|руб\w*)',clause,re.I):
-            result.append({'kind':'discount','value':number(m['value']),'unit':'RUB','qualifier':'up_to' if m['qual'] else 'exact','basis_amount':None,'basis_unit':None,'evidence':clause})
+            amount, base = literal_number(m['value']), literal_number(basis) if basis else None
+            if amount is None or (basis is not None and base is None) or not number_starts_here(clause, m.start('value')):
+                continue
+            result.append({'kind':'miles','value':amount,'unit':'miles','qualifier':'up_to' if m['qual'] else 'exact','basis_amount':base,'basis_unit':'RUB' if basis else None,'evidence':clause})
+        for m in re.finditer(rf'скидк\w*\s+(?P<qual>до\s+)?(?P<value>{NUMERIC_TOKEN})\s*(?:₽|руб\w*)',clause,re.I):
+            amount = literal_number(m['value'])
+            if amount is not None:
+                result.append({'kind':'discount','value':amount,'unit':'RUB','qualifier':'up_to' if m['qual'] else 'exact','basis_amount':None,'basis_unit':None,'evidence':clause})
     unique = {json.dumps(r,ensure_ascii=False,sort_keys=True):r for r in result}
     return list(unique.values())
 
@@ -203,10 +266,14 @@ def lexical_conditions(value: str) -> list[dict]:
         clause=clause.strip()
         if not clause:continue
         def add(kind,**kwargs):result.append({'kind':kind,'evidence':clause,**kwargs})
-        for match in re.finditer(rf'(?:заказ\w*|покупк\w*|чек\w*|бронировани\w*)\s+(?:на\s+сумму\s+)?от\s+({NUMBER})\s*(?:₽|руб\w*)',clause,re.I):
-            add('minimum_purchase',value=number(match[1]),unit='RUB',qualifier='at_least')
-        for match in re.finditer(rf'максимальн\w*\s+(?:размер\s+)?(?:скидк\w*|к[еэ]шб[еэ]к\w*)\s*(?:составля\w*\s*)?[:—–-]?\s*({NUMBER})\s*(?:₽|руб\w*)',clause,re.I):
-            add('maximum_benefit',value=number(match[1]),unit='RUB',qualifier='up_to')
+        for match in re.finditer(rf'(?:заказ\w*|покупк\w*|чек\w*|бронировани\w*)\s+(?:на\s+сумму\s+)?от\s+({NUMERIC_TOKEN})\s*(?:₽|руб\w*)',clause,re.I):
+            amount = literal_number(match[1])
+            if amount is not None:
+                add('minimum_purchase',value=amount,unit='RUB',qualifier='at_least')
+        for match in re.finditer(rf'максимальн\w*\s+(?:размер\s+)?(?:скидк\w*|к[еэ]шб[еэ]к\w*)\s*(?:составля\w*\s*)?[:—–-]?\s*({NUMERIC_TOKEN})\s*(?:₽|руб\w*)',clause,re.I):
+            amount = literal_number(match[1])
+            if amount is not None:
+                add('maximum_benefit',value=amount,unit='RUB',qualifier='up_to')
         if re.search(r'\b(?:перв\w*\s+(?:заказ|покупк|бронирован)|нов\w*\s+(?:клиент|пользоват))',clause,re.I):
             # This is a referenced audience, not proof that every other audience is excluded.
             add('first_purchase' if re.search(r'перв\w*\s+(?:заказ|покупк|бронирован)',clause,re.I) else 'new_customer_reference')

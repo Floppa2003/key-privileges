@@ -8,7 +8,8 @@ from __future__ import annotations
 import re
 from urllib.parse import urlsplit
 from bs4 import BeautifulSoup, NavigableString, Tag, Comment
-from normalized import make_offer, normalize_rates, text
+from html_text import html_text
+from normalized import make_offer, normalize_rates
 from promo_codes import extract_promocodes
 
 PROGRAM = re.compile(r'Единая\s+Карта\s+Петербуржца', re.I)
@@ -29,30 +30,36 @@ def extract_ilocked_ekp(source, soup, url, observed_at, cfg):
     if len(headings) != 1:
         raise ValueError('ilocked_ekp_title')
     h1 = headings[0]
-    title = text(h1.get_text(' ', strip=True))
+    title = html_text(h1)
     if not title:
         raise ValueError('ilocked_ekp_title')
-    pieces = []
+    pieces = set()
     boundary = False
     for node in h1.next_elements:
         if isinstance(node, Tag) and node.name in ('h1', 'h2', 'h3'):
             boundary = True
             break
         if isinstance(node, NavigableString) and not isinstance(node, Comment) and h1 not in node.parents:
-            pieces.append(str(node))
+            pieces.add(id(node))
     # Missing heading means changed markup, not permission to read recommendations.
     if not boundary:
         raise ValueError('ilocked_ekp_section_boundary')
-    intro = re.sub(r'\s+', ' ', ' '.join(pieces)).strip()
+    # Keep exactly the same owned text-node range, retaining its inline and
+    # block structure rather than inserting spaces between every text node.
+    for node in list(dom.find_all(string=True)):
+        if id(node) not in pieces:
+            node.extract()
+    intro = html_text(dom, br_separator=' ')
     matches = list(PROGRAM.finditer(intro))
     if len(matches) != 1:
         raise ValueError('ilocked_ekp_program_ambiguous')
     end = CARD.search(intro, matches[0].end())
     if end is None:
         raise ValueError('ilocked_ekp_card_requirement')
-    start = intro.rfind('Для владельцев', 0, matches[0].start())
-    if start < 0:
+    starts = list(re.finditer(r'Для\s+владельцев', intro[:matches[0].start()]))
+    if not starts:
         raise ValueError('ilocked_ekp_claim_start')
+    start = starts[-1].start()
     claim = intro[start:end.end()]
     if len(claim) > 2000:
         raise ValueError('ilocked_ekp_claim_bound')
@@ -62,7 +69,7 @@ def extract_ilocked_ekp(source, soup, url, observed_at, cfg):
     if (len(re.findall(r'\d+(?:[.,]\d+)?\s*%', claim)) != 1 or len(rates) != 1
             or rates[0].get('kind') != 'discount' or len(promo['codes']) != 1):
         raise ValueError('ilocked_ekp_benefit_or_code_ambiguous')
-    important = re.search(r'\bВАЖНО\s*:\s*(.+)$', intro[end.end():], re.I)
+    important = re.search(r'\bВАЖНО\s*:\s*(.+)$', intro[end.end():], re.I | re.S)
     conditions = claim + ('\n' + important[0] if important else '')
     details = {
         'source_scope': 'exact_quest_public_ekp_clause',
@@ -94,18 +101,18 @@ def extract_certificate_restriction(source, soup, url, observed_at, cfg):
     for node in dom.select('script,style,noscript,form,input,[hidden],[aria-hidden="true"]'):
         node.decompose()
     titles = dom.find_all('h1')
-    if len(titles) != 1 or not re.search(r'сертификат', titles[0].get_text(' ', strip=True), re.I):
+    if len(titles) != 1 or not re.search(r'сертификат', html_text(titles[0]), re.I):
         raise ValueError('ilocked_certificate_title')
     candidates = []
     for node in dom.select('.t165__textwrapper .t165__btn-container p'):
-        value = text(node.get_text(' ', strip=True))
-        if re.search(r'подарочн\w* сертификат', value, re.I) and re.search(r'скидк', value, re.I):
+        value = html_text(node)
+        if re.search(r'подарочн\w*\s+сертификат', value, re.I) and re.search(r'скидк', value, re.I):
             candidates.append(value)
     if (len(candidates) != 1 or len(candidates[0]) > 500
             or not re.search(r'скидки\s+не\s+распространяются', candidates[0], re.I)):
         raise ValueError('ilocked_certificate_restriction_changed')
     return [make_offer(source, 'discount-restriction', cfg['program'], cfg['partner'], '',
-        url, observed_at, title=text(titles[0].get_text(' ', strip=True)),
+        url, observed_at, title=html_text(titles[0]),
         category=cfg['category'], record_kind='program_rules', link_kind='page_block',
         conditions=candidates[0], locator='.t165__textwrapper .t165__btn-container p; gift-certificate restriction',
         details={'evidence_role': 'supplementary_rules_not_incremental_discount',

@@ -7,6 +7,7 @@ import asyncio,json,re
 from datetime import datetime
 from urllib.parse import urlsplit
 from bs4 import BeautifulSoup
+from html_text import html_text
 from normalized import make_offer,text
 from partner_pages import content,MONTHS
 from content_discovery import label_id, clean_dom
@@ -82,20 +83,20 @@ def page_records(source,raw,observed_at):
         fixed=[];seen=set()
         for n,ul in enumerate(lists):
             preceding=ul.find_previous_sibling('p')
-            section_text=text(preceding.get_text(' ',strip=True)) if preceding else ''
+            section_text=html_text(preceding) if preceding else ''
             section_component=('selectable_replacement' if re.search(r'изменить|заменить',section_text,re.I) else
                 'prepared_selection' if re.search(r'готовую|состоящ',section_text,re.I) else 'selection_context_unresolved')
             for li in ul.find_all('li',recursive=False):
-                claim=text(li.get_text(' ',strip=True))
-                if 'всегда в составе' in claim:
+                claim=html_text(li,br_separator=' ');flat_claim=' '.join(claim.split())
+                if 'всегда в составе' in flat_claim:
                     fixed.append(claim);continue
-                matched=[name for marker,name in mapping if marker in claim]
+                matched=[name for marker,name in mapping if marker in flat_claim]
                 if not claim:raise ValueError('t2_mixx_empty_service')
                 name=matched[0] if len(matched)==1 else claim.split(':',1)[0]
                 native=name if len(matched)==1 else label_id(name,'service')
                 if native in seen:raise ValueError('t2_mixx_duplicate_service')
                 seen.add(native)
-                component='included_automatically' if re.search(r'подключится автоматически',claim,re.I) else section_component
+                component='included_automatically' if re.search(r'подключится автоматически',flat_claim,re.I) else section_component
                 add(native,name,claim,terms,link_kind='page_block',locator='.article-content li = '+claim,
                     details={'membership_component':component,'selection_slots':int(slots[1]) if slots else None},warnings=['not_all_optional_services_are_included_simultaneously'])
         for paragraph in fixed:
@@ -112,9 +113,11 @@ def page_records(source,raw,observed_at):
                 add(native,name,claim,terms,link_kind='page_block',locator='.article-content fixed-services paragraph',
                     details={'membership_component':'fixed'},warnings=['source_fixed_inventory_preserved_not_a_guaranteed_personal_bundle'])
     elif source=='t2_selection':
-        cards=[c for c in soup.select('.tariff-detail-t2-subscription-premium-card') if 'T2 SELECTION' in text(c.get_text(' ',strip=True)).upper()]
+        cards=[c for c in soup.select('.tariff-detail-t2-subscription-premium-card') if 'T2 SELECTION' in ' '.join(html_text(c).split()).upper()]
         if len(cards)!=1:raise ValueError('t2_selection_card_missing_or_ambiguous')
-        card=cards[0];claim=text(card.select_one('.card-kit-t2__text').get_text(' ',strip=True))
+        card=cards[0];claim_node=card.select_one('.card-kit-t2__text')
+        if claim_node is None:raise ValueError('t2_selection_card_text_missing')
+        claim=html_text(claim_node,br_separator=' ')
         add('premium-participation','T2',claim,content([card]),link_kind='page_block',locator='.tariff-detail-t2-subscription-premium-card containing T2 SELECTION',
             details={'required_tariff':'Premium','source_scope':'program_summary_not_full_selection_catalog'},warnings=['yandex_discount_rates_not_stated'])
     elif source in ('t2_mixx_s','t2_powerbank'):

@@ -126,9 +126,7 @@ def _prepare_pdf_page(page):
             ident=id(obj)
             if ident in seen:continue
             seen.add(ident)
-            if obj.get('/Subtype')=='/Image':
-                images.add(ident)
-            elif obj.get('/Subtype')=='/Form':
+            if obj.get('/Subtype')=='/Form':
                 if not hasattr(obj,'get_data'):raise ValueError('pdf_xobject_resource_shape')
                 forms[ident]=obj
                 pending.append(obj.get('/Resources',page_resources))
@@ -172,7 +170,11 @@ def _prepare_pdf_page(page):
                     if len(operands)!=1 or not isinstance(operands[0],str):raise ValueError('pdf_xobject_resource_shape')
                     target=resolve(objects.get(operands[0]))
                     if not isinstance(target,dict):raise ValueError('pdf_xobject_resource_shape')
-                    if target.get('/Subtype')=='/Form':calls[key].append(target)
+                    if target.get('/Subtype')=='/Image':
+                        # Shared resources can list images that this page never
+                        # draws. Only reached Do calls affect OCR completeness.
+                        images.add(id(target))
+                    elif target.get('/Subtype')=='/Form':calls[key].append(target)
         for form in calls[key]:
             invocations+=1
             if invocations>MAX_FORM_INVOCATIONS:raise ValueError('pdf_xobject_invocation_limit')

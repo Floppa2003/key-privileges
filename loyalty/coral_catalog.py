@@ -10,7 +10,7 @@ from urllib.parse import urlsplit
 from bs4 import BeautifulSoup
 from html_text import html_text
 from free_access_probe import FreeReader, ProbeError, sanitized_page, now
-from normalized import make_offer, text
+from normalized import make_offer
 
 CLUB = 'https://coralbonus.ru/klub-privilegii/'
 PROMO = 'https://coralbonus.ru/promo/'
@@ -77,7 +77,7 @@ def category_cards(raw, entry, categories=None):
             raise ValueError('coral_card_unknown_category')
         result[url] = {'url': url, 'category': categories[parent], 'parent_url': entry['url']}
     section = headings[0].find_parent('section')
-    if section is None or '{{' in section.get_text(' ', strip=True):
+    if section is None or '{{' in html_text(section):
         raise ValueError('coral_category_not_rendered')
     if soup.select_one('.pagination a[href],a[rel="next"]'):
         raise ValueError('coral_category_pagination_not_supported')
@@ -122,13 +122,13 @@ def detail(raw, sid, entry, observed_at, retrieval):
         if purchase_request:
             auth = h.parent.select_one('.order-autorize')
             auth_title = auth.select_one('h3')
-            if not auth_title or text(auth_title.get_text(' ', strip=True)) != 'Чтобы совершить покупку нужно авторизоваться на сайте':
+            if not auth_title or re.sub(r'\s+', ' ', html_text(auth_title)) != 'Чтобы совершить покупку нужно авторизоваться на сайте':
                 raise ValueError('coral_purchase_request_identity_not_supported')
         elif ticket:
             auth = h.parent.select_one('.order-autorize')
             auth_title = auth.select_one('h3')
-            if not auth_title or not re.fullmatch(r'Чтобы купить билеты нужно авторизоваться на сайте',
-                                                  text(auth_title.get_text(' ', strip=True))):
+            if not auth_title or not re.fullmatch(r'Чтобы\s+купить\s+билеты\s+нужно\s+авторизоваться\s+на\s+сайте',
+                                                  html_text(auth_title)):
                 raise ValueError('coral_ticket_identity_not_supported')
         elif len(purchase) == 1 and 'order-lg-2' in h.parent.get('class', []):
             auth = purchase[0].select_one('.order-autorize')
@@ -140,7 +140,7 @@ def detail(raw, sid, entry, observed_at, retrieval):
         # Plain HTML can contain both Angular branches. Read only the explicit
         # authorization notice, never hidden generated coupon/account branches.
         auth_heading = auth.select_one('h3') if auth else None
-        auth_text = text(auth_heading.get_text(' ', strip=True)) if auth_heading else ''
+        auth_text = html_text(auth_heading) if auth_heading else ''
     else:
         if 'article' not in section.get('class', []) or section.select_one('.sale-item-description'):
             raise ValueError('coral_promotion_not_detail')
@@ -153,22 +153,22 @@ def detail(raw, sid, entry, observed_at, retrieval):
     body = own_text(copy)
     if len(body) < len(title) + 50 or '{{' in body:
         raise ValueError('coral_detail_body_missing')
-    tables = [[[text(c.get_text(' ', strip=True)) for c in row.find_all(['th', 'td'], recursive=False)]
+    tables = [[[html_text(c) for c in row.find_all(['th', 'td'], recursive=False)]
                for row in table.select('tr')] for table in copy.select('table')]
     table_contexts = []
     for table in copy.select('table'):
         previous = table.find_previous(['p', 'h2', 'h3', 'h4'])
-        table_contexts.append(text(previous.get_text(' ', strip=True)) if previous else '')
+        table_contexts.append(html_text(previous) if previous else '')
     redemption = []
     for p in copy.select('p,h2,h3,h4'):
-        if re.fullmatch(r'Как воспользоваться предложением\s*:?', text(p.get_text(' ', strip=True)), re.I):
+        if re.fullmatch(r'Как\s+воспользоваться\s+предложением\s*:?', html_text(p), re.I):
             nxt = p.find_next_sibling()
             while nxt is not None and nxt.name in ('ul', 'ol'):
                 redemption.append(own_text(nxt))
                 nxt = nxt.find_next_sibling()
     if auth_text:
         redemption.append(auth_text)
-    links = [{'label': text(a.get_text(' ', strip=True)), 'url': a['href']} for a in copy.select('a[href]')]
+    links = [{'label': html_text(a), 'url': a['href']} for a in copy.select('a[href]')]
     block = {'title': title, 'body': body, 'redemption': '\n'.join(redemption),
              'authentication_notice': auth_text, 'tables': tables, 'table_contexts': table_contexts,
              'links': links, 'category': entry.get('category'), 'valid_until': explicit_end(body),
