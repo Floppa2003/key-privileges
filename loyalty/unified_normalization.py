@@ -14,7 +14,7 @@ from collections import Counter, defaultdict
 from datetime import date, datetime, timedelta
 from decimal import Decimal, InvalidOperation
 from urllib.parse import urlsplit, urlunsplit, parse_qsl, urlencode
-from normalized import normalize_rates, number, NUMBER
+from normalized import normalize_rates, number, NUMBER, TYPES
 from promo_codes import extract_promocodes
 
 VERSION = '1.0.1'
@@ -200,7 +200,9 @@ def _structured_mile_evidence(details):
             # Do not remove a quote containing another reward or two literal
             # mileage claims, even if normalize_rates deduplicates their values.
             flat=' '.join(literal.split())
-            if ENGLISH_RATE_LABEL.search(flat):continue
+            if (ENGLISH_RATE_LABEL.search(flat)
+                    or any(re.search(TYPES[k],flat,re.I) for k in ('discount','cashback'))):
+                continue
             rates=normalize_rates(flat)
             if (len(rates)!=1
                     or len(re.findall(rf'{NUM}\s*мил[ьяиюе]\w*',flat,re.I))!=1):
@@ -240,7 +242,7 @@ def _clauses(raw):
                 raise ValueError('af_record_semantic_display_binding')
             source_fields=[('/details/semantic_fields/'+name,source[name])
                            for name in ('benefit','conditions','redemption')]
-    structured_quotes=_structured_mile_evidence(details)
+    structured_quotes=[] if details.get('pages') else _structured_mile_evidence(details)
     for path,value in source_fields:
         spans=[]
         for literal in structured_quotes:

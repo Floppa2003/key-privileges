@@ -15,8 +15,10 @@ SHA256 = 'a' * 64
 
 class StructuredMileEvidenceTests(unittest.TestCase):
     def project(self, body, *, conditions=None, evidence=EVIDENCE,
-                changes=None, structured=True):
+                changes=None, structured=True, pages=None):
         details = {'_source': {'source_id': 'af_vtb_rules'}}
+        if pages is not None:
+            details['pages'] = pages
         if structured:
             details['earning_rules'] = [{
                 'value': '4', 'unit': 'miles', 'basis_amount': '70',
@@ -167,6 +169,28 @@ class StructuredMileEvidenceTests(unittest.TestCase):
             ('4', 'miles', None, None), ('4', 'miles', None, None),
         ])
         self.assertEqual(len(self.miles(result, method='clause_candidate')), 2)
+
+    def test_reward_label_inside_quote_keeps_a_rate_outside_its_span(self):
+        for label, kind in (('Скидка', 'discount'), ('Кешбэк', 'cashback')):
+            with self.subTest(label=label):
+                literal = 'За каждые 70 ₽\n' + label + ' на оплату: получите 4 мили'
+                result = self.project(literal + ' и 7%.', evidence=literal)
+                self.assert_miles(result, [
+                    ('4', 'miles', '70', 'RUB'), ('4', 'miles', None, None),
+                ])
+                self.assertEqual(
+                    [(item['value'], item['unit']) for item in result['benefits']
+                     if item['kind'] == kind], [('7', 'percent')],
+                )
+
+    def test_pdf_keeps_disabled_lexical_rates_and_unparsed_clauses(self):
+        body = EVIDENCE + '.\nСкидка 7%.'
+        result = self.project(body, pages=[{'number': 1, 'text': body}])
+        self.assert_miles(result, [('4', 'miles', '70', 'RUB')])
+        self.assertFalse(any(item['method'] == 'clause_candidate'
+                             for item in result['benefits']))
+        self.assertEqual(result['quality']['unparsed_clause_count'], 3)
+        self.assertIn('pdf_table_semantics_not_inferred', result['quality']['issues'])
 
     def test_nonmatching_literal_and_ordinary_single_line_keep_prior_behavior(self):
         flat = EVIDENCE.replace('\n', ' ')
