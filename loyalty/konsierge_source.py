@@ -14,6 +14,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 from bs4 import BeautifulSoup
+from html_text import html_text
 from playwright.async_api import TimeoutError as BrowserTimeout
 from konsierge_catalog import (ROOT, SOURCE, ITEM_KEYS, parse_capture, item_fields,
                                category_id, require, ROBOTS_POLICY, RECURRING_MODE)
@@ -63,9 +64,12 @@ def dom_capture(raw):
         for key, cls in (('name', 'BenefitTeaser-Title'), ('offer', 'BenefitTeaser-OfferText')):
             el = original.select_one('.' + cls)
             require(el is not None, 'card_label_missing')
-            card[key] = re.sub(r'\s+', ' ', el.get_text(' ', strip=True)).strip()
+            card[key] = html_text(el)
             copy = output.new_tag('div', attrs={'class': cls})
-            copy.string = card[key]; dest.append(copy)
+            for index,line in enumerate(card[key].split('\n')):
+                if index:copy.append(output.new_tag('br'))
+                copy.append(line)
+            dest.append(copy)
         cards.append(card); output.find('qy-benefits-page').append(dest)
     return str(output), cards
 

@@ -42,10 +42,18 @@ def candidate(value: str, position: int, prefix: str) -> tuple[str | None, int]:
         stop = start + token.end()
         # Only all-uppercase words can extend an unquoted code. Never join an
         # instruction such as "из SMS" or a number/date onto its first word.
-        extra = re.match(r'(?:[ \t]+[A-ZА-ЯЁ][A-ZА-ЯЁ0-9_.-]{1,29}(?![\w.-])){1,3}', value[stop:])
-        if extra:
+        # A final dot ends the sentence even when its next word is uppercase.
+        # Internal dots remain literal, as do dots inside quoted codes.
+        ended = token[0].endswith('.')
+        for _ in range(3):
+            if ended:
+                break
+            extra = re.match(r'[ \t]+[A-ZА-ЯЁ][A-ZА-ЯЁ0-9_.-]{1,29}(?![\w.-])', value[stop:])
+            if not extra:
+                break
             code += extra[0].rstrip('.')
             stop += extra.end()
+            ended = extra[0].endswith('.')
     words = code.split()
     if not words or not 2 <= len(code) <= 60 or (words[0].casefold() in STOP and not (quoted and words[0].casefold()=='скидка' and len(words)>1 and any(re.search(r'[A-Z0-9]',w) for w in words[1:]))):
         return None, stop

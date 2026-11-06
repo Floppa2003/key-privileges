@@ -5,7 +5,7 @@ from urllib.parse import urljoin,urlsplit
 from datetime import datetime
 from bs4 import BeautifulSoup,Comment,Tag
 from html_text import html_text
-from normalized import make_offer,text,normalize_rates,number
+from normalized import make_offer,text,normalize_rates,percent_spans
 from partner_pages import content
 from promo_codes import extract_promocodes,candidate
 from model import clean_url
@@ -80,17 +80,19 @@ def hse_rates(value):
     rows=[]
     for clause in value.splitlines():
         eligible=[]
-        for m in re.finditer(r'(\d+(?:[.,]\d+)?)\s*%',clause):
-            if re.match(r'\s*(?:[-—–]\s*)?(?:оплат|предоплат|платеж|аванс)',clause[m.end():],re.I):continue
-            if 0<=float(number(m[1]))<=100:eligible.append(m)
-        amounts={number(m[1]) for m in eligible}
+        for span in percent_spans(clause):
+            if re.match(r'\s*(?:[-—–]\s*)?(?:оплат|предоплат|платеж|аванс)',clause[span['end']:],re.I):continue
+            eligible.append(span)
+        amounts={span['value'] for span in eligible}
         parsed=[r for r in normalize_rates(clause) if r['unit']!='percent' or r['value'] in amounts]
         if not parsed and len(eligible)==1 and CLAIM.search(clause):
-            m=eligible[0];prefix=clause[max(0,m.start()-12):m.start()]
+            span=eligible[0]
             # Only the already-owned public benefit clause can supply this type.
-            parsed=[{'kind':'discount','value':number(m[1]),'unit':'percent',
-                     'qualifier':'up_to' if re.search(r'до\s*$',prefix,re.I) else 'at_least' if re.search(r'от\s*$',prefix,re.I) else 'exact',
+            parsed=[{'kind':'discount','value':span['value'],'unit':'percent',
+                     'qualifier':span['qualifier'],
                      'basis_amount':None,'basis_unit':None,'evidence':clause}]
+            if span['min_value'] is not None:
+                parsed[0]['min_value']=span['min_value']
         rows.extend(parsed)
     return rows
 

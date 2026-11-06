@@ -2,6 +2,7 @@
 from __future__ import annotations
 import re
 from bs4 import BeautifulSoup
+from html_text import html_text
 from expansion_common import compact,sha,identity,reported,ExcludedOffer,add_error,PROGRAMS
 from public_reward_projection import make_record
 
@@ -20,11 +21,11 @@ def inventory(raw):
     result=[];seen=set()
     for n in nodes:
         ps=n.find_all('p',recursive=False)
-        title=compact(ps[0].get_text(' ',strip=True)) if ps else ''
+        title=html_text(ps[0]) if ps else ''
         if not title:raise ValueError('flystation_missing_heading')
         # Compatibility aliases preserve already published row IDs. They do not
         # select a parser or reject new labels; every card takes the same path.
-        native=LEGACY_IDS.get(title, label_id(title, 'promotion'))
+        native=LEGACY_IDS.get(compact(title), label_id(title, 'promotion'))
         if native in seen:raise ValueError('flystation_duplicate_identity')
         seen.add(native);html=str(n)
         result.append(dict(native=native,url=URL,title=title,panel_html=html,
@@ -44,8 +45,8 @@ def source_fields(e):
     soup=BeautifulSoup(e['panel_html'],'html.parser');nodes=soup.select('.promotions__slider-item-text')
     if len(nodes)!=1:raise ValueError('flystation_panel_identity')
     ps=nodes[0].find_all('p',recursive=False)
-    title=compact(plain(ps[0])) if ps else ''
-    if title!=e.get('title') or LEGACY_IDS.get(title,label_id(title,'promotion'))!=e['native']:
+    title=e.get('title','');visible_title=html_text(ps[0]) if ps else ''
+    if compact(visible_title)!=compact(title) or LEGACY_IDS.get(compact(visible_title),label_id(visible_title,'promotion'))!=e['native']:
         raise ValueError('flystation_heading_identity')
     body='\n'.join(plain(p) for p in ps[1:] if plain(p))
     if not body:raise ValueError('flystation_empty_terms')
@@ -70,7 +71,9 @@ def legacy_source_fields(e):
     if e.get('url')!=URL or sha(e.get('panel_html',''))!=e.get('panel_sha256'):raise ValueError('flystation_evidence_identity')
     soup=BeautifulSoup(e['panel_html'],'html.parser');nodes=soup.select('.promotions__slider-item-text')
     if len(nodes)!=1:raise ValueError('flystation_panel_identity')
-    ps=[compact(p.get_text(' ',strip=True))for p in nodes[0].find_all('p',recursive=False)];ps=[p for p in ps if p]
+    # Legacy stored rows used one folded string per paragraph. Keep that
+    # readback shape, while inline elements no longer split words or digits.
+    ps=[compact(html_text(p))for p in nodes[0].find_all('p',recursive=False)];ps=[p for p in ps if p]
     if not ps or ps[0]!=e.get('title') or LEGACY_IDS.get(ps[0])!=e['native']:raise ValueError('flystation_heading_identity')
     native=e['native'];body='\n'.join(ps[1:]);terms=[];benefits=[];activation=''
     if native in ('extra-time','sport-start'):

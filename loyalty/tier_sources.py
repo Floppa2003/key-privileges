@@ -6,7 +6,8 @@ from decimal import Decimal
 import re
 from urllib.parse import urljoin
 from bs4 import BeautifulSoup, Tag
-from normalized import canonical_url, make_offer, number, text
+from html_text import html_text
+from normalized import canonical_url, make_offer, number
 from partner_pages import content
 from read_budget import within_source_budget
 
@@ -14,6 +15,10 @@ URAL_URL='https://www.uralairlines.ru/wings_rules/'
 UTAIR_URL='https://media.utair.ru/status'
 # Historical ID aliases are not an accepted-tier list. New labels are discovered.
 URAL_LEGACY_IDS={'Синий':'blue','Серебряный':'silver','Золотой':'gold'}
+
+
+def _match_text(value):
+    return ' '.join(value.split())
 
 
 def heading_body(heading):
@@ -29,15 +34,15 @@ def ural_tiers(raw, observed_at):
     headings=soup.select('.uan-styled-text h2')
     general=[]
     for h in headings:
-        if re.match(r'Бонусы программы|Уровни участия',text(h.get_text())):
+        if re.match(r'Бонусы программы|Уровни участия',_match_text(html_text(h))):
             general.append(content([h,*heading_body(h)]))
     observed=[];seen=set()
     for heading in headings:
-        match=re.fullmatch(r'(.+?)\s+уровень',text(heading.get_text()),re.I)
+        match=re.fullmatch(r'(.+?)\s+уровень',html_text(heading),re.I|re.S)
         if not match:continue
         label=match[1].strip()
-        if not label or label.casefold() in seen:raise ValueError('ural_tier_heading_missing_or_duplicated')
-        seen.add(label.casefold());observed.append((label,heading))
+        if not label or _match_text(label).casefold() in seen:raise ValueError('ural_tier_heading_missing_or_duplicated')
+        seen.add(_match_text(label).casefold());observed.append((label,heading))
     if not observed or len(observed)>100:raise ValueError('ural_tier_inventory_bound')
     rows=[]
     for label,heading in observed:
@@ -45,22 +50,22 @@ def ural_tiers(raw, observed_at):
         nodes=heading_body(heading);body=BeautifulSoup(''.join(map(str,nodes)),'html.parser')
         first=body.select_one('li')
         if first is None:raise ValueError('ural_qualification_missing')
-        qualification=text(first.get_text(' ',strip=True))
-        if sum('Присваивается' in text(n.get_text()) for n in body.select('li'))>1:
+        qualification=html_text(first);flat_qualification=_match_text(qualification)
+        if sum('Присваивается' in html_text(n) for n in body.select('li'))>1:
             raise ValueError('ural_tier_boundary_ambiguous')
-        q={'evidence':qualification,'registration':bool(re.search('при регистрации',qualification,re.I)),
+        q={'evidence':qualification,'registration':bool(re.search('при регистрации',flat_qualification,re.I)),
            'flights':None,'spend_rub':None,'operator':None,'window':None,'required_previous_tier':None}
-        f=re.search(r'(\d+) пол[её]тов',qualification,re.I)
-        amount=re.search(r'на сумму ([\d\s\u00a0]+) рублей',qualification,re.I)
+        f=re.search(r'(\d+) пол[её]тов',flat_qualification,re.I)
+        amount=re.search(r'на сумму ([\d\s\u00a0]+) рублей',flat_qualification,re.I)
         if f:q['flights']=int(f[1])
         if amount:q['spend_rub']=number(amount[1].strip())
-        if f and amount and 'либо' in qualification:q['operator']='OR'
-        if re.search(r'1 календарного года',qualification):q['window']='calendar_year'
-        previous=re.search(r'участнику\s+([^,.]+?)\s+уровня',qualification,re.I)
+        if f and amount and 'либо' in flat_qualification:q['operator']='OR'
+        if re.search(r'1 календарного года',flat_qualification):q['window']='calendar_year'
+        previous=re.search(r'участнику\s+([^,.]+?)\s+уровня',flat_qualification,re.I)
         if previous:
             q['required_previous_tier_evidence']=previous[0]
             candidates=[name for name,_ in observed if previous[1].casefold() in
-                (name.casefold(),re.sub(r'ый$', 'ого', name.casefold()),re.sub(r'ий$', 'его', name.casefold()))]
+                (_match_text(name).casefold(),re.sub(r'ый$', 'ого', _match_text(name).casefold()),re.sub(r'ий$', 'его', _match_text(name).casefold()))]
             if len(candidates)==1:q['required_previous_tier']=candidates[0]
         rates=[]
         for paragraph in body.select('p'):
@@ -110,12 +115,12 @@ def utair_tabs(raw):
         texts=sorted([n for n in elements if _inside(n,box)],key=lambda n:(_rect(n)[1],_rect(n)[0]))
         if len(texts)!=2 or any(id(n) in owned for n in texts):raise ValueError('utair_tab_geometry_ambiguous')
         owned.update(id(n) for n in texts)
-        tier,price=[text(n.get_text(' ',strip=True)) for n in texts]
-        if not tier or tier.casefold() in {t.casefold() for t in result}:raise ValueError('utair_duplicate_or_empty_tier')
-        hints=[text(n.get_text(' ',strip=True)) for n in nav[0].select('.t396__elem[data-elem-type="tooltip"]') if _inside(n,box)]
+        tier,price=[html_text(n) for n in texts]
+        if not tier or _match_text(tier).casefold() in {_match_text(t).casefold() for t in result}:raise ValueError('utair_duplicate_or_empty_tier')
+        hints=[html_text(n) for n in nav[0].select('.t396__elem[data-elem-type="tooltip"]') if _inside(n,box)]
         if len(hints)>1:raise ValueError('utair_qualification_window_ambiguous')
-        amount=re.fullmatch(r'[cс] (\d+(?:[.,]\d+)?) тыс\. руб\.',price,re.I)
-        window='calendar_year' if hints and 'календарном году' in hints[0] else None
+        amount=re.fullmatch(r'[cс] (\d+(?:[.,]\d+)?) тыс\. руб\.',_match_text(price),re.I)
+        window='calendar_year' if hints and 'календарном году' in _match_text(hints[0]) else None
         result[tier]={'tier':tier,'qualification_text':price,'scope_text':hints[0] if hints else None,
                       'spend_rub':number(str(Decimal(amount[1].replace(',', '.'))*1000)) if amount else None,
                       'window':window}
@@ -133,9 +138,9 @@ def utair_intro_context(raw):
     soup=BeautifulSoup(raw,'html.parser')
     observations=[];amounts=set()
     for block in soup.select('.t-rec'):
-        value=text(block.get_text(' ',strip=True))
-        if not value.startswith('Программа лояльности Utair Status'):continue
-        for match in re.finditer(r'с ([\d \u00a0]+) ₽, потраченных на полеты',value):
+        value=html_text(block);flat_value=_match_text(value)
+        if not flat_value.startswith('Программа лояльности Utair Status'):continue
+        for match in re.finditer(r'с ([\d \u00a0]+) ₽, потраченных на полеты',flat_value):
             amount=number(match[1].strip());amounts.add(amount)
             observations.append({'spend_rub':amount,'evidence':value})
     return {'observations':observations,'spend_rub_values':sorted(amounts,key=int),
@@ -157,7 +162,7 @@ def utair_tier(panel_html, tab, exclusions, observed_at, *, intro_context=None):
     for a in panel.select('a[href]'):
         try:url=canonical_url(urljoin(UTAIR_URL,a['href']))
         except (ValueError,TypeError):skipped+=1;continue
-        item={'label':text(a.get_text(' ',strip=True)),'url':url}
+        item={'label':html_text(a),'url':url}
         if item not in links:links.append(item)
     warnings=['linked_full_rules_not_fetched','actual_member_tier_not_verified',
               'layout_blocks_not_individual_offer_counts','inheritance_not_expanded']
@@ -177,8 +182,8 @@ async def collect_utair_tiers(client,cfg,report,now,limit):
     raw=await within_source_budget(client,lambda:client.read(UTAIR_URL,render=True))
     headers=utair_tabs(raw)
     soup=BeautifulSoup(raw,'html.parser')
-    exclusions=[text(n.get_text(' ',strip=True)) for n in soup.select('.t-rec')
-                if text(n.get_text(' ',strip=True)).startswith('Привилегии не предоставляются')]
+    exclusions=[html_text(n) for n in soup.select('.t-rec')
+                if _match_text(html_text(n)).startswith('Привилегии не предоставляются')]
     if len(exclusions)!=1:raise ValueError('utair_general_exclusions_not_found')
     report['discovered']=len(headers);rows=[];panels=set()
     nav=client.page.locator('#rec759374982')

@@ -12,15 +12,27 @@ def public_data(raw,key):
     soup=BeautifulSoup(raw,'html.parser');nodes=soup.select('script#__NUXT_DATA__')
     if len(nodes)!=1:raise ValueError('magnit_state_missing')
     values=json.loads(nodes[0].get_text())
-    if not isinstance(values,list) or len(values)>50000:raise ValueError('magnit_state_bound')
+    if not isinstance(values,list) or not 1<=len(values)<=50000:raise ValueError('magnit_state_bound')
+    def reference(i):
+        if type(i) is not int or not 0<=i<len(values):raise ValueError('magnit_state_reference')
+        return i
+    def wrapper_reference(value):
+        if len(value)!=2 or value[0] not in ('ShallowReactive','Reactive'):
+            raise ValueError('magnit_state_wrapper')
+        return reference(value[1])
     def unwrap(i):
-        value=values[i]
-        while isinstance(value,list) and value and isinstance(value[0],str):
-            if value[0] not in ('ShallowReactive','Reactive'):raise ValueError('magnit_state_wrapper')
-            value=values[value[1]]
-        return value
+        seen=set()
+        while True:
+            reference(i)
+            if i in seen:raise ValueError('magnit_state_cycle')
+            seen.add(i);value=values[i]
+            if not (isinstance(value,list) and value and isinstance(value[0],str)):return value
+            i=wrapper_reference(value)
     # Do not decode pinia, profile or other optional guest/personal stores.
-    root=unwrap(0);data=unwrap(root['data'])
+    root=unwrap(0)
+    if not isinstance(root,dict) or 'data' not in root:raise ValueError('magnit_state_root')
+    data=unwrap(root['data'])
+    if not isinstance(data,dict):raise ValueError('magnit_state_data')
     if key not in data:raise ValueError('magnit_owned_state_missing:'+key)
     def read(i,trail=()):
         if type(i) is not int:raise ValueError('magnit_state_reference')
@@ -30,8 +42,7 @@ def public_data(raw,key):
         if isinstance(value,dict):return {k:read(v,trail) for k,v in value.items()}
         if isinstance(value,list):
             if value and isinstance(value[0],str):
-                if value[0] not in ('ShallowReactive','Reactive'):raise ValueError('magnit_state_tag')
-                return read(value[1],trail)
+                return read(wrapper_reference(value),trail)
             return [read(v,trail) for v in value]
         return value
     return read(data[key])

@@ -3,7 +3,8 @@ from __future__ import annotations
 import hashlib,json,re
 from urllib.parse import urljoin,urlsplit,urlunsplit
 from bs4 import BeautifulSoup,Comment
-from normalized import make_offer,text
+from html_text import html_text
+from normalized import make_offer
 from read_budget import within_source_budget,stops_catalog
 
 SOURCE_ID='greatlist_alfa_only'
@@ -12,6 +13,10 @@ HOST='greatlist.ru'
 WARNINGS=['user_eligibility_not_verified','authenticated_partner_catalog_not_read',
           'public_guide_not_bank_promotion_rules','dates_caps_and_activation_not_inferred',
           'guide_and_bank_pdf_records_not_merged']
+
+
+def _label_key(value):
+    return ' '.join(value.split())
 
 
 def public_url(value,base=ROOT):
@@ -36,8 +41,8 @@ def city_roots(raw):
         if p.hostname!=HOST:continue  # Foreign country editions are outside this source.
         url=public_url(a['href'])
         if not re.fullmatch(r'/[a-z]{2,12}/',p.path):raise ValueError('greatlist_city_path')
-        name=text(a.get_text(' ',strip=True))
-        if not name or (url in cities and cities[url]!=name):raise ValueError('greatlist_city_identity')
+        name=html_text(a)
+        if not name or (url in cities and _label_key(cities[url])!=_label_key(name)):raise ValueError('greatlist_city_identity')
         cities[url]=name
     if not 1<=len(cities)<=12:raise ValueError('greatlist_city_count')
     return [{'url':url,'name':name} for url,name in cities.items()]
@@ -70,7 +75,7 @@ def catalogue(raw,url,city):
         if (not re.fullmatch(r'[1-9][0-9]{0,9}',ident) or len(labels)!=1
             or not re.fullmatch(re.escape(city['url'])+r'restaurant/[a-z0-9-]+/',link)):
             raise ValueError('greatlist_card_identity')
-        name=text(labels[0].get_text(' ',strip=True))
+        name=html_text(labels[0])
         if not name or ident in ids or link in urls:raise ValueError('greatlist_duplicate_or_empty_card')
         ids.add(ident);urls.add(link)
         cards.append({'post_id':ident,'name':name,'url':link,'city':dict(city),'catalogue_url':url})
@@ -101,12 +106,12 @@ def source_fields(e):
     if not isinstance(bullets,list) or not 1<=len(bullets)<=12 or any(not isinstance(x,str) or not x for x in bullets):
         raise ValueError('greatlist_benefit_bullets')
     if e.get('presentation')=='list':
-        if not e['block_text'].startswith('Привилегии для клиентов Alfa Only:') or any(x not in e['block_text'] for x in bullets):
+        if not _label_key(e['block_text']).startswith('Привилегии для клиентов Alfa Only:') or any(x not in e['block_text'] for x in bullets):
             raise ValueError('greatlist_wrong_benefit_owner')
         benefit='Привилегии для клиентов Alfa Only:\n'+'\n'.join(bullets)
     elif e.get('presentation')=='paragraph':
         benefit=e['block_text'].partition('В меню')[0].strip()
-        if not benefit.startswith('Клиентам Alfa Only доступна ') or bullets!=[benefit]:
+        if not _label_key(benefit).startswith('Клиентам Alfa Only доступна ') or bullets!=[benefit]:
             raise ValueError('greatlist_wrong_benefit_owner')
     else:raise ValueError('greatlist_unknown_benefit_layout')
     redemption='\n'.join(x for x in bullets if re.search(r'брон|бронир|консьерж',x,re.I))
@@ -119,14 +124,14 @@ def parse_detail(raw,card,observed_at):
     soup=page(raw,card['url']);classes=soup.body.get('class',[])
     headings=soup.select('h1')
     if ('single-restaurant' not in classes or 'postid-'+card['post_id'] not in classes
-        or len(headings)!=1 or re.sub(r'^(?:Ресторан|Бар|Кафе|Кофейня|Городское кафе)\s+', '', text(headings[0].get_text(' ',strip=True)), flags=re.I).strip('«»\"“” ').casefold()!=card['name'].strip('«»\"“” ').casefold()):
+        or len(headings)!=1 or re.sub(r'^(?:Ресторан|Бар|Кафе|Кофейня|Городское кафе)\s+', '', _label_key(html_text(headings[0])), flags=re.I).strip('«»\"“” ').casefold()!=_label_key(card['name']).strip('«»\"“” ').casefold()):
         raise ValueError('greatlist_detail_identity')
     blocks=soup.select('.alfa-section-hide .alfa-section-text')
     addresses=soup.select('article.contacts .contacts_item_address')
     if len(blocks)!=1 or len(addresses)>1:raise ValueError('greatlist_owned_block_missing_or_ambiguous')
-    block=clean_block(blocks[0]);address=text(addresses[0].get_text(' ',strip=True)) if addresses else ''
-    bullets=[text(li.get_text(' ',strip=True)) for li in block.select('ul > li')]
-    full=text(block.get_text(' ',strip=True))
+    block=clean_block(blocks[0]);address=html_text(addresses[0]) if addresses else ''
+    bullets=[html_text(li,br_separator=' ') for li in block.select('ul > li')]
+    full=html_text(block,br_separator=' ')
     presentation='list' if block.select('ul') else 'paragraph'
     if presentation=='paragraph':bullets=[full.partition('В меню')[0].strip()]
     if len(full)>6000:raise ValueError('greatlist_block_too_large')

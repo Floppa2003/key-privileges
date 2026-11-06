@@ -10,22 +10,40 @@ from pathlib import Path
 from datetime import date
 from urllib.parse import urljoin,urlsplit,parse_qsl
 from bs4 import BeautifulSoup
-from normalized import canonical_url,make_offer,number,text
+from html_text import html_text
+from normalized import (canonical_url,make_offer,number,NUMERIC_TOKEN,
+                        literal_number,number_starts_here)
 from partner_pages import content,MONTHS
 from read_budget import within_source_budget
 from source_diagnostics import ParseError
 
 CONFIG=json.loads(Path(__file__).with_suffix('.json').read_text(encoding='utf8'))
-NUM=r'\d[\d \u00a0\u202f]*(?:[.,]\d+)?'
+NUM=NUMERIC_TOKEN
 
 
 def flat(value):
     return re.sub(r'\s+',' ',value).replace('‑','-').strip()
 
 
+def literal_lines(value):
+    return re.sub(r'[^\S\n]+',' ',value).replace('‑','-').strip()
+
+
 def match(pattern,value,reason):
-    found=re.search(pattern,flat(value),re.I)
+    folded=literal_lines(value)
+    # Reviewed patterns use literal spaces as word separators. Allow their
+    # words to wrap, while NUMERIC_TOKEN cannot absorb a neighbouring block.
+    found=re.search(pattern.replace(' ',r'\s+'),folded,re.I|re.S)
     if not found:raise ValueError(reason)
+    for index,group in enumerate(found.groups(),1):
+        if group is not None and re.fullmatch(r'\d[\d\s.,]*',group):
+            start=found.start(index)
+            # A preceding tariff label can end in a digit and a sentence dot
+            # ("Тариф 1+0. 10 услуг"); that space is not a decimal continuation.
+            sentence_boundary=bool(re.search(r'[.)]\s+$',folded[:start]))
+            literal_boundary=sentence_boundary or number_starts_here(folded,start)
+            if literal_number(group) is None or not literal_boundary:
+                raise ValueError(reason)
     return found
 
 
@@ -39,13 +57,30 @@ def date_label(pattern,value):
 def earning_rules(value):
     # Do not turn redemption percentages or background programme examples into
     # earning. The caller passes only a reviewed earning section.
-    pattern=rf'(?P<n>\d+(?:[.,]\d+)?)\s+мил[ьяиюе]\w*(?:\s+начисляется)?(?:\s+«Аэрофлот\s+Бонус»)?\s+за\s+каждые\s+(?:потраченные\s+)?(?P<base>{NUM})\s*(?:руб\w*|₽)'
+    pattern=rf'(?P<n>{NUMERIC_TOKEN})\s+мил[ьяиюе]\w*(?:\s+начисляется)?(?:\s+«Аэрофлот\s+Бонус»)?\s+за\s+каждые\s+(?:потраченные\s+)?(?P<base>{NUMERIC_TOKEN})\s*(?:руб\w*|₽)'
     found=[]
-    for m in re.finditer(pattern,flat(value),re.I):
-        item={'value':number(m['n']),'unit':'miles','basis_amount':number(m['base']),
+    folded=literal_lines(value)
+    for m in re.finditer(pattern,folded,re.I):
+        amount,basis=literal_number(m['n']),literal_number(m['base'])
+        if amount is None or basis is None or not number_starts_here(folded,m.start('n')):
+            continue
+        item={'value':amount,'unit':'miles','basis_amount':basis,
               'basis_unit':'RUB','evidence':m[0]}
         if item not in found:found.append(item)
     return found
+
+
+def section_markers(value,*labels):
+    """Match reviewed labels without folding away the original evidence spans."""
+    markers=[]
+    for label in labels:
+        words=r'\s+'.join(re.escape(word) for word in label.split())
+        matches=list(re.finditer(r'(?<!\w)'+words+r'(?!\w)(?:\s*:)?',value,re.I))
+        if len(matches)!=1:raise ValueError('known_rule_section_missing_or_ambiguous')
+        markers.append(matches[0])
+    if any(a.end()>b.start() for a,b in zip(markers,markers[1:])):
+        raise ValueError('known_rule_section_order_changed')
+    return markers
 
 
 def linked_documents(nodes,url):
@@ -61,7 +96,7 @@ def linked_documents(nodes,url):
                        for k,_ in parse_qsl(urlsplit(raw).query,keep_blank_values=True)):
                     continue
             except (ValueError,TypeError):continue
-            item={'label':text(a.get_text(' ',strip=True)),'url':raw,'fetched':False}
+            item={'label':html_text(a),'url':raw,'fetched':False}
             if item not in result:result.append(item)
     return result
 
@@ -80,21 +115,27 @@ def scoped(source,raw,url):
     handler=cfg.get('handler')
     if handler=='headquarters':
         nodes=[n for n in nodes if (h:=n.select_one('.accordion__title-text')) is not None
-               and text(h.get_text())=='Перечень льготных категорий']
+               and flat(html_text(h))=='Перечень льготных категорий']
         if len(nodes)!=1:raise ValueError('rgo_discount_accordion_not_unique')
     if handler=='comfort':
         nodes=[n for n in nodes[0].select('.t509__colwrapper')
-               if 'Comfort Pass стал партнером программы' in flat(n.get_text())]
+               if 'Comfort Pass стал партнером программы' in flat(html_text(n))]
         if len(nodes)!=1:raise ValueError('comfort_base_news_not_unique')
     if handler=='x5':
-        headings=[text(n.select_one('h2').get_text()) for n in nodes]
+        headings=[flat(html_text(n.select_one('h2'))) for n in nodes]
         if sorted(headings)!=sorted(['О партнёре','Как воспользоваться?','Условия предложения']):
             raise ValueError('x5_rule_sections_changed')
     if handler=='gpb':
         products=[n for n in nodes if any(re.fullmatch(r'TariffsMsbItemContent_root__(?!.*__)[A-Za-z0-9_-]+',c) for c in n.get('class',[]))]
         titles=['Условия по карте','Условия программы лояльности «Аэрофлот Бонус»']
-        accordions=[n.parent.parent for n in nodes if text(n.get_text(' ',strip=True)) in titles]
-        if not 1<=len(products)<=100 or len(accordions)!=len(set(titles)):raise ValueError('gpb_public_sections_ambiguous')
+        triggers=[n for n in nodes if flat(html_text(n)) in titles]
+        accordions=[n.find_parent(lambda parent:any(
+            re.fullmatch(r'Accordion_root__(?!.*__)[A-Za-z0-9_-]+',c)
+            for c in parent.get('class',[]))) for n in triggers]
+        if (not 1<=len(products)<=100 or sorted(flat(html_text(n)) for n in triggers)!=sorted(titles)
+                or any(n is None for n in accordions)
+                or len({id(n) for n in accordions})!=len(titles)):
+            raise ValueError('gpb_public_sections_ambiguous')
         nodes=products+accordions
     terms=content(nodes)
     if any(x.casefold() not in flat(terms).casefold() for x in cfg['required']):
@@ -115,17 +156,20 @@ def parse_known_rule(source,raw,url,observed_at):
         products=[n for n in nodes if any(re.fullmatch(r'TariffsMsbItemContent_root__(?!.*__)[A-Za-z0-9_-]+',c) for c in n.get('class',[]))]
         labels=set()
         for node in products:
-            value=flat(node.get_text(' ',strip=True))
+            value=html_text(node)
             heading=node.select('h5')
             if len(heading)!=1:raise ValueError('gpb_subscription_label_missing')
-            label=flat(heading[0].get_text(' ',strip=True))
+            label=flat(html_text(heading[0]))
             if not label or label in labels:raise ValueError('gpb_subscription_label_duplicate')
             labels.add(label)
             rate=match(r'Мили «Аэрофлот Бонус» (\d+(?:[.,]\d+)?) мили за (\d+) ₽ покупок',value,'gpb_rate_missing')
             cap=match(r'Максимум миль в месяц ('+NUM+r')(?= Переводы|$)',value,'gpb_cap_missing')
             benefit_clauses.append(label+': '+rate[0]+'; '+cap[0])
-            monthly=re.search(r'(?:далее\s*[—–-]\s*)?(\d+(?:[.,]\d+)?)\s*₽\s*в месяц',value,re.I)
-            cost=number(monthly[1]) if monthly else '0' if re.search(r'Бесплатно',value,re.I) else None
+            monthly=re.search(r'(?:далее\s*[—–-]\s*)?('+NUM+r')\s*₽\s*в\s+месяц',value,re.I)
+            if monthly and (literal_number(monthly[1]) is None
+                            or not number_starts_here(value,monthly.start(1))):
+                raise ValueError('gpb_monthly_cost_invalid')
+            cost=literal_number(monthly[1]) if monthly else '0' if re.search(r'Бесплатно',value,re.I) else None
             paid=(float(cost)>0) if cost is not None else None
             options.append({'subscription':paid,'label':label,'miles':number(rate[1]),'basis_rub':rate[2],
                 'monthly_cap_miles':number(cap[1]),'monthly_subscription_rub':cost,'evidence':value})
@@ -137,8 +181,9 @@ def parse_known_rule(source,raw,url,observed_at):
             'notifications_after_first_month_rub':notify[1],'evidence':notify[0]})
         benefit='\n'.join(benefit_clauses)
     elif handler=='retail_miles':
-        earning=terms.split('Условия начислений:',1)[1].split('Условия списаний:',1)[0].strip()
-        redemption=terms.split('Условия списаний:',1)[1].strip()
+        first,second=section_markers(terms,'Условия начислений','Условия списаний')
+        earning=terms[first.end():second.start()].strip()
+        redemption=terms[second.end():].strip()
         rules=earning_rules(earning)
         if not rules:raise ValueError('retail_earning_rule_changed')
         cap=match(r'не более (\d+)%',redemption,'retail_redemption_cap_missing')
@@ -151,7 +196,8 @@ def parse_known_rule(source,raw,url,observed_at):
     elif handler=='iway':
         e=nodes[0].select_one('.condition_earn')
         if e is None:raise ValueError('iway_earning_section_missing')
-        earning=content([e]);redemption=terms.split('Использовать мили',1)[1]
+        first,second=section_markers(terms,'Накопить мили','Использовать мили')
+        earning=content([e]);redemption=terms[second.end():]
         rates=[]
         for label,channel in ((r'При заказе поездки в i[’\']way','direct'),(r'При заказе через турагентство','travel_agent')):
             clause=match(label+r'\s+(\d+ мил[ьяиюе] за каждые потраченные '+NUM+r'\s*(?:₽|руб\w*))',earning,'iway_earning_channel_missing')
@@ -160,12 +206,13 @@ def parse_known_rule(source,raw,url,observed_at):
             rates.append({**parsed[0],'channel':channel,'evidence':clause[0]})
         details.update(earning_rules=rates,
             redemption_rules={'evidence':redemption},
-            promotional_teaser={'evidence':terms.split('Накопить мили',1)[0],
+            promotional_teaser={'evidence':terms[:first.start()],
                                 'period_resolved':False,'not_a_cash_discount':True})
         benefit=earning;warnings.append('month_only_redemption_promotion_not_assigned_a_year')
     elif handler=='skyshop':
-        earning=terms.split('Условия начислений:',1)[1].split('Условия получения премий:',1)[0]
-        details.update(earning_rules=earning_rules(earning),redemption_rules={'evidence':terms.split('Условия получения премий:',1)[1]})
+        first,second=section_markers(terms,'Условия начислений','Условия получения премий')
+        earning=terms[first.end():second.start()]
+        details.update(earning_rules=earning_rules(earning),redemption_rules={'evidence':terms[second.end():]})
         if not details['earning_rules']:raise ValueError('skyshop_earning_rule_missing')
         benefit=earning;warnings.append('rate_effective_date_not_full_offer_validity')
     elif handler=='x5':
@@ -250,7 +297,7 @@ def parse_known_rule(source,raw,url,observed_at):
         details.update(validity_evidence=[a,b],validity_scope='promo_activation_window')
     if handler=='smartavia':return smartavia_records(cfg,nodes,terms,details,warnings,url,observed_at)
     # Opt-in native tables from already scoped sections, never a fabricated table.
-    tables=[[[text(cell.get_text(' ',strip=True)) for cell in row.find_all(['th','td'],recursive=False)]
+    tables=[[[html_text(cell) for cell in row.find_all(['th','td'],recursive=False)]
              for row in table.select('tr')] for node in nodes for table in node.select('table')] if cfg.get('capture_tables') else []
     return [make_offer(source,'rules:page',cfg['program'],cfg['partner'],benefit,url,observed_at,
         title=cfg['title'],conditions=terms,link_kind=cfg.get('link_kind','detail_page'),
@@ -267,7 +314,7 @@ def smartavia_records(cfg,nodes,terms,details,warnings,url,now):
         # The visible label and value may be separate sibling blocks. Read
         # only this card's title; do not join the following price/benefit text.
         titles=card.select('.sm-title-extra')
-        labels_in_card=([text(n.get_text(' ',strip=True)) for n in titles] if titles else
+        labels_in_card=([html_text(n) for n in titles] if titles else
                         re.findall(r'(?:^|\n)Тариф\s+([^\n]+?)(?=\.\s|\n|$)',value))
         if len(labels_in_card)!=1:raise ValueError('smartavia_plan_label_missing_or_ambiguous')
         key=labels_in_card[0].strip()

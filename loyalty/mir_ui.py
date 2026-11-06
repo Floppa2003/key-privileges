@@ -5,6 +5,7 @@ import json
 import time
 from urllib.parse import urlsplit, urljoin
 from bs4 import BeautifulSoup
+from html_text import html_text
 from adapters import mir_detail
 from normalized import content_hash
 
@@ -53,7 +54,7 @@ def dom_snapshot(raw, profile, payment, number):
             raise ValueError('invalid_public_card_url')
         owner=card.select_one('.promo-card-v2-owner__name')
         if owner is None:raise ValueError('public_card_partner_missing')
-        items.append({'xml_id':native_ids.get(url),'url':url,'name':owner.get_text(' ',strip=True)})
+        items.append({'xml_id':native_ids.get(url),'url':url,'name':html_text(owner)})
     if not items or len(items)>50:raise ValueError('unexpected_visible_card_count')
     return {'payment_type':payment,'page':number,'items':items,'expected':profile['expected'],
             'page_title':profile['page_title']}

@@ -8,7 +8,8 @@ import re
 from urllib.parse import urljoin,urlsplit
 from bs4 import BeautifulSoup
 import coral_catalog as c
-from normalized import make_offer,text
+from normalized import make_offer
+from html_text import html_text
 from practical_scope import follow_document_link
 
 SOURCE_ID='coral_rule_documents'
@@ -50,26 +51,25 @@ def source_fields(raw,url):
         raise ValueError('cg_rule_canonical')
     headings=soup.select('h1')
     if len(headings)!=1:raise ValueError('cg_rule_heading')
-    h=headings[0];title=text(h.get_text(' ',strip=True));section=h.find_parent('section')
+    h=headings[0];title=html_text(h);section=h.find_parent('section')
     if section is None or not re.match(r'^(?:Правила|Порядок)\b',title,re.I):raise ValueError('cg_rule_article')
     # Both reviewed layouts have one heading-owned section: an article or the
     # programme contract's container. Header/footer and forms are not conditions.
     for n in section.select('script,style,noscript,form,input,textarea,iframe,button,header,footer,nav'):
         n.decompose()
-    for br in section.select('br'):br.replace_with('\n')
-    body=text(section.get_text('\n',strip=True))
+    body=html_text(section)
     if (not 80<=len(body)<=35000 or len(title)>300 or '{{' in body
         or re.search(r'captcha|access denied|игнорируй предыдущие инструкции|ignore previous instructions',body,re.I)):
         raise ValueError('cg_rule_content')
     tables=[]
     for table in section.select('table'):
-        cells=[[text(td.get_text(' ',strip=True)) for td in tr.select(':scope > th,:scope > td')] for tr in table.select('tr')]
+        cells=[[html_text(td) for td in tr.select(':scope > th,:scope > td')] for tr in table.select('tr')]
         tables.append([row for row in cells if row])
     links=[]
     for a in section.select('a[href]'):
         value=urljoin(url,a['href']);u=urlsplit(value)
         if u.scheme!='https' or u.username or u.password or u.query or u.fragment:continue
-        link={'label':text(a.get_text(' ',strip=True)),'url':value}
+        link={'label':html_text(a),'url':value}
         if link not in links:links.append(link)
     return {'title':title,'text':body,'tables':tables,'unread_links':links}
 

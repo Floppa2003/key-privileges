@@ -12,6 +12,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from urllib.parse import urlsplit, parse_qs
 from bs4 import BeautifulSoup
+from html_text import html_text
 from normalized import make_offer, text, normalize_rates
 
 SOURCE = 'konsierge_public'
@@ -33,6 +34,11 @@ def digest(value):
 
 def require(ok, reason):
     if not ok: raise ValueError('konsierge_' + reason)
+
+
+def labels_equal(*values):
+    return (all(isinstance(value,str) for value in values)
+            and len({' '.join(value.split()) for value in values})==1)
 
 
 def stamp(value):
@@ -185,8 +191,9 @@ def parse_capture(report, directory, source_run):
         require(len(nodes)==total,'dom_nodes')
         for item,card,node in zip(all_items,c['cards'],nodes):
             title=node.select_one('.BenefitTeaser-Title'); offer=node.select_one('.BenefitTeaser-OfferText')
-            require(title is not None and offer is not None and text(title.get_text(' ',strip=True))==text(item['name'])==card['name']
-                    and text(offer.get_text(' ',strip=True))==text(item['offer'])==card['offer'],'dom_item')
+            require(title is not None and offer is not None
+                    and labels_equal(html_text(title),text(item['name']),card['name'])
+                    and labels_equal(html_text(offer),text(item['offer']),card['offer']),'dom_item')
             if rid is not None: memberships.setdefault(item['id'],[]).append(rid)
     root=inventories[None]
     for rid, items in inventories.items():

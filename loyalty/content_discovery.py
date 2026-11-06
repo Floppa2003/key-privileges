@@ -7,7 +7,7 @@ from __future__ import annotations
 import hashlib
 import re
 from bs4 import BeautifulSoup, Comment
-from normalized import normalize_rates
+from normalized import normalize_rates, NUMERIC_TOKEN
 
 
 def compact(value):
@@ -78,9 +78,13 @@ A quoted price or a non-stacking rule alone is not a positive reward.
             continue
         # Accept amounts syntactically attached to a reward word. A later
         # prepayment percentage in the same sentence is not another discount.
-        amount=r'(?:\d+(?:[.,]\d+)?\s*[–—-]\s*)?\d+(?:[.,]\d+)?\s*(?:%|₽|руб\.?\w*)'
+        # Keep complete numeric tokens and both range bounds. Truncating a
+        # phrase here would bypass the shared parser's range/token validation.
+        amount=(rf'(?:от\s+{NUMERIC_TOKEN}\s*%?\s+до\s+|'
+                rf'{NUMERIC_TOKEN}\s*%?\s*[–—-]\s*)?'
+                rf'{NUMERIC_TOKEN}\s*(?:%|₽|руб\.?\w*)')
         word=r'(?:скидк[а-яё]*|к[еэ]шб[еэ]к[а-яё]*)'
-        forward=word+r'\s*(?:(?:в размере|составляет|—|–|-|до|от)\s*)*'+amount
+        forward=word+r'\s*(?:(?:в размере|составляет|—|–|-|до|от)\s*)*?'+amount
         reverse=amount+r'\s+'+word
         phrases=[m.group() for pattern in (forward,reverse) for m in re.finditer(pattern,clause,re.I)]
         rates=[]

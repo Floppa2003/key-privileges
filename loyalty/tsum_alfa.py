@@ -8,6 +8,7 @@ from __future__ import annotations
 import hashlib
 import re
 from bs4 import BeautifulSoup, Comment
+from html_text import html_text
 from normalized import make_offer, number
 
 SOURCE_ID = 'alfa_only_tsum'
@@ -42,7 +43,7 @@ def clean(node):
             n.decompose()
     for n in soup.find_all(string=lambda s: isinstance(s, Comment)):
         n.extract()
-    return compact(soup.get_text(' ', strip=True))
+    return html_text(soup).replace('\x00', '')
 
 
 def one(soup, selector):
@@ -96,7 +97,7 @@ def current_rate(e,tier):
     answer=' '.join(e['faq'].values())
     # A newly listed card needs no separately hardcoded FAQ clause. Where
     # the source supplies an independent comparison, it must agree.
-    matches=re.findall(r'(\d+(?:[.,]\d+)?)% вместо \d+(?:[.,]\d+)?% по карте '+re.escape(tier)+r'(?!\w)',answer)
+    matches=re.findall(r'(\d+(?:[.,]\d+)?)%\s+вместо\s+\d+(?:[.,]\d+)?%\s+по\s+карте\s+'+re.escape(tier)+r'(?!\w)',answer)
     if any(number(v)!=rate for v in matches):raise ValueError('alfa_tsum_tier_rate_disagreement')
     return rate
 
@@ -113,7 +114,7 @@ def derived(e,tier):
     validate_faq(e['faq'])
     if not e.get('redemption'):raise ValueError('alfa_tsum_activation_missing')
     answer=' '.join(e['faq'].values())
-    credit=bool(re.search(r'к[еэ]шб[еэ]к на карту лояльности ЦУМа и ДЛТ',answer,re.I))
+    credit=bool(re.search(r'к[еэ]шб[еэ]к\s+на\s+карту\s+лояльности\s+ЦУМа\s+и\s+ДЛТ',answer,re.I))
     rate=current_rate(e,tier)
     if rate is not None and credit:
         benefit=f'Кешбэк бонусами на карту лояльности ЦУМа и ДЛТ: {rate}% по карте {tier}.'
@@ -128,14 +129,14 @@ def record_kind(e,tier):
     if e.get('projection_version') is None:return 'partner_offer'
     answer=' '.join(e['faq'].values())
     return ('partner_offer' if current_rate(e,tier) is not None and re.search(
-        r'к[еэ]шб[еэ]к на карту лояльности ЦУМа и ДЛТ',answer,re.I) else 'source_observation')
+        r'к[еэ]шб[еэ]к\s+на\s+карту\s+лояльности\s+ЦУМа\s+и\s+ДЛТ',answer,re.I) else 'source_observation')
 
 
 def extract_tsum(source, soup, url, observed_at, cfg):
     if source != SOURCE_ID or url != URL:
         raise ValueError('alfa_tsum_requested_url_mismatch')
     heading = clean(one(soup, '[class*="AlfaOnly__logoTitle___"]'))
-    if 'Alfa Only' not in heading or 'картой лояльности ЦУМ' not in heading:
+    if 'Alfa Only' not in compact(heading) or 'картой лояльности ЦУМ' not in compact(heading):
         raise ValueError('alfa_tsum_program_identity')
     faq_root = one(soup, '[class*="AlfaOnly__faqBlock___"]')
     all_faq = {}

@@ -13,7 +13,7 @@ SCOPES = {'тип карты': 'card_type', 'вид карты': 'card_type',
           'тип номера': 'room_type', 'промокод': 'promo_code'}
 DISCOUNTS = {'скидка', 'размер скидки', 'cкидка'}
 PERCENT = re.compile(r'(?:(до|от)\s+)?(\d+(?:[.,]\d+)?)\s*'
-                     r'(?:[–—-]\s*(\d+(?:[.,]\d+)?)\s*)?%')
+                     r'(?:[–—-]\s*(\d+(?:[.,]\d+)?)\s*)?%', re.I)
 
 
 def _decimal(value: str) -> str:
@@ -74,7 +74,8 @@ def extract_table_benefits(tables: list) -> dict:
                 continue
             rate = {'kind': 'discount', 'value': _decimal(match[3] or match[2]),
                     'unit': 'percent', 'qualifier': 'range' if match[3] else
-                    'up_to' if match[1] == 'до' else 'at_least' if match[1] == 'от' else 'exact'}
+                    'up_to' if (match[1] or '').casefold() == 'до' else
+                    'at_least' if (match[1] or '').casefold() == 'от' else 'exact'}
             if match[3]:
                 rate['min_value'] = _decimal(match[2])
             literal_codes = []

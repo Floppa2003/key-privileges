@@ -15,7 +15,7 @@ from urllib.parse import urlsplit
 
 import requests
 
-from normalized import make_offer, validate_offer
+from normalized import make_offer, percent_spans, validate_offer
 
 SOURCE_ID = "alfa_only_partner_pdf_offers"
 PROGRAM = "Alfa Only"
@@ -285,9 +285,14 @@ def partner_rates(value: str) -> list[dict]:
     match = re.search(r"по\s*ставке\s*(\d+(?:[.,]\d+)?)\s*%", text, re.I)
     if not match:
         return []
-    raw = match.group(1).replace(",", ".")
+    spans = percent_spans(text[match.start(1):])
+    if (not spans or spans[0]['start'] != 0 or spans[0]['value'] != '10'
+            or spans[0]['qualifier'] != 'exact' or spans[0]['min_value'] is not None):
+        # These reviewed documents promise exactly 10%. A changed range must
+        # not inherit the first bound or keep the existing exact-rate title.
+        raise ValueError('alfa_partner_pdf_rate_invalid_or_changed')
     clause = must(text, r"3\.2\..{0,700}?по\s*ставке\s*\d+(?:[.,]\d+)?\s*%.{0,520}?календарного\s*месяца", "alfa_partner_pdf_rate_evidence_missing")
-    return [{"kind":"cashback","value":raw.rstrip("0").rstrip(".") if "." in raw else raw,
+    return [{"kind":"cashback","value":spans[0]['value'],
              "unit":"percent","qualifier":"exact","basis_amount":None,"basis_unit":None,"evidence":clause}]
 
 def validate_partner_record(row: dict) -> None:
