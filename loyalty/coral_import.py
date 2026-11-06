@@ -58,7 +58,10 @@ def sanitize(raw,url):
         if root.tag!='{http://www.sitemaps.org/schemas/sitemap/0.9}urlset':raise ValueError('cg_sitemap_shape')
         if len(root)>4000:raise ValueError('cg_sitemap_bound')
         urls=[n.text for n in root.findall('{*}url/{*}loc')]
-        if any(not isinstance(u,str) or len(u)>800 or urlsplit(u).netloc!='coralbonus.ru' or urlsplit(u).scheme!='https' or urlsplit(u).query or urlsplit(u).fragment for u in urls):
+        if any(not isinstance(u,str) or len(u)>800 for u in urls):raise ValueError('cg_sitemap_url')
+        # XML formatting is outside the URL; urlsplit must not hide whitespace inside it.
+        urls=[u.strip(' \t\r\n') for u in urls]
+        if any(re.search(r'\s',u) or urlsplit(u).netloc!='coralbonus.ru' or urlsplit(u).scheme!='https' or urlsplit(u).query or urlsplit(u).fragment for u in urls):
             raise ValueError('cg_sitemap_url')
         return json.dumps(urls,ensure_ascii=False)
     soup=BeautifulSoup(raw,'html.parser')

@@ -1,8 +1,9 @@
 """X5's anonymous route loader inventory and source-owned offer details."""
 from __future__ import annotations
-import json,re
+import json,math,re
 from urllib.parse import urlencode
 from bs4 import BeautifulSoup
+from normalized import number
 from public_reward_projection import plain,one,make_record
 from expansion_common import compact,sha,identity,iso,check_period,exclusion,ExcludedOffer,reported,add_error,PROGRAMS
 
@@ -65,7 +66,8 @@ def source_fields(e):
     if typ=='quest' and cost is None:
         access='Задание или предложение партнёра; денежная оплата, требования и возможное автопродление указаны ниже. Цена получения в баллах X5 не указана.'
     elif type(cost) in (int,float) and cost>=0 and typ in ('purchased','exchange'):
-        access=(f'Получение: {cost:g} баллов X5 Клуба.' if typ=='purchased' else 'Обмен баллов X5; курс и единицы обмена определяются условиями ниже.')
+        if type(cost) is float and not math.isfinite(cost):raise ValueError('x5_cost_type')
+        access=(f'Получение: {number(str(cost))} баллов X5 Клуба.' if typ=='purchased' else 'Обмен баллов X5; курс и единицы обмена определяются условиями ниже.')
     else:raise ValueError('x5_cost_type')
     benefit=title+('\n'+e['exchange_terms'] if typ=='exchange' and e.get('exchange_terms') else '')
     return dict(native=e['native'],program=PROGRAMS[SOURCE],partner=partner,title=title,benefit=benefit,

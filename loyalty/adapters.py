@@ -84,7 +84,7 @@ def mir_detail(data: dict,url: str,observed_at: str) -> list[dict]:
     templates=[{'name':x.get('templateName'),'title':text(x.get('templateTitle')),
                 'text':text(x.get('templateText'))} for x in (p.get('templates') or [])]
     desc=p.get('desc',{});num=desc.get('number',{})
-    benefit=text(text(num.get('PREFIX'))+' '+text(num.get('AMOUNT'))+' '+text(desc.get('text')))
+    benefit=text(text(num.get('PREFIX'))+' '+text(num.get('AMOUNT'))+' '+text(desc.get('text')),markup=False)
     def iso(value):
         return datetime.strptime(value,'%d.%m.%Y').date().isoformat() if value else None
     dates={k:iso(p.get(v)) for k,v in [('valid_from','startDate'),('valid_until','endDate')]}

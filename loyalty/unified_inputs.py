@@ -1,6 +1,8 @@
 """Five explicitly supported source sheets. Native CellData, not guessed schemas."""
 from __future__ import annotations
 import copy
+import re
+from decimal import Decimal
 from unified_normalization import INPUT_TABS, make_input, digest
 
 HEADERS = {
@@ -12,11 +14,75 @@ HEADERS = {
 }
 
 
+def _number_format_sections(pattern):
+    """Keep operators and metadata; quoted, escaped and spacing tokens are literal."""
+    if not isinstance(pattern,str):return None
+    sections=[];tokens=[];meta=[];i=0
+    while i<len(pattern):
+        char=pattern[i]
+        if char=='"':
+            end=pattern.find('"',i+1)
+            if end<0:return None
+            i=end+1;continue
+        if char in ('\\','_','*'):
+            if i+1==len(pattern):return None
+            i+=2;continue
+        if char=='[':
+            end=pattern.find(']',i+1)
+            if end<0:return None
+            meta.append(pattern[i+1:end]);i=end+1;continue
+        if char==';':
+            sections.append((''.join(tokens),meta));tokens=[];meta=[]
+        else:tokens.append(char)
+        i+=1
+    sections.append((''.join(tokens),meta))
+    return sections if len(sections)<=4 else None
+
+
+def _percent_format(pattern,value):
+    """Recognize percent units, without rendering or rounding the native number."""
+    sections=_number_format_sections(pattern)
+    if not sections:return False
+    if len(sections)==4 or (len(sections)>1 and '@' in sections[-1][0]):
+        sections=sections[:-1]
+    conditions=[]
+    for _,meta in sections:
+        condition=None
+        for item in meta:
+            match=re.fullmatch(r'(<=|>=|<>|=|<|>)([+-]?(?:\d+(?:\.\d*)?|\.\d+))',item)
+            if match:
+                if condition is not None:return False
+                condition=(match[1],Decimal(match[2]))
+            elif not (re.fullmatch(r'(?:Black|Blue|Cyan|Green|Magenta|Red|White|Yellow|Color\d+)',item,re.I)
+                      or item.startswith('$')):
+                return False
+        conditions.append(condition)
+    percent=lambda section:'%' in section[0] and '@' not in section[0]
+    if any(conditions):
+        if len(conditions)>2 and conditions[2] is not None:return False
+        number=Decimal(str(value))
+        for section,condition in zip(sections[:2],conditions[:2]):
+            if condition is None:
+                # Mixed conditional/default selection is not guessed. Uniform
+                # numeric sections still declare the same percent units.
+                return all(percent(s) for s in sections)
+            operator,threshold=condition
+            matches={'<':number<threshold,'<=':number<=threshold,
+                     '>':number>threshold,'>=':number>=threshold,
+                     '=':number==threshold,'<>':number!=threshold}
+            if matches[operator]:return percent(section)
+        return len(sections)==3 and percent(sections[2])
+    if len(sections)<=2:index=1 if len(sections)==2 and value<0 else 0
+    else:index=0 if value>0 else (1 if value<0 else 2)
+    return percent(sections[index])
+
+
 def clean_atom(c):
     # Ignore display-only metadata in deterministic hashes: a UI's locale-specific
     # rendering is not a change to a stored amount, formula, or original text.
     result = {k:c[k] for k in ('value','formula','error') if k in c and c[k] is not None}
-    if isinstance(c.get('value'), (int,float)) and '%' in c.get('format',''):
+    value=c.get('value')
+    if isinstance(value,(int,float)) and not isinstance(value,bool) and _percent_format(c.get('format',''),value):
         result['format']='%'
     return result
 
@@ -61,8 +127,13 @@ def atom_from_cell(cell):
     if value is None:value=next((e[k] for k in ('stringValue','numberValue','boolValue') if k in e),None)
     if value is not None:result['value']=value
     if 'errorValue' in e:result['error']=True
-    fmt=cell.get('userEnteredFormat',{}).get('numberFormat',{}).get('pattern')
-    if fmt:result['format']=fmt
+    fmt=(cell.get('effectiveFormat',{}).get('numberFormat')
+         or cell.get('userEnteredFormat',{}).get('numberFormat',{}))
+    pattern=fmt.get('pattern')
+    # Date/time formats have their own tokens; an unquoted '%' is literal there.
+    if fmt.get('type') not in ('DATE','TIME','DATE_TIME'):
+        if pattern:result['format']=pattern
+        elif fmt.get('type')=='PERCENT':result['format']='%'
     return result
 
 
@@ -75,7 +146,7 @@ def read_tables(client):
         col='';x=grid['columnCount']
         while x:x,r=divmod(x-1,26);col=chr(65+r)+col
         data=client.request('GET',params={'ranges':f"'{name}'!A1:{col}{n}",'includeGridData':'true',
-            'fields':'sheets(properties(title),data(startRow,startColumn,rowData.values(userEnteredValue,effectiveValue,userEnteredFormat.numberFormat)))'})
+            'fields':'sheets(properties(title),data(startRow,startColumn,rowData.values(userEnteredValue,effectiveValue,userEnteredFormat.numberFormat,effectiveFormat.numberFormat)))'})
         sheet=data.get('sheets',[])
         if len(sheet)!=1 or sheet[0]['properties']['title']!=name:raise ValueError('Wrong source sheet response')
         rows=[]

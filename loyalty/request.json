@@ -1,10 +1,8 @@
 {
-  "request_id": "2026-11-06-parsing-boundary-completion",
+  "request_id": "2026-11-06-mantera-list-parsing-repair",
   "source_ids": [
-    "utair",
-    "ural_angara_rules",
-    "hse_alumni"
+    "mantera_moments"
   ],
-  "reason": "Refresh the three registered public sources containing the verified TVIL reward-unit error and lost range bounds for Angara, REBOOT and Tochnaya Optika. Publish accepted fresh observations and deterministic common views through the existing writers, with destination readback. Retain existing unavailable-source handling, manual fields, access controls and collection budgets.",
+  "reason": "Refresh the registered Mantera source after repairing the current resort redemption clause in list-item markup. Recheck the live named-partner roster, FAQ tiers and independent Congress page through the existing collector. Publish only accepted fresh observations and deterministic common views with destination readback; retain cross-source agreement checks, named hotel redemption scope, access controls and collection budgets.",
   "publish": true
 }
