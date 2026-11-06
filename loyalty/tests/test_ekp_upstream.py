@@ -15,8 +15,10 @@ import zipfile
 
 sys.path.insert(0, str(Path(__file__).parents[1]))
 from ekp_upstream import main, select_upstream, validate_upstream
+from test_ekp_api import cmrt_public_row
 from test_ekp_session import Fake, fail_after, run, session
 from ekp_session_collect import collect, validate_session_bundle
+from normalized import content_hash
 
 REPOSITORY = 'Floppa2003/key-privileges'
 CLOCK = datetime(2026, 11, 3, 15, 28, 55, tzinfo=timezone.utc)
@@ -265,6 +267,31 @@ class EkpUpstreamSelection(unittest.TestCase):
 
 class EkpUpstreamValidation(unittest.TestCase):
     selection = {'run_id': 'fixture', 'run_attempt': 1, 'commit': 'test'}
+
+    def test_fresh_cmrt_collection_reconstructs_both_price_bands(self):
+        obj = session(1)
+        obj['pages'][0]['partners'] = [cmrt_public_row()]
+        with tempfile.TemporaryDirectory() as folder:
+            bundle = run(Fake(obj), folder)
+            accepted = validate_upstream(folder, self.selection, datetime.now(timezone.utc))
+            self.assertEqual(accepted, bundle)
+            self.assertEqual(accepted['sources'][0]['status'], 'ok')
+            self.assertEqual(accepted['observed_at'], bundle['observed_at'])
+            self.assertEqual([(rate['kind'], rate['value'])
+                              for rate in accepted['records'][0]['rates']],
+                             [('discount', '5'), ('discount', '10')])
+
+    def test_removing_second_price_band_is_rejected_even_after_rehashing(self):
+        obj = session(1)
+        obj['pages'][0]['partners'] = [cmrt_public_row()]
+        with tempfile.TemporaryDirectory() as folder:
+            bundle = run(Fake(obj), folder)
+            row = bundle['records'][0]
+            row['rates'] = [rate for rate in row['rates'] if rate['value'] != '10']
+            row['content_sha256'] = content_hash(row)
+            Path(folder, 'normalized.json').write_text(json.dumps(bundle, ensure_ascii=False))
+            with self.assertRaisesRegex(ValueError, 'ekp_artifact_reconstruction_mismatch'):
+                validate_upstream(folder, self.selection, datetime.now(timezone.utc))
 
     def test_fresh_previous_snapshot_keeps_dates_and_default_publish_window(self):
         with tempfile.TemporaryDirectory() as folder:

@@ -129,6 +129,13 @@ def normalize_rates(value: str, *, heading_context: str = '') -> list[dict]:
     heading_kind = heading_kinds[0] if len(heading_kinds)==1 else None
     for clause in re.split(r'[\n;]', text(value, markup=False)):
         clause = clause.strip()
+        # In an explicit price band, "от 1000 руб. — 10%", the currency dot
+        # is an abbreviation. Other sentence endings remain boundaries.
+        # Keep character positions stable for the original label/rate spans.
+        percent = r'\d+(?:[.,]\d+)?'
+        price_band = rf'\b(?:до|от|свыше|более|менее)\s+{NUMBER}\s*руб\.'
+        ruble_band = rf'{price_band}(?=\s*[-–—:]\s*(?:(?:до|от)\s+)?{percent}(?:\s*[-–—]\s*{percent})?\s*%)'
+        scoped_clause = re.sub(ruble_band, lambda match: match[0][:-1] + ' ', clause, flags=re.I)
         labels = [(m.start(), k) for k in ('discount','cashback') for m in re.finditer(TYPES[k],clause,re.I)]
         for m in re.finditer(r'(?:(?P<lo>\d+(?:[.,]\d+)?)\s*[–—-]\s*)?(?P<value>\d+(?:[.,]\d+)?)\s*%', clause):
             before = sorted((pos,k) for pos,k in labels if pos < m.start())
@@ -137,19 +144,30 @@ def normalize_rates(value: str, *, heading_context: str = '') -> list[dict]:
                 # A reward label does not extend into another sentence.
                 # Parallel scopes within one sentence still share their label.
                 abbreviations = r'\b(?:физ|юр)\.(?=\s+лиц)|\bдоп\.(?=\s+\w)|\bв\s+т\.\s*ч\.(?=\s|$)'
-                scope_text = re.sub(abbreviations, lambda match: match[0].replace('.', ''), between, flags=re.I)
+                scope_text = re.sub(abbreviations, lambda match: match[0].replace('.', ''),
+                                    scoped_clause[before[-1][0]:m.start()], flags=re.I)
                 if re.search(r'[.!?](?:\s|$)', scope_text):
                     before = []
             after = next((k for k in ('discount','cashback') if re.match(r'\s*'+TYPES[k],clause[m.end():],re.I)),None)
             if re.match(r'\s*мил(?:ями|и|ь)\b',clause[m.end():],re.I):
                 after='miles'
             payment = r'\b(?:предоплат\w*|оплат\w*|аванс\w*|НДС|налог\w*|комисси\w*|штраф\w*)\b'
-            payment_context = bool((before and ('%' in between or re.search(r'\bпри\b|\bна условиях\b', between, re.I)))
+            # A postfix reward label belongs to the percentage just before it;
+            # it does not also label a later payment or tax percentage.
+            payment_context = bool((before and ('%' in between
+                                   or re.search(r'%\s*$', clause[:before[-1][0]])
+                                   or re.search(r'\b(?:при|на условиях|с уч[её]том)\b|\bза\s*$', between, re.I)))
                                    or (heading_kind and not before))
+            price_tail = rf'(?:{price_band}\s*[-–—:]\s*)?'
             discounted_commission = ((before[-1][1] if before else heading_kind)=='discount'
-                and re.search(r'(?:^|,|\bи)\s*на\s+комисси(?:ю|и)\s*(?:(?:—|–|:|до|от)\s*)*$', clause[:m.start()], re.I))
+                and re.search(rf'(?:^|,|\bи)\s*на\s+комисси(?:ю|и)\s*{price_tail}(?:(?:—|–|:|до|от)\s*)*$', clause[:m.start()], re.I))
+            # A fee/prepayment band does not become a reward because an earlier
+            # discount exists. Ordinary purchase/payment thresholds still can.
+            charge_band = (r'\b(?:предоплат\w*|аванс\w*|НДС|налог\w*|комисси\w*|штраф\w*)\b'
+                           rf'[^%.,;\n]*?{price_band}\s*[-–—:]\s*(?:(?:до|от)\s+)?$')
             if payment_context and not after and not discounted_commission and (
                     re.search(payment+r'\s*(?:(?:в размере|составляет|—|–|:|до|от)\s*)*$', clause[:m.start()], re.I)
+                    or re.search(charge_band, clause[:m.start()], re.I)
                     or re.match(r'\s*'+payment, clause[m.end():], re.I)):
                 continue
             if not before and not after and not heading_kind:

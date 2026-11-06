@@ -23,11 +23,39 @@ def raw(ident='31',*,locked=False,active=True,value=17):
         'discountScheme':'Предъявите ЕКП до оплаты','shtrich':[{'name':'DO_NOT_EXPORT','link':'https://private.example/token'}]}
 
 
+def cmrt_public_row():
+    # Public EKP row 970, collection 42052369238:1: original public fields.
+    return {
+        'id': '970', 'name': 'ЦМРТ', 'active': True,
+        'description_authorized': False,
+        'categories': [{'categoryId': 32, 'categoryName': 'ЕКП ЛО'},
+                       {'categoryId': 3, 'categoryName': 'Медицина'}],
+        'text': 'Сеть лечебно-диагностических клиник',
+        'loyaltyDescription': (
+            'Держателям ЕКП предоставляется скидка на все услуги сети '
+            'лечебно-диагностических клиник ЦМРТ - 5% при оплате до '
+            '10.000 руб., свыше 10.000 руб. - 10%.<br/>\n'
+            'Скидка не суммируется с другими акциями и предложениями.\n'),
+        'discountScheme': 'При предъявлении ЕКП перед оплатой',
+    }
+
+
 def record(row=None):
     return e.make_record(row or raw(),NOW,request=e.query(0),response_sha='a'*64,observed_total=1,completed_at=NOW)
 
 
 class MappingTests(unittest.TestCase):
+    def test_actual_cmrt_public_terms_keep_both_price_bands(self):
+        source = cmrt_public_row()
+        row = record(source)
+        validate_offer(row)
+        self.assertEqual(row['source_status'], 'public_catalog_api_terms')
+        self.assertEqual([(rate['kind'], rate['value'], rate['unit'])
+                          for rate in row['rates']],
+                         [('discount', '5', 'percent'),
+                          ('discount', '10', 'percent')])
+        self.assertEqual(row['details']['public_partner'], source)
+
     def test_changed_input_not_fixed_answers(self):
         a=record();b=record(raw(value=23));d=record(raw('84'))
         self.assertEqual(a['id'],b['id']);self.assertNotEqual(a['content_sha256'],b['content_sha256'])
