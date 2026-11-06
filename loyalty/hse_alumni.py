@@ -19,7 +19,8 @@ UNANCHORED_HEADINGS={'mordapechat':'Морда довольна. Студия п
 
 def heading_matches_name(heading, name):
     """An exact current card name, optionally followed by a delimited descriptor."""
-    h=text(heading, markup=False).casefold();n=text(name, markup=False).casefold()
+    h=' '.join(text(heading, markup=False).split()).casefold()
+    n=' '.join(text(name, markup=False).split()).casefold()
     return bool(n) and (h==n or any(h.startswith(n+separator) for separator in ('. ', ': ', ' — ', ' – ')))
 
 

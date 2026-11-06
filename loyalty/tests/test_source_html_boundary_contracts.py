@@ -125,5 +125,31 @@ class SourceHtmlBoundaryContractsTests(unittest.TestCase):
         }])
 
 
+
+    def test_utair_scope_words_and_tier_list_can_wrap(self):
+        literal = 'ТВИЛ.РУ — 5% милями для\nуровней\nBronze,\nSilver и\nGold'
+        row = self.utair(
+            '<a href="https://utair.tvil.ru/">'
+            'ТВИЛ.РУ — 5% милями для<br>уровней<br>Bronze,<br>Silver и<br>Gold</a>'
+        )
+        self.assertEqual(row['details']['tier_rates'], [{
+            'tiers': ['Bronze', 'Silver', 'Gold'], 'value': '5',
+            'unit': 'percent_miles', 'evidence': literal,
+        }])
+        self.assertEqual(row['conditions_text'], literal)
+
+    def test_utair_next_offer_label_is_not_a_tier(self):
+        row = self.utair(
+            '<a href="https://utair.tvil.ru/">'
+            'ТВИЛ.РУ — 5% милями для уровня<br>'
+            'Otello — 10% милями для уровня Gold</a>'
+        )
+        self.assertEqual([r['value'] for r in row['rates']], ['5', '10'])
+        self.assertEqual(row['details']['tier_rates'], [{
+            'tiers': ['Gold'], 'value': '10', 'unit': 'percent_miles',
+            'evidence': 'Otello — 10% милями для уровня Gold',
+        }])
+
+
 if __name__ == '__main__':
     unittest.main()
