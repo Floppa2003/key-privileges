@@ -1,13 +1,14 @@
 """Private normalization stage: Sheets -> common views in the SAME spreadsheet.
 
 Never upload this stage's source rows or outputs as public Actions artifacts.
-Only counts/digests are printed. Source tabs are read-only, destination allowlist
+Only counts, digests and sanitized failure codes are printed. Source tabs are read-only, destination allowlist
 is disjoint, and each publication is read back. No Google permissions are changed.
 """
 from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import time
 from datetime import datetime,timezone
 from pathlib import Path
@@ -96,6 +97,19 @@ def publish_all(*,as_of=None,client=None):
     return result
 
 
+def _failure_details(exc):
+    """Only recognized, already sanitized Sheets errors may reach public logs."""
+    details = {'mode': 'unified_publication_failed', 'error_type': type(exc).__name__}
+    if isinstance(exc, RuntimeError):
+        message = str(exc)
+        status = re.fullmatch(r'Google Sheets HTTP ([45][0-9]{2})', message)
+        if status:
+            details['sheets_http_status'] = int(status[1])
+        elif message == 'Google Sheets network failure; commit state must be checked before retry':
+            details['sheets_network_failure'] = True
+    return details
+
+
 def main():
     p=argparse.ArgumentParser()
     p.add_argument('--publish',action='store_true')
@@ -130,4 +144,5 @@ if __name__=='__main__':
     try:main()
     except Exception as exc:
         print(f'Unified normalization failed ({type(exc).__name__}); publication is not certified.')
+        print(dump(_failure_details(exc)))
         raise SystemExit(1)
