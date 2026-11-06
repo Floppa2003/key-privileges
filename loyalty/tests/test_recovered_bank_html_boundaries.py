@@ -1,4 +1,5 @@
 """VTB rules keep HTML line breaks without borrowing another card's terms."""
+import copy
 import json
 import sys
 import unittest
@@ -7,6 +8,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from normalized import validate_offer
 from recovered_sources import parse_bank_page
+from sheets_normalized import prepare
+from unified_inputs import HEADERS, inputs_from_tables
+from unified_normalization import INPUT_TABS, normalize_inputs, validate_normalized
 
 NOW = '2026-09-14T13:00:00+00:00'
 IDENTITY = 'Дебетовая карта Привилегия Аэрофлот'
@@ -78,6 +82,55 @@ class RecoveredBankHtmlBoundariesTests(unittest.TestCase):
                 raw = page(extra_sections=f'<section class="xNativeSection">{prime}</section>')
                 with self.assertRaises(ValueError):
                     parse_bank_page('af_vtb_rules', raw, NOW)
+
+    def test_multiline_earning_rule_reaches_common_view_only_once(self):
+        raw = page(formula=(
+            'За каждые 70 ₽<br>получите 4 мили.<br>'
+            'Скидка 7% на покупки у партнёра.<br>Только для новых клиентов.'
+        ))
+        try:
+            row = parse_bank_page('af_vtb_rules', raw, NOW)
+        except ValueError as exc:
+            self.fail(f'Valid VTB markup was rejected: {exc}')
+        validate_offer(row)
+        report = {
+            'source_id': 'af_vtb_rules', 'name': 'VTB rules', 'root': row['source_url'],
+            'status': 'ok', 'discovered': 1, 'normalized': 1, 'failed': 0,
+            'errors': [], 'region': None, 'coverage': 'owned VTB bank rules',
+            'observed_at': NOW,
+        }
+        bundle = {
+            'schema_version': 2, 'run_id': 'test:bank-html', 'observed_at': NOW,
+            'records': [row], 'sources': [report],
+        }
+        values = prepare(json.loads(json.dumps(bundle)))['parser_offers']
+        tables = {
+            tab: [[] for _ in range(header - 1)] + [[{'value': h} for h in HEADERS[tab]]]
+            for tab, (header, _) in INPUT_TABS.items()
+        }
+        tables['parser_offers'].extend([[{'value': value} for value in cells + ['']] for cells in values])
+        inputs, _ = inputs_from_tables(tables)
+        before = copy.deepcopy(inputs)
+        result = normalize_inputs(inputs, as_of='2026-11-06')['records'][0]
+        validate_normalized(result)
+        miles = [b for b in result['benefits'] if b['kind'] == 'earn_miles']
+        self.assertEqual(
+            [(b['value'], b['unit'], b['basis_value'], b['basis_unit']) for b in miles],
+            [('4', 'miles', '70', 'RUB')],
+        )
+        self.assertEqual(miles[0]['evidence']['path'], '/details/earning_rules/0')
+        self.assertEqual(
+            [(b['value'], b['unit']) for b in result['benefits'] if b['kind'] == 'discount'],
+            [('7', 'percent')],
+        )
+        self.assertEqual(result['raw']['details']['earning_rules'][0]['evidence'],
+                         'За каждые 70 ₽\nполучите 4 мили')
+        self.assertIn('Только для новых клиентов.', result['raw']['conditions'])
+        self.assertEqual(result['raw']['original']['fields']['SHA256']['value'], row['content_sha256'])
+        self.assertEqual(result['provenance']['source_id'], 'af_vtb_rules')
+        self.assertEqual(result['provenance']['observed_at'], NOW)
+        self.assertEqual(result['raw'], before[0])
+        self.assertEqual(inputs, before)
 
     def test_incomplete_or_ambiguous_sections_do_not_invent_a_rule(self):
         split_identity = (
