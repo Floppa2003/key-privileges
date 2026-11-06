@@ -169,11 +169,21 @@ def utair_partners(soup,url,observed_at):
         # Different cards can describe different tiers at one destination.
         # Parse each claim separately so a tier cannot leak into another rate.
         for claim in entry['claims']:
-            for clause in re.split(r'\n|(?<=[.!])\s+',claim):
-                scope=re.search(r'для уровн(?:я|ей)\s+(.+?)(?:\s+[—–-]|$)',clause,re.I)
+            # Mask only a complete explicit tier phrase, keeping original offsets.
+            tier=r'[A-Za-z][A-Za-z0-9-]*'
+            tier_scope=(rf'\bдля\s+уровн(?:я|ей)\s+{tier}'
+                        rf'(?:(?:\s*[,/]\s*|\s+(?:и|или)\s+){tier})*'
+                        r'(?![^\n]*\d+(?:[.,]\d+)?%\s+милями)')
+            masked=re.sub(tier_scope,lambda m:m[0].replace('\n',' '),claim,flags=re.I)
+            start=0
+            for boundary in re.finditer(r'\n|(?<=[.!])\s+|\Z',masked):
+                end=boundary.start()
+                clause=masked[start:end];literal=claim[start:end]
+                start=boundary.end()
+                scope=re.search(r'для\s+уровн(?:я|ей)\s+(.+?)(?:\s+[—–-]|$)',clause,re.I)
                 tiers=re.findall(r'\b[A-Za-z][A-Za-z0-9-]*\b',scope[1]) if scope else []
                 rate=re.search(r'(\d+(?:[.,]\d+)?)%\s+милями',clause)
-                if tiers and rate:tier_rates.append({'tiers':tiers,'value':rate[1].replace(',','.'),'unit':'percent_miles','evidence':clause})
+                if tiers and rate:tier_rates.append({'tiers':tiers,'value':rate[1].replace(',','.'),'unit':'percent_miles','evidence':literal})
         claim='\n'.join(entry['claims'])
         details={'partner_url':entry['urls'][0],'tier_rates':tier_rates,
                  'partner_identity_origin':'published_destination_not_independently_verified'}

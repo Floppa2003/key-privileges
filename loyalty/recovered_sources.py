@@ -279,7 +279,7 @@ def scoped_bank_sections(sid, raw):
             continue
         if body:
             selected.append(n)
-    if not selected or not any('Как начисляются мили' in n.get_text() for n in selected):
+    if not selected or not any('Как начисляются мили' in ' '.join(html_text(n).split()) for n in selected):
         raise ValueError('vtb_product_sections_changed')
     return selected
 
@@ -288,6 +288,9 @@ def parse_bank_page(sid, raw, now):
     spec=SOURCES[sid]
     nodes=scoped_bank_sections(sid,raw)
     blocks=[html_text(n) for n in nodes]
+    # Whitespace-insensitive contract checks never replace the source evidence.
+    # Keep each section separate so adjacent products cannot supply missing words.
+    labels=[' '.join(block.split()) for block in blocks]
     terms='\n'.join(blocks)
     details={'_source':{'source_id':sid},'transport':transport_evidence(sid),'evidence_role':'supplementary_rules_not_incremental_discount',
         'sections':blocks,'linked_documents':linked_documents(nodes,spec['url']),
@@ -295,31 +298,36 @@ def parse_bank_page(sid, raw, now):
     warnings=['personal_eligibility_not_verified','linked_full_documents_not_fetched']
     start=end=None
     if sid=='af_vtb_rules':
-        if 'Дебетовая карта Привилегия Аэрофлот' not in terms or 'Прайм Аэрофлот' in terms:
+        if (not any('Дебетовая карта Привилегия Аэрофлот' in label for label in labels)
+            or any('Прайм Аэрофлот' in label for label in labels)):
             raise ValueError('vtb_product_identity_or_related_product_contamination')
-        paragraph=next(x for x in blocks if x.startswith('Как начисляются мили'))
-        m=re.search(r'За\s+каждые\s+([\d ]+)\s*₽.*?получите\s+(\d+)\s+мили',paragraph,re.I)
+        earning=[block for block,label in zip(blocks,labels) if label.startswith('Как начисляются мили')]
+        if len(earning)!=1:raise ValueError('vtb_earning_contract_changed')
+        paragraph=earning[0]
+        m=re.search(r'За\s+каждые\s+([\d ]+)\s*₽.*?получите\s+(\d+)\s+мили',paragraph,re.I|re.S)
         if not m:raise ValueError('vtb_earning_contract_changed')
         details['earning_rules']=[{'value':m[2],'unit':'miles','basis_amount':number(m[1]),
             'basis_unit':'RUB','qualifier':'exact','evidence':m[0]}]
         details['fees']=[x for x in blocks if 'комисси' in x.lower()]
         details['earning_conditions']=paragraph
-        details['qualification']=next((x for x in blocks if x.startswith('Премиум-обслуживание')),'')
-        campaign=next((x for x in blocks if x.startswith('Празднуем')),'')
+        details['qualification']=next((block for block,label in zip(blocks,labels) if label.startswith('Премиум-обслуживание')),'')
+        campaign=next((block for block,label in zip(blocks,labels) if label.startswith('Празднуем')),'')
         if campaign:details['individual_campaign_rules']={'text':campaign,'scope':'individual_offer_not_base_card_terms'}
         warnings.append('campaign_dates_do_not_expire_base_card_rules')
         program='Аэрофлот Бонус';partner='ВТБ';title='ВТБ Привилегия Аэрофлот — условия карты'
     elif sid=='nspk_ekp_rules':
-        if 'Держатели ЕКП смогут экономить' not in terms or 'vamprivet.ru' not in terms:
+        if not any('Держатели ЕКП смогут экономить' in label for label in labels) or 'vamprivet.ru' not in terms:
             raise ValueError('nspk_article_identity_changed')
         program='Единая карта петербуржца (ЕКП)';partner='НСПК';title='НСПК — объявление о кешбэке ЕКП'
         warnings.append('announcement_article_not_full_campaign_rules')
         details['scope']='published_article_not_complete_offer_catalogue'
     else:
-        if 'Приветственные баллы РЖД за оформление карты' not in terms:
+        if not any('Приветственные баллы РЖД за оформление карты' in label for label in labels):
             raise ValueError('uralsib_campaign_identity_changed')
-        m=re.search(r'В период с (\d{2}\.\d{2}\.\d{4}) по (\d{2}\.\d{2}\.\d{4}) оформить заявку',terms)
-        if not m:raise ValueError('uralsib_application_period_missing')
+        periods=[m for block in blocks if (m:=re.search(
+            r'В\s+период\s+с\s+(\d{2}\.\d{2}\.\d{4})\s+по\s+(\d{2}\.\d{2}\.\d{4})\s+оформить\s+заявку',block))]
+        if len(periods)!=1:raise ValueError('uralsib_application_period_missing')
+        m=periods[0]
         start,end=[datetime.strptime(x,'%d.%m.%Y').date().isoformat() for x in m.groups()]
         details['validity_scope']='card_application_window';details['application_period_evidence']=m[0]
         details['tables']=[[[html_text(c) for c in tr.find_all(['th','td'])]

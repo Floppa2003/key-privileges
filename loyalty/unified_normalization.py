@@ -14,7 +14,7 @@ from collections import Counter, defaultdict
 from datetime import date, datetime, timedelta
 from decimal import Decimal, InvalidOperation
 from urllib.parse import urlsplit, urlunsplit, parse_qsl, urlencode
-from normalized import normalize_rates, number, NUMBER
+from normalized import normalize_rates, number, NUMBER, TYPES
 from promo_codes import extract_promocodes
 
 VERSION = '1.0.1'
@@ -187,6 +187,42 @@ def make_input(raw):
     return r
 
 
+def _structured_mile_evidence(details):
+    """Quotes safe to remove from the lexical buffer after structured projection."""
+    result=[]
+    for field in ('earning_rules','flight_bonus_rates'):
+        for rule in details.get(field,[]):
+            literal=rule.get('evidence')
+            if (rule.get('unit')!='miles' or rule.get('basis_unit')!='RUB'
+                    or not isinstance(literal,str) or '\n' not in literal):
+                continue
+            # Folding is only a consistency check, never stored evidence.
+            # Do not remove a quote containing another reward or two literal
+            # mileage claims, even if normalize_rates deduplicates their values.
+            flat=' '.join(literal.split())
+            if (ENGLISH_RATE_LABEL.search(flat)
+                    or any(re.search(TYPES[k],flat,re.I) for k in ('discount','cashback'))):
+                continue
+            rates=normalize_rates(flat)
+            if (len(rates)!=1
+                    or len(re.findall(rf'{NUM}\s*мил[ьяиюе]\w*',flat,re.I))!=1):
+                continue
+            rate=rates[0]
+            if (rate['kind']!='miles' or rate['unit']!='miles'
+                    or rate.get('basis_unit')!='RUB'
+                    or rate.get('basis_amount') is None
+                    or rule.get('basis_amount') is None
+                    or rate.get('qualifier','exact')!=rule.get('qualifier','exact')):
+                continue
+            try:
+                matches=(decimal(rate['value'])==decimal(rule['value'])
+                         and decimal(rate['basis_amount'])==decimal(rule['basis_amount']))
+            except (ValueError,InvalidOperation):
+                continue
+            if matches:result.append(literal)
+    return result
+
+
 def _clauses(raw):
     seen=set()
     source_fields=[('/'+name,raw.get(name) or '') for name in ('benefit','conditions','activation')]
@@ -206,13 +242,31 @@ def _clauses(raw):
                 raise ValueError('af_record_semantic_display_binding')
             source_fields=[('/details/semantic_fields/'+name,source[name])
                            for name in ('benefit','conditions','redemption')]
+    structured_quotes=[] if details.get('pages') else _structured_mile_evidence(details)
     for path,value in source_fields:
+        spans=[]
+        for literal in structured_quotes:
+            start=value.find(literal)
+            # Repeated quotes have no unambiguous structural owner. Keep the
+            # prior lexical projection rather than choosing an occurrence.
+            if start>=0 and value.find(literal,start+1)<0:
+                spans.append((start,start+len(literal)))
         # Preserve decimal periods, URLs, dates and the actual original substring.
         for m in re.finditer(r'[^\n;]+',value):
             clause=m.group().strip()
-            if not clause or clause in seen:continue
-            seen.add(clause)
-            yield path,clause
+            if not clause:continue
+            start=m.start()+len(m.group())-len(m.group().lstrip())
+            rate_clause=clause
+            for left,right in spans:
+                left=max(start,left)-start
+                right=min(start+len(clause),right)-start
+                if left<right:
+                    # Separators cannot join labels or bases across removed text.
+                    rate_clause=rate_clause[:left]+';'*(right-left)+rate_clause[right:]
+            key=(clause,rate_clause)
+            if key in seen:continue
+            seen.add(key)
+            yield path,clause,rate_clause
 
 
 def _scope(clause):
@@ -496,13 +550,13 @@ def normalize_record(raw, *, as_of):
             and isinstance(heading,str) and heading
             and raw.get('benefit','').startswith(heading+': ')):
         owned_heading=heading
-    for path,clause in (() if airline_rules else _clauses(raw)):
-        scope=_scope(clause);recognized=False
+    for path,clause,rate_clause in (() if airline_rules else _clauses(raw)):
+        scope=_scope(clause);recognized=rate_clause!=clause
         # Do not derive benefits from unassigned raw PDF table text.
         # The hotel's published heading labels only its owned benefit section;
         # common conditions and unrelated sources cannot inherit that label.
         heading_context=owned_heading if path=='/benefit' else ''
-        rate_text=clause.removeprefix(heading_context+': ') if heading_context else clause
+        rate_text=rate_clause.removeprefix(heading_context+': ') if heading_context else rate_clause
         rates=[]
         if not d.get('pages'):
             rate_parser = _english_rates if ENGLISH_RATE_LABEL.search(rate_text) else normalize_rates
@@ -510,14 +564,15 @@ def normalize_record(raw, *, as_of):
             # Only the known legacy Discount column supplies an implicit
             # label. A bare percent in Notes or another source does not.
             if (path=='/benefit' and raw['origin'] in ('yandex_discounts_complete_all','VG_community_offers')
-                    and (m:=re.fullmatch(r'\s*('+NUM+r')\s*%\s*',clause))):
+                    and (m:=re.fullmatch(r'\s*('+NUM+r')\s*%\s*',rate_clause))):
                 rates.append({'kind':'discount','value':decimal(m[1]),'unit':'percent','qualifier':'exact','evidence':clause})
-            for m in re.finditer(r'(?:up to\s+)?('+NUM+r')\s*RUB\s+(?:off|discount)\b',clause,re.I):
+            for m in re.finditer(r'(?:up to\s+)?('+NUM+r')\s*RUB\s+(?:off|discount)\b',rate_clause,re.I):
                 rates.append({'kind':'discount','value':decimal(m[1]),'unit':'RUB','qualifier':'up_to' if re.search('up to',m[0],re.I) else 'exact','evidence':clause})
-        if not d.get('pages') and re.search(r'\d\s*%.*милями',clause,re.I) and not rates:
-            m=re.search(r'('+NUM+r')\s*%',clause)
-            rates=[{'kind':'miles','value':decimal(m[1]),'unit':'percent','qualifier':'up_to' if re.search('до',clause[:m.start()],re.I) else 'exact'}]
+        if not d.get('pages') and re.search(r'\d\s*%.*милями',rate_clause,re.I) and not rates:
+            m=re.search(r'('+NUM+r')\s*%',rate_clause)
+            rates=[{'kind':'miles','value':decimal(m[1]),'unit':'percent','qualifier':'up_to' if re.search('до',rate_clause[:m.start()],re.I) else 'exact'}]
         for rr in rates:
+            if rate_clause!=clause:rr['evidence']=clause
             if rr.get('evidence') in structured_evidence:continue
             # Locally labelled discount/cashback rates already exclude payment
             # percentages. A separate commission must not erase those rewards.

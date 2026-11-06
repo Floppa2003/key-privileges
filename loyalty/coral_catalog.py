@@ -30,11 +30,16 @@ def checked_url(url, prefix, depth):
     return url
 
 
+def _label_key(value):
+    """Compare source labels without rewriting their published text."""
+    return ' '.join(value.split())
+
+
 def listing(raw, sid):
     soup = BeautifulSoup(raw, 'html.parser')
     heading = soup.select('h1')
     expected = 'Клуб привилегий' if sid == 'coral' else 'Акции'
-    if len(heading) != 1 or html_text(heading[0]) != expected:
+    if len(heading) != 1 or _label_key(html_text(heading[0])) != expected:
         raise ValueError('coral_listing_identity')
     selector = '.category-box-menu h5 a[href]' if sid == 'coral' else '.sale-item-description h5 a[href]'
     prefix = '/klub-privilegii/' if sid == 'coral' else '/promo/'
@@ -42,7 +47,7 @@ def listing(raw, sid):
     for a in soup.select(selector):
         url = checked_url(a['href'], prefix, 2)
         label = html_text(a)
-        if not label or (url in result and result[url]['title'] != label):
+        if not label or (url in result and _label_key(result[url]['title']) != _label_key(label)):
             raise ValueError('coral_listing_label_conflict')
         result[url] = {'url': url, 'title': label}
     if not 1 <= len(result) <= 200:
@@ -56,7 +61,7 @@ def category_cards(raw, entry, categories=None):
     categories = categories or {entry["url"]: entry["title"]}
     soup = BeautifulSoup(raw, 'html.parser')
     headings = soup.select('h1'); grids = soup.select('#categoryProductsList')
-    if len(headings) != 1 or html_text(headings[0]) != entry['title'] or len(grids) != 1:
+    if len(headings) != 1 or _label_key(html_text(headings[0])) != _label_key(entry['title']) or len(grids) != 1:
         raise ValueError('coral_category_identity')
     result = {}; excluded = 0
     for box in grids[0].select('.product-box'):

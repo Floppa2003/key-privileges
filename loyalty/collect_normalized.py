@@ -12,7 +12,7 @@ from datetime import datetime,timezone
 from pathlib import Path
 from urllib.parse import urljoin,urlsplit,urlencode
 from bs4 import BeautifulSoup
-from playwright.async_api import async_playwright
+from playwright.async_api import async_playwright, TimeoutError as BrowserTimeout
 from adapters import extract,next_state,s7_catalog,s7_detail,mir_detail,PROGRAMS,node_text,ural_catalog,key_catalog,mir_page_url
 from normalized import VERSION,make_offer,content_hash,validate_offer,text
 from public_transport import PublicSource
@@ -77,12 +77,27 @@ async def collect_rgo(client,cfg,report,now,limit):
     raw=await client.read(cfg['url'],render=True)
     page=client.page;exhausted=False
     for _ in range(30):
-        count=await page.locator('.loyalty-card').count()
         more=page.locator('.pagination-more .btn').first
         if not await more.count() or not await more.is_visible():exhausted=True;break
-        await more.click(timeout=5000);await page.wait_for_timeout(1500)
-        if await page.locator('.loyalty-card').count()==count:
+        before=await page.evaluate("""() => ({
+            cards: document.querySelectorAll('.loyalty-card').length,
+            links: new Set(Array.from(document.querySelectorAll('.loyalty-card__link[href]'),
+                                      node => node.href)).size
+        })""")
+        await more.click(timeout=5000)
+        try:
+            await within_source_budget(client,lambda:page.wait_for_function("""before => (
+                document.querySelectorAll('.loyalty-card').length > before.cards
+                && new Set(Array.from(document.querySelectorAll('.loyalty-card__link[href]'),
+                                     node => node.href)).size > before.links
+            )""",arg=before,timeout=10000))
+        except BrowserTimeout:
             report['errors'].append({'phase':'catalog','reason':'load_more_did_not_grow'});break
+    else:
+        more=page.locator('.pagination-more .btn').first
+        exhausted=not await more.count() or not await more.is_visible()
+        if not exhausted:
+            report['errors'].append({'phase':'catalog','reason':'pagination_iteration_limit_reached'})
     soup=BeautifulSoup(await page.content(),'html.parser')
     urls=list(dict.fromkeys(urljoin(cfg['url'],x['href']) for x in soup.select('.loyalty-card__link[href]')))
     report['discovered']=len(urls);report['coverage']='load_more_exhausted' if exhausted else 'pagination_not_exhausted'

@@ -1,6 +1,13 @@
 {
-  "request_id": "2026-11-06-parsing-continuity",
-  "source_ids": [],
-  "reason": "Refresh registered public sources through the existing collector after the reviewed HTML, PDF, document discovery and literal numeric parsing fixes. Publish accepted fresh records and deterministic common views through the existing Sheets writers, then verify destination readback. Keep prior observations for unavailable sources, source identities, manual fields, access controls and collection budgets.",
+  "request_id": "2026-11-06-parsing-boundaries-final",
+  "source_ids": [
+    "rgo",
+    "af_vtb_rules",
+    "nspk_ekp_rules",
+    "uralsib_rzd_rules",
+    "hse_alumni",
+    "utair_media"
+  ],
+  "reason": "Refresh the six registered sources affected by the reviewed bank HTML boundaries, source section ownership, wrapped Utair tier scopes and RGO load-more progress fixes. Publish accepted fresh observations and deterministic common views through the existing writers, with destination readback. Retain existing unavailable-source handling, manual fields, access controls and collection budgets.",
   "publish": true
 }
