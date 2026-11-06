@@ -292,6 +292,68 @@ def _scope(clause):
     return scope
 
 
+def _rate_scope(clause,rate,spans):
+    """Bind explicit purchase stages to their own percent occurrence."""
+    index=rate.get('_percent_index')
+    if (type(index) is not int or not 0<=index<len(spans)
+            or spans[index]['value']!=rate['value']
+            or spans[index]['min_value']!=rate.get('min_value')):
+        return {}
+    span=spans[index]
+    first=r'(?:перв(?:ый|ая|ое|ые|ого|ой|ую|ому|ым|ом|ых|ыми)|first)'
+    stage=r'(?:'+first+r'|повторн\w*|последующ\w*|repeat|subsequent)'
+    ordinary_noun=r'(?:заказ\w*|покупк\w*|визит\w*|посещен\w*|orders?|purchases?|visits?)\b'
+    noun=(r'(?:'+ordinary_noun+r'|(?:чистк\w*|при[её]м\w*|бронирован\w*|'
+          r'обращен\w*|подключен\w*)\b)')
+    # A lowercase continuation after "руб." stays in the price clause. A capitalized
+    # next sentence remains a boundary; this is not a general tokenizer.
+    boundaries=[m for m in re.finditer(r'[.!?](?:\s|$)|;',clause)
+                if not (m[0].startswith('.') and re.search(r'\bруб\Z',clause[:m.start()],re.I)
+                        and re.match(r'\s+[а-яёa-z]',clause[m.start()+1:]))]
+    left=max((m.end() for m in boundaries if m.end()<=span['start']),default=0)
+    right=min((m.start() for m in boundaries if m.start()>=span['end']),default=len(clause))
+    neighbours=[i for i,item in enumerate(spans)
+                if left<=item['start'] and item['end']<=right]
+    position=neighbours.index(index)
+    owned_left,owned_right=left,right
+    separator=r'[,;+]|\b(?:и|а|или|and|or|but)\b'
+    if position:
+        start=spans[neighbours[position-1]]['end']
+        split=list(re.finditer(separator,clause[start:span['start']],re.I))
+        owned_left=start+split[-1].end() if split else span['start']
+    if position+1<len(neighbours):
+        stop=spans[neighbours[position+1]]['start']
+        split=list(re.finditer(separator,clause[span['end']:stop],re.I))
+        owned_right=span['end']+split[-1].start() if split else stop
+    # A coordinated modifier may share the final noun: "15% на первый и
+    # 10% на повторный заказ". An unrelated first payment is not an order.
+    shared=(r'\s*(?:,|\b(?:и|или|and|or)\b)\s*'
+            r'(?:'+NUMERIC_TOKEN+r'\s*%\s*(?:(?:на|при|за|on|for)\s+)?'
+            r'(?:(?:the|your)\s+)?)?'+stage+r'\s+'+noun)
+    markers=[(left+m.start(),left+m.end(),
+              'first' if re.match(r'перв|first',m[0],re.I) else 'repeat')
+             for m in re.finditer(r'\b(?:повторн\w*|последующ\w*|repeat|subsequent)\b|'
+                                  r'\b(?:перв\w*|first)\b(?=\s+'+ordinary_noun+')|'
+                                  r'\b'+first+r'\b(?=\s+'+noun+'|'+shared+')',
+                                  clause[left:right],re.I)]
+    local={kind for start,end,kind in markers if owned_left<=start and end<=owned_right}
+    all_stages={kind for _,_,kind in markers}
+    first,last=spans[neighbours[0]],spans[neighbours[-1]]
+    if not local and markers:
+        # A single shared prefix, or a suffix of a plain coordinated percent
+        # list, may qualify the complete list; do not borrow another rate's tail.
+        shared_prefix=all(end<=first['start'] for _,end,_ in markers)
+        shared_suffix=(all(start>=last['end'] for start,_,_ in markers)
+                       and all(re.fullmatch(r'[\s,]*(?:(?:и|или|and|or)\b[\s,]*)?',
+                                            clause[spans[a]['end']:spans[b]['start']],re.I)
+                               for a,b in zip(neighbours,neighbours[1:])))
+        if shared_prefix or shared_suffix or len(all_stages)>1:
+            local=all_stages
+    if local:
+        return {'purchase_stage':next(iter(local)) if len(local)==1 else 'multiple_stages'}
+    return _scope(clause[left:right]) if len(neighbours)==1 else {}
+
+
 def _english_rates(clause, *, heading_context='', with_spans=False):
     """Use the same local ownership rules for English and mixed source text."""
     # These are parser-token aliases in a temporary buffer. The source clause
@@ -303,6 +365,37 @@ def _english_rates(clause, *, heading_context='', with_spans=False):
                      r'(?:(?:of|is|at|equals)\s+)+', r'\1 ', working, flags=re.I)
     return [{**rate, 'evidence': clause}
             for rate in normalize_rates(working, heading_context=heading_context,with_spans=with_spans)]
+
+
+def _discount_percent_is_product_exception(clause, rate, spans):
+    """Own only a product markdown inside a positive applicability exception."""
+    index=rate.get('_percent_index')
+    if (rate.get('kind')!='discount' or rate.get('unit')!='percent'
+            or not isinstance(index,int) or not 0<=index<len(spans)
+            or spans[index]['value']!=rate.get('value')
+            or spans[index]['min_value']!=rate.get('min_value')):
+        return False
+    # Periods within decimal numbers are not sentence boundaries. A new
+    # sentence/paragraph or semicolon cannot inherit an earlier exception.
+    before=clause[:spans[index]['start']]
+    start=max((m.end() for m in re.finditer(r'[.!?](?=\s|$)|[\n;]',before)),default=0)
+    context=before[start:]
+    applies=re.search(r'\bраспространя(?:ется|ются)\s+на\s+',context,re.I)
+    if not applies or re.search(r'\bне\b',context[:applies.start()],re.I):
+        return False
+    scope=context[applies.end():]
+    exception=re.search(r',\s*кроме(?!\s+того\b)\s+',scope,re.I)
+    if not exception:
+        return False
+    # Require the percentage's own product descriptor, rather than every
+    # later rate in the sentence. "А на доставку скидка 20%" remains a benefit.
+    # This deliberately does not interpret arbitrary exclusions or negations.
+    descriptor=scope[exception.end():]
+    if re.search(r'\bкроме\s+того\b',descriptor,re.I):
+        return False
+    return bool(re.search(r'\b(?:товар(?:а|ов)|издели(?:я|й)|украшени(?:я|й))'
+                          r'\s+(?:с|со)\s+(?:прямой\s+)?скидкой\s*'
+                          r'(?:[-−–—]\s*)?(?:(?:до|от)\s*)?$',descriptor,re.I))
 
 
 def _cashback_kind(clause,rate,spans):
@@ -343,11 +436,35 @@ def _cashback_kind(clause,rate,spans):
     if next_prefix:right=min(right,next_prefix[0])
     later=[label.start() for label in after if label is not postfix]
     if later:right=min(right,later[0])
-    suffix=re.split(r'[.!?](?:\s|$)|;',clause[span['end']:right],maxsplit=1)[0]
+    sentence_break=r'[.!?](?:\s|$)|;'
+    tail=clause[span['end']:right]
+    sentences=re.split(sentence_break,tail,maxsplit=2)
+    suffix=sentences[0]
     local_prefix=preposed_unit(index)
     for local in (suffix,local_prefix[1] if local_prefix else '',prefix):
         kinds=[kind for kind,pattern in REWARD_UNIT_WORDING.items() if re.search(pattern,local,re.I)]
         if kinds:return kinds[0] if len(kinds)==1 else 'cashback'
+    # An immediately following sentence may name the same payout explicitly.
+    # Require one owner and a positive amount/return construction, not merely
+    # a later mention of points in payment instructions or exclusions.
+    if (len(sentences)<2 or tail[len(suffix)]!='.'
+            or (len(sentences)==2 and right<len(clause))):
+        return 'cashback'
+    sentence_start=max((m.end() for m in re.finditer(sentence_break,clause)
+                        if m.end()<=span['start']),default=0)
+    if any(item['start']>=sentence_start for item in spans[:index]):
+        return 'cashback'
+    continuation=sentences[1].strip()
+    payout=re.match(r'(?:(?:(?:полная|вся|эта)\s+)?(?:стоимость|сумма)\s+'
+                    r'(?:верн[её]тся|возвращается|начисляется|будет\s+(?:возвращена|начислена))'
+                    r'(?:\s+вам)?(?:\s+на\s+(?:ваш\s+)?сч[её]т)?|'
+                    r'(?:the\s+)?amount\s+(?:is|will\s+be)\s+(?:credited|returned|paid))\s+',
+                    continuation,re.I)
+    if payout:
+        local=continuation[payout.end():]
+        kinds=[kind for kind,pattern in REWARD_UNIT_WORDING.items() if re.search(pattern,local,re.I)]
+        if len(kinds)==1 and re.match(REWARD_UNIT_WORDING[kinds[0]],local,re.I):
+            return kinds[0]
     return 'cashback'
 
 
@@ -662,17 +779,34 @@ def normalize_record(raw, *, as_of):
             if (path=='/benefit' and raw['origin'] in ('yandex_discounts_complete_all','VG_community_offers')
                     and re.fullmatch(r'\s*('+NUM+r')\s*%\s*',rate_clause)
                     and len(spans)==1 and spans[0]['min_value'] is None):
-                rates.append({'kind':'discount','value':spans[0]['value'],'unit':'percent','qualifier':'exact','evidence':clause})
+                rates.append({'kind':'discount','value':spans[0]['value'],'unit':'percent',
+                              'qualifier':'exact','evidence':clause,'_percent_index':0})
             for m,value in _amount_matches(r'(?:up to\s+)?('+NUMERIC_TOKEN+r')\s*RUB\s+(?:off|discount)\b',rate_clause):
                 rates.append({'kind':'discount','value':value,'unit':'RUB','qualifier':'up_to' if re.search('up to',m[0],re.I) else 'exact','evidence':clause})
-        if not d.get('pages') and re.search(r'\d\s*%.*милями',rate_clause,re.I) and not rates:
-            for span in spans:
-                tail=re.split(r'%|[.!?](?:\s|$)|;',rate_text[span['end']:],maxsplit=1)[0]
+        if not d.get('pages') and re.search(r'\d\s*%.*милями',rate_clause,re.I):
+            covered={rate.get('_percent_index') for rate in rates if rate['unit']=='percent'}
+            for index,span in enumerate(spans):
+                if index in covered:continue
+                # Complete only this occurrence; another recognized rate does
+                # not cover it, and a neighbour's mileage unit cannot label it.
+                right=spans[index+1]['start'] if index+1<len(spans) else len(rate_text)
+                parts=re.split(r'[.!?](?:\s|$)|;',rate_text[span['end']:right],maxsplit=1)
+                tail=parts[0]
+                if index+1<len(spans) and len(parts)==1:
+                    boundaries=list(re.finditer(r'[,;+]|\b(?:и|или|and|or)\b',tail,re.I))
+                    if boundaries:tail=tail[:boundaries[-1].start()]
+                prefix=re.split(r'[.!?](?:\s|$)|;',rate_text[:span['start']])[-1]
+                denied=r'\bне\s+(?:(?:будет|будут)\s+)?(?:начисл\w*|получ\w*|верн\w*|возвращ\w*)'
                 if (re.search(r'\bмилями\b',tail,re.I)
-                        and not re.match(r'\s*(?:предоплат|аванс|НДС|налог|комисси|штраф)',tail,re.I)):
+                        and not re.match(r'\s*(?:предоплат|оплат|аванс|НДС|налог|комисси|штраф)',tail,re.I)
+                        and not re.search(r'\b(?:оплат\w*|спис\w*|потрат\w*|предоплат\w*|аванс\w*)(?:\s+(?:до|от))?\s*\Z',prefix,re.I)
+                        and not re.search(denied+r'[^%.,;!?]*\Z',prefix,re.I)
+                        and not re.search(denied,tail,re.I)):
                     rates.append({'kind':'miles','value':span['value'],'min_value':span['min_value'],
-                                  'unit':'percent','qualifier':span['qualifier'],'evidence':clause})
+                                  'unit':'percent','qualifier':span['qualifier'],'evidence':clause,
+                                  '_percent_index':index})
         for rr in rates:
+            if _discount_percent_is_product_exception(rate_text,rr,spans):continue
             if rate_clause!=clause:rr['evidence']=clause
             if rr.get('evidence') in structured_evidence:continue
             # Locally labelled discount/cashback rates already exclude payment
@@ -690,12 +824,32 @@ def normalize_record(raw, *, as_of):
             if kind=='cashback':
                 kind=_cashback_kind(rate_text,rr,spans)
             benefit(kind,path,value=rr['value'],unit=rr['unit'],qualifier=rr.get('qualifier','unspecified'),value_min=rr.get('min_value'),
-                    basis_value=rr.get('basis_amount'),basis_unit=rr.get('basis_unit'),scope=scope,fragment=clause,
+                    basis_value=rr.get('basis_amount'),basis_unit=rr.get('basis_unit'),
+                    scope=_rate_scope(rate_text,rr,spans) if rr['unit']=='percent' else scope,fragment=clause,
                     method='clause_candidate',reward_unit='miles' if kind=='earn_miles' else 'points' if kind=='earn_points' else None)
             recognized=True
         if not d.get('pages') and re.search(r'получ\w*|начисл\w*',clause,re.I) and not re.search(r'спис|оплат\w* балл|комисси',clause,re.I):
-            for m,value in _amount_matches(r'('+NUMERIC_TOKEN+r')\s+(?:бонус(?:ов|а)?|балл(?:ов|а)?)\b',clause):
+            for m,value in _amount_matches(r'('+NUMERIC_TOKEN+r')\s+(?P<additional>дополнительн\w*\s+)?(?:бонус(?:ов|а)?|балл(?:ов|а)?)\b',clause):
                 prefix=clause[:m.start()]
+                if m['additional']:
+                    # The adjective is supported only in its own literal
+                    # award, not a nearby spend instruction or denial.
+                    award=re.search(r'\b(?:получ\w*|начисл\w*)\s+(?:(?:до|от)\s+)?$',prefix,re.I)
+                    denied=award and re.search(r'\b(?:не|нельзя|невозможно)(?:\s+\w+)?\s*$',prefix[:award.start()],re.I)
+                    credited=(re.match(r'\s+начисл\w*\b',clause[m.end():],re.I)
+                              and not re.search(r'\b(?:не|вместо|кроме)\s*$',prefix,re.I))
+                    if not ((award and not denied) or credited):
+                        continue
+                # A points-to-money equation alone does not award points.
+                # Require its own earning action; a later exchange action
+                # owns the formula, but an exchange purchase before an explicit
+                # award ("за обмен валюты начисляем...") does not cancel it.
+                if re.match(r'\s*=\s*'+NUMERIC_TOKEN+r'\s*'+MONEY+r'(?=\W|$)',clause[m.end():],re.I):
+                    local_prefix=re.split(r'[.!?](?:\s|$)|[;,]',prefix)[-1]
+                    earning=list(re.finditer(r'\b(?:получ\w*|начисл\w*)\b',local_prefix,re.I))
+                    exchange=list(re.finditer(r'\b(?:обменять|обменяйте|конвертировать|конвертируйте)\b',local_prefix,re.I))
+                    if not earning or (exchange and exchange[-1].start()>earning[-1].start()):
+                        continue
                 if re.search(r'\(\s*до\s*$',prefix,re.I):
                     condition('benefit_cap',path,value=value,unit='points',qualifier='up_to',
                               scope=scope,fragment=clause,method='clause_candidate')
