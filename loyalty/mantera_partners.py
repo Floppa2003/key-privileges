@@ -257,8 +257,10 @@ def validate_evidence(roster, resort):
 
 
 def source_fields(e):
-    if e.get('projection_version') is None:return legacy_source_fields(e)
-    if e.get('projection_version')!=2:raise ValueError('mantera_partner_projection_version')
+    version=e.get('projection_version')
+    if version is None:return legacy_source_fields(e)
+    if version not in (2,3):raise ValueError('mantera_partner_projection_version')
+    scope_name='partner' if version==3 else 'hotel'
     from mantera_source import PROGRAM
     from content_discovery import faq_text,action_clauses
     if e.get('kind')!='public_partner' or e.get('url')!=ROSTER_URL:raise ValueError('mantera_public_partner_identity')
@@ -267,7 +269,7 @@ def source_fields(e):
     if name not in roster['names'] or name==CONGRESS:raise ValueError('mantera_public_partner_not_listed_or_duplicate')
     can_redeem=name in redeemable;terms=[];earning=[];spending=[];qualification=[]
     for tier,threshold,earn,spend in tiers:
-        scope={'member_tier':tier,'annual_spend_clause':threshold,'hotel':name}
+        scope={'member_tier':tier,'annual_spend_clause':threshold,scope_name:name}
         earning.append(tier+' — '+earn+'%')
         terms.append(dict(kind='earn_points',value=earn,unit='percent',qualifier='exact',reward_unit='Mantera_bonus_not_cash',fragment=earning[-1],scope=scope))
         qualification.append(tier+': сумма покупок за год '+threshold+'.')
@@ -278,10 +280,11 @@ def source_fields(e):
     if can_redeem:benefit+='\nОплата накопленными бонусами: '+'; '.join(spending)+'.'
     conditions=[*qualification,*roster['rules'],faq_text(roster['faq']),resort['clause'].split(' Присоединяйтесь,')[0],
         'Источник условий списания: '+RESORT_URL,
-        'Партнёр назван в публичном списке программы. Личный доступ и конкретное бронирование не проверялись.']
+        ('Партнёр назван в публичном списке программы. Личный доступ и конкретная покупка не проверялись.' if version==3 else
+         'Партнёр назван в публичном списке программы. Личный доступ и конкретное бронирование не проверялись.')]
     warnings=['public_named_roster_not_all_group_businesses','bonus_not_cash','bonus_redemption_cap_not_discount']
     if not can_redeem:
-        warnings.append('hotel_redemption_not_confirmed')
+        warnings.append('partner_redemption_not_confirmed' if version==3 else 'hotel_redemption_not_confirmed')
         conditions.append('Возможность списания именно у этого партнёра отдельно не подтверждена; общие лимиты программы не означают доступность списания во всех объектах.')
     if unresolved:warnings.append('unresolved_redemption_names_preserved_in_source_clause')
     count=roster.get('declared_count')
@@ -290,8 +293,8 @@ def source_fields(e):
         conditions.append(f"Счётчик источника: {count}; именованных позиций в списке: {len(roster['names'])}. Полнота всей программы не подтверждена.")
     return dict(native=native_id(name),program=PROGRAM,partner=name,title=PROGRAM+' → '+name,
         benefit=benefit,conditions='\n'.join(conditions),activation='\n'.join(filter(None,(roster['registration'],action_clauses(faq_text(roster['faq']))))),
-        url=ROSTER_URL,category='Отели / бонусы',link_kind='page_block',locator=ROSTER_HEADING+'; '+name,terms=terms,
-        scope={'hotel':name,'eligibility_not_verified':True,'redemption_publicly_supported':can_redeem},warnings=warnings)
+        url=ROSTER_URL,category='Партнёры / бонусы' if version==3 else 'Отели / бонусы',link_kind='page_block',locator=ROSTER_HEADING+'; '+name,terms=terms,
+        scope={scope_name:name,'eligibility_not_verified':True,'redemption_publicly_supported':can_redeem},warnings=warnings)
 
 
 def parse_pair(roster_raw, resort_raw, observed_at):
@@ -306,7 +309,7 @@ def parse_pair(roster_raw, resort_raw, observed_at):
         validate_evidence(roster, resort)
     except Exception as exc:
         raise PartnerSourceError(ROSTER_URL, exc, source_urls=[ROSTER_URL, RESORT_URL]) from exc
-    records = [make_record('mantera_moments', {'projection_version':2,'kind':'public_partner', 'url':ROSTER_URL,
+    records = [make_record('mantera_moments', {'projection_version':3,'kind':'public_partner', 'url':ROSTER_URL,
                'name':name, 'roster':roster, 'resort':resort}, observed_at)
                for name in roster['names'] if name != CONGRESS]
     inventory = {'version':1, 'roster_url':ROSTER_URL, 'resort_url':RESORT_URL,

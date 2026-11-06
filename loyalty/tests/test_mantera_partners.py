@@ -42,7 +42,7 @@ class PublicManteraPartners(unittest.TestCase):
             spent = [x for x in n['benefits'] if x['kind']=='redeem_points']
             self.assertEqual([x['value'] for x in earned], ['3','5','7','10','15'])
             self.assertEqual([x['value'] for x in spent], ['20','20','30','40','50'] if expected else [])
-            self.assertTrue(all(x['scope']['hotel']==r['partner_name'] for x in n['benefits']))
+            self.assertTrue(all(x['scope']['partner']==r['partner_name'] for x in n['benefits']))
             view, reason = record_row(n, NOW[:10])
             self.assertIsNone(reason)
             for clause in ('до оформления', 'невозможно', 'промокода', '24 месяца'):
