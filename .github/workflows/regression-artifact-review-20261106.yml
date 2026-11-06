@@ -18,8 +18,8 @@ jobs:
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
           github-token: ${{ github.token }}
-          run-id: 42145990849
-          artifact-ids: 13469519170
+          run-id: 42146948387
+          artifact-ids: 13470727266
           merge-multiple: true
           path: .regression-review
       - name: Read bounded test failures and summary
@@ -37,13 +37,23 @@ jobs:
           commit = commit_path.read_text().strip()
           if not re.fullmatch(r'[a-f0-9]{40}', commit):
               raise SystemExit('invalid_commit_identity')
+          if commit != 'cd58b1677dd67338ee0c2e7f26a23cf64f1483ef':
+              raise SystemExit('unexpected_test_commit')
           emit('TEST_COMMIT', commit)
-          for filename in ('python.log', 'source-browser.log'):
+          expected = {'python.log': 1877, 'browser.log': 11, 'source-browser.log': 5,
+                      'geometry-browser.log': 4, 'tls-browser.log': 3, 'key.log': 7}
+          for filename in expected:
               emit('TEST_LOG', filename)
               path = root / filename
               if path.is_symlink() or path.stat().st_size > 8 * 1024 * 1024:
                   raise SystemExit('invalid_test_log')
               lines = path.read_text(encoding='utf-8').splitlines()
+              if filename == 'key.log':
+                  summary = [line for line in lines if re.fullmatch(r'# (?:tests|pass|fail|cancelled|skipped|todo) \d+', line)]
+                  emit('TEST_SUMMARY', summary)
+                  if not {'# tests 7', '# pass 7', '# fail 0', '# cancelled 0', '# skipped 0'}.issubset(lines):
+                      raise SystemExit('key_regression_not_green')
+                  continue
               blocks = []
               active = None
               for line in lines:
@@ -63,6 +73,8 @@ jobs:
               if not 1 <= len(summary) <= 8:
                   raise SystemExit('missing_test_summary')
               emit('TEST_SUMMARY', summary)
+              if blocks or 'OK' not in summary or not any(line.startswith('Ran ' + str(expected[filename]) + ' tests in ') for line in summary):
+                  raise SystemExit('regression_not_green_or_count_changed')
               targeted = [line[:800] for line in lines if any(name in line for name in ('test_recovered_bank_html_boundaries.', 'test_unified_structured_mile_evidence.', 'test_source_html_boundary_contracts.')) and line.endswith(' ... ok')]
               emit('TARGETED_PASSED', targeted[:40])
           PY
