@@ -103,5 +103,59 @@ class RecoveredBankHtmlBoundariesTests(unittest.TestCase):
                     parse_bank_page('af_vtb_rules', raw, NOW)
 
 
+class OtherRecoveredBankHtmlBoundariesTests(unittest.TestCase):
+    def parsed(self, sid, raw):
+        try:
+            row = parse_bank_page(sid, raw, NOW)
+        except ValueError as exc:
+            self.fail(f'Valid bank markup was rejected: {exc}')
+        row = json.loads(json.dumps(row, ensure_ascii=False))
+        validate_offer(row)
+        self.assertEqual(row['observed_at'], NOW)
+        return row
+
+    def test_nspk_identity_line_break_keeps_the_supplementary_article(self):
+        raw = (
+            '<div class="pages-press-center-details-article-slug">'
+            '<h1>Держатели ЕКП<br>смогут экономить</h1>'
+            '<p>Кешбэк 5%. Необходимо согласиться с условиями на vamprivet.ru.</p>'
+            '</div>'
+        )
+        row = self.parsed('nspk_ekp_rules', raw)
+        self.assertIn('Держатели ЕКП\nсмогут экономить', row['conditions_text'])
+        self.assertEqual(row['source_status'], 'public_announcement_not_full_rules')
+        self.assertIsNone(row['valid_until'])
+
+    def test_uralsib_identity_and_period_breaks_keep_literal_dates(self):
+        cases = (
+            ('identity', 'Приветственные баллы РЖД<br>за оформление карты',
+             'В период с 01.09.2023 по 15.03.2024 оформить заявку',
+             'В период с 01.09.2023 по 15.03.2024 оформить заявку'),
+            ('period', 'Приветственные баллы РЖД за оформление карты',
+             'В период с 01.09.2023<br>по 15.03.2024<br>оформить заявку',
+             'В период с 01.09.2023\nпо 15.03.2024\nоформить заявку'),
+            ('combined', 'Приветственные баллы РЖД<br>за оформление карты',
+             'В период с 01.09.2023<br>по 15.03.2024<br>оформить заявку',
+             'В период с 01.09.2023\nпо 15.03.2024\nоформить заявку'),
+        )
+        for name, identity, period, evidence in cases:
+            with self.subTest(case=name):
+                raw = f'<h1>{identity}</h1><section id="textBlock">{period} на карту.</section>'
+                row = self.parsed('uralsib_rzd_rules', raw)
+                self.assertEqual(row['valid_from'], '2023-09-01')
+                self.assertEqual(row['valid_until'], '2024-03-15')
+                self.assertEqual(row['validity_status'], 'expired_by_published_end')
+                self.assertEqual(row['details']['application_period_evidence'], evidence)
+                self.assertIn(evidence, row['conditions_text'])
+
+    def test_uralsib_period_cannot_be_joined_across_source_blocks(self):
+        raw = (
+            '<h1>Приветственные баллы РЖД за оформление карты. В период с 01.09.2023</h1>'
+            '<section id="textBlock">по 15.03.2024 оформить заявку на карту.</section>'
+        )
+        with self.assertRaises(ValueError):
+            parse_bank_page('uralsib_rzd_rules', raw, NOW)
+
+
 if __name__ == '__main__':
     unittest.main()
