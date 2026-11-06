@@ -38,7 +38,7 @@ jobs:
           if not re.fullmatch(r'[a-f0-9]{40}', commit):
               raise SystemExit('invalid_commit_identity')
           emit('TEST_COMMIT', commit)
-          for filename in ('tests.log', 'source-browser.log'):
+          for filename in ('python.log', 'source-browser.log'):
               emit('TEST_LOG', filename)
               path = root / filename
               if path.is_symlink() or path.stat().st_size > 8 * 1024 * 1024:
