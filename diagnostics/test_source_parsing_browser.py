@@ -7,6 +7,7 @@ import json
 from pathlib import Path
 import sys
 import unittest
+from unittest.mock import patch
 
 from bs4 import BeautifulSoup
 from playwright.async_api import async_playwright
@@ -23,6 +24,85 @@ FIXTURE=(ROOT/'loyalty/tests/fixtures_live/t2-magnit-20261104.html').read_text()
 ARTICLE=BeautifulSoup(FIXTURE,'html.parser').body.decode_contents()
 SHELL='<html><head><title>Магнит Плюс Премиум - служба поддержки T2</title></head><body><div>Загрузка…</div>'
 DELAYED=SHELL+'<script>setTimeout(() => { document.body.innerHTML = '+json.dumps(ARTICLE)+'; }, 2800);</script></body></html>'
+
+
+
+RGO_CFG=next(c for c in json.loads((ROOT/'loyalty/sources_normalized.json').read_text())
+             if c['id']=='rgo')
+RGO_URL=RGO_CFG['url']
+RGO_DETAIL=(ROOT/'loyalty/tests/fixtures_live/rgo-etnomir.html').read_text()
+
+
+def rgo_catalog(initial,mode):
+    return """<!doctype html><html><body>
+      <div id="cards"></div>
+      <div class="pagination-more"><span class="btn" role="button" tabindex="0">More</span></div>
+      <script>
+      const cards=document.querySelector('#cards');
+      const more=document.querySelector('.pagination-more .btn');
+      const mode=__MODE__;
+      let next=1;
+      window.rgoClicks=0;
+      window.rgoGrowthDelay=null;
+      function appendCard() {
+        const card=document.createElement('div'); card.className='loyalty-card';
+        const link=document.createElement('a'); link.className='loyalty-card__link';
+        link.href=__URL__+'browser-test-'+next+++'/'; link.textContent='Partner';
+        card.append(link); cards.append(card);
+      }
+      for(let n=0;n<__INITIAL__;n++) appendCard();
+      if(mode==='terminal') more.hidden=true;
+      more.addEventListener('click',()=>{
+        window.rgoClicks++;
+        if(mode==='delayed') {
+          const started=performance.now();
+          setTimeout(()=>{
+            for(let n=0;n<8;n++) appendCard();
+            window.rgoGrowthDelay=performance.now()-started;
+            more.hidden=true;
+          },3000);
+        } else if(mode==='cycle') {
+          cards.append(cards.firstElementChild.cloneNode(true));
+        } else if(mode==='limit-visible' || mode==='limit-terminal') {
+          appendCard();
+          if(mode==='limit-terminal' && window.rgoClicks===30) more.hidden=true;
+        }
+      });
+      </script></body></html>""".replace('__INITIAL__',str(initial)).replace(
+          '__MODE__',json.dumps(mode)).replace('__URL__',json.dumps(RGO_URL))
+
+
+class RgoReplaySource:
+    """Only transport is replaced; DOM clicks and both parsers stay real."""
+    def __init__(self,browser,html):
+        self.browser=browser;self.html=html;self.detail_reads=[];self.aborted=[]
+        self.catalog_reads=0;self.clicks=0;self.growth_delay=None
+
+    async def __aenter__(self):
+        self.context=await self.browser.new_context()
+        async def abort(route):
+            self.aborted.append(route.request.url)
+            await route.abort()
+        await self.context.route('**/*',abort)
+        self.page=await self.context.new_page()
+        return self
+
+    async def __aexit__(self,*_):
+        try:
+            state=await self.page.evaluate('({clicks: window.rgoClicks, delay: window.rgoGrowthDelay})')
+            self.clicks=state['clicks'];self.growth_delay=state['delay']
+        finally:
+            await self.context.close()
+
+    async def read(self,url,*,render=False):
+        if url==RGO_URL and render:
+            self.catalog_reads+=1
+            await self.page.set_content(self.html,wait_until='domcontentloaded')
+            return await self.page.content()
+        if render or not url.startswith(RGO_URL+'browser-test-'):
+            raise AssertionError('unexpected_replay_source_request')
+        self.detail_reads.append(url)
+        return RGO_DETAIL
 
 
 class RoutedBrowser:
@@ -82,6 +162,60 @@ class SourceParsingBrowserTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(rows,[])
         self.assertEqual(report['errors'][0]['reason'],'page_content_not_ready')
         self.assertEqual(browser.documents,[URL])
+
+
+
+    async def collect_rgo_replay(self,initial,mode):
+        source=RgoReplaySource(self.browser,rgo_catalog(initial,mode))
+        with patch.object(collector,'PublicSource',return_value=source):
+            report,rows=await collector.one(self.browser,RGO_CFG,NOW,500)
+        self.assertEqual(source.catalog_reads,1)
+        self.assertEqual(source.aborted,[])
+        self.assertEqual(len(set(source.detail_reads)),len(rows))
+        return source,report,rows
+
+    async def test_rgo_waits_for_native_growth_after_one_and_a_half_seconds(self):
+        source,report,rows=await self.collect_rgo_replay(12,'delayed')
+        self.assertEqual(report['status'],'ok',report['errors'])
+        self.assertEqual(report['coverage'],'load_more_exhausted')
+        self.assertEqual(report['discovered'],20)
+        self.assertEqual(len(rows),20)
+        self.assertEqual(source.clicks,1)
+        self.assertGreaterEqual(source.growth_delay,2000)
+
+    async def test_rgo_terminal_stalled_and_cyclic_catalogues_remain_distinct(self):
+        for mode in ('terminal','stalled','cycle'):
+            with self.subTest(mode=mode):
+                source,report,rows=await self.collect_rgo_replay(12,mode)
+                self.assertEqual(len(rows),12)
+                if mode=='terminal':
+                    self.assertEqual(report['status'],'ok',report['errors'])
+                    self.assertEqual(report['coverage'],'load_more_exhausted')
+                    self.assertEqual(report['errors'],[])
+                    self.assertEqual(source.clicks,0)
+                else:
+                    self.assertEqual(report['status'],'partial')
+                    self.assertEqual(report['coverage'],'pagination_not_exhausted')
+                    self.assertEqual(report['errors'],[
+                        {'phase':'catalog','reason':'load_more_did_not_grow'}])
+                    self.assertEqual(source.clicks,1)
+
+    async def test_rgo_thirtieth_click_requires_observed_exhaustion(self):
+        for mode in ('limit-visible','limit-terminal'):
+            with self.subTest(mode=mode):
+                source,report,rows=await self.collect_rgo_replay(1,mode)
+                self.assertEqual(source.clicks,30)
+                self.assertEqual(report['discovered'],31)
+                self.assertEqual(len(rows),31)
+                if mode=='limit-visible':
+                    self.assertEqual(report['status'],'partial')
+                    self.assertEqual(report['coverage'],'pagination_not_exhausted')
+                    self.assertEqual(report['errors'],[
+                        {'phase':'catalog','reason':'pagination_iteration_limit_reached'}])
+                else:
+                    self.assertEqual(report['status'],'ok',report['errors'])
+                    self.assertEqual(report['coverage'],'load_more_exhausted')
+                    self.assertEqual(report['errors'],[])
 
 
 if __name__=='__main__':unittest.main(verbosity=2)

@@ -70,6 +70,17 @@ class SourceHtmlBoundaryContractsTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             coral.category_cards(raw.replace('Первая<br>категория', 'Другая<br>категория'), entry)
 
+    def test_coral_duplicate_category_labels_ignore_only_structural_whitespace(self):
+        first = '<div class="category-box-menu"><h5><a href="' + coral.CLUB + 'one/">Первая категория</a></h5></div>'
+        second = '<div class="category-box-menu"><h5><a href="' + coral.CLUB + 'one/">Первая<br>категория</a></h5></div>'
+        raw = doc('<h1>Клуб привилегий</h1>' + first + second, coral.CLUB)
+        entries = coral.listing(raw, 'coral')
+        self.assertEqual(entries, [{
+            'url': coral.CLUB + 'one/', 'title': 'Первая\nкатегория',
+        }])
+        with self.assertRaises(ValueError):
+            coral.listing(raw.replace('Первая<br>категория', 'Другая<br>категория'), 'coral')
+
     def utair(self, anchors):
         rows = extract('utair_media', panel(anchors), UTAIR_URL, NOW)
         self.assertEqual(len(rows), 1)
