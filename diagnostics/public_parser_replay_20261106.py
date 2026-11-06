@@ -35,6 +35,7 @@ def no_network(*args, **kwargs):
 def prepare_inputs(code_root, bundle_path, output, expected_run, expected_count):
     sys.path.insert(0, str(Path(code_root).resolve() / "loyalty"))
     from sheets_normalized import prepare
+    from practical_scope import publication_rows
     from unified_inputs import HEADERS, inputs_from_tables
     from unified_normalization import INPUT_TABS
     socket.create_connection = no_network
@@ -43,7 +44,11 @@ def prepare_inputs(code_root, bundle_path, output, expected_run, expected_count)
     if bundle.get("run_id") != expected_run or len(bundle.get("records", [])) != int(expected_count):
         raise AssertionError("source_bundle_identity_or_count_mismatch")
     before = copy.deepcopy(bundle)
-    values = prepare(bundle)["parser_offers"]
+    published = publication_rows(
+        prepare(bundle),
+        {record["id"]: record["source_id"] for record in bundle["records"]},
+    )
+    values = published["parser_offers"]
     tables = {
         tab: [[] for _ in range(header - 1)] + [[{"value": name} for name in HEADERS[tab]]]
         for tab, (header, _) in INPUT_TABS.items()
@@ -52,24 +57,44 @@ def prepare_inputs(code_root, bundle_path, output, expected_run, expected_count)
         [[{"value": value} for value in cells + [""]] for cells in values]
     )
     inputs, _ = inputs_from_tables(tables)
-    if bundle != before or len(inputs) != int(expected_count):
-        raise AssertionError("source_bundle_mutated_or_rows_lost")
+    if bundle != before or len(inputs) != len(values):
+        raise AssertionError("source_bundle_mutated_or_published_rows_lost")
+    original_by_id = {record["id"]: record for record in before["records"]}
+    for raw in inputs:
+        original = original_by_id[raw["id"]]
+        fields = raw["original"]["fields"]
+        stored_source_id = original["details"].get("_source", {}).get(
+            "source_id", "parser_offers"
+        )
+        if (
+            raw["source_id"] != stored_source_id
+            or raw["observed_at"] != original["observed_at"]
+            or fields["SHA256"]["value"] != original["content_sha256"]
+            or fields["Запуск"]["value"] != before["run_id"]
+            or (raw["benefit"], raw["conditions"], raw["activation"])
+            != (original["benefit_text"], original["conditions_text"], original["redemption_text"])
+        ):
+            raise AssertionError("stored_input_changed_source_evidence")
     save(output, inputs)
-    emit("REPLAY_INPUT", {"run_id": expected_run, "records": len(inputs),
-                          "input_sha256": fingerprint(inputs)})
+    emit("REPLAY_INPUT", {"run_id": expected_run, "source_records": len(bundle["records"]),
+                          "published_records": len(values),
+                          "omitted_by_publication_scope": len(bundle["records"]) - len(values),
+                          "records": len(inputs), "input_sha256": fingerprint(inputs)})
 
 
 def normalize(code_root, input_path, output):
     sys.path.insert(0, str(Path(code_root).resolve() / "loyalty"))
     from unified_normalization import normalize_inputs, validate_normalized
+    from practical_scope import select_inputs
     socket.create_connection = no_network
     socket.socket.connect = no_network
     inputs = load(input_path)
     before = copy.deepcopy(inputs)
-    result = normalize_inputs(inputs, as_of="2026-11-06")
-    if inputs != before or len(result["records"]) != len(inputs):
+    selected, excluded = select_inputs(inputs)
+    result = normalize_inputs(selected, as_of="2026-11-06")
+    if inputs != before or len(result["records"]) != len(selected):
         raise AssertionError("consumer_mutated_inputs_or_lost_records")
-    for row, raw in zip(result["records"], inputs):
+    for row, raw in zip(result["records"], selected):
         validate_normalized(row)
         if row["raw"] != raw or row["id"] != raw["id"]:
             raise AssertionError("consumer_changed_raw_or_identity")
@@ -77,6 +102,8 @@ def normalize(code_root, input_path, output):
             raise AssertionError("consumer_changed_observation_time")
     save(output, result)
     emit("REPLAY_OUTPUT", {"records": len(result["records"]),
+                           "input_records_before_scope": len(inputs),
+                           "excluded_by_consumer_scope": excluded,
                            "terms": result["audit"]["terms"],
                            "result_sha256": fingerprint(result)})
 
@@ -117,7 +144,7 @@ def compare(label, old_path, new_path):
     emit("REPLAY_COMPARISON", {"dataset": label, "records": len(current),
                                "old_terms": old["audit"]["terms"], "new_terms": new["audit"]["terms"],
                                "changed_records": len(changed),
-                               "raw_and_provenance_unchanged": True})
+                               "raw_and_provenance_unchanged": True, "full_output_equal": old == new})
     for item in changed:
         emit("REPLAY_DELTA", item)
 
