@@ -87,14 +87,19 @@ def clean_atom(c):
     return result
 
 
+def _cell_has_content(cell):
+    # A calculated error is source data even without a scalar or entered formula.
+    return cell.get('value') not in (None,'') or bool(cell.get('formula') or cell.get('error'))
+
+
 def inputs_from_tables(tables, public_records=None):
     result=[];index={r['id']:r for r in public_records or []};stats={}
     for name,(header,width) in INPUT_TABS.items():
         if name not in tables:raise ValueError('Required source sheet missing: '+name)
         rows=list(tables[name])
-        while len(rows)>header and not any(c.get('value') not in (None,'') or c.get('formula') for c in rows[-1]):rows.pop()
+        while len(rows)>header and not any(_cell_has_content(c) for c in rows[-1]):rows.pop()
         if len(rows)>5000:raise ValueError('Source row bound exceeded')
-        if any(c.get('value') not in (None,'') or c.get('formula') for row in rows for c in row[width:]):
+        if any(_cell_has_content(c) for row in rows for c in row[width:]):
             raise ValueError('Unmapped populated source column')
         actual=[c.get('value','') for c in rows[header-1][:width]]
         expected=HEADERS[name]
@@ -102,7 +107,7 @@ def inputs_from_tables(tables, public_records=None):
         accepted=0;blank=0
         for i,cells in enumerate(rows[header:],header+1):
             cells=[clean_atom(c) for c in cells[:width]]
-            if not any(c.get('value') not in (None,'') or c.get('formula') for c in cells):blank+=1;continue
+            if not any(_cell_has_content(c) for c in cells):blank+=1;continue
             if any(c.get('error') for c in cells):raise ValueError('Source error cell requires review')
             fields={h:(cells[j] if j<len(cells) else {}) for j,h in enumerate(expected)}
             key=fields.get('ID',{}).get('value')
