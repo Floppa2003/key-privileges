@@ -1,8 +1,13 @@
 {
-  "request_id": "2026-11-06-mantera-list-parsing-repair",
+  "request_id": "2026-11-07-native-link-and-date-parsing-repair",
   "source_ids": [
-    "mantera_moments"
+    "ekp_announcements",
+    "rzd_announcements",
+    "mir_announcements",
+    "bspb_announcements",
+    "alfa_only_announcements",
+    "t2_bolshe"
   ],
-  "reason": "Refresh the registered Mantera source after repairing the current resort redemption clause in list-item markup. Recheck the live named-partner roster, FAQ tiers and independent Congress page through the existing collector. Publish only accepted fresh observations and deterministic common views with destination readback; retain cross-source agreement checks, named hotel redemption scope, access controls and collection budgets.",
+  "reason": "Refresh the registered public announcement feeds and T2 catalogue after repairing native URL entity decoding and complete timestamp validation. Preserve original post identity, publication time, query parameters and source calendar dates. Use the existing collectors, collection budgets and serialized publication with destination readback; normalize all stored sources with the corrected native-cell and date contracts.",
   "publish": true
 }

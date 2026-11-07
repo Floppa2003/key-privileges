@@ -44,7 +44,7 @@ def _values_fingerprint(tables):
 
 
 def publish_all(*,as_of=None,client=None):
-    as_of=as_of or datetime.now(timezone.utc).date().isoformat()
+    as_of=datetime.now(timezone.utc).date().isoformat() if as_of is None else as_of
     client=client or UnifiedSheets(os.environ.get('DISCOUNTS_SPREADSHEET_ID',''),os.environ.get('GOOGLE_ACCESS_TOKEN',''))
     tables=read_tables(client)
     inputs,inventory=inputs_from_tables(tables)
@@ -125,7 +125,7 @@ def main():
     if path.stat().st_size>50000000:raise ValueError('Offline input bound exceeded')
     tables=json.loads(path.read_text(encoding='utf8'))['sheets'];inputs,inventory=inputs_from_tables(tables)
     practical,excluded=select_inputs(inputs)
-    result=normalize_inputs(practical,as_of=args.as_of or datetime.now(timezone.utc).date().isoformat())
+    result=normalize_inputs(practical,as_of=datetime.now(timezone.utc).date().isoformat() if args.as_of is None else args.as_of)
     result['audit'].update(publication_scope=SCOPE_VERSION,excluded_bulk_records=excluded,
         input_records_before_scope=len(inputs),source_snapshot_sha256=digest(inputs))
     result['audit']['input_inventory']=inventory

@@ -79,6 +79,75 @@ class AdditionalEvidenceTests(unittest.TestCase):
   h=post('ekpcard/70','⚡️<br><b>Скидка 10% держателям ЕКП</b>')
   self.assertIn('Скидка',parse_feed(h,CFG,NOW)['records'][0]['title'])
 
+class AnnouncementUrlBoundaryTests(unittest.TestCase):
+    def record_for_href(self, href):
+        markup = post('ekpcard/70', 'Держателям ЕКП скидка 10% '
+                      + f'<a href="{href}">Studio</a>')
+        result = parse_feed(markup, CFG, NOW)
+        self.assertEqual(result['errors'], [])
+        self.assertEqual(len(result['records']), 1)
+        return result['records'][0]
+
+    def assert_card_url(self, href, expected):
+        record = self.record_for_href(href)
+        expected_links = [{'label': 'Studio', 'url': expected}]
+        self.assertEqual(record['details']['outgoing_links'], expected_links)
+        self.assertEqual(record['details']['linked_cards'], expected_links)
+
+    def test_html_decoded_query_parameter_names_stay_literal(self):
+        cases = (
+            ('?x=1&amp;copy=2', '?x=1&copy=2'),
+            ('?x=1&amp;notit=food', '?x=1&notit=food'),
+            ('?x=1&amp;lt=2', '?x=1&lt=2'),
+        )
+        for source_query, expected_query in cases:
+            with self.subTest(query=source_query):
+                self.assert_card_url(
+                    'https://ekp.spb.ru/capabilities/loyalty/tiles/123' + source_query,
+                    'https://ekp.spb.ru/capabilities/loyalty/tiles/123' + expected_query)
+
+    def test_encoded_literal_value_and_ordinary_parameters_are_preserved(self):
+        self.assert_card_url(
+            'https://ekp.spb.ru/capabilities/loyalty/tiles/123?q=%26lt%3BVIP%26gt%3B+%26amp%3Bcopy%3D2&amp;region=78&amp;categories=food',
+            'https://ekp.spb.ru/capabilities/loyalty/tiles/123?q=%26lt%3BVIP%26gt%3B+%26amp%3Bcopy%3D2&region=78&categories=food')
+
+    def test_residual_amp_text_without_an_assignment_is_preserved(self):
+        cases = (
+            ('?q=prefix&amp;amp;', '?q=prefix&amp%3B='),
+            ('?x=1&amp;amp;literal', '?x=1&amp%3Bliteral='),
+        )
+        for source_query, expected_query in cases:
+            with self.subTest(query=source_query):
+                self.assert_card_url(
+                    'https://ekp.spb.ru/capabilities/loyalty/tiles/123' + source_query,
+                    'https://ekp.spb.ru/capabilities/loyalty/tiles/123' + expected_query)
+
+    def test_path_and_fragment_entity_text_is_preserved(self):
+        record = self.record_for_href(
+            'https://ekp.spb.ru/literal/&amp;amp;copy=2?x=1#part&amp;amp;copy=2')
+        self.assertEqual(record['details']['outgoing_links'], [{
+            'label': 'Studio',
+            'url': 'https://ekp.spb.ru/literal/&amp;copy=2?x=1#part&amp;copy=2',
+        }])
+        self.assertEqual(record['details']['linked_cards'], [])
+
+    def test_extra_query_separator_escape_is_repaired_only_once(self):
+        self.assert_card_url(
+            'https://ekp.spb.ru/capabilities/loyalty/tiles/123?region=78&amp;amp;amp;categories=food',
+            'https://ekp.spb.ru/capabilities/loyalty/tiles/123?region=78&amp%3Bcategories=food')
+
+    def test_double_escaped_secret_parameter_is_rejected(self):
+        record = self.record_for_href(
+            'https://ekp.spb.ru/capabilities/loyalty/tiles/123?region=78&amp;amp;token=fixture-secret')
+        self.assertEqual(record['details']['outgoing_links'], [])
+        self.assertEqual(record['details']['linked_cards'], [])
+
+    def test_repaired_query_still_rejects_url_credentials(self):
+        record = self.record_for_href(
+            'https://reader:fixture-password@ekp.spb.ru/capabilities/loyalty/tiles/123?region=78&amp;amp;categories=food')
+        self.assertEqual(record['details']['outgoing_links'], [])
+        self.assertEqual(record['details']['linked_cards'], [])
+
 class PublicationBoundaryTests(unittest.TestCase):
  def test_announcement_cannot_be_promoted_by_changing_link_kind(self):
   from normalized import content_hash,validate_offer

@@ -27,6 +27,14 @@ explicit **sheet-plus-row locators**, not vendor IDs or permanent business
 identities; sorting those source rows changes their association. Do not use such
 IDs for an external permanent offer registry without a separate identity design.
 
+Populated public start/end date columns and recognized explicit legacy intervals
+must contain valid dates. Malformed endpoints fail instead of becoming missing
+bounds. Free-form legacy validity text can still remain unknown and is preserved.
+Timestamp conversion validates the complete value and retains its source calendar
+date without a timezone conversion. An explicit normalization `as_of` must be a
+calendar-valid `YYYY-MM-DD` string; only an omitted value defaults to today's UTC
+date. An explicitly empty or otherwise invalid value fails before publication.
+
 ## Common record
 
 `unified.schema.json` describes the JSON record. Every output retains its complete
