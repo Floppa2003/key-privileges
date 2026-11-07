@@ -8,6 +8,7 @@ from datetime import datetime
 from urllib.parse import urlsplit
 from bs4 import BeautifulSoup
 from html_text import html_text
+from iso_datetime import parse_iso_datetime
 from normalized import make_offer,text
 from partner_pages import content,MONTHS
 from content_discovery import label_id, clean_dom
@@ -40,7 +41,7 @@ def catalog_records(data,observed_at,*,region_key='msk'):
         terms=content([agreement]);benefit=text(obj.get('info')) or text(obj.get('name'))
         if not benefit or not terms:raise ValueError('t2_offer_missing_terms')
         expiry=obj.get('dateTo')
-        until=datetime.fromisoformat(expiry.replace('Z','+00:00')).date().isoformat() if expiry else None
+        until=parse_iso_datetime(expiry).date().isoformat() if expiry else None
         company=text(obj.get('companyName')) or text((obj.get('partner') or {}).get('name'))
         flags={key:obj.get(key) for key in ('availableForAll','forAllTariffs','offlineOffer','areaType','offerType','promoCodeType','duration')}
         categories=[{'id':x.get('id'),'name':text(x.get('name'))} for x in obj.get('segments',[])]

@@ -1,7 +1,7 @@
 """Small shared guards for the four reviewed public catalogue additions."""
 from __future__ import annotations
 import hashlib, json, re
-from datetime import date
+from datetime import date, datetime
 from bs4 import BeautifulSoup
 from public_reward_projection import plain
 
@@ -30,8 +30,13 @@ def identity(e, source):
 def iso(value):
     if not value: return None
     value=compact(value)
-    if re.match(r'^\d{4}-\d{2}-\d{2}',value): s=value[:10]
+    if re.fullmatch(r'\d{4}-\d{2}-\d{2}',value):s=value
     elif re.fullmatch(r'\d{2}\.\d{2}\.\d{4}',value):s='-'.join(reversed(value.split('.')))
+    # Bound timezone components explicitly: fromisoformat normalizes +03:60.
+    elif re.fullmatch(r'\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:[.,]\d+)?'
+                      r'(?:Z|[+-](?:[01]\d|2[0-3]):[0-5]\d)?',value):
+        datetime.fromisoformat(value)
+        s=value[:10]  # Keep the source's calendar date; do not convert to UTC.
     else:raise ValueError('unreviewed_source_date')
     date.fromisoformat(s);return s
 

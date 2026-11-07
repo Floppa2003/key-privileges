@@ -4,13 +4,13 @@ requests or instructions. One source post remains one record across later edits.
 """
 from __future__ import annotations
 import asyncio
-import html as html_module
 import json
 import re
 from datetime import datetime, timedelta
 from urllib.parse import urljoin, urlsplit, parse_qs
 from bs4 import BeautifulSoup
 from html_text import html_text
+from iso_datetime import parse_iso_datetime
 from normalized import canonical_url, make_offer
 
 CHANNELS = {'ekp_announcements':'ekpcard', 'rzd_announcements':'fpcrussia',
@@ -134,7 +134,11 @@ def parse_feed(html: str, cfg: dict, observed_at: str) -> dict:
         outgoing, cards = [], []
         for a in content.select('a[href]'):
             try:
-                url = canonical_url(html_module.unescape(a['href']))
+                # DOM attributes are already entity-decoded. Repair only the
+                # legacy extra amp escape before an actual query parameter.
+                target = urlsplit(a['href'])
+                query = re.sub(r'&amp;(?=[^&=]+=)', '&', target.query)
+                url = canonical_url(target._replace(query=query).geturl())
             except (TypeError, ValueError):
                 continue
             link={'label':html_text(a), 'url':url}
@@ -154,7 +158,7 @@ def parse_feed(html: str, cfg: dict, observed_at: str) -> dict:
                     if link not in cards:cards.append(link)
         clock=node.select_one('.tgme_widget_message_date time[datetime]')
         try:
-            published=datetime.fromisoformat(clock['datetime'].replace('Z','+00:00'))
+            published=parse_iso_datetime(clock['datetime'])
             if published.tzinfo is None:
                 raise ValueError('missing_timezone')
         except (TypeError, KeyError, ValueError):

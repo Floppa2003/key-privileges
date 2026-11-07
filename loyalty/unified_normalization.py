@@ -17,6 +17,7 @@ from urllib.parse import urlsplit, urlunsplit, parse_qsl, urlencode
 from normalized import (normalize_rates, percent_spans, number, NUMBER, TYPES,
                         NUMERIC_TOKEN, literal_number, number_starts_here)
 from promo_codes import extract_promocodes
+from iso_datetime import parse_iso_datetime
 
 VERSION = '1.0.1'
 GROUPS = ('benefits', 'conditions', 'costs', 'codes')
@@ -110,7 +111,7 @@ def iso_date(value):
         try:return datetime.strptime(s,fmt).date().isoformat()
         except ValueError:pass
     if re.fullmatch(r'\d{4}-\d{2}-\d{2}T.+',s):
-        try:return datetime.fromisoformat(s.replace('Z','+00:00')).date().isoformat()
+        try:return parse_iso_datetime(s).date().isoformat()
         except ValueError:pass
     return None
 
@@ -163,7 +164,12 @@ def make_input(raw):
         r['details']=json.loads(_text(raw,'Детали JSON') or '{}')
         if not isinstance(r['details'],dict):raise ValueError('Expected source details object')
         r['source_id']=r['details'].get('_source',{}).get('source_id',origin)
-        r['valid_from']=iso_date(_field(raw,'Начало'));r['valid_until']=iso_date(_field(raw,'Окончание'))
+        for dest,col in (('valid_from','Начало'),('valid_until','Окончание')):
+            value=_field(raw,col)
+            r[dest]=iso_date(value)
+            # Only blank structured date cells may become missing bounds.
+            if r[dest] is None and value is not None and (not isinstance(value,str) or value.strip()):
+                raise ValueError('Invalid structured source date: '+col)
         r['category']=_text(raw,'Категория') or None
     elif origin=='parser_inbox':
         r.update(program=_text(raw,'Источник'),title=_text(raw,'Заголовок страницы'),kind='raw_page',
@@ -191,7 +197,10 @@ def make_input(raw):
         else:r['benefit']='' if v is None else str(v)
         r['valid_until']=iso_date(_field(raw,'Validity'))
         interval=re.fullmatch(r'(\d{4}-\d{2}-\d{2})\s+(?:to|–|—)\s+(\d{4}-\d{2}-\d{2})',str(_field(raw,'Validity')).strip())
-        if interval:r['valid_from']=iso_date(interval[1]);r['valid_until']=iso_date(interval[2])
+        if interval:
+            # An explicit malformed endpoint is not an absent interval bound.
+            r['valid_from']=date.fromisoformat(interval[1]).isoformat()
+            r['valid_until']=date.fromisoformat(interval[2]).isoformat()
         r['details']={'explicit_code_cell':_text(raw,'Promo Code'),'region':_text(raw,'City') or None,
                       'corporate_eligibility_not_verified':True}
     return r
@@ -478,8 +487,15 @@ def _amount_matches(pattern,clause):
             yield match,value
 
 
-def normalize_record(raw, *, as_of):
+def _validate_as_of(as_of):
+    # Validity comparisons require the same canonical date form on both sides.
+    if not isinstance(as_of,str) or not re.fullmatch(r'[0-9]{4}-[0-9]{2}-[0-9]{2}',as_of):
+        raise ValueError('as_of must use YYYY-MM-DD')
     date.fromisoformat(as_of)
+
+
+def normalize_record(raw, *, as_of):
+    _validate_as_of(as_of)
     raw=copy.deepcopy(raw)
     program=raw.get('program')
     n=dict(schema_version=1,normalizer_version=VERSION,id=raw['id'],
@@ -929,6 +945,7 @@ def validate_normalized(n):
 
 
 def normalize_inputs(inputs, *, as_of, public_only=False):
+    _validate_as_of(as_of)
     ids=set();records=[]
     for raw in inputs:
         if raw['id'] in ids:raise ValueError('Duplicate source identity')
