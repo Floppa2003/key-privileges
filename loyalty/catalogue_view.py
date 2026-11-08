@@ -4,6 +4,7 @@ import re
 from bs4 import BeautifulSoup
 from collections import Counter
 from datetime import date
+from partner_pages import MONTHS
 from catalogue_clauses import (VERSION, HEADERS, NOISE_KIND, TECHNICAL, DEAD,
     ROLE, RULE, ACTION, MARKETING, DESCRIPTIVE, text, compact, key, clause_key,
     unique_clauses, clean_plain, units, is_boilerplate, practical_terms,
@@ -76,8 +77,9 @@ def owned_source_text(raw):
     if d.get("general_rules_excerpt") and d.get("qualification"):
         general=text(d["general_rules_excerpt"])
         own=text(raw.get("conditions")).replace(general,"")
+        general=re.sub(r'(\bПосле\s+совершения)\s+',r'\1 ',general,flags=re.I)
         relevant=[v for v in units(general) if re.search(
-            r"После совершения двух перелетов|Оплатить бонусами возможно только тариф|"
+            r"\bПосле\s+совершения\b[^.!?\n]*\bперел[её]т\w*\b|Оплатить бонусами возможно только тариф|"
             r"Сборы, а также|Все неиспользованные начисленные бонусы|"
             r"Бонусы не начисляются|только на личные полеты|"
             r"начисляются за фактически лично|СНГ|сгора|аннулир",v,re.I)]
@@ -134,6 +136,42 @@ def owned_source_text(raw):
     return raw
 
 
+def campaign_expired(value, as_of, published_until=None):
+    """Only an owned completion statement or a complete, labelled end date."""
+    full_date=r'(?:\d{4}-\d{2}-\d{2}|\d{1,2}\.\d{1,2}\.\d{4}|\d{1,2}\s+(?:'+'|'.join(MONTHS)+r')\s+\d{4})'
+    period=re.compile(r'^(?:Акция\s+(?:шла|действовала|действует)|Срок\s+(?:проведения|действия)\s+акции)'
+        r'\s*:?\s+(?:с\s+(?P<start>'+full_date+r')(?:\s+года)?\s+)?(?:по|до)\s+'
+        r'(?P<end>'+full_date+r')(?!\d|[.-]\d)(?:\s+года)?(?:\s+включительно)?[.;]?$',re.I)
+    def parsed(token):
+        if '-' in token:return date.fromisoformat(token)
+        if '.' in token:
+            day,month,year=map(int,token.split('.'))
+        else:
+            day,month,year=token.casefold().split()
+            day,month,year=int(day),MONTHS[month],int(year)
+        return date(year,month,day)
+    completed=False;ends=[]
+    for clause in units(value):
+        if re.match(r'^(?:Срок акции уже ист[её]к\b|Акция\s+(?:уже\s+)?(?:завершена|завершилась|закончилась)\b)',clause,re.I):
+            completed=True
+        match=period.fullmatch(clause)
+        if not match:continue
+        try:
+            end=parsed(match['end'])
+            if match['start'] and parsed(match['start'])>end:return False
+        except (ValueError,KeyError):return False
+        ends.append(end)
+    # An explicit early closure overrides a scheduled end. Otherwise conflicting
+    # free-form and structured dates do not prove that the offer has expired.
+    if completed:return True
+    if ends:
+        if published_until:
+            try:ends.append(date.fromisoformat(published_until))
+            except ValueError:return False
+        return len(set(ends))==1 and ends[0]<date.fromisoformat(as_of)
+    return False
+
+
 def record_row(n, as_of):
     raw=owned_source_text(n["raw"]); d=raw.get("details",{}); kind=raw["kind"]
     from source_lifecycle import reader_hold
@@ -145,7 +183,7 @@ def record_row(n, as_of):
     if d.get("public_editorial_information") or d.get("public_coral_block",{}).get("public_editorial_information"):
         return None,"реклама программы"
     source=raw.get("benefit_url") or raw.get("source_url") or ""
-    if re.search(r"В старой официальной подборке|Только в старой",raw.get("benefit",""),re.I) or DEAD.search(raw.get("benefit","")) or re.search(r"срок акции уже ист[её]к|акция (?:шла|действовала) .{0,80}20(?:2[0-5])",raw.get("conditions",""),re.I):
+    if re.search(r"В старой официальной подборке|Только в старой",raw.get("benefit",""),re.I) or DEAD.search(raw.get("benefit","")) or campaign_expired(raw.get("conditions",""),as_of,raw.get("valid_until")):
         return None,"неактивное предложение"
     if kind=="campaign" and re.search(
             r"победителям|розыгрыш|разыгрываем|\bшанс(?:ы|ов|ом|у|а)?\s+"

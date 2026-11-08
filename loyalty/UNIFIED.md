@@ -1,4 +1,4 @@
-# Common normalization of all stored data — 1.0.2
+# Common normalization of all stored data — 1.0.3
 
 This is a deterministic **source-preserving projection**, not another web scrape,
 a new discount catalogue, a personal entitlement check, or a savings calculator.
@@ -115,6 +115,46 @@ and source evidence remain auditable; they are not guaranteed ordinary offers.
 The bounded check covers the owned benefit, conditions and activation fields,
 without scanning unrelated nested source text.
 Promotional use of `шанс` alone does not hide a stated discount for every participant.
+
+## Changing numerical terms in supported source formats
+
+Source adapters read current literal numbers instead of pinning previously seen
+values. GPB notification fees retain the stated starting month and decimal amount;
+the old after-first-month alias exists only when the source says month two.
+Student eligibility keeps its stated calendar-valid day/month and relative next
+academic year, without inventing an absolute offer expiry.
+
+Alfa partner PDFs retain the exact operative percentage, literal reward cap and
+payout days. A headline saying **up to** is an upper bound, not the operative rate;
+the body may state a lower rate but cannot exceed that headline. Generated titles
+use the operative rate. Invalid numeric tokens, ranges presented as an exact rate,
+and contradictory clauses still stop that source adapter.
+
+For reviewed retail-mileage rules, common projection rederives discount/delivery
+treatment from the retained literal redemption evidence. Both benefit scope and
+linked condition use that interpretation; cached old metadata cannot override it.
+A complete basis requires explicit, unambiguous treatment of both discounts and
+delivery. The raw source record stays unchanged.
+
+The reader preserves flight qualification clauses when their count changes,
+including worded counts. Campaign completion has no fixed year list: an owned
+completion statement or complete unambiguous end date is required; a start-only
+date does not prove expiry. The stated end day remains included. Unrecognized or
+conflicting free-form dates remain unknown, including a conflict with the
+published structured interval. An explicit early-closure statement overrides a
+scheduled future end date.
+
+Payment/prepayment percentages remain conditions at any amount. A nominal price
+does not establish a benefit by being exactly one ruble: the supported reader
+forms require an owned positive code activation or an explicit first/trial
+subscription period. A purchase minimum alone is insufficient, and a sibling
+discount's code does not establish another price benefit. No savings amount is
+calculated from that promotional price. These are bounded source/phrase rules,
+not a claim to understand every possible wording.
+
+Version 1.0.3 changes the derived generation even for identical stored inputs and
+the same assessment date, so corrected interpretations can be republished without
+pretending that source observations are new.
 
 ## Five derived Sheet views
 

@@ -8,6 +8,7 @@ import asyncio,json,re
 import requests
 from pathlib import Path
 from datetime import date
+from decimal import Decimal
 from urllib.parse import urljoin,urlsplit,parse_qsl
 from bs4 import BeautifulSoup
 from html_text import html_text
@@ -16,6 +17,7 @@ from normalized import (canonical_url,make_offer,number,NUMERIC_TOKEN,
 from partner_pages import content,MONTHS
 from read_budget import within_source_budget
 from source_diagnostics import ParseError
+from known_rule_terms import retail_redemption_basis
 
 CONFIG=json.loads(Path(__file__).with_suffix('.json').read_text(encoding='utf8'))
 NUM=NUMERIC_TOKEN
@@ -45,6 +47,12 @@ def match(pattern,value,reason):
             if literal_number(group) is None or not literal_boundary:
                 raise ValueError(reason)
     return found
+
+
+def unique_match(pattern,value,reason):
+    matches=list(re.finditer(pattern.replace(' ',r'\s+'),literal_lines(value),re.I|re.S))
+    if len(matches)!=1:raise ValueError(reason)
+    return match(pattern,value,reason)
 
 
 def date_label(pattern,value):
@@ -175,10 +183,18 @@ def parse_known_rule(source,raw,url,observed_at):
                 'monthly_cap_miles':number(cap[1]),'monthly_subscription_rub':cost,'evidence':value})
         minimum=match(r'Минимальная сумма покупок по карте в месяц [—–-] ('+NUM+r') ₽',terms,'gpb_minimum_missing')
         service=match(r'Стоимость обслуживания (\d+) ₽',terms,'gpb_service_fee_missing')
-        notify=match(r'со 2 месяца [—–-] (\d+) ₽/мес',terms,'gpb_notification_fee_missing')
+        notify=unique_match(r'со? ('+NUM+r') месяца [—–-] ('+NUM+r') ₽/мес',
+                            terms,'gpb_notification_fee_missing')
+        notification_month=Decimal(literal_number(notify[1]))
+        if notification_month<=0 or notification_month!=notification_month.to_integral_value():
+            raise ValueError('gpb_notification_month_invalid')
+        fees={'card_service_rub':service[1],
+              'notifications_from_month':int(notification_month),
+              'notifications_monthly_rub':number(notify[2]),'evidence':notify[0]}
+        if notification_month==2:
+            fees['notifications_after_first_month_rub']=fees['notifications_monthly_rub']
         details.update(mileage_options=options,monthly_minimum_purchases_rub=number(minimum[1]),
-            minimum_evidence=minimum[0],fees={'card_service_rub':service[1],
-            'notifications_after_first_month_rub':notify[1],'evidence':notify[0]})
+            minimum_evidence=minimum[0],fees=fees)
         benefit='\n'.join(benefit_clauses)
     elif handler=='retail_miles':
         first,second=section_markers(terms,'Условия начислений','Условия списаний')
@@ -186,11 +202,13 @@ def parse_known_rule(source,raw,url,observed_at):
         redemption=terms[second.end():].strip()
         rules=earning_rules(earning)
         if not rules:raise ValueError('retail_earning_rule_changed')
-        cap=match(r'не более (\d+)%',redemption,'retail_redemption_cap_missing')
-        cash=match(r'При этом (\d+)%',redemption,'retail_cash_share_missing')
+        cap=unique_match(r'не более ('+NUM+r')\s*%',redemption,'retail_redemption_cap_missing')
+        cash=unique_match(r'При этом ('+NUM+r')\s*%',redemption,'retail_cash_share_missing')
+        if any(not 0<=Decimal(literal_number(m[1]))<=100 for m in (cap,cash)):
+            raise ValueError('retail_redemption_percent_invalid')
         details.update(earning_rules=rules,redemption_rules={
-            'max_order_percent':cap[1],'minimum_cash_percent':cash[1],
-            'basis':'order_after_discounts_excluding_delivery_as_published',
+            'max_order_percent':number(cap[1]),'minimum_cash_percent':number(cash[1]),
+            'basis':retail_redemption_basis(redemption),
             'evidence':redemption},earning_conditions=earning)
         benefit=earning
     elif handler=='iway':
@@ -230,7 +248,11 @@ def parse_known_rule(source,raw,url,observed_at):
     elif handler=='students':
         age=match(r'до (\d+) лет \(включительно\)',terms,'student_age_missing')
         activation=match(r'в течение (\d+) рабочих дней',terms,'student_activation_time_missing')
-        expiry=match(r'до 1 сентября следующего учебного года',terms,'student_relative_expiry_missing')
+        expiry=unique_match(r'до (\d{1,2}) ('+'|'.join(MONTHS)+r') следующего учебного года',
+                            terms,'student_relative_expiry_missing')
+        # A leap year validates possible month/day pairs without assigning an
+        # actual calendar year to the source's relative academic-year expiry.
+        date(2000,MONTHS[expiry[2].casefold()],int(expiry[1]))
         details.update(age_max_inclusive=int(age[1]),activation_workdays=int(activation[1]),
                        entitlement_expiry_text=expiry[0])
         warnings.append('relative_student_entitlement_expiry_not_calendar_offer_end')
