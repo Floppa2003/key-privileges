@@ -22,7 +22,10 @@ skipping data. Blank styled trailing rows do not change the input fingerprint.
 Numeric legacy discounts are percentages only when their native number format
 says so; `0.2` in a plain numeric cell is not silently converted to 20 percent.
 Formulas and cached source values are preserved in `raw.original`, never executed
-as new formulas. Record IDs from the public input are unchanged. Legacy IDs are
+as new formulas. Record IDs from the public input are unchanged. Populated
+`parser_offers` and `parser_inbox` rows must have a nonblank string ID; missing,
+numeric or boolean IDs fail before publication and never acquire a row-based ID.
+Legacy IDs are
 explicit **sheet-plus-row locators**, not vendor IDs or permanent business
 identities; sorting those source rows changes their association. Do not use such
 IDs for an external permanent offer registry without a separate identity design.
@@ -56,6 +59,8 @@ card/tier, option, product or deposit band. Examples of guarded distinctions:
 
 - cash discounts vs cash cashback vs miles/points; no reward-to-ruble valuation;
 - earning vs redemption, commissions, subscription prices and minimum cash spend;
+- literal denials of points awards vs neighbouring affirmative amounts; recognized
+  Russian earning verbs keep prefix/suffix negation within their own statement;
 - amount vs purchase minimum, reward cap and rate denominator;
 - lower/upper range bounds, exact vs up-to rates;
 - literal code vs SMS/app/account delivery; parenthesized code labels remain scope;

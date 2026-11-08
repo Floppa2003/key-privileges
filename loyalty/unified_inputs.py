@@ -110,10 +110,15 @@ def inputs_from_tables(tables, public_records=None):
             if not any(_cell_has_content(c) for c in cells):blank+=1;continue
             if any(c.get('error') for c in cells):raise ValueError('Source error cell requires review')
             fields={h:(cells[j] if j<len(cells) else {}) for j,h in enumerate(expected)}
-            key=fields.get('ID',{}).get('value')
-            # Private legacy rows have no vendor ID; namespace+row is declared,
-            # not passed off as an offer ID or used for semantic deduplication.
-            ident=str(key) if key else digest([name,'row',i])
+            if 'ID' in fields:
+                key=fields['ID'].get('value')
+                if not isinstance(key,str) or not key.strip():
+                    raise ValueError('Invalid explicit source ID')
+                ident=key
+            else:
+                # Private legacy rows have no vendor ID; namespace+row is declared,
+                # not passed off as an offer ID or used for semantic deduplication.
+                ident=digest([name,'row',i])
             raw={'id':ident,'origin':name,'row':i,'fields':fields}
             r=make_input(raw)
             current=index.get(ident)
