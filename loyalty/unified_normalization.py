@@ -737,14 +737,15 @@ def normalize_record(raw, *, as_of):
         if raw['origin']=='parser_offers' and any(
                 cfg.get('handler')=='retail_miles' and cfg['url']==raw.get('source_url')
                 for cfg in KNOWN_RULES.values()):
-            from known_rule_terms import retail_redemption_basis
+            from known_rule_terms import retail_redemption_terms
             literal=red.get('evidence')
             if (not isinstance(literal,str) or not literal.strip()
                     or ' '.join(literal.split()) not in ' '.join(raw.get('conditions','').split())):
                 raise ValueError('known_rule_redemption_evidence_mismatch')
-            # Old stored adapters hardcoded this basis. Derive the projection
-            # from the preserved quotation, leaving historical raw untouched.
-            red={**red,'basis':retail_redemption_basis(literal)}
+            # Old stored adapters hardcoded the basis. Derive all associated
+            # terms from the quotation so stale numbers cannot contradict the
+            # same evidence, leaving historical raw untouched.
+            red={**red,**retail_redemption_terms(literal)}
             redemption_path+='/evidence'
         if red.get('max_order_percent') is not None:benefit('redeem_rewards',redemption_path,value=red['max_order_percent'],unit='percent_of_order',qualifier='up_to',scope={'basis':red.get('basis')})
         if red.get('minimum_cash_percent') is not None:condition('minimum_cash_payment',redemption_path,value=red['minimum_cash_percent'],unit='percent_of_order',qualifier='at_least')

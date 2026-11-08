@@ -150,10 +150,12 @@ def campaign_expired(value, as_of, published_until=None):
             day,month,year=token.casefold().split()
             day,month,year=int(day),MONTHS[month],int(year)
         return date(year,month,day)
-    completed=False;ends=[]
-    for clause in units(value):
-        if re.match(r'^(?:Срок акции уже ист[её]к\b|Акция\s+(?:уже\s+)?(?:завершена|завершилась|закончилась)\b)',clause,re.I):
-            completed=True
+    clauses=units(value)
+    # Resolve the explicit status first, independently of malformed schedules.
+    if any(re.match(r'^(?:Срок акции уже ист[её]к\b|Акция\s+(?:уже\s+)?(?:завершена|завершилась|закончилась)\b)',clause,re.I)
+           for clause in clauses):return True
+    ends=[]
+    for clause in clauses:
         match=period.fullmatch(clause)
         if not match:continue
         try:
@@ -163,7 +165,6 @@ def campaign_expired(value, as_of, published_until=None):
         ends.append(end)
     # An explicit early closure overrides a scheduled end. Otherwise conflicting
     # free-form and structured dates do not prove that the offer has expired.
-    if completed:return True
     if ends:
         if published_until:
             try:ends.append(date.fromisoformat(published_until))

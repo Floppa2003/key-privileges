@@ -17,7 +17,7 @@ from normalized import (canonical_url,make_offer,number,NUMERIC_TOKEN,
 from partner_pages import content,MONTHS
 from read_budget import within_source_budget
 from source_diagnostics import ParseError
-from known_rule_terms import retail_redemption_basis
+from known_rule_terms import retail_redemption_terms
 
 CONFIG=json.loads(Path(__file__).with_suffix('.json').read_text(encoding='utf8'))
 NUM=NUMERIC_TOKEN
@@ -202,14 +202,8 @@ def parse_known_rule(source,raw,url,observed_at):
         redemption=terms[second.end():].strip()
         rules=earning_rules(earning)
         if not rules:raise ValueError('retail_earning_rule_changed')
-        cap=unique_match(r'не более ('+NUM+r')\s*%',redemption,'retail_redemption_cap_missing')
-        cash=unique_match(r'При этом ('+NUM+r')\s*%',redemption,'retail_cash_share_missing')
-        if any(not 0<=Decimal(literal_number(m[1]))<=100 for m in (cap,cash)):
-            raise ValueError('retail_redemption_percent_invalid')
-        details.update(earning_rules=rules,redemption_rules={
-            'max_order_percent':number(cap[1]),'minimum_cash_percent':number(cash[1]),
-            'basis':retail_redemption_basis(redemption),
-            'evidence':redemption},earning_conditions=earning)
+        details.update(earning_rules=rules,redemption_rules=retail_redemption_terms(redemption),
+                       earning_conditions=earning)
         benefit=earning
     elif handler=='iway':
         e=nodes[0].select_one('.condition_earn')

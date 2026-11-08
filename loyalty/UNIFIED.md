@@ -130,9 +130,12 @@ the body may state a lower rate but cannot exceed that headline. Generated title
 use the operative rate. Invalid numeric tokens, ranges presented as an exact rate,
 and contradictory clauses still stop that source adapter.
 
-For reviewed retail-mileage rules, common projection rederives discount/delivery
-treatment from the retained literal redemption evidence. Both benefit scope and
-linked condition use that interpretation; cached old metadata cannot override it.
+For reviewed retail-mileage rules, common projection rederives redemption and
+minimum-cash percentages as well as discount/delivery treatment from the retained
+literal redemption evidence. Both benefit scope and linked condition use that
+interpretation; cached old metadata cannot override it. The complete owned
+percentage expression must be valid, including its right boundary; a range or
+malformed suffix cannot donate its first number.
 A complete basis requires explicit, unambiguous treatment of both discounts and
 delivery. The raw source record stays unchanged.
 
@@ -147,7 +150,9 @@ scheduled future end date.
 Payment/prepayment percentages remain conditions at any amount. A nominal price
 does not establish a benefit by being exactly one ruble: the supported reader
 forms require an owned positive code activation or an explicit first/trial
-subscription period. A purchase minimum alone is insufficient, and a sibling
+subscription period with a valid duration and its own valid price. A later
+regular price cannot rescue an invalid promotional price. A purchase minimum
+alone is insufficient, and a sibling
 discount's code does not establish another price benefit. No savings amount is
 calculated from that promotional price. These are bounded source/phrase rules,
 not a claim to understand every possible wording.

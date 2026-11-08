@@ -78,5 +78,7 @@
 - [x] Add a regression proving changed semantics do not reuse the preceding generation; observe RED, then bump version/document the contracts.
 - [x] Run all Python and KEY tests. Replay all immutable public inputs through common/reader views; separately validate source-derived changes. Inspect every delta.
 - [x] Commit and complete task-done with the full Python suite.
-- [ ] Obtain one fresh whole-branch review; fix material findings with RED-to-GREEN regressions and a green full suite.
+- [x] Obtain one fresh whole-branch review; fix material findings with RED-to-GREEN regressions and a green full suite.
 - [ ] Run branch CI, merge exact verified head, complete existing normalization publication and independently read back the receipt/native manifest.
+
+Release completion is verified in the merged PR, workflow receipt and native publication manifest; it is not pre-marked by this code commit.

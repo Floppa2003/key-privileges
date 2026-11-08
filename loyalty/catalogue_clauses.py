@@ -11,6 +11,7 @@ import unicodedata
 from bs4 import BeautifulSoup
 from collections import Counter
 from datetime import date
+from decimal import Decimal
 from normalized import NUMERIC_TOKEN, literal_number
 
 VERSION = "practical-catalogue-v2"
@@ -210,10 +211,24 @@ def practical_terms(value, *, labels=()):
 
 def promotional_price_claim(s, raw=None):
     """A literal price needs its own offer context, never a nominal-price cutoff."""
-    prices=list(re.finditer(r'\bза\s+('+NUMERIC_TOKEN+r')\s*(?:₽|руб\w*\b)',s,re.I))
-    if not prices or any(literal_number(m[1]) is None for m in prices):return False
-    if re.match(r'^(?:перв\w*\s+'+NUMERIC_TOKEN+r'\s+(?:дн\w*|недел\w*|месяц\w*)\s+подписк\w*|'
-                 r'пробн\w*\s+период\s+подписк\w*)\b',s,re.I):return True
+    currency=r'(?:₽|руб(?:ль|ля|лей|ли)?\b\.?)'
+    prices=[]
+    # Inspect every price-bearing "за" segment, including invalid first prices.
+    # A later regular price cannot rescue a malformed promotional one.
+    for part in re.split(r'\bза\s+',s,flags=re.I)[1:]:
+        if not re.search(currency,part,re.I):continue
+        price=re.match(r'('+NUMERIC_TOKEN+r')\s*'+currency,part,re.I)
+        if not price or literal_number(price[1]) is None:return False
+        prices.append(price)
+    if not prices:return False
+    if re.match(r'^(?:перв\w*|пробн\w*\s+период)\b',s,re.I) and re.search(r'\bподписк\w*\b',s,re.I):
+        trial=re.match(r'^(?:перв\w*\s+(?P<duration>'+NUMERIC_TOKEN+r')\s+(?:дн\w*|недел\w*|месяц\w*)\s+подписк\w*|'
+                       r'пробн\w*\s+период\s+подписк\w*)\s+за\s+('+NUMERIC_TOKEN+r')\s*'+currency,s,re.I)
+        if not trial:return False
+        if trial['duration'] is not None:
+            duration=literal_number(trial['duration'])
+            if duration is None or Decimal(duration)<=0:return False
+        return True
     own='\n'.join([s]+[text((raw or {}).get(f)) for f in ('conditions','activation')])
     for clause in units(own):
         # A sibling's stated discount owns its code; it does not turn this price
@@ -236,8 +251,9 @@ def benefit_claim(s, raw=None):
     if raw and len(s)<350 and re.search(r"\d\s*%",s) and (
         s in units(raw.get("benefit","")) or raw.get("details",{}).get("public_partner")
     ) and not re.search(r"успеваем|родител|населен|успешных|рынк|доходност|исследовани[яй] показ|"
-                       r"\b(?:пред)?оплат[аы]\b[^!?\n%]{0,50}\d\s*%|"
-                       r"\d\s*%\s*(?:предоплат\w*|оплата)\b",s,re.I):return True
+                       r"\d\s*%\s*(?:₽|руб(?:ль|ля|лей|ли)?\b)|"
+                       r"\b(?:предоплат\w*|оплат\w*|оплачива\w*|оплачено)\b[^!?\n%]{0,50}\d\s*%|"
+                       r"\d\s*%\s*(?:[-–—]\s*н[а-яё]+\s*)?(?:предоплат\w*|оплата)\b",s,re.I):return True
     d=(raw or {}).get("details",{})
     if d.get("public_item") and re.search(r"завтрак|кредит.{0,35}(?:USD|EUR|доллар|евро)|"
                                         r"(?:USD|EUR|доллар|евро).{0,35}кредит",s,re.I):return True

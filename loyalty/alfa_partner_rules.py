@@ -302,7 +302,7 @@ def partner_rates(value: str) -> list[dict]:
     spans = percent_spans(suffix)
     if (len(spans) != 1 or spans[0]['start'] != 0
             or spans[0]['qualifier'] != 'exact' or spans[0]['min_value'] is not None
-            or re.match(r'\s*(?:%|[–—-]\s*\d|до\s+\d)', suffix[spans[0]['end']:], re.I)):
+            or not re.match(r'\s*,?\s*(?:но\s+)?не\s*более\b', suffix[spans[0]['end']:], re.I)):
         # A supported exact rate may change, but a range or malformed numeric
         # expression must not donate a valid first bound or suffix.
         raise ValueError('alfa_partner_pdf_rate_invalid_or_changed')
@@ -319,15 +319,21 @@ def numeric_terms(benefit: str, payout: str) -> dict:
     _, ceiling = promotion_title(benefit)
     if Decimal(rates[0]['value']) > Decimal(ceiling):
         raise ValueError('alfa_partner_pdf_title_rate_conflict')
-    cap = re.search(r'не\s*более\s*(?P<amount>' + NUMERIC_TOKEN
+    cap_labels = list(re.finditer(r'\bне\s*более\b',rates[0]['evidence'],re.I))
+    if len(cap_labels)!=1:
+        raise ValueError('alfa_partner_pdf_cap_invalid')
+    cap = re.match(r'\s*(?P<amount>' + NUMERIC_TOKEN
                     + r')\s*(?:\([^()]{1,200}\)\s*)?Альфа\s*-\s*Баллов/\s*Бонусных\s*Миль',
-                    rates[0]['evidence'], re.I)
+                    rates[0]['evidence'][cap_labels[0].end():], re.I)
     amount = literal_number(cap['amount']) if cap else None
     if amount is None or Decimal(amount) <= 0:
         raise ValueError('alfa_partner_pdf_cap_invalid')
-    delay = re.search(r'в\s*течение\s*(?P<days>' + NUMERIC_TOKEN
+    delay_labels = list(re.finditer(r'\bв\s*течение\b',payout,re.I))
+    if len(delay_labels)!=1:
+        raise ValueError('alfa_partner_pdf_payout_days_invalid')
+    delay = re.match(r'\s*(?P<days>' + NUMERIC_TOKEN
                       + r')\s*(?:день|дня|дней)\s*с\s*даты\s*окончания\s*календарного\s*месяца',
-                      payout, re.I)
+                      payout[delay_labels[0].end():], re.I)
     days = literal_number(delay['days']) if delay else None
     if days is None or Decimal(days) <= 0 or Decimal(days) != Decimal(days).to_integral_value():
         raise ValueError('alfa_partner_pdf_payout_days_invalid')
