@@ -147,7 +147,10 @@ def record_row(n, as_of):
     source=raw.get("benefit_url") or raw.get("source_url") or ""
     if re.search(r"В старой официальной подборке|Только в старой",raw.get("benefit",""),re.I) or DEAD.search(raw.get("benefit","")) or re.search(r"срок акции уже ист[её]к|акция (?:шла|действовала) .{0,80}20(?:2[0-5])",raw.get("conditions",""),re.I):
         return None,"неактивное предложение"
-    if kind=="campaign" and re.search(r"шансы на победу|победителям|розыгрыш|разыгрываем",raw.get("benefit",""),re.I):
+    if kind=="campaign" and re.search(
+            r"победителям|розыгрыш|разыгрываем|\bшанс(?:ы|ов|ом|у|а)?\s+"
+            r"(?:на\s+победу|выиграть|стать\s+(?:одним|одной)\s+из\s+(?:\d+\s+)?(?:обладател|победител))",
+            "\n".join(raw.get(field,"") or "" for field in ("benefit","conditions","activation")),re.I):
         return None,"розыгрыш"
     if raw.get("source_status")=="public_rules_ocr_unverified":return None,"неразобранный документ"
     if kind=="program_rules" and (

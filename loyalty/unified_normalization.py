@@ -15,11 +15,13 @@ from datetime import date, datetime, timedelta
 from decimal import Decimal, InvalidOperation
 from urllib.parse import urlsplit, urlunsplit, parse_qsl, urlencode
 from normalized import (normalize_rates, percent_spans, number, NUMBER, TYPES,
-                        NUMERIC_TOKEN, literal_number, number_starts_here)
+                        NUMERIC_TOKEN, literal_number, number_starts_here,
+                        reward_amounts, reward_basis, fixed_discount_amounts, benefit_mentions)
 from promo_codes import extract_promocodes
 from iso_datetime import parse_iso_datetime
+from reward_context import reward_role, benefit_denied, gift_spans
 
-VERSION = '1.0.1'
+VERSION = '1.0.2'
 GROUPS = ('benefits', 'conditions', 'costs', 'codes')
 INPUT_TABS = {
     'parser_offers': (1, 26), 'loyalty_partner_benefits': (4, 13),
@@ -323,17 +325,21 @@ def _rate_scope(clause,rate,spans):
     right=min((m.start() for m in boundaries if m.start()>=span['end']),default=len(clause))
     neighbours=[i for i,item in enumerate(spans)
                 if left<=item['start'] and item['end']<=right]
-    position=neighbours.index(index)
-    owned_left,owned_right=left,right
     separator=r'[,;+]|\b(?:и|а|или|and|or|but)\b'
-    if position:
-        start=spans[neighbours[position-1]]['end']
-        split=list(re.finditer(separator,clause[start:span['start']],re.I))
-        owned_left=start+split[-1].end() if split else span['start']
-    if position+1<len(neighbours):
-        stop=spans[neighbours[position+1]]['start']
-        split=list(re.finditer(separator,clause[span['end']:stop],re.I))
-        owned_right=span['end']+split[-1].start() if split else stop
+    def window(position):
+        item=spans[neighbours[position]]
+        lower,upper=left,right
+        if position:
+            start=spans[neighbours[position-1]]['end']
+            split=list(re.finditer(separator,clause[start:item['start']],re.I))
+            lower=start+split[-1].end() if split else item['start']
+        if position+1<len(neighbours):
+            stop=spans[neighbours[position+1]]['start']
+            split=list(re.finditer(separator,clause[item['end']:stop],re.I))
+            upper=item['end']+split[-1].start() if split else stop
+        return lower,upper
+    windows=[window(i) for i in range(len(neighbours))]
+    owned_left,owned_right=windows[neighbours.index(index)]
     # A coordinated modifier may share the final noun: "15% на первый и
     # 10% на повторный заказ". An unrelated first payment is not an order.
     shared=(r'\s*(?:,|\b(?:и|или|and|or)\b)\s*'
@@ -345,22 +351,65 @@ def _rate_scope(clause,rate,spans):
                                   r'\b(?:перв\w*|first)\b(?=\s+'+ordinary_noun+')|'
                                   r'\b'+first+r'\b(?=\s+'+noun+'|'+shared+')',
                                   clause[left:right],re.I)]
+    # An explicitly excluded purchase stage is a rule, not an affirmative
+    # scope for that benefit. Other components still keep their own stages.
+    exclusion=(r'\bне\s+(?:(?:будет|будут)\s+)?'
+               r'(?:действ\w*|предостав\w*|начисл\w*|выда\w*)\s+(?:на|при|за|для)\b')
+    excluded=[m for m in markers if any(lower<=m[0] and m[1]<=upper
+              and re.search(exclusion,clause[lower:m[0]],re.I) for lower,upper in windows)]
+    markers=[m for m in markers if m not in excluded]
     local={kind for start,end,kind in markers if owned_left<=start and end<=owned_right}
     all_stages={kind for _,_,kind in markers}
     first,last=spans[neighbours[0]],spans[neighbours[-1]]
     if not local and markers:
         # A single shared prefix, or a suffix of a plain coordinated percent
         # list, may qualify the complete list; do not borrow another rate's tail.
-        shared_prefix=all(end<=first['start'] for _,end,_ in markers)
-        shared_suffix=(all(start>=last['end'] for start,_,_ in markers)
+        same_family=len({spans[i].get('family','percent') for i in neighbours})==1
+        explicit_prefix=bool(re.match(r'\s*(?:только\s+)?(?:на|при|за|для|for|on)\s+',
+                                      clause[left:markers[0][0]],re.I))
+        shared_prefix=(all(end<=first['start'] for _,end,_ in markers)
+                       and (same_family or explicit_prefix))
+        shared_suffix=(same_family and all(start>=last['end'] for start,_,_ in markers)
                        and all(re.fullmatch(r'[\s,]*(?:(?:и|или|and|or)\b[\s,]*)?',
                                             clause[spans[a]['end']:spans[b]['start']],re.I)
                                for a,b in zip(neighbours,neighbours[1:])))
-        if shared_prefix or shared_suffix or len(all_stages)>1:
+        if shared_prefix or shared_suffix or (same_family and len(all_stages)>1):
             local=all_stages
     if local:
         return {'purchase_stage':next(iter(local)) if len(local)==1 else 'multiple_stages'}
-    return _scope(clause[left:right]) if len(neighbours)==1 else {}
+    return _scope(clause[left:right]) if len(neighbours)==1 and not excluded else {}
+
+
+def _component_context(clause):
+    """Purchase-stage owners across different literal benefit components.
+
+    Parenthesized reward caps belong to their preceding component. Other
+    quantities/markers are boundaries, even if they do not become benefits.
+    """
+    groups={'percent':percent_spans(clause)}
+    for family in ('points','miles','RUB'):
+        matches=(fixed_discount_amounts(clause) if family=='RUB' else reward_amounts(clause,family))
+        groups[family]=[{'start':m.start(),'end':m.end(),**a} for m,a in matches]
+    groups['gift']=[{'start':m.start(),'end':m.end(),'value':None,'min_value':None}
+                    for m in gift_spans(clause,boundaries_only=True)]
+    components=sorted(({**s,'family':family,'ordinal':i} for family,spans in groups.items()
+                       for i,s in enumerate(spans)),key=lambda s:(s['start'],s['end']))
+    anchors=[];owners={}
+    for span in components:
+        bracket_cap=(span['family'] in ('points','miles') and
+                     re.search(r'\(\s*(?:до|не\s+более)\s*$',clause[:span['start']],re.I))
+        denominator=(span['family'] in ('points','miles') and
+                     re.search(r'\bза\s+(?:кажды[еий]\s+)?$',clause[:span['start']],re.I))
+        if ((bracket_cap or denominator) and anchors and
+                not re.search(r'[.!?](?:\s|$)|[;\n]',clause[anchors[-1]['end']:span['start']])):
+            owners[(span['family'],span['ordinal'])]=len(anchors)-1
+        else:
+            owners[(span['family'],span['ordinal'])]=len(anchors)
+            anchors.append(span)
+    scopes={key:_rate_scope(clause,{'_percent_index':index,'value':anchors[index]['value'],
+                                    'min_value':anchors[index]['min_value']},anchors)
+            for key,index in owners.items()}
+    return scopes,{key:(anchors[i]['family'],anchors[i]['ordinal']) for key,i in owners.items()}
 
 
 def _english_rates(clause, *, heading_context='', with_spans=False):
@@ -487,38 +536,6 @@ def _amount_matches(pattern,clause):
             yield match,value
 
 
-POINT_AMOUNT_PATTERN=(r'('+NUMERIC_TOKEN+r')\s+(?P<additional>дополнительн\w*\s+)?'
-                      r'(?:бонус(?:ов|а)?|балл(?:ов|а)?)\b')
-
-
-def _points_award_denied(clause,amount):
-    """Bind a literal denial to this amount, not a neighbouring positive award."""
-    boundary=r'[.!?](?:\s|$)|\b(?:но|зато|однако)\b'
-    prefix=re.split(boundary,clause[:amount.start()],flags=re.I)[-1]
-    suffix=re.split(boundary,clause[amount.end():],maxsplit=1,flags=re.I)[0]
-    award=r'(?:получ\w*|начисл\w*)'
-    denial=r'(?:не|нельзя|невозможно)(?:\s+(?:буд\w*|мож\w*|смож\w*|вам|мы|вы)){0,2}'
-    preceding=list(re.finditer(r'\b'+award+r'\b',prefix,re.I))
-    if not preceding:
-        # A coordinated list may share its final action. Do not cross another
-        # action or borrow that suffix from a separately prefixed award.
-        end=0
-        for other,_ in _amount_matches(POINT_AMOUNT_PATTERN,suffix):
-            if not re.fullmatch(r'\s*(?:,|и|или)\s*',suffix[end:other.start()],re.I):break
-            end=other.end()
-        suffix=suffix[end:]
-    if re.match(r'\s*(?:нельзя|невозможно)\b',suffix,re.I):return True
-    modifiers=r'(?:(?:буд\w*|уже)\s+){0,2}'
-    following=re.match(r'\s*'+modifiers+r'(?P<denial>'+denial+r'\s+)?'+modifiers+award+r'\b',suffix,re.I)
-    if following:
-        # A postposed action owns the preceding amount, even after a different
-        # negated award: "не начисляем 500 баллов, 100 бонусов получите".
-        return bool(following['denial'] or re.match(
-            r'\s+(?:нельзя|невозможно|не\s+буд\w*)\b',suffix[following.end():],re.I))
-    # Shared lists inherit their verb; another earning verb starts a new award.
-    return bool(preceding and re.search(r'\b'+denial+r'\s*$',prefix[:preceding[-1].start()],re.I))
-
-
 def _validate_as_of(as_of):
     # Validity comparisons require the same canonical date form on both sides.
     if not isinstance(as_of,str) or not re.fullmatch(r'[0-9]{4}-[0-9]{2}-[0-9]{2}',as_of):
@@ -552,6 +569,7 @@ def normalize_record(raw, *, as_of):
     if raw['kind']=='announcement':n['quality']['issues'].append('announcement_is_not_verified_current_offer')
     supplemental=raw['kind'] in ('program_rules','tier_benefit','announcement','raw_page')
     signatures={g:{} for g in GROUPS}
+    cap_owners={};component_benefits=defaultdict(set)
     def add(group,kind,path,*,value=None,unit=None,qualifier='unspecified',basis_value=None,basis_unit=None,
             scope=None,fragment=None,method='structured_source',reward_unit=None,delivery=None,value_min=None):
         ev=evidence(raw,path,fragment)
@@ -564,7 +582,7 @@ def normalize_record(raw, *, as_of):
         key=digest({k:v for k,v in obj.items() if k not in ('method',)})
         if key not in signatures[group]:
             obj['id']=digest([raw['id'],group,key]);signatures[group][key]=obj;n[group].append(obj)
-        return obj
+        return signatures[group][key]
     def benefit(kind,path,**kw):return add('benefits',kind,path,**kw)
     def condition(kind,path,**kw):return add('conditions',kind,path,**kw)
     def code(value,path,scope=None,delivery='literal',fragment=None):
@@ -818,6 +836,8 @@ def normalize_record(raw, *, as_of):
         heading_context=owned_heading if path=='/benefit' else ''
         rate_text=rate_clause.removeprefix(heading_context+': ') if heading_context else rate_clause
         spans=percent_spans(rate_text)
+        rate_scopes,rate_owners=_component_context(rate_text)
+        clause_scopes,clause_owners=(rate_scopes,rate_owners) if rate_text==clause else _component_context(clause)
         rates=[]
         if not d.get('pages'):
             rate_parser = _english_rates if ENGLISH_RATE_LABEL.search(rate_text) else normalize_rates
@@ -846,6 +866,8 @@ def normalize_record(raw, *, as_of):
                 prefix=re.split(r'[.!?](?:\s|$)|;',rate_text[:span['start']])[-1]
                 denied=r'\bне\s+(?:(?:будет|будут)\s+)?(?:начисл\w*|получ\w*|верн\w*|возвращ\w*)'
                 if (re.search(r'\bмилями\b',tail,re.I)
+                        and reward_role(rate_text,span['start'],span['end'],amounts=benefit_mentions(rate_text))
+                            not in ('denied','spend','reference')
                         and not re.match(r'\s*(?:предоплат|оплат|аванс|НДС|налог|комисси|штраф)',tail,re.I)
                         and not re.search(r'\b(?:оплат\w*|спис\w*|потрат\w*|предоплат\w*|аванс\w*)(?:\s+(?:до|от))?\s*\Z',prefix,re.I)
                         and not re.search(denied+r'[^%.,;!?]*\Z',prefix,re.I)
@@ -857,58 +879,76 @@ def normalize_record(raw, *, as_of):
             if _discount_percent_is_product_exception(rate_text,rr,spans):continue
             if rate_clause!=clause:rr['evidence']=clause
             if rr.get('evidence') in structured_evidence:continue
+            rate_key=(rr['unit'],rr.get('_percent_index') if rr['unit']=='percent' else rr.get('_amount_index'))
+            rate_scope=rate_scopes.get(rate_key,scope if rr['unit']!='percent' else {})
+            owner=(path,clause,rate_owners.get(rate_key))
+            if rr.get('_reward_cap'):
+                cap=condition('benefit_cap',path,value=rr['value'],unit=rr['unit'],qualifier='up_to',
+                          basis_value=rr['basis_amount'],basis_unit=rr['basis_unit'],
+                          scope=rate_scope,fragment=clause,method='clause_candidate')
+                cap_owners.setdefault(cap['id'],set()).add(owner)
+                recognized=True
+                continue
             # Locally labelled discount/cashback rates already exclude payment
             # percentages. A separate commission must not erase those rewards.
             if (re.search(r'комисси|commission',clause,re.I)
                     and not (rr.get('evidence') and rr['kind'] in ('discount','cashback'))):continue
             # A limit or minimum is a constraint, not an extra cashback/discount.
             if rr['unit']=='RUB' and re.search(r'максимум|максимальн|не более|лимит',clause,re.I):continue
-            # Raw points/miles numbers in a payment instruction may be redemption
-            # costs, not earning. Keep such clauses for review instead.
-            if rr['unit']=='miles' and re.search(r'спис|обмен|оплат\w*\s+мил|потратить',clause,re.I) and not re.search(r'начисл|получ|заработ',clause,re.I):continue
             kind=KIND.get(rr['kind'],rr['kind'])
             # A marketing "bonus" or a program name does not state the reward
             # unit. Require literal wording for payment/credit in points.
             if kind=='cashback':
                 kind=_cashback_kind(rate_text,rr,spans)
-            benefit(kind,path,value=rr['value'],unit=rr['unit'],qualifier=rr.get('qualifier','unspecified'),value_min=rr.get('min_value'),
+            reward=benefit(kind,path,value=rr['value'],unit=rr['unit'],qualifier=rr.get('qualifier','unspecified'),value_min=rr.get('min_value'),
                     basis_value=rr.get('basis_amount'),basis_unit=rr.get('basis_unit'),
-                    scope=_rate_scope(rate_text,rr,spans) if rr['unit']=='percent' else scope,fragment=clause,
+                    scope=rate_scope,fragment=clause,
                     method='clause_candidate',reward_unit='miles' if kind=='earn_miles' else 'points' if kind=='earn_points' else None)
+            component_benefits[owner].add(reward['id'])
             recognized=True
-        if not d.get('pages') and re.search(r'получ\w*|начисл\w*',clause,re.I) and not re.search(r'спис|оплат\w* балл|комисси',clause,re.I):
-            for m,value in _amount_matches(POINT_AMOUNT_PATTERN,clause):
-                if _points_award_denied(clause,m):continue
+        if not d.get('pages'):
+            for index,(m,amount) in enumerate(reward_amounts(clause,'points')):
+                value=amount['value']
+                amount_scope=clause_scopes.get(('points',index),{})
+                owner=(path,clause,clause_owners.get(('points',index)))
+                role=reward_role(clause,m.start(),m.end())
                 prefix=clause[:m.start()]
-                if m['additional']:
-                    # The adjective is supported only in its own literal
-                    # award, not a nearby spend instruction or denial.
-                    award=re.search(r'\b(?:получ\w*|начисл\w*)\s+(?:(?:до|от)\s+)?$',prefix,re.I)
-                    denied=award and re.search(r'\b(?:не|нельзя|невозможно)(?:\s+\w+)?\s*$',prefix[:award.start()],re.I)
-                    credited=(re.match(r'\s+начисл\w*\b',clause[m.end():],re.I)
-                              and not re.search(r'\b(?:не|вместо|кроме)\s*$',prefix,re.I))
-                    if not ((award and not denied) or credited):
-                        continue
+                basis=reward_basis(clause,m.start(),m.end())
+                if basis is None:continue
+                bracket_cap=re.search(r'\(\s*(?:до|не\s+более)\s*$',prefix,re.I)
+                period_cap=(role not in ('denied','spend','reference') and amount['qualifier']=='up_to'
+                            and (bracket_cap or (role=='unknown' and basis['basis_unit'] in ('month','day'))))
+                if period_cap:
+                    cap=condition('benefit_cap',path,value=value,unit='points',qualifier='up_to',
+                              basis_value=basis['basis_amount'],basis_unit=basis['basis_unit'],
+                              scope=amount_scope,fragment=clause,method='clause_candidate')
+                    cap_owners.setdefault(cap['id'],set()).add(owner)
+                    recognized=True
+                    continue
+                if role!='earn' and not (role=='unknown' and re.search(r'\+\s*$',prefix)):
+                    continue
                 # A points-to-money equation alone does not award points.
                 # Require its own earning action; a later exchange action
                 # owns the formula, but an exchange purchase before an explicit
                 # award ("за обмен валюты начисляем...") does not cancel it.
                 if re.match(r'\s*=\s*'+NUMERIC_TOKEN+r'\s*'+MONEY+r'(?=\W|$)',clause[m.end():],re.I):
                     local_prefix=re.split(r'[.!?](?:\s|$)|[;,]',prefix)[-1]
-                    earning=list(re.finditer(r'\b(?:получ\w*|начисл\w*)\b',local_prefix,re.I))
+                    earning=list(re.finditer(r'\b(?:получ\w*|начисл\w*|заработ\w*)\b',local_prefix,re.I))
                     exchange=list(re.finditer(r'\b(?:обменять|обменяйте|конвертировать|конвертируйте)\b',local_prefix,re.I))
                     if not earning or (exchange and exchange[-1].start()>earning[-1].start()):
                         continue
-                if re.search(r'\(\s*до\s*$',prefix,re.I):
-                    condition('benefit_cap',path,value=value,unit='points',qualifier='up_to',
-                              scope=scope,fragment=clause,method='clause_candidate')
-                else:
-                    qualifier='up_to' if re.search(r'\bдо\s*$',prefix,re.I) else 'at_least' if re.search(r'\bот\s*$',prefix,re.I) else 'unspecified'
-                    benefit('earn_points',path,value=value,unit='points',qualifier=qualifier,
-                            scope=scope,fragment=clause,method='clause_candidate',reward_unit='points')
+                reward=benefit('earn_points',path,value=value,unit='points',qualifier=amount['qualifier'],
+                        value_min=amount['min_value'],basis_value=basis['basis_amount'],basis_unit=basis['basis_unit'],
+                        scope=amount_scope,fragment=clause,method='clause_candidate',reward_unit='points')
+                component_benefits[owner].add(reward['id'])
                 recognized=True
-        if not d.get('pages') and re.search(r'в подарок|комплиментар|подарок при|gift (?:with|on|for)|complimentary',clause,re.I):
-            benefit('gift',path,scope=scope,fragment=clause,method='clause_candidate');recognized=True
+        if not d.get('pages'):
+            projected_gifts={(m.start(),m.end()) for m in gift_spans(clause)}
+            for index,m in enumerate(gift_spans(clause,boundaries_only=True)):
+                if ((m.start(),m.end()) not in projected_gifts or
+                        benefit_denied(clause,m.start(),m.end(),amounts=benefit_mentions(clause),gift=True)):continue
+                benefit('gift',path,scope=clause_scopes.get(('gift',index),{}),fragment=clause,method='clause_candidate')
+                recognized=True
         for m,value in _amount_matches(rf'(?:заказ\w*|покупк\w*|чек\w*|бронировани\w*)\s+(?:на\s+сумму\s+)?от\s+({NUMERIC_TOKEN})\s*{MONEY}',clause):
             condition('minimum_purchase',path,value=value,unit='RUB',qualifier='at_least',scope=scope,fragment=clause,method='clause_candidate');recognized=True
         for m,value in _amount_matches(rf'(?:максимум(?:\s+скидки)?|максимальн\w*\s+(?:размер\s+)?(?:скидк\w*|к[еэ]шб[еэ]к\w*)|не более)\s*[:—–-]?\s*({NUMERIC_TOKEN})\s*{MONEY}',clause):
@@ -941,9 +981,13 @@ def normalize_record(raw, *, as_of):
         key=dump([c['value'],c['scope'],c['delivery']])
         if key not in seen:seen[key]=c;codes.append(c)
     n['codes']=codes
+    cap_benefits={cap:set().union(*(component_benefits[owner] for owner in owners))
+                  for cap,owners in cap_owners.items()}
     for b in n['benefits']:
-        b['condition_ids']=[c['id'] for c in n['conditions'] if c['evidence']==b['evidence'] or
-                            (c['scope'] and c['scope']==b['scope'])]
+        b['condition_ids']=[c['id'] for c in n['conditions']
+                            if ((b['id'] in cap_benefits[c['id']]) if c['id'] in cap_benefits else
+                                ({c['scope'].get('purchase_stage'),b['scope'].get('purchase_stage')}!={'first','repeat'}
+                                 and (c['evidence']==b['evidence'] or (c['scope'] and c['scope']==b['scope']))))]
         b['condition_linkage']='same_evidence_or_explicit_scope_only'
         b['remaining_record_rules_require_review']=True
     n['quality']['level']='structured_with_review' if any(n[g] for g in GROUPS) else 'evidence_only'
