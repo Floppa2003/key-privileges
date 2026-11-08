@@ -11,6 +11,8 @@ import unicodedata
 from bs4 import BeautifulSoup
 from collections import Counter
 from datetime import date
+from decimal import Decimal
+from normalized import NUMERIC_TOKEN, literal_number
 
 VERSION = "practical-catalogue-v2"
 HEADERS = ["Партнёр","Программа","Выгода","Промокод / получение","Как получить",
@@ -33,8 +35,10 @@ TECHNICAL = re.compile(
 OFFER = re.compile(
     r"[сc]кидк|к[еэ]шб[еэ]к|cashback|discount|\bfree\b|бесплат|"
     r"в подарок|дарим|дарит|комплимент|угоща|"
-    r"(?:двойн|дополнительн|начисл|получ|копи|накапл|трать|обмен|оплат|"
+    r"(?:двойн|дополнительн|начисл|получ|копи|накапл|трать|обмен|"
     r"использ|возвращ|возмещ).{0,70}?(?:мил[яьиией]|балл|бонус|₽|руб)|"
+    r"оплат.{0,70}?(?:мил[яьиией]|балл|бонус)|"
+    r"\bВыплата\b.{0,300}\bв сумме операции оплаты\b|"
     r"(?:мил[яьиией]|балл|бонус).{0,55}?(?:\d|начисл|потрач|покуп|копи|оплат)|"
     r"специальн\w* (?:цен|тариф)|льготн|сниженн\w* цен|"
     r"ранн\w* заезд|поздн\w* выезд|повышени\w* категори|апгрейд|upgrade|"
@@ -49,7 +53,7 @@ OFFER = re.compile(
     r"при демонстрации карты|при предъявлении карты|специальные условия|"
     r"эксклюзивн\w* предложен|сертификат.{0,35}\d|"
     r"(?:\d[\d \u00a0]*\s*(?:балл\w*|бонус\w*|мил[ьи]|ГБ|Мб)\b)|"
-    r"за 1\s*(?:₽|руб)|промокод на подписку|спецтариф|special rates|"
+    r"промокод на подписку|спецтариф|special rates|"
     r"\d.{0,12}мил(?:я|и|ей|ями)|мил(?:я|и|ей|ями).{0,70}\d|"
     r"оплачивайте.{0,60}балл|предоставляется статус", re.I)
 ACTION = re.compile(
@@ -189,7 +193,7 @@ MARKETING = re.compile(
     r"Экспертам, психологам|[—–-] фирменные подарки|[—–-] корпоративные инструменты|"
     r"[—–-] игровые продукты|[—–-] авторские игры|[—–-] практические инструменты|"
     r"[—–-] продукты для продвижения|Мы превращаем подготовку|Почему именно|"
-    r"(?:\d+\. )?(?:Комплексный All-in-one|Преподаватели 99-го|Гибкие форматы обучения)|"
+    r"(?:\d+\. )?(?:Комплексный All-in-one|Преподаватели \d+-го процентиля|Гибкие форматы обучения)|"
     r"Собрали все, что потребуется|Без траты времени|Программа обучения была разработана|"
     r"У нас можно заниматься|Мы поможем вам|Одноименный|Одноимённый)",re.I)
 
@@ -205,6 +209,37 @@ def practical_terms(value, *, labels=()):
         kept.append(s)
     return "\n".join(unique_clauses(kept))
 
+def promotional_price_claim(s, raw=None):
+    """A literal price needs its own offer context, never a nominal-price cutoff."""
+    currency=r'(?:₽|руб(?:ль|ля|лей|ли)?\b\.?)'
+    prices=[]
+    # Inspect every price-bearing "за" segment, including invalid first prices.
+    # A later regular price cannot rescue a malformed promotional one.
+    for part in re.split(r'\bза\s+',s,flags=re.I)[1:]:
+        if not re.search(currency,part,re.I):continue
+        price=re.match(r'('+NUMERIC_TOKEN+r')\s*'+currency,part,re.I)
+        if not price or literal_number(price[1]) is None:return False
+        prices.append(price)
+    if not prices:return False
+    if re.match(r'^(?:перв\w*|пробн\w*\s+период)\b',s,re.I) and re.search(r'\bподписк\w*\b',s,re.I):
+        trial=re.match(r'^(?:перв\w*\s+(?P<duration>'+NUMERIC_TOKEN+r')\s+(?:дн\w*|недел\w*|месяц\w*)\s+подписк\w*|'
+                       r'пробн\w*\s+период\s+подписк\w*)\s+за\s+('+NUMERIC_TOKEN+r')\s*'+currency,s,re.I)
+        if not trial:return False
+        if trial['duration'] is not None:
+            duration=literal_number(trial['duration'])
+            if duration is None or Decimal(duration)<=0:return False
+        return True
+    own='\n'.join([s]+[text((raw or {}).get(f)) for f in ('conditions','activation')])
+    for clause in units(own):
+        # A sibling's stated discount owns its code; it does not turn this price
+        # into another benefit. Ordinary code instructions remain usable.
+        if clause_key(clause)!=clause_key(s) and OFFER.search(clause):continue
+        for match in re.finditer(r'\b(?:по\s+промокоду|(?:введите|примените|активируйте|используйте)\s+'
+                                 r'(?:личный\s+|свой\s+)?(?:промокод|код)\b)',clause,re.I):
+            if not re.search(r'\b(?:не|без|нельзя|не\s+нужно)\s*$',clause[:match.start()],re.I):return True
+    return False
+
+
 def benefit_claim(s, raw=None):
     """A percentage or a normal breakfast is not, by itself, a privilege."""
     if not s or is_boilerplate(s) or ((DESCRIPTIVE.search(s) or MARKETING.search(s)) and not re.search(r"[сc]кидк|к[еэ]шб[еэ]к|в подарок|бесплат",s,re.I)):return False
@@ -212,11 +247,13 @@ def benefit_claim(s, raw=None):
                  r"поэтому .{0,30}подарок|фирменные подарки для|"
                  r"скидк\w* (?:не предоставля|не действ|не распространя)",s,re.I):return False
     if re.search(r"(?:дарит|дарим|скидка|кешбэк|бонусы|составляет|от|до|за|при|на)\s*$",s,re.I):return False
-    if OFFER.search(s):return True
+    if OFFER.search(s) or promotional_price_claim(s,raw):return True
     if raw and len(s)<350 and re.search(r"\d\s*%",s) and (
         s in units(raw.get("benefit","")) or raw.get("details",{}).get("public_partner")
     ) and not re.search(r"успеваем|родител|населен|успешных|рынк|доходност|исследовани[яй] показ|"
-                       r"оплат[аы] 100%|предоплат[аы] 100%",s,re.I):return True
+                       r"\d\s*%\s*(?:₽|руб(?:ль|ля|лей|ли)?\b)|"
+                       r"\b(?:предоплат\w*|оплат\w*|оплачива\w*|оплачено)\b[^!?\n%]{0,50}\d\s*%|"
+                       r"\d\s*%\s*(?:[-–—]\s*н[а-яё]+\s*)?(?:предоплат\w*|оплата)\b",s,re.I):return True
     d=(raw or {}).get("details",{})
     if d.get("public_item") and re.search(r"завтрак|кредит.{0,35}(?:USD|EUR|доллар|евро)|"
                                         r"(?:USD|EUR|доллар|евро).{0,35}кредит",s,re.I):return True

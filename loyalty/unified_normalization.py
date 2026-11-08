@@ -21,7 +21,7 @@ from promo_codes import extract_promocodes
 from iso_datetime import parse_iso_datetime
 from reward_context import reward_role, benefit_denied, gift_spans
 
-VERSION = '1.0.2'
+VERSION = '1.0.3'
 GROUPS = ('benefits', 'conditions', 'costs', 'codes')
 INPUT_TABS = {
     'parser_offers': (1, 26), 'loyalty_partner_benefits': (4, 13),
@@ -731,9 +731,24 @@ def normalize_record(raw, *, as_of):
                     basis_value=c.get('basis_amount'),basis_unit=c.get('basis_unit'),reward_unit='miles' if kind=='earn_miles' else c.get('reward_unit','points'),scope={'source_rule':field})
             if c.get('evidence'):structured_evidence.add(c['evidence'])
     red=d.get('redemption_rules')
+    redemption_path='/details/redemption_rules'
     if isinstance(red,dict):
-        if red.get('max_order_percent') is not None:benefit('redeem_rewards','/details/redemption_rules',value=red['max_order_percent'],unit='percent_of_order',qualifier='up_to',scope={'basis':red.get('basis')})
-        if red.get('minimum_cash_percent') is not None:condition('minimum_cash_payment','/details/redemption_rules',value=red['minimum_cash_percent'],unit='percent_of_order',qualifier='at_least')
+        from known_rules import CONFIG as KNOWN_RULES
+        if raw['origin']=='parser_offers' and any(
+                cfg.get('handler')=='retail_miles' and cfg['url']==raw.get('source_url')
+                for cfg in KNOWN_RULES.values()):
+            from known_rule_terms import retail_redemption_terms
+            literal=red.get('evidence')
+            if (not isinstance(literal,str) or not literal.strip()
+                    or ' '.join(literal.split()) not in ' '.join(raw.get('conditions','').split())):
+                raise ValueError('known_rule_redemption_evidence_mismatch')
+            # Old stored adapters hardcoded the basis. Derive all associated
+            # terms from the quotation so stale numbers cannot contradict the
+            # same evidence, leaving historical raw untouched.
+            red={**red,**retail_redemption_terms(literal)}
+            redemption_path+='/evidence'
+        if red.get('max_order_percent') is not None:benefit('redeem_rewards',redemption_path,value=red['max_order_percent'],unit='percent_of_order',qualifier='up_to',scope={'basis':red.get('basis')})
+        if red.get('minimum_cash_percent') is not None:condition('minimum_cash_payment',redemption_path,value=red['minimum_cash_percent'],unit='percent_of_order',qualifier='at_least')
     for i,c in enumerate(d.get('mileage_options',[])):
         p=f'/details/mileage_options/{i}';scope={'option':c['label']}
         benefit('earn_miles',p,value=c['miles'],unit='miles',basis_value=c['basis_rub'],basis_unit='RUB',qualifier='exact',scope=scope,reward_unit='miles')
@@ -768,7 +783,9 @@ def normalize_record(raw, *, as_of):
                 'subscription','fees','service_fee_conditions','earning_conditions','redemption_rules','limitations','audience','activation'):
         if d.get(key) not in (None,{},[], ''):
             group='costs' if key in ('fees','service_fee_conditions','subscription') else 'conditions'
-            add(group,key,'/details/'+key,scope={'source_value':d[key]})
+            projected=red if key=='redemption_rules' else d[key]
+            path=redemption_path if key=='redemption_rules' else '/details/'+key
+            add(group,key,path,scope={'source_value':projected})
     for i,c in enumerate(d.get('tier_values',[])):
         p=f'/details/tier_values/{i}'
         benefit('tier_inclusion',p,value=str(c.get('included')).lower() if c.get('included') is not None else None,unit='boolean',scope={'tier':c.get('tier'),'text':c.get('text')})

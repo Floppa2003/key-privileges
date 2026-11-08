@@ -1,4 +1,4 @@
-import copy,sys,unittest
+import copy,hashlib,json,sys,unittest
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).parents[1]))
 try:
@@ -22,6 +22,16 @@ class ViewTests(unittest.TestCase):
  def test_same_snapshot_is_deterministic(self):
   r=normalize_inputs([record()],as_of='2026-09-14')
   self.assertEqual(prepare_views(r),prepare_views(copy.deepcopy(r)))
+ def test_numeric_rule_release_does_not_reuse_preceding_generation(self):
+  r=normalize_inputs([record()],as_of='2026-09-14');views=prepare_views(r)
+  # Reproduce the published 1.0.2 generation contract independently. Changing
+  # semantics must invalidate it even when source inputs and as_of are identical.
+  previous=hashlib.sha256(json.dumps([r['audit']['source_snapshot_sha256'],r['as_of'],'1.0.2'],
+      ensure_ascii=False,sort_keys=True,separators=(',',':')).encode()).hexdigest()
+  generations={row[-1] for rows in views.values() for row in rows}
+  self.assertEqual(len(generations),1)
+  self.assertNotIn(previous,generations)
+  self.assertNotEqual(r['normalizer_version'],'1.0.2')
  def test_derived_views_do_not_include_original_input_tab(self):
   self.assertNotIn('parser_offers',SCHEMAS);self.assertNotIn('loyalty_partner_benefits',SCHEMAS)
  def test_corporate_codes_are_in_private_views_not_dropped(self):

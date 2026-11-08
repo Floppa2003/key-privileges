@@ -11,11 +11,12 @@ import hashlib
 import io
 import re
 from datetime import date
+from decimal import Decimal
 from urllib.parse import urlsplit
 
 import requests
 
-from normalized import make_offer, percent_spans, validate_offer
+from normalized import make_offer, percent_spans, validate_offer, NUMERIC_TOKEN, literal_number
 
 SOURCE_ID = "alfa_only_partner_pdf_offers"
 PROGRAM = "Alfa Only"
@@ -185,11 +186,7 @@ def parse_document(spec: dict, data: bytes, observed_at: str) -> dict:
     text = compact(pdf_text(data))
     sha = hashlib.sha256(data).hexdigest()
 
-    title = must(
-        text,
-        r"Акци[ия]\s*[«\"]К[еэ]шб[еэ]к\s*до\s*10%\s*за\s*(?:первую\s*)?покупк[уи]\s*Alfa\s*Only[»\"]",
-        "alfa_partner_pdf_title_missing",
-    )
+    title, _ = promotion_title(text)
     valid_from, valid_until = validity(text)
 
     legal = re.search(
@@ -212,7 +209,7 @@ def parse_document(spec: dict, data: bytes, observed_at: str) -> dict:
     payment = numbered_clause(text, "3.1", "3.2", r"Для\s*получения")
     benefit_clause = must(
         text,
-        r"3\.2\..{0,420}?получают\s*Альфа\s*-\s*Баллы/\s*Бонусные\s*Мили.{0,120}?по\s*ставке\s*10\s*%.{0,220}?не\s*более\s*1\s*500.{0,260}?от\s*суммы\s*(?:всех|первой)\s*Расходн[а-я]+\s*операц[а-я]+.{0,220}?календарного\s*месяца",
+        r"3\.2\..{0,420}?получают\s*Альфа\s*-\s*Баллы/\s*Бонусные\s*Мили.{0,120}?по\s*ставке.{0,220}?не\s*более.{0,260}?от\s*суммы\s*(?:всех|первой)\s*Расходн[а-я]+\s*операц[а-я]+.{0,220}?календарного\s*месяца",
         "alfa_partner_pdf_benefit_missing",
     )
     scope = "first_transaction_each_calendar_month" if re.search(
@@ -226,7 +223,7 @@ def parse_document(spec: dict, data: bytes, observed_at: str) -> dict:
     )
     payout = must(
         text,
-        r"Начисление.{0,360}?производится\s*Банком\s*в\s*течение\s*10\s*дней\s*с\s*даты\s*окончания\s*календарного\s*месяца",
+        r"Начисление.{0,360}?производится\s*Банком\s*в\s*течение.{0,80}?\s*с\s*даты\s*окончания\s*календарного\s*месяца",
         "alfa_partner_pdf_payout_missing",
     )
     appendix = must(
@@ -242,6 +239,7 @@ def parse_document(spec: dict, data: bytes, observed_at: str) -> dict:
     redemption = "\n".join([joining, payment])
     clauses = dict(eligibility=eligibility, territory=territory, stacking=stacking,
                    payout=payout, appendix=appendix, joining=joining, payment=payment)
+    rate = numeric_terms(benefit, payout)
 
     row = make_offer(
         SOURCE_ID,
@@ -251,7 +249,7 @@ def parse_document(spec: dict, data: bytes, observed_at: str) -> dict:
         benefit,
         spec["url"],
         observed_at,
-        title=f"Alfa Only → {spec['display_name']} — 10%",
+        title=f"Alfa Only → {spec['display_name']} — {rate['value']}%",
         conditions=conditions,
         redemption=redemption,
         link_kind="document_section",
@@ -280,20 +278,67 @@ def parse_document(spec: dict, data: bytes, observed_at: str) -> dict:
 
 
 
+def promotion_title(text: str) -> tuple[str, str]:
+    pattern = (r"Акци[ия]\s*[«\"]К[еэ]шб[еэ]к\s*до\s*(?P<rate>" + NUMERIC_TOKEN
+               + r")\s*%\s*за\s*(?:первую\s*)?покупк[уи]\s*Alfa\s*Only[»\"]")
+    titles = list(re.finditer(pattern, text, re.I))
+    if not titles:
+        raise ValueError('alfa_partner_pdf_title_missing')
+    values = {literal_number(m['rate']) for m in titles}
+    if (None in values or len(values) != 1
+            or not 0 <= Decimal(next(iter(values))) <= 100):
+        raise ValueError('alfa_partner_pdf_title_rate_invalid')
+    return compact(titles[0][0]), next(iter(values))
+
+
 def partner_rates(value: str) -> list[dict]:
     text = compact(value)
-    match = re.search(r"по\s*ставке\s*(\d+(?:[.,]\d+)?)\s*%", text, re.I)
-    if not match:
+    labels = list(re.finditer(r"по\s*ставке\s*", text, re.I))
+    if not labels:
         return []
-    spans = percent_spans(text[match.start(1):])
-    if (not spans or spans[0]['start'] != 0 or spans[0]['value'] != '10'
-            or spans[0]['qualifier'] != 'exact' or spans[0]['min_value'] is not None):
-        # These reviewed documents promise exactly 10%. A changed range must
-        # not inherit the first bound or keep the existing exact-rate title.
+    if len(labels) != 1:
+        raise ValueError('alfa_partner_pdf_rate_invalid_or_changed')
+    suffix = text[labels[0].end():]
+    spans = percent_spans(suffix)
+    if (len(spans) != 1 or spans[0]['start'] != 0
+            or spans[0]['qualifier'] != 'exact' or spans[0]['min_value'] is not None
+            or not re.match(r'\s*,?\s*(?:но\s+)?не\s*более\b', suffix[spans[0]['end']:], re.I)):
+        # A supported exact rate may change, but a range or malformed numeric
+        # expression must not donate a valid first bound or suffix.
         raise ValueError('alfa_partner_pdf_rate_invalid_or_changed')
     clause = must(text, r"3\.2\..{0,700}?по\s*ставке\s*\d+(?:[.,]\d+)?\s*%.{0,520}?календарного\s*месяца", "alfa_partner_pdf_rate_evidence_missing")
     return [{"kind":"cashback","value":spans[0]['value'],
              "unit":"percent","qualifier":"exact","basis_amount":None,"basis_unit":None,"evidence":clause}]
+
+
+def numeric_terms(benefit: str, payout: str) -> dict:
+    """Validate owned numeric clauses without pinning their published values."""
+    rates = partner_rates(benefit)
+    if len(rates) != 1:
+        raise ValueError('alfa_partner_pdf_common_rate_missing')
+    _, ceiling = promotion_title(benefit)
+    if Decimal(rates[0]['value']) > Decimal(ceiling):
+        raise ValueError('alfa_partner_pdf_title_rate_conflict')
+    cap_labels = list(re.finditer(r'\bне\s*более\b',rates[0]['evidence'],re.I))
+    if len(cap_labels)!=1:
+        raise ValueError('alfa_partner_pdf_cap_invalid')
+    cap = re.match(r'\s*(?P<amount>' + NUMERIC_TOKEN
+                    + r')\s*(?:\([^()]{1,200}\)\s*)?Альфа\s*-\s*Баллов/\s*Бонусных\s*Миль',
+                    rates[0]['evidence'][cap_labels[0].end():], re.I)
+    amount = literal_number(cap['amount']) if cap else None
+    if amount is None or Decimal(amount) <= 0:
+        raise ValueError('alfa_partner_pdf_cap_invalid')
+    delay_labels = list(re.finditer(r'\bв\s*течение\b',payout,re.I))
+    if len(delay_labels)!=1:
+        raise ValueError('alfa_partner_pdf_payout_days_invalid')
+    delay = re.match(r'\s*(?P<days>' + NUMERIC_TOKEN
+                      + r')\s*(?:день|дня|дней)\s*с\s*даты\s*окончания\s*календарного\s*месяца',
+                      payout[delay_labels[0].end():], re.I)
+    days = literal_number(delay['days']) if delay else None
+    if days is None or Decimal(days) <= 0 or Decimal(days) != Decimal(days).to_integral_value():
+        raise ValueError('alfa_partner_pdf_payout_days_invalid')
+    return rates[0]
+
 
 def validate_partner_record(row: dict) -> None:
     if row.get("source_id") != SOURCE_ID:
@@ -335,6 +380,9 @@ def validate_partner_record(row: dict) -> None:
             or details.get("activation") != row.get("redemption_text")
             or details.get("limitations") != clauses["territory"]):
         raise ValueError("alfa_partner_pdf_practical_clauses_mismatch")
+    rate = numeric_terms(row.get('benefit_text', ''), clauses['payout'])
+    if row.get('title') != f"Alfa Only → {spec['display_name']} — {rate['value']}%":
+        raise ValueError('alfa_partner_pdf_title_rate_mismatch')
 
 
 def project_common(raw, n, benefit, condition, code):
@@ -354,6 +402,7 @@ def project_common(raw, n, benefit, condition, code):
         "record_kind": raw["kind"], "link_kind": raw["link_kind"],
         "benefit_url": raw["benefit_url"], "details": d,
         "conditions_text": raw["conditions"], "redemption_text": raw["activation"],
+        "title": raw["title"], "benefit_text": raw["benefit"],
         "warnings": raw["source_warnings"],
     })
     # Serialized rates and the promotion's "up to" title are not the source
