@@ -88,7 +88,7 @@ def _owned_role(text, start, end, *, amounts=(), actions=_ACTION,
             if (mixed_list and shared_following and
                     not re.search(r'(?:[уюя]т(?:ся)?|[её]м|им|ены|лены)$',following['action'],re.I)):
                 return 'unknown'
-            if partial_exclusion and partial_exclusion(following_suffix[following.end():]):
+            if partial_exclusion and partial_exclusion(following_suffix[following.end():],following['action']):
                 return 'earn'
             return 'denied'
         action = actions.fullmatch(following['action'])
@@ -116,16 +116,19 @@ def reward_role(text, start, end, *, amounts=()):
 
 def benefit_denied(text, start, end, *, amounts=(), gift=False):
     """An explicit owned denial, preserving product/cash-equivalent exclusions."""
-    def partial_exclusion(tail):
+    def partial_exclusion(tail,action):
         if gift and re.match(r'\s+в\s+денежном\s+эквиваленте\b', tail, re.I):
             return True
-        restriction=re.match(r'\s+(?:на|для|при|за)\s+(?P<object>[^.!?;]+)',tail,re.I)
+        restriction=re.match(r'\s+(?P<preposition>на|для|при|за)\s+(?P<object>[^.!?;]+)',tail,re.I)
         if not restriction:return False
         # A payout destination is part of the denied credit, not an excluded
         # product/category/payment method. Do not whitelist product names.
         destination=(r'(?:(?:ваш\w*|сво\w*|личн\w*|бонусн\w*|банковск\w*|расч[её]тн\w*)\s+){0,3}'
                      r'(?:сч[её]т\w*|баланс\w*|карт[уы]\b|карточк\w*|кошел[её]к\w*)')
-        return not bool(re.match(destination,restriction['object'],re.I))
+        denied_credit=(restriction['preposition'].casefold()=='на'
+                       and not re.match(r'действ',action,re.I)
+                       and re.match(destination,restriction['object'],re.I))
+        return not bool(denied_credit)
     return _owned_role(text, start, end, amounts=amounts, actions=_BENEFIT_ACTION,
                        references=False, partial_exclusion=partial_exclusion,mixed_list=True) == 'denied'
 

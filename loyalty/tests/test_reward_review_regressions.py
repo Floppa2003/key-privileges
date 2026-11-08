@@ -59,6 +59,15 @@ class RewardReviewRegressions(unittest.TestCase):
                 self.assertEqual(normalize_rates(literal),[])
                 self.assertEqual(self.project(literal)['benefits'],[])
 
+    def test_card_eligibility_restriction_is_not_a_denied_credit(self):
+        for tail in ('для банковской карты Visa','на банковскую карту Visa'):
+            literal=f'Скидка 10% не действует {tail}.'
+            with self.subTest(tail=tail):
+                self.assertEqual([(r['kind'],r['value']) for r in normalize_rates(literal)],[('discount','10')])
+                self.assertEqual([(b['kind'],b['value']) for b in self.project(literal)['benefits']],
+                                 [('discount','10')])
+        self.assertEqual(self.project('Кешбэк 5% не предоставляется на банковскую карту.')['benefits'],[])
+
     def test_excluded_stage_is_not_a_positive_benefit_scope(self):
         result=self.project('Скидка 10% не действует на первый заказ.')
         self.assertEqual([(b['kind'],b['value'],b['scope']) for b in result['benefits']],
