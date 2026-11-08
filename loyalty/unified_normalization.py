@@ -487,6 +487,38 @@ def _amount_matches(pattern,clause):
             yield match,value
 
 
+POINT_AMOUNT_PATTERN=(r'('+NUMERIC_TOKEN+r')\s+(?P<additional>дополнительн\w*\s+)?'
+                      r'(?:бонус(?:ов|а)?|балл(?:ов|а)?)\b')
+
+
+def _points_award_denied(clause,amount):
+    """Bind a literal denial to this amount, not a neighbouring positive award."""
+    boundary=r'[.!?](?:\s|$)|\b(?:но|зато|однако)\b'
+    prefix=re.split(boundary,clause[:amount.start()],flags=re.I)[-1]
+    suffix=re.split(boundary,clause[amount.end():],maxsplit=1,flags=re.I)[0]
+    award=r'(?:получ\w*|начисл\w*)'
+    denial=r'(?:не|нельзя|невозможно)(?:\s+(?:буд\w*|мож\w*|смож\w*|вам|мы|вы)){0,2}'
+    preceding=list(re.finditer(r'\b'+award+r'\b',prefix,re.I))
+    if not preceding:
+        # A coordinated list may share its final action. Do not cross another
+        # action or borrow that suffix from a separately prefixed award.
+        end=0
+        for other,_ in _amount_matches(POINT_AMOUNT_PATTERN,suffix):
+            if not re.fullmatch(r'\s*(?:,|и|или)\s*',suffix[end:other.start()],re.I):break
+            end=other.end()
+        suffix=suffix[end:]
+    if re.match(r'\s*(?:нельзя|невозможно)\b',suffix,re.I):return True
+    modifiers=r'(?:(?:буд\w*|уже)\s+){0,2}'
+    following=re.match(r'\s*'+modifiers+r'(?P<denial>'+denial+r'\s+)?'+modifiers+award+r'\b',suffix,re.I)
+    if following:
+        # A postposed action owns the preceding amount, even after a different
+        # negated award: "не начисляем 500 баллов, 100 бонусов получите".
+        return bool(following['denial'] or re.match(
+            r'\s+(?:нельзя|невозможно|не\s+буд\w*)\b',suffix[following.end():],re.I))
+    # Shared lists inherit their verb; another earning verb starts a new award.
+    return bool(preceding and re.search(r'\b'+denial+r'\s*$',prefix[:preceding[-1].start()],re.I))
+
+
 def _validate_as_of(as_of):
     # Validity comparisons require the same canonical date form on both sides.
     if not isinstance(as_of,str) or not re.fullmatch(r'[0-9]{4}-[0-9]{2}-[0-9]{2}',as_of):
@@ -845,7 +877,8 @@ def normalize_record(raw, *, as_of):
                     method='clause_candidate',reward_unit='miles' if kind=='earn_miles' else 'points' if kind=='earn_points' else None)
             recognized=True
         if not d.get('pages') and re.search(r'получ\w*|начисл\w*',clause,re.I) and not re.search(r'спис|оплат\w* балл|комисси',clause,re.I):
-            for m,value in _amount_matches(r'('+NUMERIC_TOKEN+r')\s+(?P<additional>дополнительн\w*\s+)?(?:бонус(?:ов|а)?|балл(?:ов|а)?)\b',clause):
+            for m,value in _amount_matches(POINT_AMOUNT_PATTERN,clause):
+                if _points_award_denied(clause,m):continue
                 prefix=clause[:m.start()]
                 if m['additional']:
                     # The adjective is supported only in its own literal
