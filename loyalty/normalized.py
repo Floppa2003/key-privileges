@@ -13,6 +13,7 @@ from model import clean_url
 from promo_codes import extract_promocodes
 from table_benefits import extract_table_benefits
 from recovered_contract import SOURCES as RECOVERED_SOURCES, http_url, validate_recovered
+from reward_context import reward_role, benefit_denied, gift_spans
 
 VERSION = '2.9.6'
 HOSTS = {
@@ -177,6 +178,101 @@ def percent_spans(value: str) -> list[dict]:
     return result
 
 
+def reward_amounts(value: str, unit: str):
+    """Validated reward spans, consuming both endpoints of a literal range."""
+    word = r'мил[ьяиюе]\w*' if unit == 'miles' else r'(?:балл(?:ов|а)?|бонус(?:ов|а)?)'
+    label = r'(?:(?:дополнительн\w*|бонусн\w*)\s+){0,2}' + word + r'\b'
+    token = r'[−-]?' + NUMERIC_TOKEN
+    pattern = (rf'(?:(?:\bот\s+(?P<word_lo>{token})\s*(?:{label}\s+)?до\s+)'
+               rf'|(?P<lo>{token})\s*(?:{label}\s*)?[–—-]\s*)?'
+               rf'(?P<value>{token})\s*(?P<reward_unit>{label})')
+    for match in re.finditer(pattern, value, re.I):
+        lower_key = 'word_lo' if match['word_lo'] is not None else 'lo'
+        first_key = lower_key if match[lower_key] is not None else 'value'
+        if not number_starts_here(value, match.start(first_key)):
+            continue
+        prefix = value[:match.start()]
+        if (prefix and (prefix[-1].isalnum() or prefix[-1]=='_')):
+            continue
+        if re.search(rf'{NUMERIC_TOKEN}\s*(?:{label}\s*)?(?:[–—-]|\bдо)\s*$',prefix,re.I):
+            continue
+        if (match[lower_key] is not None
+                and re.match(rf'\s*(?:[–—-]|\bдо)\s*{NUMERIC_TOKEN}',value[match.end():],re.I)):
+            continue
+        upper = literal_number(match['value'])
+        lower = literal_number(match[lower_key]) if match[lower_key] is not None else None
+        if upper is None or (match[lower_key] is not None
+                             and (lower is None or Decimal(lower) > Decimal(upper))):
+            continue
+        qualifier = ('range' if lower is not None else
+                     'up_to' if re.search(r'\b(?:до|не\s+более)\s*$', prefix, re.I) else
+                     'at_least' if re.search(r'\b(?:от|не\s+менее)\s*$', prefix, re.I) else
+                     'unspecified')
+        yield match, {'value': upper, 'min_value': lower, 'qualifier': qualifier}
+
+
+def reward_basis(clause: str, start: int, end: int):
+    """Literal quantity denominator; None rejects an explicitly malformed base."""
+    unit = r'(?:₽|руб\w*|RUB|(?:бонусн\w*\s+)?балл\w*|бонус(?:ов|а)?|дней|день|дня|месяц\w*)'
+    # Consume an explicit numeric expression before validating it, including a
+    # malformed/range base: it must not turn into a rate with no denominator.
+    numeric = r'(?:от\s+)?[−+-]?\d[\w., \t\u00a0\u202f–—−-]*?'
+    amount = rf'(?P<basis>{numeric})\s*(?P<unit>{unit})(?=\W|$)'
+    suffix = clause[end:]
+    if re.search(r'мил[ьяиюе]\w*$',clause[start:end],re.I):
+        suffix=re.sub(r'^\s+S7\b(?:\s+Airlines)?(?=\s+(?:за|в)\b)','',suffix,flags=re.I)
+    match = re.match(r'\s+(?:начисля\w+\s+)?за\s+(?:кажды[еий]\s+)?'
+                     r'(?:потраченн\w+\s+)?' + amount, suffix, re.I)
+    if not match:
+        prefix=re.sub(r'\bруб\.(?=\s)','руб ',clause[:start],flags=re.I)
+        prefix=re.split(r'[.!?](?:\s|$)|[;\n]',prefix)[-1]
+        action=r'(?:начисл\w+|получ\w+|заработ\w+)'
+        bridge=r'(?:(?!\b'+action+r'\b)[^0-9;.!?]){0,120}'
+        match = re.search(r'\bза\s+кажды[еий]\s+(?:потраченн\w+\s+)?' + amount
+                          + bridge + action + r'\s*$',prefix,re.I)
+    if match:
+        base = literal_number(match['basis'])
+        if base is None or Decimal(base)<=0:
+            return None
+        word = match['unit'].casefold()
+        basis_unit = ('RUB' if re.match(r'₽|руб|rub', word) else
+                      'month' if word.startswith('месяц') else
+                      'day' if re.match(r'дн|день', word) else 'points')
+        return {'basis_amount': base, 'basis_unit': basis_unit}
+    if re.match(r'\s+в\s+месяц\b', suffix, re.I):
+        return {'basis_amount': '1', 'basis_unit': 'month'}
+    if re.match(r'\s+за\s+каждые\s+сутки\b', suffix, re.I):
+        return {'basis_amount': '1', 'basis_unit': 'day'}
+    return {'basis_amount': None, 'basis_unit': None}
+
+
+def fixed_discount_amounts(value: str):
+    """Validated fixed-price discount spans, shared with component ownership."""
+    for match in re.finditer(rf'скидк\w*\s+(?P<qual>до\s+)?(?P<value>{NUMERIC_TOKEN})\s*(?:₽|руб\w*)',value,re.I):
+        amount=literal_number(match['value'])
+        if amount is not None:
+            yield match, {'value':amount,'min_value':None,
+                          'qualifier':'up_to' if match['qual'] else 'exact'}
+
+
+def _postfix_rate_label(clause, end):
+    for kind in ('discount','cashback','miles'):
+        pattern=(r'\s*(?:\(\s*)?(?:постоянн\w*\s+)?'+TYPES[kind]+r'\w*\s*\)?')
+        match=re.match(pattern,clause[end:],re.I)
+        if match:return kind,end+match.end()
+    return None,end
+
+
+def benefit_mentions(clause):
+    """Context-only spans for a shared denial over a literal benefit list."""
+    spans=[(s['start'],_postfix_rate_label(clause,s['end'])[1]) for s in percent_spans(clause)]
+    for unit in ('points','miles'):
+        spans.extend((m.start(),m.end()) for m,_ in reward_amounts(clause,unit))
+    spans.extend((m.start(),m.end()) for m,_ in fixed_discount_amounts(clause))
+    spans.extend((m.start(),m.end()) for m in gift_spans(clause))
+    return sorted(spans)
+
+
 def normalize_rates(value: str, *, heading_context: str = '', with_spans: bool = False) -> list[dict]:
     """Only recognizable local rate phrases; context is mandatory for every value.
     Rates are NOT combinable without interpreting their evidence/conditions.
@@ -184,6 +280,7 @@ def normalize_rates(value: str, *, heading_context: str = '', with_spans: bool =
     """
     result = []
     percent_index = 0
+    amount_indexes = {'miles':0,'RUB':0}
     heading_kinds = [k for k in ('discount','cashback') if re.search(TYPES[k],heading_context,re.I)]
     heading_kind = heading_kinds[0] if len(heading_kinds)==1 else None
     for clause in re.split(r'[\n;]', text(value, markup=False)):
@@ -195,7 +292,9 @@ def normalize_rates(value: str, *, heading_context: str = '', with_spans: bool =
         ruble_band = rf'{price_band}(?=\s*[-–—:]\s*(?:(?:до|от)\s+)?(?:{_PERCENT.pattern}))'
         scoped_clause = re.sub(ruble_band, lambda match: match[0][:-1] + ' ', clause, flags=re.I)
         labels = [(m.start(), k) for k in ('discount','cashback') for m in re.finditer(TYPES[k],clause,re.I)]
-        for span in percent_spans(clause):
+        percentages=percent_spans(clause)
+        polarity_spans=benefit_mentions(clause)
+        for span in percentages:
             index = percent_index
             percent_index += 1
             start, end = span['start'], span['end']
@@ -209,14 +308,12 @@ def normalize_rates(value: str, *, heading_context: str = '', with_spans: bool =
                                     scoped_clause[before[-1][0]:start], flags=re.I)
                 if re.search(r'[.!?](?:\s|$)', scope_text):
                     before = []
-            after = next((k for k in ('discount','cashback') if re.match(r'\s*'+TYPES[k],clause[end:],re.I)),None)
-            if re.match(r'\s*мил(?:ями|и|ь)\b',clause[end:],re.I):
-                after='miles'
+            after,label_end = _postfix_rate_label(clause,end)
             payment = r'\b(?:предоплат\w*|оплат\w*|аванс\w*|НДС|налог\w*|комисси\w*|штраф\w*)\b'
             # A postfix reward label belongs to the percentage just before it;
             # it does not also label a later payment or tax percentage.
             payment_context = bool((before and ('%' in between
-                                   or re.search(r'%\s*$', clause[:before[-1][0]])
+                                   or re.search(r'%\s*(?:\(\s*)?(?:постоянн\w*\s+)?$', clause[:before[-1][0]],re.I)
                                    or re.search(r'\b(?:при|на условиях|с уч[её]том)\b|\bза\s*$', between, re.I)))
                                    or (heading_kind and not before))
             price_tail = rf'(?:{price_band}\s*[-–—:]\s*)?'
@@ -234,26 +331,41 @@ def normalize_rates(value: str, *, heading_context: str = '', with_spans: bool =
             if not before and not after and not heading_kind:
                 continue
             kind = after or (before[-1][1] if before else heading_kind)
+            if benefit_denied(clause,start,label_end,amounts=polarity_spans):
+                continue
+            if kind=='miles' and reward_role(clause,start,label_end,amounts=polarity_spans) in ('denied','spend','reference'):
+                continue
             r = {'kind':kind,'value':span['value'],'unit':'percent','qualifier':span['qualifier'],'basis_amount':None,'basis_unit':None,'evidence':clause}
             if span['min_value'] is not None:
                 r['min_value'] = span['min_value']
             if with_spans:
                 r['_percent_index'] = index
             result.append(r)
-        pattern = rf'(?P<qual>до\s+)?(?P<value>{NUMERIC_TOKEN})\s*мил[ьяиюе]\w*(?:\s+(?:начисля\w+\s+)?за\s+(?:кажды[еий]\s+)?(?:потраченн\w+\s+)?(?P<basis>{NUMERIC_TOKEN})\s*(?:₽|руб\w*))?'
-        for m in re.finditer(pattern,clause,re.I):
-            basis=m['basis']
-            if not basis:
-                preceding=re.search(rf'за\s+кажды[еий]\s+(?:потраченн\w+\s+)?({NUMERIC_TOKEN})\s*(?:₽|руб\w*\.?)[^0-9;]{{0,120}}(?:начисля\w+|получаете|получите)\s*$',clause[:m.start()],re.I)
-                if preceding:basis=preceding[1]
-            amount, base = literal_number(m['value']), literal_number(basis) if basis else None
-            if amount is None or (basis is not None and base is None) or not number_starts_here(clause, m.start('value')):
+        for m,amount in reward_amounts(clause,'miles'):
+            index=amount_indexes['miles'];amount_indexes['miles']+=1
+            role=reward_role(clause,m.start(),m.end())
+            if role in ('denied','spend','reference'):
                 continue
-            result.append({'kind':'miles','value':amount,'unit':'miles','qualifier':'up_to' if m['qual'] else 'exact','basis_amount':base,'basis_unit':'RUB' if basis else None,'evidence':clause})
-        for m in re.finditer(rf'скидк\w*\s+(?P<qual>до\s+)?(?P<value>{NUMERIC_TOKEN})\s*(?:₽|руб\w*)',clause,re.I):
-            amount = literal_number(m['value'])
-            if amount is not None:
-                result.append({'kind':'discount','value':amount,'unit':'RUB','qualifier':'up_to' if m['qual'] else 'exact','basis_amount':None,'basis_unit':None,'evidence':clause})
+            basis=reward_basis(clause,m.start(),m.end())
+            if basis is None:
+                continue
+            rate={'kind':'miles','value':amount['value'],'unit':'miles',
+                  'qualifier':'exact' if amount['qualifier']=='unspecified' else amount['qualifier'],
+                  **basis,'evidence':clause}
+            if amount['min_value'] is not None:rate['min_value']=amount['min_value']
+            if with_spans:rate['_amount_index']=index
+            bracket_cap=re.search(r'\(\s*(?:до|не\s+более)\s*$',clause[:m.start()],re.I)
+            if (with_spans and amount['qualifier']=='up_to' and
+                    (bracket_cap or (role=='unknown' and basis['basis_unit'] in ('month','day')))):
+                rate['_reward_cap']=True
+            result.append(rate)
+        for m,amount in fixed_discount_amounts(clause):
+            index=amount_indexes['RUB'];amount_indexes['RUB']+=1
+            if benefit_denied(clause,m.start(),m.end(),amounts=polarity_spans):continue
+            rate={'kind':'discount','value':amount['value'],'unit':'RUB','qualifier':amount['qualifier'],
+                  'basis_amount':None,'basis_unit':None,'evidence':clause}
+            if with_spans:rate['_amount_index']=index
+            result.append(rate)
     unique = {json.dumps(r,ensure_ascii=False,sort_keys=True):r for r in result}
     return list(unique.values())
 

@@ -1,4 +1,4 @@
-# Common normalization of all stored data — 1.0.0
+# Common normalization of all stored data — 1.0.2
 
 This is a deterministic **source-preserving projection**, not another web scrape,
 a new discount catalogue, a personal entitlement check, or a savings calculator.
@@ -59,8 +59,9 @@ card/tier, option, product or deposit band. Examples of guarded distinctions:
 
 - cash discounts vs cash cashback vs miles/points; no reward-to-ruble valuation;
 - earning vs redemption, commissions, subscription prices and minimum cash spend;
-- literal denials of points awards vs neighbouring affirmative amounts; recognized
-  Russian earning verbs keep prefix/suffix negation within their own statement;
+- literal denials, spending, account balances and certificate face values vs
+  neighbouring earned points/miles; recognized prefix/postfix actions own their
+  quantities, including an intervening purchase stage and shared amount lists;
 - amount vs purchase minimum, reward cap and rate denominator;
 - lower/upper range bounds, exact vs up-to rates;
 - literal code vs SMS/app/account delivery; parenthesized code labels remain scope;
@@ -69,8 +70,31 @@ card/tier, option, product or deposit band. Examples of guarded distinctions:
 - reward lifetime, qualifying period and status duration are not offer expiry;
 - a gift-card exclusion is not a complimentary gift.
 
+Literal reward quantities preserve word/dash ranges and lower/upper bounds.
+Recognized positive bonus/earning wording and `+` amounts do not discard their
+units. A stated exchange/purchase/period denominator is kept literally (for
+example, 20 miles per 500 points); a malformed/nonpositive explicit denominator
+does not become a bare award. Bare monthly/day maxima and parenthesized reward
+limits are conditions, not an additional guaranteed award. No exchange value is
+calculated. Reference quantities do not create earned rewards.
+
+Bounded postfix labels such as `10% (постоянной скидки)` own their percentage,
+without also labelling a neighbouring payment/tax percentage. Discounts,
+cashback and gifts retain local denials; product exclusions and restrictions on
+paying a gift's cash equivalent do not erase the positive component. A plural
+predicate can deny a mixed list, while a singular predicate remains local.
+`комплементарная` alone remains ambiguous and is not a typed free gift.
+
+First/repeat purchase scopes belong to their literal benefit component, including
+mixed discounts, gifts and reward quantities. A clearly shared prefix can scope
+the bundle; a sibling's tail cannot. Denominators and parenthesized caps remain
+children of their owning component. An explicitly excluded purchase stage is a
+rule, not an affirmative scope. The original clause stays intact as evidence.
+
 `condition_ids` binds only the same exact evidence or explicit equal nonempty
-scope. Other parent rules still apply and are not expanded into invented logical
+scope, excludes explicitly incompatible first/repeat stages, and restricts local
+reward caps to their owned benefit even when sibling stages are identical.
+Other parent rules still apply and are not expanded into invented logical
 constraints. All terms retain `review_required=true`: this is the context review
 needed before application, **not** a claim that every extracted quantity is wrong.
 `semantic_completeness=not_certified` is deliberate. The number of unrecognized
@@ -84,6 +108,13 @@ conditions, values, timestamps or statuses are copied across records, including
 manual/public disagreements. Supplementary rules, announcements and tier bundles
 are not counted as independent additive discounts. Source status is retained; date
 comparison does not prove current availability or eligibility.
+
+The reader catalogue excludes explicitly chance-to-win campaigns, including
+`шанс выиграть` and `шанс стать одним из ... обладателей`. Their campaign record
+and source evidence remain auditable; they are not guaranteed ordinary offers.
+The bounded check covers the owned benefit, conditions and activation fields,
+without scanning unrelated nested source text.
+Promotional use of `шанс` alone does not hide a stated discount for every participant.
 
 ## Five derived Sheet views
 
