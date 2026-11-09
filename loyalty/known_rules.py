@@ -44,7 +44,7 @@ def match(pattern,value,reason):
             # ("Тариф 1+0. 10 услуг"); that space is not a decimal continuation.
             sentence_boundary=bool(re.search(r'[.)]\s+$',folded[:start]))
             literal_boundary=(sentence_boundary or number_starts_here(folded,start)) and not re.search(
-                r'(?:[+−–—-]|\d\s*[–—-]\s*)$',folded[:start])
+                r'(?:[+−]\s*|[–—-]|\d\s*[–—-]\s*)$',folded[:start])
             if literal_number(group) is None or not literal_boundary:
                 raise ValueError(reason)
     return found
@@ -61,6 +61,14 @@ def unique_match(pattern,value,reason):
     matches=list(re.finditer(pattern.replace(' ',r'\s+'),literal_lines(value),re.I|re.S))
     if len(matches)!=1:raise ValueError(reason)
     return match(pattern,value,reason)
+
+
+def owned_match(anchor,pattern,value,reason):
+    """Own the label before parsing its value, including malformed values."""
+    folded=literal_lines(value)
+    anchors=list(re.finditer(anchor.replace(' ',r'\s+'),folded,re.I))
+    if len(anchors)!=1:raise ValueError(reason)
+    return match(r'\A(?:'+pattern+r')',folded[anchors[0].start():],reason)
 
 
 def date_label(pattern,value):
@@ -190,7 +198,7 @@ def parse_known_rule(source,raw,url,observed_at):
             options.append({'subscription':paid,'label':label,'miles':number(rate[1]),'basis_rub':number(rate[2]),
                 'monthly_cap_miles':number(cap[1]),'monthly_subscription_rub':cost,'evidence':value})
         minimum=match(r'Минимальная сумма покупок по карте в месяц [—–-] ('+NUM+r') ₽',terms,'gpb_minimum_missing')
-        service=match(r'Стоимость обслуживания ('+NUM+r') ₽',terms,'gpb_service_fee_missing')
+        service=owned_match(r'Стоимость обслуживания',r'Стоимость обслуживания ('+NUM+r') ₽',terms,'gpb_service_fee_missing')
         notify=unique_match(r'со? ('+NUM+r') месяца [—–-] ('+NUM+r') ₽/мес',
                             terms,'gpb_notification_fee_missing')
         notification_month=Decimal(literal_number(notify[1]))
@@ -220,7 +228,7 @@ def parse_known_rule(source,raw,url,observed_at):
         earning=content([e]);redemption=terms[second.end():]
         rates=[]
         for label,channel in ((r'При заказе поездки в i[’\']way','direct'),(r'При заказе через турагентство','travel_agent')):
-            clause=match(label+r'\s+('+NUM+r' мил[ьяиюе] за каждые потраченные '+NUM+r'\s*(?:₽|руб\w*))',earning,'iway_earning_channel_missing')
+            clause=owned_match(label,label+r'\s+('+NUM+r' мил[ьяиюе] за каждые потраченные '+NUM+r'\s*(?:₽|руб\w*))',earning,'iway_earning_channel_missing')
             parsed=earning_rules(clause[0])
             if len(parsed)!=1:raise ValueError('iway_ambiguous_channel_rate')
             rates.append({**parsed[0],'channel':channel,'evidence':clause[0]})
@@ -259,8 +267,8 @@ def parse_known_rule(source,raw,url,observed_at):
                        entitlement_expiry_text=expiry[0])
         warnings.append('relative_student_entitlement_expiry_not_calendar_offer_end')
     elif handler=='sim':
-        delivery=match(r'Стоимость услуги [–—-] ('+NUM+r') руб',terms,'sim_delivery_price_missing')
-        replacement=match(r'Дополнительно оплачивается замена SIM-карты [–—-] ('+NUM+r') руб',terms,'sim_replacement_price_missing')
+        delivery=owned_match(r'Стоимость услуги',r'Стоимость услуги [–—-] ('+NUM+r') руб',terms,'sim_delivery_price_missing')
+        replacement=owned_match(r'Дополнительно оплачивается замена SIM-карты',r'Дополнительно оплачивается замена SIM-карты [–—-] ('+NUM+r') руб',terms,'sim_replacement_price_missing')
         free=match(r'Для участников программы T2 Selection услуга предоставляется бесплатно',terms,'sim_selection_delivery_missing')
         details['fees']={'delivery_standard_rub':number(delivery[1]),'replacement_rub':number(replacement[1]),
                          'delivery_selection_rub':'0','evidence':[delivery[0],replacement[0],free[0]]}
@@ -278,9 +286,9 @@ def parse_known_rule(source,raw,url,observed_at):
         details['illustrative_examples_not_universal_rates']=True
         warnings.append('worked_examples_preserved_not_promoted_to_global_rates')
     elif handler=='family':
-        maximum=match(r'до ('+NUM+r') счет(?:ов|а)?\b',terms,'family_account_bound_missing')
-        months=match(r'через ('+NUM+r') месяц(?:ев|а)?\b',terms,'family_exit_bound_missing')
-        cash=match(r'Как минимум ('+NUM+r') рубл(?:ей|я|ь)\b',terms,'miles_minimum_cash_missing')
+        maximum=owned_match(r'\bдо\s+(?=[^.!?;\n]*?\bсчет(?:ов|а)?\b)',r'до ('+NUM+r') счет(?:ов|а)?\b',terms,'family_account_bound_missing')
+        months=owned_match(r'\bчерез\s+(?=[^.!?;\n]*?\bмесяц(?:ев|а)?\b)',r'через ('+NUM+r') месяц(?:ев|а)?\b',terms,'family_exit_bound_missing')
+        cash=owned_match(r'Как минимум',r'Как минимум ('+NUM+r') рубл(?:ей|я|ь)\b',terms,'miles_minimum_cash_missing')
         details['family']={'max_accounts':whole_count(maximum[1],'family_account_invalid'),
             'minimum_membership_months':whole_count(months[1],'family_months_invalid'),
             'evidence':terms.split('Как минимум',1)[0]}

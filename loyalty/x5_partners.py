@@ -82,7 +82,7 @@ def exchange_line(value):
         groups=[i for i in range(1,4) if match[i] is not None]
         if all(literal_number(match[i]) is not None
                and number_starts_here(value,match.start(i))
-               and not re.search(r'(?:[+−–—-]|\d\s*[–—-]\s*)$',value[:match.start(i)]) for i in groups):
+               and not re.search(r'(?:[+−–—-]\s*|\d\s*[–—-]\s*)$',value[:match.start(i)]) for i in groups):
             return True
     return False
 

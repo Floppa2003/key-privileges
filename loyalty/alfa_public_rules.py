@@ -49,16 +49,22 @@ def _count(name, unit):
     return rf'(?P<n_{name}>{NUMERIC_TOKEN}){_WORDS}\s*(?:{unit})\b'
 
 
+def _literal_count(name,unit):
+    return rf'(?P<w_{name}>{NUMERIC_TOKEN}|[а-яё]+(?:\s+[а-яё]+)?){_WORDS}\s*(?:{unit})\b'
+
+
 def _until(marker, maximum):
     """Stop at the first owned label, including when its following value is bad."""
     return rf'(?:(?!{marker}).){{0,{maximum}}}?'
 
 
-def _valid_number(match, group, code, *, integer=False):
+def _valid_number(match, group, code, *, integer=False, price_separator=False):
     value=literal_number(match[group])
     prefix=match.string[:match.start(group)]
+    # The dash in an already matched "uses — cost" pair is table structure.
+    if price_separator:prefix=re.sub(r'[–—-]\s*$','',prefix)
     if (value is None or not number_starts_here(match.string,match.start(group))
-            or re.search(r'(?:[+−–—-]|\d\s*[–—-]\s*)$',prefix)
+            or re.search(r'(?:[+−-]\s*|[–—]|\d\s*[–—-]\s*)$',prefix)
             or (integer and (not value.isdecimal() or int(value)<=0))):
         raise ValueError(code)
     return value
@@ -76,11 +82,25 @@ def _owned_match(text, anchor, pattern, code):
         elif name.startswith('w_'):
             parsed=count_value(value)
             if parsed is None or parsed<=0:raise ValueError(code)
+            if value[0].isdigit():_valid_number(match,name,code,integer=True)
     return match
 
 
 def _owned(text, anchor, pattern, code):
     return _compact(_owned_match(text,anchor,pattern,code)[0])
+
+
+def _payout_limit(text,section,subject,code):
+    starts=list(re.finditer(r'(?<![\d.])'+section,text,re.I))
+    if len(starts)!=1:raise ValueError(code)
+    tail=text[starts[0].end():]
+    stop=re.search(r'(?<![\d.])\d+(?:\.\d+){1,3}\.(?=\s)',tail)
+    owned=text[starts[0].start():starts[0].end()]+(tail[:stop.start()] if stop else tail)
+    label=rf'максимальная\s*сумма\s*Выплаты\s*{subject}\s*составляет\s*'
+    if len(list(re.finditer(label,owned,re.I)))!=1:raise ValueError(code)
+    return _owned(owned,section,section+_until(label,120)+label+_money('cap')
+        +r'\s*на\s*'+_literal_count('participants',r'Участник(?:а|ов)?')
+        +r'\s*за\s*'+_literal_count('months',r'календарн(?:ый|ых)\s*месяц(?:а|ев)?'),code)
 
 
 def _insurance_row(text):
@@ -96,7 +116,8 @@ def _insurance_row(text):
     matches=list(pair.finditer(cells))
     if not matches:raise ValueError(code)
     for match in matches:
-        for name in ('n_uses','n_cost'):_valid_number(match,name,code,integer=True)
+        for name in ('n_uses','n_cost'):
+            _valid_number(match,name,code,integer=True,price_separator=name=='n_cost')
     remainder=pair.sub('',cells)
     remainder=re.sub(r'Не\s*предоставляется','',remainder,flags=re.I)
     if re.sub(r'[\s.;,]+','',remainder):raise ValueError(code)
@@ -242,16 +263,10 @@ def parse_core(data: bytes, observed_at: str) -> list[dict]:
         text,
         r'6\.6\.3\.',
         r'6\.6\.3\.'+_until(r'не\s*более\b(?!\s*следующих\s*сумм\b)',650)
-        +maximum+_money('cap')+r'\s*за\s*доступ\s*одного\s*лица',
+        +maximum+_money('cap')+r'\s*за\s*доступ\s*'+_literal_count('people',r'лиц(?:а|о)?'),
         "alfa_lounge_benefit_missing",
     )
-    lounge_limit = _owned(
-        text,
-        r'6\.6\.7\.',
-        r'6\.6\.7\..{0,120}?максимальная\s*сумма\s*Выплаты\s*БЗ\s*составляет\s*'+_money('cap')
-        +r'\s*на\s*одного\s*Участника\s*за\s*один\s*календарный\s*месяц',
-        "alfa_lounge_limit_missing",
-    )
+    lounge_limit = _payout_limit(text,r'6\.6\.7\.',r'БЗ',"alfa_lounge_limit_missing")
 
     restaurant_anchor=r'Выплата\s*за\s*посещение\s*ресторанов/\s*кафе/\s*баров'
     points=r'(?:Альфа\s*-\s*)?Балл(?:а|ов)?'
@@ -263,13 +278,7 @@ def parse_core(data: bytes, observed_at: str) -> list[dict]:
         +maximum+_money('second')+r'\s*при\s*списании\s*'+_count('second',points),
         "alfa_restaurant_benefit_missing",
     )
-    restaurant_limit = _owned(
-        text,
-        r'6\.7\.7\.',
-        r'6\.7\.7\..{0,120}?максимальная\s*сумма\s*Выплаты\s*РКБ\s*составляет\s*'+_money('cap')
-        +r'\s*на\s*одного\s*Участника\s*за\s*один\s*календарный\s*месяц',
-        "alfa_restaurant_limit_missing",
-    )
+    restaurant_limit = _payout_limit(text,r'6\.7\.7\.',r'РКБ',"alfa_restaurant_limit_missing")
 
     qr_benefit = _owned(
         text,

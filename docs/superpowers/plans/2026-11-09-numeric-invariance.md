@@ -85,5 +85,5 @@ Each implementation task runs the full suite once before its commit; `task-done`
 - [x] Bump to1.0.4 and document the repaired numerical paths.
 - [x] Run the complete Python suite and `node --test key/refresh.test.mjs`; compare base/current projections on immutable public fixtures or the prior public snapshot and inspect every delta.
 - [x] Commit `fix: version numerical invariance repairs`.
-- [ ] Obtain one fresh whole-branch review; fix material findings in one RED→GREEN pass and run the full suite.
+- [x] Obtain one fresh whole-branch review; fix material findings in one RED→GREEN pass and run the full suite. Five important findings fixed; 2,431 Python and 7 Node tests passed; final public/native replay retains the reviewed deltas.
 - [ ] Publish a PR, verify final-head CI, merge the tested tree, use the existing request bridge to refresh the two Alfa PDFs whose lost clauses cannot be recovered from stored rows, wait for publication, and independently read native manifest/catalogue state. Record completion in release evidence after the final write.

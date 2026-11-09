@@ -28,6 +28,15 @@ def _qualification_number(match,*,integer=False):
     return int(value) if integer else value
 
 
+def _qualification_clause(value,anchor,pattern):
+    markers=list(re.finditer(anchor,value,re.I))
+    if not markers:return None
+    if len(markers)!=1:raise ValueError('ural_qualification_number_ambiguous')
+    found=re.match(pattern,value[markers[0].start():],re.I)
+    if found is None:raise ValueError('ural_qualification_number_missing')
+    return found
+
+
 def heading_body(heading):
     nodes=[]
     for node in heading.next_siblings:
@@ -62,12 +71,9 @@ def ural_tiers(raw, observed_at):
             raise ValueError('ural_tier_boundary_ambiguous')
         q={'evidence':qualification,'registration':bool(re.search('при регистрации',flat_qualification,re.I)),
            'flights':None,'spend_rub':None,'operator':None,'window':None,'window_years':None,'required_previous_tier':None}
-        f=re.search(rf'при совершении ({NUMERIC_TOKEN}) пол[её]т(?:ов|а)?\b',flat_qualification,re.I)
-        amount=re.search(rf'на сумму ({NUMERIC_TOKEN}) рубл(?:ей|я|ь)\b',flat_qualification,re.I)
-        years=re.search(rf'в течение ({NUMERIC_TOKEN}) календарн(?:ого|ых) (?:года|лет)\b',flat_qualification,re.I)
-        for marker,found in ((r'при совершении',f),(r'на сумму',amount),(r'в течение.*календарн',years)):
-            if re.search(marker,flat_qualification,re.I) and found is None:
-                raise ValueError('ural_qualification_number_missing')
+        f=_qualification_clause(flat_qualification,r'при совершении',rf'при совершении ({NUMERIC_TOKEN}) пол[её]т(?:ов|а)?\b')
+        amount=_qualification_clause(flat_qualification,r'на сумму',rf'на сумму ({NUMERIC_TOKEN}) рубл(?:ей|я|ь)\b')
+        years=_qualification_clause(flat_qualification,r'в течение',rf'в течение ({NUMERIC_TOKEN}) календарн(?:ого|ых) (?:года|лет)\b')
         if f:q['flights']=_qualification_number(f,integer=True)
         if amount:q['spend_rub']=_qualification_number(amount)
         if f and amount and 'либо' in flat_qualification:q['operator']='OR'

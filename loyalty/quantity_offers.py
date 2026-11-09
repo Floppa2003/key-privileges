@@ -52,7 +52,7 @@ def has_quantity_offer(value):
     for match in _OFFER.finditer(text):
         prefix, tail = text[:match.start()], text[match.end():]
         if (not number_starts_here(text, match.start())
-                or re.search(r'(?:[+−–—-]|\d\s*[–—-]\s*)$', prefix)
+                or re.search(r'(?:[+−–—-]\s*|\d\s*[–—-]\s*)$', prefix)
                 or re.search(rf'\b{_EXTRA_NUMBER}\s+$', prefix)):
             continue
         if re.match(rf'(?:[.,]\d|\s*[–—-]\s*(?:\d|{_WORD})|\s+{_EXTRA_NUMBER}\b|\s+с\s+половиной\b)', tail):
@@ -60,13 +60,20 @@ def has_quantity_offer(value):
         more, paid = count_value(match['more']), count_value(match['paid'])
         if more is None or paid is None or not more > paid > 0:
             continue
-        end = match.end() + len(re.match(r'[»”"\']*', tail)[0])
+        end = match.end() + len(re.match(r'\s*(?:[»”"\']\s*)*', tail)[0])
+        # Temporal modifiers and spaces inside closing quotes do not detach
+        # an explicit denial from its quantity offer.
+        modifier = re.match(r'более\s+(?=не\b)', text[end:])
+        if modifier:end += modifier.end()
         suffix = text[end:]
         if re.match(r'\s*(?:₽|\$|€|руб\w*\b|копе\w*\b|usd\b|eur\b|доллар\w*\b|евро\b)', suffix):
             continue
         if benefit_denied(text, match.start(), end):
             continue
-        if re.match(r'\s+(?:(?:уже|была)\s+)?(?:отменен\w*|завершен\w*|законч\w*|недействител\w*)\b', suffix):
+        cancelled = r'(?:отменен\w*|завершен\w*|законч\w*|недействител\w*)'
+        if re.match(r'\s*(?:(?:уже|была)\s+)?'+cancelled+r'\b', suffix):
+            continue
+        if re.search(r'\b'+cancelled+r'\s+(?:акци\w*|предложени\w*)\s*[«“"\']?\s*$', prefix):
             continue
         return True
     return False

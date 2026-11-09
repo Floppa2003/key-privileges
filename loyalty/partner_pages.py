@@ -133,9 +133,10 @@ def extract_partner_page(source,soup,url,observed_at):
               'limitations':'press_release_not_full_partner_card_rules'})
                 for audience,claim in [('new_customers',m[1]),('existing_customers',m[2])]]
     if source=='nordwind_domina':
-        matches=list(re.finditer(rf'Каждые ({NUMERIC_TOKEN})\s*₽, потраченные в Domina Пулково ({NUMERIC_TOKEN}) мил[ьяию]\b',flat))
-        if len(matches)!=1:raise ValueError('Nordwind hotel earning card changed')
-        match=matches[0]
+        anchors=list(re.finditer(r'\bКаждые\b',flat,re.I))
+        if len(anchors)!=1:raise ValueError('Nordwind hotel earning card changed')
+        match=re.match(rf'Каждые ({NUMERIC_TOKEN})\s*₽, потраченные в Domina Пулково ({NUMERIC_TOKEN}) мил[ьяию]\b',flat[anchors[0].start():],re.I)
+        if match is None:raise ValueError('Nordwind hotel earning card changed')
         basis,value=literal_number(match[1]),literal_number(match[2])
         if basis is None or value is None:raise ValueError('Nordwind hotel earning number invalid')
         return [make('offer',match[0],details={'earning_rule':{

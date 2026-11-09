@@ -16,10 +16,34 @@ Base: `4b100d5d2adf1e954cf97ee0f68ce7a731732018`. Normalizer: **1.0.4**.
   all price-table columns, and cashback preserves historical qualifiers in its
   own row. Repeated expense columns do not become a standalone reader benefit.
 
+## Independent whole-branch review
+
+One fresh review of `4b100d5..49f97dd` identified five important findings and no
+critical or minor findings. All five were addressed in one material-fix pass:
+
+- Cancelled Avolta bundles remain excluded across source and reader boundaries,
+  including cancellation before the phrase, temporal modifiers and spaces inside
+  closing quotes. Product exclusions still preserve a valid offer.
+- A spaced sign cannot disappear from quantity offers, Primbank earning rates,
+  X5 exchange rates or Alfa cashback limits. Explicit table/price separators
+  remain valid structure.
+- Required field labels are owned before their numerical values are parsed.
+  Repeated contradictory or malformed labels in GPB, SIM, Family, iway, Ural,
+  Domina and Alfa cannot be skipped in favour of a later convenient value.
+- Alfa person, participant and calendar-month bases accept changing counts in
+  digits or supported words, preserving the complete literal basis without
+  dividing its limit into an inferred per-person or monthly entitlement.
+- Finuslugi point/day forms and Primbank mile/welcome forms follow the changed
+  number; deposit money retains decimal boundaries while durations stay integral.
+
+The pass added 21 focused regression methods. Native-document replay also caught
+and covered a date inside a payout clause being mistaken for a section boundary.
+No review findings were deferred and no additional review cycle was performed.
+
 ## Deterministic verification
 
 - Baseline: 2,362 Python tests passed.
-- Implementation: **2,410 Python tests passed**, including regression tests first
+- Final implementation: **2,431 Python tests passed**, including regression tests first
   observed failing before their fixes. **7 KEY Node tests passed**.
 - The 1.0.4 generation differs from 1.0.3 for the same input and assessment date;
   the source input remains unchanged.
