@@ -316,7 +316,7 @@
     ],
     "required": [
       "Семья",
-      "счетов",
+      "счет",
       "Как минимум"
     ],
     "record_kind": "program_rules",
@@ -330,7 +330,7 @@
     "url": "https://media.utair.ru/wmiles",
     "program": "Utair Status",
     "partner": "Utair — Поколения",
-    "title": "Двойные мили: аудитории и условия",
+    "title": "Мили по программе «Поколения»: аудитории и условия",
     "selectors": [
       "#rec586475392",
       "#rec586348980"

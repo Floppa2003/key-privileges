@@ -3,7 +3,7 @@ from __future__ import annotations
 import json,math,re
 from urllib.parse import urlencode
 from bs4 import BeautifulSoup
-from normalized import number
+from normalized import number,NUMERIC_TOKEN,literal_number,number_starts_here
 from public_reward_projection import plain,one,make_record
 from expansion_common import compact,sha,identity,iso,check_period,exclusion,ExcludedOffer,reported,add_error,PROGRAMS
 
@@ -76,6 +76,17 @@ def source_fields(e):
         terms=[dict(kind='partner_privilege',fragment=benefit)],scope={'X5_membership_required':True,'individual_code_not_issued':True},
         warnings=['X5_points_cost_not_cash_discount'])
 
+def exchange_line(value):
+    pattern=rf'({NUMERIC_TOKEN})\s+мил[ьяи]\s+за каждые\s+({NUMERIC_TOKEN})\s+балл(?:ов|а)?\b|по курсу\s+({NUMERIC_TOKEN})(?![\d.,])'
+    for match in re.finditer(pattern,value,re.I):
+        groups=[i for i in range(1,4) if match[i] is not None]
+        if all(literal_number(match[i]) is not None
+               and number_starts_here(value,match.start(i))
+               and not re.search(r'(?:[+−–—-]\s*|\d\s*[–—-]\s*)$',value[:match.start(i)]) for i in groups):
+            return True
+    return False
+
+
 def detail(raw,card,category,now):
     soup=BeautifulSoup(raw,'html.parser');root=one(soup,'main');h=root.select('h2')
     if not h:raise ValueError('x5_detail_missing_heading')
@@ -93,7 +104,7 @@ def detail(raw,card,category,now):
         # Keep a stated conversion ratio, not the surrounding social-network or airline advertising.
         about=section('О партнёре')
         e['exchange_terms']='\n'.join(line for line in (about+'\n'+e['activation']).splitlines()
-            if re.search(r'по курсу\s+\d|\b\d+\s+миль за каждые\s+\d+',line,re.I))
+            if exchange_line(line))
     check_period(iso(card.get('startDate')),iso(card.get('endDate')),now)
     return make_record(SOURCE,e,now)
 

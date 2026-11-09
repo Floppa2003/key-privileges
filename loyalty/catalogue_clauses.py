@@ -13,6 +13,7 @@ from collections import Counter
 from datetime import date
 from decimal import Decimal
 from normalized import NUMERIC_TOKEN, literal_number
+from quantity_offers import has_quantity_offer
 
 VERSION = "practical-catalogue-v2"
 HEADERS = ["Партнёр","Программа","Выгода","Промокод / получение","Как получить",
@@ -243,11 +244,14 @@ def promotional_price_claim(s, raw=None):
 def benefit_claim(s, raw=None):
     """A percentage or a normal breakfast is not, by itself, a privilege."""
     if not s or is_boilerplate(s) or ((DESCRIPTIVE.search(s) or MARKETING.search(s)) and not re.search(r"[сc]кидк|к[еэ]шб[еэ]к|в подарок|бесплат",s,re.I)):return False
+    # Repeated redemption-price columns can accidentally satisfy OFFER's
+    # points-near-a-number fallback. Their count does not establish eligibility.
+    if re.search(r'^Услуг[аи]\b.*?\bраз(?:а)?\s*[–—-]\s*[^;\n]{0,100}?Промо\s*-\s*балл',s,re.I):return False
     if re.search(r"двойную выгоду|родител\w* отмечают|\d+% успешных|процентил|"
                  r"поэтому .{0,30}подарок|фирменные подарки для|"
                  r"скидк\w* (?:не предоставля|не действ|не распространя)",s,re.I):return False
     if re.search(r"(?:дарит|дарим|скидка|кешбэк|бонусы|составляет|от|до|за|при|на)\s*$",s,re.I):return False
-    if OFFER.search(s) or promotional_price_claim(s,raw):return True
+    if OFFER.search(s) or promotional_price_claim(s,raw) or has_quantity_offer(s):return True
     if raw and len(s)<350 and re.search(r"\d\s*%",s) and (
         s in units(raw.get("benefit","")) or raw.get("details",{}).get("public_partner")
     ) and not re.search(r"успеваем|родител|населен|успешных|рынк|доходност|исследовани[яй] показ|"

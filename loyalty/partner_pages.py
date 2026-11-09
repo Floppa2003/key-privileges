@@ -6,7 +6,7 @@ from datetime import datetime
 from urllib.parse import urljoin,urlsplit
 from bs4 import BeautifulSoup
 from html_text import html_text
-from normalized import make_offer,text,canonical_url
+from normalized import make_offer,text,canonical_url,NUMERIC_TOKEN,literal_number
 from source_diagnostics import ParseError
 
 CONFIG=json.loads(Path(__file__).with_suffix('.json').read_text(encoding='utf8'))
@@ -133,10 +133,14 @@ def extract_partner_page(source,soup,url,observed_at):
               'limitations':'press_release_not_full_partner_card_rules'})
                 for audience,claim in [('new_customers',m[1]),('existing_customers',m[2])]]
     if source=='nordwind_domina':
-        match=re.search(r'Каждые ([0-9 ]+)₽, потраченные в Domina Пулково ([0-9]+) мил[ьяию]',flat)
-        if not match:raise ValueError('Nordwind hotel earning card changed')
+        anchors=list(re.finditer(r'\bКаждые\b',flat,re.I))
+        if len(anchors)!=1:raise ValueError('Nordwind hotel earning card changed')
+        match=re.match(rf'Каждые ({NUMERIC_TOKEN})\s*₽, потраченные в Domina Пулково ({NUMERIC_TOKEN}) мил[ьяию]\b',flat[anchors[0].start():],re.I)
+        if match is None:raise ValueError('Nordwind hotel earning card changed')
+        basis,value=literal_number(match[1]),literal_number(match[2])
+        if basis is None or value is None:raise ValueError('Nordwind hotel earning number invalid')
         return [make('offer',match[0],details={'earning_rule':{
-            'value':match[2],'unit':'miles','basis_amount':match[1].replace(' ',''),'basis_unit':'RUB','evidence':match[0]}})]
+            'value':value,'unit':'miles','basis_amount':basis,'basis_unit':'RUB','evidence':match[0]}})]
     benefit=content(select(cfg['benefit_selectors'])) if cfg.get('benefit_selectors') else terms
     redemption=content(select(cfg['redemption_selectors'])) if cfg.get('redemption_selectors') else ''
     return [make('offer',benefit,redemption=redemption,valid_from=date_from,valid_until=date_until)]

@@ -21,7 +21,7 @@ from promo_codes import extract_promocodes
 from iso_datetime import parse_iso_datetime
 from reward_context import reward_role, benefit_denied, gift_spans
 
-VERSION = '1.0.3'
+VERSION = '1.0.4'
 GROUPS = ('benefits', 'conditions', 'costs', 'codes')
 INPUT_TABS = {
     'parser_offers': (1, 26), 'loyalty_partner_benefits': (4, 13),

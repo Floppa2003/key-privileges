@@ -43,16 +43,32 @@ def match(pattern,value,reason):
             # A preceding tariff label can end in a digit and a sentence dot
             # ("Тариф 1+0. 10 услуг"); that space is not a decimal continuation.
             sentence_boundary=bool(re.search(r'[.)]\s+$',folded[:start]))
-            literal_boundary=sentence_boundary or number_starts_here(folded,start)
+            literal_boundary=(sentence_boundary or number_starts_here(folded,start)) and not re.search(
+                r'(?:[+−]\s*|[–—-]|\d\s*[–—-]\s*)$',folded[:start])
             if literal_number(group) is None or not literal_boundary:
                 raise ValueError(reason)
     return found
+
+
+def whole_count(value,reason):
+    parsed=literal_number(value)
+    if parsed is None or not parsed.isdecimal() or int(parsed)<=0:
+        raise ValueError(reason)
+    return int(parsed)
 
 
 def unique_match(pattern,value,reason):
     matches=list(re.finditer(pattern.replace(' ',r'\s+'),literal_lines(value),re.I|re.S))
     if len(matches)!=1:raise ValueError(reason)
     return match(pattern,value,reason)
+
+
+def owned_match(anchor,pattern,value,reason):
+    """Own the label before parsing its value, including malformed values."""
+    folded=literal_lines(value)
+    anchors=list(re.finditer(anchor.replace(' ',r'\s+'),folded,re.I))
+    if len(anchors)!=1:raise ValueError(reason)
+    return match(r'\A(?:'+pattern+r')',folded[anchors[0].start():],reason)
 
 
 def date_label(pattern,value):
@@ -170,7 +186,7 @@ def parse_known_rule(source,raw,url,observed_at):
             label=flat(html_text(heading[0]))
             if not label or label in labels:raise ValueError('gpb_subscription_label_duplicate')
             labels.add(label)
-            rate=match(r'Мили «Аэрофлот Бонус» (\d+(?:[.,]\d+)?) мили за (\d+) ₽ покупок',value,'gpb_rate_missing')
+            rate=match(r'Мили «Аэрофлот Бонус» ('+NUM+r') мил[ьяи] за ('+NUM+r') ₽ покупок',value,'gpb_rate_missing')
             cap=match(r'Максимум миль в месяц ('+NUM+r')(?= Переводы|$)',value,'gpb_cap_missing')
             benefit_clauses.append(label+': '+rate[0]+'; '+cap[0])
             monthly=re.search(r'(?:далее\s*[—–-]\s*)?('+NUM+r')\s*₽\s*в\s+месяц',value,re.I)
@@ -179,16 +195,16 @@ def parse_known_rule(source,raw,url,observed_at):
                 raise ValueError('gpb_monthly_cost_invalid')
             cost=literal_number(monthly[1]) if monthly else '0' if re.search(r'Бесплатно',value,re.I) else None
             paid=(float(cost)>0) if cost is not None else None
-            options.append({'subscription':paid,'label':label,'miles':number(rate[1]),'basis_rub':rate[2],
+            options.append({'subscription':paid,'label':label,'miles':number(rate[1]),'basis_rub':number(rate[2]),
                 'monthly_cap_miles':number(cap[1]),'monthly_subscription_rub':cost,'evidence':value})
         minimum=match(r'Минимальная сумма покупок по карте в месяц [—–-] ('+NUM+r') ₽',terms,'gpb_minimum_missing')
-        service=match(r'Стоимость обслуживания (\d+) ₽',terms,'gpb_service_fee_missing')
+        service=owned_match(r'Стоимость обслуживания',r'Стоимость обслуживания ('+NUM+r') ₽',terms,'gpb_service_fee_missing')
         notify=unique_match(r'со? ('+NUM+r') месяца [—–-] ('+NUM+r') ₽/мес',
                             terms,'gpb_notification_fee_missing')
         notification_month=Decimal(literal_number(notify[1]))
         if notification_month<=0 or notification_month!=notification_month.to_integral_value():
             raise ValueError('gpb_notification_month_invalid')
-        fees={'card_service_rub':service[1],
+        fees={'card_service_rub':number(service[1]),
               'notifications_from_month':int(notification_month),
               'notifications_monthly_rub':number(notify[2]),'evidence':notify[0]}
         if notification_month==2:
@@ -212,7 +228,7 @@ def parse_known_rule(source,raw,url,observed_at):
         earning=content([e]);redemption=terms[second.end():]
         rates=[]
         for label,channel in ((r'При заказе поездки в i[’\']way','direct'),(r'При заказе через турагентство','travel_agent')):
-            clause=match(label+r'\s+(\d+ мил[ьяиюе] за каждые потраченные '+NUM+r'\s*(?:₽|руб\w*))',earning,'iway_earning_channel_missing')
+            clause=owned_match(label,label+r'\s+('+NUM+r' мил[ьяиюе] за каждые потраченные '+NUM+r'\s*(?:₽|руб\w*))',earning,'iway_earning_channel_missing')
             parsed=earning_rules(clause[0])
             if len(parsed)!=1:raise ValueError('iway_ambiguous_channel_rate')
             rates.append({**parsed[0],'channel':channel,'evidence':clause[0]})
@@ -228,8 +244,8 @@ def parse_known_rule(source,raw,url,observed_at):
         if not details['earning_rules']:raise ValueError('skyshop_earning_rule_missing')
         benefit=earning;warnings.append('rate_effective_date_not_full_offer_validity')
     elif handler=='x5':
-        m=match(r'(\d+) миль за каждые (\d+) баллов',terms,'x5_exchange_rule_missing')
-        details['exchange_rule']={'miles':m[1],'basis_amount':m[2],'basis_unit':'X5_points','evidence':m[0]}
+        m=match(r'('+NUM+r') мил[ьяи] за каждые ('+NUM+r') балл(?:ов|а)?\b',terms,'x5_exchange_rule_missing')
+        details['exchange_rule']={'miles':number(m[1]),'basis_amount':number(m[2]),'basis_unit':'X5_points','evidence':m[0]}
         end,evidence=date_label(r'Акция действует до (\d{1,2}) ('+'|'.join(MONTHS)+r') (\d{4})',terms)
         details['validity_evidence']=evidence
     elif handler in ('tripster','vipzal'):
@@ -251,10 +267,10 @@ def parse_known_rule(source,raw,url,observed_at):
                        entitlement_expiry_text=expiry[0])
         warnings.append('relative_student_entitlement_expiry_not_calendar_offer_end')
     elif handler=='sim':
-        delivery=match(r'Стоимость услуги [–—-] (\d+) руб',terms,'sim_delivery_price_missing')
-        replacement=match(r'Дополнительно оплачивается замена SIM-карты [–—-] (\d+) руб',terms,'sim_replacement_price_missing')
+        delivery=owned_match(r'Стоимость услуги',r'Стоимость услуги [–—-] ('+NUM+r') руб',terms,'sim_delivery_price_missing')
+        replacement=owned_match(r'Дополнительно оплачивается замена SIM-карты',r'Дополнительно оплачивается замена SIM-карты [–—-] ('+NUM+r') руб',terms,'sim_replacement_price_missing')
         free=match(r'Для участников программы T2 Selection услуга предоставляется бесплатно',terms,'sim_selection_delivery_missing')
-        details['fees']={'delivery_standard_rub':delivery[1],'replacement_rub':replacement[1],
+        details['fees']={'delivery_standard_rub':number(delivery[1]),'replacement_rub':number(replacement[1]),
                          'delivery_selection_rub':'0','evidence':[delivery[0],replacement[0],free[0]]}
     elif handler=='magnit':
         details['activation']={'same_phone_required':bool(re.search('под номером, на котором подключена подписка',flat(terms))),
@@ -270,22 +286,23 @@ def parse_known_rule(source,raw,url,observed_at):
         details['illustrative_examples_not_universal_rates']=True
         warnings.append('worked_examples_preserved_not_promoted_to_global_rates')
     elif handler=='family':
-        maximum=match(r'до (\d+) счетов',terms,'family_account_bound_missing')
-        months=match(r'через (\d+) месяцев',terms,'family_exit_bound_missing')
-        cash=match(r'Как минимум (\d+) рублей',terms,'miles_minimum_cash_missing')
-        details['family']={'max_accounts':int(maximum[1]),'minimum_membership_months':int(months[1]),
+        maximum=owned_match(r'\bдо\s+(?=[^.!?;\n]*?\bсчет(?:ов|а)?\b)',r'до ('+NUM+r') счет(?:ов|а)?\b',terms,'family_account_bound_missing')
+        months=owned_match(r'\bчерез\s+(?=[^.!?;\n]*?\bмесяц(?:ев|а)?\b)',r'через ('+NUM+r') месяц(?:ев|а)?\b',terms,'family_exit_bound_missing')
+        cash=owned_match(r'Как минимум',r'Как минимум ('+NUM+r') рубл(?:ей|я|ь)\b',terms,'miles_minimum_cash_missing')
+        details['family']={'max_accounts':whole_count(maximum[1],'family_account_invalid'),
+            'minimum_membership_months':whole_count(months[1],'family_months_invalid'),
             'evidence':terms.split('Как минимум',1)[0]}
-        details['miles_payment']={'minimum_cash_rub':cash[1],'evidence':'Как минимум'+terms.split('Как минимум',1)[1]}
+        details['miles_payment']={'minimum_cash_rub':number(cash[1]),'evidence':'Как минимум'+terms.split('Как минимум',1)[1]}
     elif handler=='generations':
         young=match(r'от (\d+) до (\d+) лет',terms,'generations_youth_age_missing')
         senior=match(r'от (\d+) лет \(для женщин\), от (\d+) лет \(для мужчин\)',terms,'generations_senior_age_missing')
         youthcode=match(r'для молодежи\s+([A-Z][A-Z0-9]+)',terms,'generations_youth_code_missing')
         seniorcode=match(r'для людей старшего поколения\s+([A-Z][A-Z0-9]+)',terms,'generations_senior_code_missing')
-        life=match(r'Срок действия миль.{0,60}составляет (\d+) года',terms,'generations_reward_lifetime_missing')
+        life=match(r'Срок действия миль.{0,60}составляет ('+NUM+r') (?:год(?:а)?|лет)\b',terms,'generations_reward_lifetime_missing')
         multiplier=re.search(r'(двойные|тройные|четверные|\d+-кратные) мили',terms,re.I)
         factor=({'двойные':2,'тройные':3,'четверные':4}.get(multiplier[1].lower()) or int(multiplier[1].split('-')[0])) if multiplier else None
         details.update(reward_multiplier=factor,reward_multiplier_evidence=multiplier[0] if multiplier else None,
-          reward_lifetime_years=int(life[1]),reward_lifetime_evidence=life[0],
+          reward_lifetime_years=whole_count(life[1],'generations_reward_lifetime_invalid'),reward_lifetime_evidence=life[0],
           audiences=[{'audience':'youth','age_min':int(young[1]),'age_max':int(young[2]),'promo_code':youthcode[1],'evidence':[young[0],youthcode[0]]},
                      {'audience':'senior','women_age_min':int(senior[1]),'men_age_min':int(senior[2]),'promo_code':seniorcode[1],'evidence':[senior[0],seniorcode[0]]}])
         warnings.append('reward_lifetime_is_not_offer_expiry')
@@ -339,19 +356,22 @@ def smartavia_records(cfg,nodes,terms,details,warnings,url,now):
         if key in labels:raise ValueError('smartavia_duplicate_plan_label')
         labels.add(key)
         price=match(r'Оформить за ('+NUM+r')\s*₽',value,'smartavia_plan_price_missing')
-        segments=match(r'(\d+) сегментов со скидкой (\d+) ₽',value,'smartavia_segments_missing')
-        baggage=match(r'(\d+) услуг «Багаж (\d+) кг» со скидкой (\d+) ₽',value,'smartavia_baggage_missing')
+        segments=match(r'('+NUM+r') сегмент(?:ов|а)? со скидкой ('+NUM+r') ₽',value,'smartavia_segments_missing')
+        baggage=match(r'('+NUM+r') услуг(?:а|и)? «Багаж ('+NUM+r') кг» со скидкой ('+NUM+r') ₽',value,'smartavia_baggage_missing')
         d={**details,'subscription_plan':{'label':key,'additional_travelers':int(travelers[1]) if travelers else None,
-           'annual_rub':number(price[1]),'flight_segments':int(segments[1]),'flight_discount_rub':segments[2],
-           'baggage_services':int(baggage[1]),'baggage_kg':int(baggage[2]),'baggage_discount_rub':baggage[3],
+           'annual_rub':number(price[1]),'flight_segments':whole_count(segments[1],'smartavia_segments_invalid'),
+           'flight_discount_rub':number(segments[2]),
+           'baggage_services':whole_count(baggage[1],'smartavia_baggage_count_invalid'),
+           'baggage_kg':whole_count(baggage[2],'smartavia_baggage_weight_invalid'),'baggage_discount_rub':number(baggage[3]),
            'evidence':value},'scope':'published_plan_card_and_common_subscription_rules'}
         records.append(make_offer('smartavia_rules','plan:'+key,cfg['program'],cfg['partner'],value,url,now,
             title='Подписка Smartavia '+key,record_kind='membership_plan',link_kind='page_block',
             locator='.smartup-tariff-item label='+key,conditions=terms,details=d,
             warnings=warnings+['annual_plan_duration_not_offer_expiry','subscription_cost_is_not_discount']))
     # The EKP benefit is not applied silently to each published base plan price.
-    claim=match(r'Все держатели ЕКП могут купить годовую Подписку Smartavia со скидкой (\d+)%\.',terms,'smartavia_ekp_claim_missing')
-    d={**details,'discount_percent':claim[1],'discount_basis':'annual_subscription_not_air_ticket',
+    claim=match(r'Все держатели ЕКП могут купить годовую Подписку Smartavia со скидкой ('+NUM+r')%\.',terms,'smartavia_ekp_claim_missing')
+    if not 0<Decimal(number(claim[1]))<=100:raise ValueError('smartavia_ekp_percent_invalid')
+    d={**details,'discount_percent':number(claim[1]),'discount_basis':'annual_subscription_not_air_ticket',
        'base_plan_prices_not_recalculated':True}
     records.append(make_offer('smartavia_rules','ekp:annual-subscription','Единая карта петербуржца (ЕКП)','Smartavia',claim[0],url,now,
       title='Скидка ЕКП на годовую подписку Smartavia',record_kind='program_rules',link_kind='page_block',

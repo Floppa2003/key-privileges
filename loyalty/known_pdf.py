@@ -8,6 +8,7 @@ import hashlib
 import io
 import re
 from datetime import datetime
+from decimal import Decimal
 from normalized import make_offer,NUMERIC_TOKEN,literal_number,number_starts_here
 from read_budget import within_source_budget
 
@@ -33,12 +34,19 @@ def require(pattern,value):
     return found
 
 
-def required_integer(match,group=1):
-    """Reviewed numeric fields require a complete, whole-number source token."""
+def required_number(match,group=1):
+    """Read a whole source token, never a signed or ranged numeric suffix."""
     value=literal_number(match[group])
-    if (value is None or not value.isdecimal()
+    if (value is None
+        or re.search(r'(?:[+−-]\s*|[–—]|\d\s*[–—-]\s*)$',match.string[:match.start(group)])
         or not number_starts_here(match.string,match.start(group))):
         raise ValueError('pdf_rule_invalid_number')
+    return value
+
+
+def required_integer(match,group=1):
+    value=required_number(match,group)
+    if not value.isdecimal():raise ValueError('pdf_rule_invalid_number')
     return value
 
 
@@ -90,12 +98,12 @@ def parse_pdf_pages(source: str,pages: list[str],observed_at: str,*,document_sha
         if not 1<=len(clauses)<=50 or any(not x for x in clauses):raise ValueError('deposit_tiers_missing_or_unbounded')
         tiers=[]
         for clause in clauses:
-            reward=require(rf'({NUMERIC_TOKEN}) баллов только за первый вклад',clause)
+            reward=require(rf'({NUMERIC_TOKEN}) балл(?:ов|а)? только за первый вклад',clause)
             interval=require(rf'на сумму от ({NUMERIC_TOKEN})\s*\([^)]*\)(?:\s+до ({NUMERIC_TOKEN})\s*\([^)]*\))? рублей',clause)
-            months=require(rf'не менее чем на ({NUMERIC_TOKEN})\s*\([^)]*\) календарный месяц',clause)
-            lo,hi=required_integer(interval),required_integer(interval,2) if interval[2] else None
+            months=require(rf'не менее чем на ({NUMERIC_TOKEN})\s*\([^)]*\) календарн(?:ый|ых) месяц(?:а|ев)?\b',clause)
+            lo,hi=required_number(interval),required_number(interval,2) if interval[2] else None
             term=int(required_integer(months))
-            if int(lo)<=0 or (hi is not None and int(hi)<int(lo)) or term<1:
+            if Decimal(lo)<=0 or (hi is not None and Decimal(hi)<Decimal(lo)) or term<1:
                 raise ValueError('invalid_deposit_interval')
             tiers.append({'points':required_integer(reward),'deposit_min_rub':lo,'deposit_max_rub':hi,
                           'term_min_months':term,'reward_unit':'RZD_Bonus_points',
@@ -103,7 +111,7 @@ def parse_pdf_pages(source: str,pages: list[str],observed_at: str,*,document_sha
         if len({t['deposit_min_rub'] for t in tiers})!=len(tiers):raise ValueError('duplicate_deposit_tier')
         period=require(r'Акция проводится в рамках срока с (\d{2}\.\d{2}\.\d{4}) г\. по (\d{2}\.\d{2}\.\d{4}) г\.',all_text)
         start,end=[datetime.strptime(s,'%d.%m.%Y').date().isoformat() for s in period.groups()]
-        credit=require(rf'в течение ({NUMERIC_TOKEN}) календарных дней после истечения Периода охлаждения',all_text)
+        credit=require(rf'в течение ({NUMERIC_TOKEN}) календарн(?:ых|ого) дн(?:ей|я) после истечения Периода охлаждения',all_text)
         cooling=require(rf'Период охлаждения\s*[–—-].{{0,100}}?по ({NUMERIC_TOKEN})\s*\(',all_text)
         details.update(deposit_reward_tiers=tiers,credit_wait_days=int(required_integer(credit)),
                        cooling_days=int(required_integer(cooling)),validity_evidence=period[0],
@@ -116,10 +124,10 @@ def parse_pdf_pages(source: str,pages: list[str],observed_at: str,*,document_sha
         section='За каждые потраченные на покупки'+section
         basis=require(rf'За каждые потраченные на покупки ({NUMERIC_TOKEN}) руб',section)
         tiers=[]
-        for m in re.finditer(rf'({NUMERIC_TOKEN}) мил[яи] при сумме покупок по карте в месяц от ({NUMERIC_TOKEN}) руб\.\s+до ({NUMERIC_TOKEN}) руб',section):
-            lo,hi=required_integer(m,2),required_integer(m,3)
-            if int(lo)>=int(hi):raise ValueError('invalid_card_spend_interval')
-            tiers.append({'miles':required_integer(m),'monthly_spend_from_rub':lo,'monthly_spend_to_rub':hi,
+        for m in re.finditer(rf'({NUMERIC_TOKEN}) мил[ьяи] при сумме покупок по карте в месяц от ({NUMERIC_TOKEN}) руб\.\s+до ({NUMERIC_TOKEN}) руб',section):
+            lo,hi=required_number(m,2),required_number(m,3)
+            if Decimal(lo)>=Decimal(hi):raise ValueError('invalid_card_spend_interval')
+            tiers.append({'miles':required_number(m),'monthly_spend_from_rub':lo,'monthly_spend_to_rub':hi,
                           'lower_inclusive':None,'upper_inclusive':None,'evidence':m[0]})
         # Every earning-tier clause must be recognized, including newly added tiers.
         # No fixed number of rows and no silent dropping of unsupported rows.
@@ -127,10 +135,10 @@ def parse_pdf_pages(source: str,pages: list[str],observed_at: str,*,document_sha
         if (not 1<=len(tiers)<=50 or len(tiers)!=expected
                 or len({t['monthly_spend_from_rub'] for t in tiers})!=len(tiers)):
             raise ValueError('card_tiers_missing_duplicate_or_unparsed')
-        cap=require(rf'Максимальный лимит выплаты кешбэк/миль в месяц[^\d]*({NUMERIC_TOKEN}) миль',section)
-        welcome=require(rf'({NUMERIC_TOKEN}) приветственных миль',section)
+        cap=require(rf'Максимальный лимит выплаты кешбэк/миль в месяц[^\d]*({NUMERIC_TOKEN}) мил[ьяи]\b',section)
+        welcome=require(rf'({NUMERIC_TOKEN}) приветственн(?:ых|ая|ые) мил[ьяи]\b',section)
         service=p.split('Обслуживание карты',1)[1].split('Обслуживание платежного стикера',1)[0] if 'Обслуживание платежного стикера' in p else p.split('Обслуживание карты',1)[1].split('Начисление кешбэк/миль',1)[0]
-        details.update(spend_reward_tiers=tiers,earning_basis_rub=required_integer(basis),earning_basis_evidence=basis[0],
+        details.update(spend_reward_tiers=tiers,earning_basis_rub=required_number(basis),earning_basis_evidence=basis[0],
                        monthly_miles_cap=required_integer(cap),monthly_miles_cap_evidence=cap[0],
                        welcome_miles=required_integer(welcome),welcome_miles_evidence=welcome[0],service_fee_conditions=service)
         benefit=section

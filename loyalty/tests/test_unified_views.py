@@ -32,6 +32,14 @@ class ViewTests(unittest.TestCase):
   self.assertEqual(len(generations),1)
   self.assertNotIn(previous,generations)
   self.assertNotEqual(r['normalizer_version'],'1.0.2')
+ def test_numeric_invariance_release_invalidates_103_generation(self):
+  original=record();unchanged=copy.deepcopy(original)
+  r=normalize_inputs([original],as_of='2026-09-14');views=prepare_views(r)
+  previous=hashlib.sha256(json.dumps([r['audit']['source_snapshot_sha256'],r['as_of'],'1.0.3'],
+      ensure_ascii=False,sort_keys=True,separators=(',',':')).encode()).hexdigest()
+  self.assertTrue(all(row[-1]!=previous for rows in views.values() for row in rows))
+  self.assertNotEqual(r['normalizer_version'],'1.0.3')
+  self.assertEqual(original,unchanged)
  def test_derived_views_do_not_include_original_input_tab(self):
   self.assertNotIn('parser_offers',SCHEMAS);self.assertNotIn('loyalty_partner_benefits',SCHEMAS)
  def test_corporate_codes_are_in_private_views_not_dropped(self):
