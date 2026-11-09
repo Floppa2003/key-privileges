@@ -7,7 +7,7 @@ import re
 from urllib.parse import urljoin
 from bs4 import BeautifulSoup, Tag
 from html_text import html_text
-from normalized import canonical_url, make_offer, number
+from normalized import canonical_url, make_offer, number, NUMERIC_TOKEN, literal_number
 from partner_pages import content
 from read_budget import within_source_budget
 
@@ -19,6 +19,13 @@ URAL_LEGACY_IDS={'Синий':'blue','Серебряный':'silver','Золот
 
 def _match_text(value):
     return ' '.join(value.split())
+
+
+def _qualification_number(match,*,integer=False):
+    value=literal_number(match[1])
+    if value is None or (integer and (not value.isdecimal() or int(value)<=0)):
+        raise ValueError('tier_qualification_invalid_number')
+    return int(value) if integer else value
 
 
 def heading_body(heading):
@@ -54,13 +61,19 @@ def ural_tiers(raw, observed_at):
         if sum('Присваивается' in html_text(n) for n in body.select('li'))>1:
             raise ValueError('ural_tier_boundary_ambiguous')
         q={'evidence':qualification,'registration':bool(re.search('при регистрации',flat_qualification,re.I)),
-           'flights':None,'spend_rub':None,'operator':None,'window':None,'required_previous_tier':None}
-        f=re.search(r'(\d+) пол[её]тов',flat_qualification,re.I)
-        amount=re.search(r'на сумму ([\d\s\u00a0]+) рублей',flat_qualification,re.I)
-        if f:q['flights']=int(f[1])
-        if amount:q['spend_rub']=number(amount[1].strip())
+           'flights':None,'spend_rub':None,'operator':None,'window':None,'window_years':None,'required_previous_tier':None}
+        f=re.search(rf'при совершении ({NUMERIC_TOKEN}) пол[её]т(?:ов|а)?\b',flat_qualification,re.I)
+        amount=re.search(rf'на сумму ({NUMERIC_TOKEN}) рубл(?:ей|я|ь)\b',flat_qualification,re.I)
+        years=re.search(rf'в течение ({NUMERIC_TOKEN}) календарн(?:ого|ых) (?:года|лет)\b',flat_qualification,re.I)
+        for marker,found in ((r'при совершении',f),(r'на сумму',amount),(r'в течение.*календарн',years)):
+            if re.search(marker,flat_qualification,re.I) and found is None:
+                raise ValueError('ural_qualification_number_missing')
+        if f:q['flights']=_qualification_number(f,integer=True)
+        if amount:q['spend_rub']=_qualification_number(amount)
         if f and amount and 'либо' in flat_qualification:q['operator']='OR'
-        if re.search(r'1 календарного года',flat_qualification):q['window']='calendar_year'
+        if years:
+            q['window_years']=_qualification_number(years,integer=True)
+            if q['window_years']==1:q['window']='calendar_year'
         previous=re.search(r'участнику\s+([^,.]+?)\s+уровня',flat_qualification,re.I)
         if previous:
             q['required_previous_tier_evidence']=previous[0]
@@ -119,10 +132,10 @@ def utair_tabs(raw):
         if not tier or _match_text(tier).casefold() in {_match_text(t).casefold() for t in result}:raise ValueError('utair_duplicate_or_empty_tier')
         hints=[html_text(n) for n in nav[0].select('.t396__elem[data-elem-type="tooltip"]') if _inside(n,box)]
         if len(hints)>1:raise ValueError('utair_qualification_window_ambiguous')
-        amount=re.fullmatch(r'[cс] (\d+(?:[.,]\d+)?) тыс\. руб\.',_match_text(price),re.I)
+        amount=re.fullmatch(rf'[cс] ({NUMERIC_TOKEN}) тыс\. руб\.',_match_text(price),re.I)
         window='calendar_year' if hints and 'календарном году' in _match_text(hints[0]) else None
         result[tier]={'tier':tier,'qualification_text':price,'scope_text':hints[0] if hints else None,
-                      'spend_rub':number(str(Decimal(amount[1].replace(',', '.'))*1000)) if amount else None,
+                      'spend_rub':number(str(Decimal(_qualification_number(amount))*1000)) if amount else None,
                       'window':window}
     if len(owned)!=len(elements):raise ValueError('utair_unowned_tab_text')
     return result

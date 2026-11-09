@@ -21,7 +21,7 @@ class KnownPdfNumericBoundaries(unittest.TestCase):
     def test_card_miles_and_welcome_never_use_a_malformed_number_suffix(self):
         for old, new in (
             ('1 миля при', '1.500.5 миля при'),
-            ('1 миля при', '1,5 миля при'),
+            ('1 миля при', '1,5,5 миля при'),
             ('500 приветственных', '1.500.5 приветственных'),
             ('500 приветственных', '1 00 приветственных'),
         ):

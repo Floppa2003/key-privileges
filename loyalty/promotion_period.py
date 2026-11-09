@@ -28,7 +28,9 @@ def promotion_dates(period, page_title, observed_on):
         start, end = None, calendar(until.groups())
     elif interval:
         start, end = calendar(interval.groups()[:3]), calendar(interval.groups()[3:])
-        if end < start or (end-start).days > 93:
+        inferred_year = interval[3] is None or interval[6] is None
+        # The short window protects inferred years, not explicitly dated offers.
+        if end < start or (inferred_year and (end-start).days > 93):
             raise ValueError('dated_promotional_rate_requires_current_confirmation')
     else:
         raise ValueError('dated_promotional_rate_requires_current_confirmation')

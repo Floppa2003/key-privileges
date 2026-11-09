@@ -1,4 +1,4 @@
-# Common normalization of all stored data — 1.0.3
+# Common normalization of all stored data — 1.0.4
 
 This is a deterministic **source-preserving projection**, not another web scrape,
 a new discount catalogue, a personal entitlement check, or a savings calculator.
@@ -160,6 +160,37 @@ not a claim to understand every possible wording.
 Version 1.0.3 changes the derived generation even for identical stored inputs and
 the same assessment date, so corrected interpretations can be republished without
 pretending that source observations are new.
+
+## Remaining numeric invariance repairs (1.0.4)
+
+Supported source templates read complete numerical values with validated grouping
+and decimal separators. Money and earning rates may be fractional; flight counts,
+durations and service quantities remain positive integers. Number-dependent word
+forms no longer bind a rule to its old amount. Ural qualification includes
+`window_years`, and only one calendar year retains the `calendar_year` alias.
+Fully explicit current Backit intervals are not limited by the 93-day safeguard
+for inferred years.
+
+Source and reader share a bounded `N по цене M` predicate: positive whole
+quantities with N > M, no owned denial or monetary-price suffix. Digit quantities
+have no offer-specific cap; supported Russian number words cover values through
+99. The evidence stays literal and no percentage saving is calculated.
+
+The reviewed Alfa PDFs retain complete caps, point expenses, delays, participant
+labels and contact digits. Restaurant citations include the whole expense and
+its point unit. Insurance keeps every published table column without assigning
+one column to a member; cashback retains historical qualifiers within its own
+row. Document revision, effective-date identity and reviewed URL remain gates.
+Written-out numbers in parentheses remain literal evidence, not a separate
+inferred numeric field.
+
+Version 1.0.4 invalidates the derived generation for unchanged inputs and date.
+A source adapter change cannot restore text already discarded from stored rows:
+that requires the existing source collector. The release request refreshes the
+two Alfa PDFs with known truncated evidence and republishes all stored inputs.
+Other adapters use the corrected code at their next source collection; immutable
+fixture and snapshot replays verify their numerical paths without claiming a
+fresh live observation of every source.
 
 ## Five derived Sheet views
 

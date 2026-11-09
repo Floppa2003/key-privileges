@@ -9,6 +9,7 @@ from urllib.parse import urljoin, urlsplit
 from bs4 import BeautifulSoup
 from normalized import normalize_rates
 from public_reward_projection import plain, one, make_record
+from quantity_offers import has_quantity_offer
 
 SOURCE = 'club_avolta_public'
 ROOT = 'https://www.clubavolta.com/ru'
@@ -42,9 +43,9 @@ def catalogue(raw,url,label):
 
 # Whole source sentences; unmodified page text remains in evidence. Merchant
 # statistics, ratings and promotional scene-setting are not practical rewards.
-BENEFIT = re.compile(r'скид|сэконом|балл|мил[ию]|CARAT|бесплат|два по цене', re.I)
+BENEFIT = re.compile(r'скид|сэконом|балл|мил[ию]|CARAT|бесплат', re.I)
 ACTION = re.compile(r'зарегистр|скачайте|загрузите|привяж|привяз|актив|перейдите|установ|нажмите|выберите|сканируйте|отсканируйте|войдите|создайте|укажите|вам понадобится|предпочитаемого партнера|предпочтительного партнера|приложени', re.I)
-PRACTICAL = re.compile(r'скид|сэконом|балл|мил[ию]|CARAT|бесплат|eSIM|SIM-карт|интернет|трафик|роуминг|аккаунт|учетн|учётн|QR|услови|положени|подписк|исключ|кроме|только|предваритель|не суммиру|не нужно|сроком|список магазинов|может быть доставлен|вернуть наряд|доставку печатных|два по цене|в Таиланде', re.I)
+PRACTICAL = re.compile(r'скид|сэконом|балл|мил[ию]|CARAT|бесплат|eSIM|SIM-карт|интернет|трафик|роуминг|аккаунт|учетн|учётн|QR|услови|положени|подписк|исключ|кроме|только|предваритель|не суммиру|не нужно|сроком|список магазинов|может быть доставлен|вернуть наряд|доставку печатных|в Таиланде', re.I)
 PITCH = re.compile(r'^(?:Превращайте|Превратите приятные|Наслаждайтесь|Кладезь|Получайте самые свежие|Будь то|Взяв напрокат|Выглядеть|Путешествуйте без багажа|Более \d|Сравнивайте|Сравнивать|В качестве участника|Выполните следующие шаги|Сделайте каждую|Найдите идеальное|Куда бы|Благодаря обширной|Пристегните|Откройте для себя|Богатый выбор|Разблокируйте|Autogrill подарит|Изображение предоставлено|Рейтинг|Smart Traveller — это глобальная|Круглосуточная поддержка|Совершайте международные звонки)', re.I)
 
 def practical_text(headline, intro, body):
@@ -53,11 +54,12 @@ def practical_text(headline, intro, body):
         paragraph=re.sub(r'^\d+\.\s+', '', paragraph).strip()
         sentences.extend(re.split(r'(?<=[.!?])\s+(?=[А-ЯЁA-Z])',paragraph))
     sentences=list(dict.fromkeys(s.strip() for s in sentences if s.strip() and not PITCH.search(s.strip())))
-    concrete=[s for s in sentences if BENEFIT.search(s) and (re.search(r'\d',s) or re.search(r'бесплат|два по цене',s,re.I))]
+    concrete=[s for s in sentences if has_quantity_offer(s) or
+              (BENEFIT.search(s) and (re.search(r'\d',s) or re.search(r'бесплат',s,re.I)))]
     if not concrete:raise ExcludedOffer('no_concrete_partner_benefit')
     claim=concrete[0]
     actions=[s for s in sentences if ACTION.search(s)]
-    conditions=[s for s in sentences if s==claim or PRACTICAL.search(s) or ACTION.search(s)]
+    conditions=[s for s in sentences if s==claim or PRACTICAL.search(s) or ACTION.search(s) or has_quantity_offer(s)]
     return claim,'\n'.join(conditions),'\n'.join(actions)
 
 def source_fields(e):

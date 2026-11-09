@@ -9,7 +9,8 @@ from urllib.parse import urlsplit
 import requests
 from pypdf import PdfReader
 
-from normalized import make_offer, validate_offer
+from normalized import make_offer, validate_offer, NUMERIC_TOKEN, literal_number, number_starts_here
+from quantity_offers import count_value
 
 CORE_URL = "https://alfabank.servicecdn.ru/site-upload/4b/2c/2366/prog_loyal_v47.pdf"
 CASHBACK_URL = "https://alfabank.servicecdn.ru/site-upload/c6/bb/2366/Loyalty_program_rules_revCashBack_25052026.pdf"
@@ -35,6 +36,97 @@ def _must(text: str, pattern: str, code: str) -> str:
     if not m:
         raise ValueError(code)
     return _compact(m.group(0))
+
+
+_WORDS = r'(?:\s*\([^()]{1,150}\))?'
+
+
+def _money(name):
+    return rf'(?P<m_{name}>{NUMERIC_TOKEN}){_WORDS}\s*рубл(?:ей|я|ь)\b'
+
+
+def _count(name, unit):
+    return rf'(?P<n_{name}>{NUMERIC_TOKEN}){_WORDS}\s*(?:{unit})\b'
+
+
+def _until(marker, maximum):
+    """Stop at the first owned label, including when its following value is bad."""
+    return rf'(?:(?!{marker}).){{0,{maximum}}}?'
+
+
+def _valid_number(match, group, code, *, integer=False):
+    value=literal_number(match[group])
+    prefix=match.string[:match.start(group)]
+    if (value is None or not number_starts_here(match.string,match.start(group))
+            or re.search(r'(?:[+−–—-]|\d\s*[–—-]\s*)$',prefix)
+            or (integer and (not value.isdecimal() or int(value)<=0))):
+        raise ValueError(code)
+    return value
+
+
+def _owned_match(text, anchor, pattern, code):
+    starts=list(re.finditer(r'(?<![\d.])'+anchor,text,re.I))
+    if len(starts)!=1:raise ValueError(code)
+    match=re.match(pattern,text[starts[0].start():],re.I)
+    if match is None:raise ValueError(code)
+    for name,value in match.groupdict().items():
+        if value is None:continue
+        if name.startswith(('m_','n_')):
+            _valid_number(match,name,code,integer=name.startswith('n_'))
+        elif name.startswith('w_'):
+            parsed=count_value(value)
+            if parsed is None or parsed<=0:raise ValueError(code)
+    return match
+
+
+def _owned(text, anchor, pattern, code):
+    return _compact(_owned_match(text,anchor,pattern,code)[0])
+
+
+def _insurance_row(text):
+    code='alfa_vzr_promo_limit_missing'
+    label=r'Услуга\s*по\s*Страхованию\s*ВЗР'
+    starts=list(re.finditer(label+r'(?=\s+(?:[+−-]?\d|Не предоставляется))',text,re.I))
+    if len(starts)!=1:raise ValueError(code)
+    tail=text[starts[0].end():]
+    stop=re.search(r'Услуга\s*доступа\s*к\s*контенту|Единовременно\s*Участнику',tail,re.I)
+    cells=tail[:stop.start()] if stop else tail
+    if len(cells)>3000:raise ValueError(code)
+    pair=re.compile(_count('uses',r'раз(?:а)?')+r'\s*[–—-]\s*'+_count('cost',r'Промо\s*-\s*балл(?:а|ов)?'),re.I)
+    matches=list(pair.finditer(cells))
+    if not matches:raise ValueError(code)
+    for match in matches:
+        for name in ('n_uses','n_cost'):_valid_number(match,name,code,integer=True)
+    remainder=pair.sub('',cells)
+    remainder=re.sub(r'Не\s*предоставляется','',remainder,flags=re.I)
+    if re.sub(r'[\s.;,]+','',remainder):raise ValueError(code)
+    # Every column stays literal; this does not assign a price to every member.
+    return _compact(text[starts[0].start():starts[0].end()]+cells).rstrip(' .')
+
+
+def _cashback_row(text):
+    code='alfa_cashback_only_row_missing'
+    anchor=r'УЛК\s*\(с\s*оформлением\s*ПУ\s*[«\"]Alfa\s*Only[»\"]\)'
+    starts=list(re.finditer(anchor,text,re.I))
+    if len(starts)!=1:raise ValueError(code)
+    tail=text[starts[0].start():]
+    stop=re.search(r'ПУ\s*[«\"]А-Клуб[»\"]|\b2\.2\.',tail,re.I)
+    row=(tail[:stop.start()] if stop else tail).strip().rstrip(' .')
+    if len(row)>3000:raise ValueError(code)
+    category=list(re.finditer(_count('category',r'Категори(?:й|я|и)'),row,re.I))
+    points=list(re.finditer(rf'(?P<amount>{NUMERIC_TOKEN})\s*Альфа\s*-?\s*Балл(?:ов|а)?\b',row,re.I))
+    money=list(re.finditer(_money('operation'),row,re.I))
+    if (len(category)!=1 or len(points)<2 or len(money)!=1
+            or len(points)!=len(re.findall(r'Альфа\s*-?\s*Балл(?:ов|а)?\b',row,re.I))
+            or len(category)!=len(re.findall(r'\bКатегори(?:й|я|и)\b',row,re.I))):
+        raise ValueError(code)
+    _valid_number(category[0],'n_category',code,integer=True)
+    for match in points:_valid_number(match,'amount',code)
+    _valid_number(money[0],'m_operation',code)
+    if not category[0].end()<=points[0].start()<points[-1].end()<=money[0].start():
+        raise ValueError(code)
+    if row[money[0].end():].strip(' .;'):raise ValueError(code)
+    return row
 
 
 def fetch_pdf(url: str, *, get=requests.get) -> bytes:
@@ -114,7 +206,7 @@ def _offer(source_id: str, native_id: str, title: str, benefit: str, conditions:
 
 
 def parse_core(data: bytes, observed_at: str) -> list[dict]:
-    text = pdf_text(data)
+    text = _compact(pdf_text(data))
     sha = hashlib.sha256(data).hexdigest()
     _must(text, r"Редакция\s*№\s*47", "alfa_core_revision_missing")
     _must(
@@ -123,15 +215,20 @@ def parse_core(data: bytes, observed_at: str) -> list[dict]:
         "alfa_core_effective_date_missing",
     )
 
-    taxi_benefit = _must(
+    maximum=r'не\s*более\s*'
+    taxi_anchor=r'Выплата\s*[–—-]\s*денежные\s*средства'
+    taxi_benefit = _owned(
         text,
-        r"Выплата.{0,160}?денежные\s*средства.{0,800}?такси,\s*трансфер\s*и\s*каршеринг.{0,180}?2\s*500.{0,120}?рублей",
+        taxi_anchor,
+        taxi_anchor+r'.{0,800}?такси,\s*трансфер\s*и\s*каршеринг'+_until(maximum,180)+maximum+_money('cap'),
         "alfa_taxi_benefit_missing",
     )
     taxi_conditions = "\n".join([
-        _must(
+        _owned(
             text,
-            r"Операция\s*становится\s*доступной\s*для\s*получения\s*Выплаты\s*в\s*течение\s*2\s*рабочих\s*дней.{0,320}?такси,\s*трансфер\s*и\s*каршеринг",
+            r'Операция\s*становится\s*доступной\s*для\s*получения\s*Выплаты\s*в\s*течение',
+            r'Операция\s*становится\s*доступной\s*для\s*получения\s*Выплаты\s*в\s*течение\s*'
+            +_count('days',r'рабоч(?:их|его)\s*дн(?:ей|я)')+r'.{0,320}?такси,\s*трансфер\s*и\s*каршеринг',
             "alfa_taxi_availability_missing",
         ),
         _must(
@@ -141,49 +238,68 @@ def parse_core(data: bytes, observed_at: str) -> list[dict]:
         ),
     ])
 
-    lounge_benefit = _must(
+    lounge_benefit = _owned(
         text,
-        r"6\.6\.3\..{0,650}?не\s*более\s*2\s*500.{0,120}?рублей\s*за\s*доступ\s*одного\s*лица",
+        r'6\.6\.3\.',
+        r'6\.6\.3\.'+_until(r'не\s*более\b(?!\s*следующих\s*сумм\b)',650)
+        +maximum+_money('cap')+r'\s*за\s*доступ\s*одного\s*лица',
         "alfa_lounge_benefit_missing",
     )
-    lounge_limit = _must(
+    lounge_limit = _owned(
         text,
-        r"6\.6\.7\..{0,120}?максимальная\s*сумма\s*Выплаты\s*БЗ\s*составляет\s*20\s*000.{0,120}?рублей\s*на\s*одного\s*Участника\s*за\s*один\s*календарный\s*месяц",
+        r'6\.6\.7\.',
+        r'6\.6\.7\..{0,120}?максимальная\s*сумма\s*Выплаты\s*БЗ\s*составляет\s*'+_money('cap')
+        +r'\s*на\s*одного\s*Участника\s*за\s*один\s*календарный\s*месяц',
         "alfa_lounge_limit_missing",
     )
 
-    restaurant_benefit = _must(
+    restaurant_anchor=r'Выплата\s*за\s*посещение\s*ресторанов/\s*кафе/\s*баров'
+    points=r'(?:Альфа\s*-\s*)?Балл(?:а|ов)?'
+    restaurant_benefit = _owned(
         text,
-        r"Выплата\s*за\s*посещение\s*ресторанов/\s*кафе/\s*баров.{0,700}?не\s*более\s*2\s*500.{0,130}?при\s*списании\s*1.{0,130}?не\s*более\s*5\s*000.{0,130}?при\s*списании\s*2",
+        restaurant_anchor,
+        restaurant_anchor+_until(maximum,700)+maximum+_money('first')
+        +r'\s*при\s*списании\s*'+_count('first',points)+r'\s*(?:или|и)\s*'
+        +maximum+_money('second')+r'\s*при\s*списании\s*'+_count('second',points),
         "alfa_restaurant_benefit_missing",
     )
-    restaurant_limit = _must(
+    restaurant_limit = _owned(
         text,
-        r"6\.7\.7\..{0,120}?максимальная\s*сумма\s*Выплаты\s*РКБ\s*составляет\s*20\s*000.{0,120}?рублей\s*на\s*одного\s*Участника\s*за\s*один\s*календарный\s*месяц",
+        r'6\.7\.7\.',
+        r'6\.7\.7\..{0,120}?максимальная\s*сумма\s*Выплаты\s*РКБ\s*составляет\s*'+_money('cap')
+        +r'\s*на\s*одного\s*Участника\s*за\s*один\s*календарный\s*месяц',
         "alfa_restaurant_limit_missing",
     )
 
-    qr_benefit = _must(
+    qr_benefit = _owned(
         text,
-        r"6\.8\.2\..{0,500}?количество\s*лиц,\s*сопровождающих\s*Участника\s*\(не\s*более\s*3.{0,220}?нажать\s*на\s*кнопку\s*[«\"]Выпустить\s*QR\s*-\s*код[»\"]",
+        r'6\.8\.2\.',
+        r'6\.8\.2\..{0,500}?количество\s*лиц,\s*сопровождающих\s*Участника\s*\('+maximum
+        +rf'(?P<n_companions>{NUMERIC_TOKEN})'+_WORDS+r'(?=\s*(?:лиц(?:о|а)?\b|[,)]))'
+        +r'.{0,220}?нажать\s*на\s*кнопку\s*[«\"]Выпустить\s*QR\s*-\s*код[»\"]',
         "alfa_qr_lounge_missing",
     )
     qr_conditions = "\n".join([
-        _must(
+        _owned(
             text,
-            r"6\.8\.3\..{0,520}?не\s*смогут\s*посетить.{0,220}?в\s*течение\s*24\s*часов.{0,280}?подлежат\s*восстановлению",
+            r'6\.8\.3\.',
+            r'6\.8\.3\..{0,520}?не\s*смогут\s*посетить'+_until(r'в\s*течение',220)
+            +r'в\s*течение\s*'+_count('hours',r'час(?:ов|а)?')+r'.{0,280}?подлежат\s*восстановлению',
             "alfa_qr_restore_missing",
         ),
-        _must(
+        _owned(
             text,
-            r"нажать\s*на\s*кнопку\s*[«\"]Вернуть[»\"]\s*в\s*течение\s*24\s*часов",
+            r'нажать\s*на\s*кнопку\s*[«\"]Вернуть[»\"]',
+            r'нажать\s*на\s*кнопку\s*[«\"]Вернуть[»\"]\s*в\s*течение\s*'+_count('hours',r'час(?:ов|а)?'),
             "alfa_qr_return_action_missing",
         ),
     ])
 
-    rbc_benefit = _must(
+    rbc_anchor=r'Промо-баллы\s*могут\s*быть\s*использованы.{0,520}?Подписк[еи]\s*на\s*РБК'
+    rbc_benefit = _owned(
         text,
-        r"Промо-баллы\s*могут\s*быть\s*использованы.{0,520}?Подписк[еи]\s*на\s*РБК.{0,420}?от\s*6\s*000\s*000\s*рублей",
+        rbc_anchor,
+        rbc_anchor+_until(r'\bот\s',420)+r'\bот\s*'+_money('minimum'),
         "alfa_rbc_benefit_missing",
     )
     rbc_conditions = _must(
@@ -192,22 +308,30 @@ def parse_core(data: bytes, observed_at: str) -> list[dict]:
         "alfa_rbc_conditions_missing",
     )
 
-    concierge_benefit = _must(
+    participants=rf'Участнику\s+{NUMERIC_TOKEN}(?:\s*(?:,|и)\s*Участнику\s+{NUMERIC_TOKEN})*'
+    concierge_match = _owned_match(
         text,
-        r"6\.2\..{0,180}?Участнику\s*3.{0,60}?Участнику\s*4.{0,60}?Участнику\s*5.{0,60}?Участнику\s*7\s*доступна\s*Услуга\s*[«\"]Консьерж\s*сервис[»\"]",
+        r'6\.2\.',
+        r'6\.2\.\s*'+participants+r'\s*доступна\s*Услуга\s*[«\"]Консьерж\s*сервис[»\"]',
         "alfa_concierge_benefit_missing",
     )
+    for participant in re.finditer(rf'Участнику\s+(?P<id>{NUMERIC_TOKEN})',concierge_match[0],re.I):
+        _valid_number(participant,'id','alfa_concierge_participant_invalid',integer=True)
+    concierge_benefit=_compact(concierge_match[0])
+    phone_anchor=r'Телефон\s*Партнера\s*[–—-]'
+    phone_match=_owned_match(text,phone_anchor,
+        phone_anchor+r'[^+\d]{0,120}?(?P<phone>\+?\d[\d ()–-]{5,32}\d)(?![\d ()–-]*\d)'
+        +_until(r'Консьерж\s*сервис',220)+r'Консьерж\s*сервис','alfa_concierge_phone_missing')
+    phone=phone_match['phone']
+    if not 8<=len(re.sub(r'\D','',phone))<=15 or phone.count('(')!=phone.count(')'):
+        raise ValueError('alfa_concierge_phone_invalid')
     concierge_conditions = "\n".join([
         _must(
             text,
             r"Для\s*получения\s*Услуги\s*[«\"]Консьерж\s*сервис[»\"].{0,650}?мобильного\s*номера\s*телефона.{0,650}?обратиться\s*по\s*Телефону\s*Партнера",
             "alfa_concierge_activation_missing",
         ),
-        _must(
-            text,
-            r"Телефон\s*Партнера.{0,120}?\+7\s*499-965-8083.{0,220}?Консьерж\s*сервис",
-            "alfa_concierge_phone_missing",
-        ),
+        _compact(phone_match[0]),
     ])
 
     simple_benefit = _must(
@@ -245,14 +369,12 @@ def parse_core(data: bytes, observed_at: str) -> list[dict]:
         "alfa_vzr_benefit_missing",
     )
     vzr_conditions = "\n".join([
-        _must(
+        _insurance_row(text),
+        _owned(
             text,
-            r"Услуга\s*по\s*Страхованию\s*ВЗР.{0,180}?1\s*\(один\)\s*раз\s*[–—-]\s*1\s*Промо-балл",
-            "alfa_vzr_promo_limit_missing",
-        ),
-        _must(
-            text,
-            r"Единовременно\s*Участнику\s*Программы\s*может\s*предоставляться\s*не\s*более\s*одной\s*услуги\s*по\s*Страхованию\s*ВЗР",
+            r'Единовременно\s*Участнику\s*Программы',
+            r'Единовременно\s*Участнику\s*Программы\s*может\s*предоставляться\s*'+maximum
+            +rf'(?P<w_count>{NUMERIC_TOKEN}|[а-яё]+(?:\s+[а-яё]+)?)\s*услуг(?:и|а)?\s*по\s*Страхованию\s*ВЗР',
             "alfa_vzr_concurrent_limit_missing",
         ),
     ])
@@ -289,7 +411,7 @@ def parse_core(data: bytes, observed_at: str) -> list[dict]:
 
 
 def parse_cashback(data: bytes, observed_at: str) -> list[dict]:
-    text = pdf_text(data)
+    text = _compact(pdf_text(data))
     sha = hashlib.sha256(data).hexdigest()
     _must(text, r"Редакция\s*№\s*101", "alfa_cashback_revision_missing")
     _must(
@@ -297,11 +419,7 @@ def parse_cashback(data: bytes, observed_at: str) -> list[dict]:
         r"Редакция\s*№\s*101\s*Правил\s*введена\s*в\s*действие\s*с\s*25\.05\.2026",
         "alfa_cashback_effective_date_missing",
     )
-    evidence = _must(
-        text,
-        r"УЛК\s*\(с\s*оформлением\s*ПУ\s*[«\"]Alfa\s*Only[»\"]\).{0,450}?5\s*Категорий.{0,280}?30\s*000\s*Альфа-Баллов.{0,180}?50\s*000\s*Альфа-Баллов.{0,100}?500\s*000\s*рублей",
-        "alfa_cashback_only_row_missing",
-    )
+    evidence = _cashback_row(text)
     row = _offer(
         "alfa_only_cashback_rules",
         "cashback101:alfa-only-limits",
