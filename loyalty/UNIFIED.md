@@ -1,4 +1,4 @@
-# Common normalization of all stored data — 1.0.4
+# Common normalization of all stored data — 1.0.5
 
 This is a deterministic **source-preserving projection**, not another web scrape,
 a new discount catalogue, a personal entitlement check, or a savings calculator.
@@ -191,6 +191,28 @@ two Alfa PDFs with known truncated evidence and republishes all stored inputs.
 Other adapters use the corrected code at their next source collection; immutable
 fixture and snapshot replays verify their numerical paths without claiming a
 fresh live observation of every source.
+
+## Numeric and clause ownership follow-up (1.0.5)
+
+T2 SIM fees are owned by the courier service section, so an independent salon
+price no longer makes the article ambiguous. Original article conditions remain.
+Utair multipliers use complete positive numeric tokens; student/Utair ages and
+activation delays accept normal year/day inflections while remaining whole counts.
+GPB price phases preserve an explicit introductory amount and month count separately
+from the ongoing monthly price. Unknown or conflicting owned values fail closed.
+
+Percentage bounds `не более` / `не менее` (also with `чем`) remain upper/lower
+bounds. Literal source extraction uses full-sentence polarity and occurrence
+positions: denied rewards, payment rates and monetary caps cannot become positive
+benefits after phrase slicing. A distinct live benefit and product exclusion
+retain their own meaning in the reader. Fixed-ruble discounts and caps keep
+independent purchase stages and condition links across sentence boundaries.
+
+Version 1.0.5 changes the derived generation without changing original input or
+observation time. The release refreshes the changed known-rule and literal-source
+adapters through the existing collector and then republishes the stored inputs.
+The immutable public snapshot replay and release limits are documented in
+`audits/parser-numeric-followup-20261112.md`.
 
 ## Five derived Sheet views
 

@@ -7,7 +7,7 @@ from __future__ import annotations
 import hashlib
 import re
 from bs4 import BeautifulSoup, Comment
-from normalized import normalize_rates, NUMERIC_TOKEN
+from normalized import normalize_rates, percent_spans, fixed_discount_amounts, NUMERIC_TOKEN, PERCENT_BOUND
 
 
 def compact(value):
@@ -84,15 +84,24 @@ A quoted price or a non-stacking rule alone is not a positive reward.
                 rf'{NUMERIC_TOKEN}\s*%?\s*[–—-]\s*)?'
                 rf'{NUMERIC_TOKEN}\s*(?:%|₽|руб\.?\w*)')
         word=r'(?:скидк[а-яё]*|к[еэ]шб[еэ]к[а-яё]*)'
-        forward=word+r'\s*(?:(?:в размере|составляет|—|–|-|до|от)\s*)*?'+amount
+        forward=word+rf'\s*(?:(?:в размере|составляет|—|–|-|{PERCENT_BOUND})\s*)*?'+amount
         reverse=amount+r'\s+'+word
-        phrases=[m.group() for pattern in (forward,reverse) for m in re.finditer(pattern,clause,re.I)]
+        phrases=[m for pattern in (forward,reverse) for m in re.finditer(pattern,clause,re.I)]
+        occurrences={'percent':[(s['start'],s['end']) for s in percent_spans(clause)],
+                     'RUB':[(m.start(),m.end()) for m,_ in fixed_discount_amounts(clause)]}
         rates=[]
-        for phrase in phrases:
-            for rate in normalize_rates(phrase):
-                if rate['kind'] in ('discount','cashback') and rate not in rates:rates.append(rate)
-        if re.search(r'(?:скидк\w*\s+не\s+(?:предостав|действ)|без\s+скид)', clause, re.I):
-            rates = []
+        # The full sentence decides polarity/payment ownership. Phrase matches
+        # only establish that this particular occurrence is directly labelled;
+        # comparing values would confuse denied/live occurrences of equal size.
+        for rate in normalize_rates(clause,with_spans=True):
+            if rate['kind'] not in ('discount','cashback'):continue
+            spans=occurrences.get(rate['unit'],[])
+            index=rate.get('_percent_index' if rate['unit']=='percent' else '_amount_index')
+            if not isinstance(index,int) or not 0<=index<len(spans):continue
+            start,end=spans[index]
+            if not any(m.start()<=start and end<=m.end() for m in phrases):continue
+            public={k:v for k,v in rate.items() if not k.startswith('_')}
+            if public not in rates:rates.append(public)
         local = {'source_clause': clause}
         for pattern, key in ((r'за\s+(\d+)\s+дн', 'advance_days'),
                              (r'на тарифы\s+(\d+[–—-]\d+)\s+минут', 'flight_minutes')):

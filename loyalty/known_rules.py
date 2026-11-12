@@ -71,6 +71,81 @@ def owned_match(anchor,pattern,value,reason):
     return match(r'\A(?:'+pattern+r')',folded[anchors[0].start():],reason)
 
 
+def sim_delivery_terms(nodes):
+    """Own the courier service before interpreting its generic price labels."""
+    all_headings=[h for node in nodes for h in node.find_all(re.compile(r'^h[1-6]$'))]
+    headings=[h for h in all_headings
+              if flat(html_text(h)).casefold()=='замена sim-карты без обращения в салон']
+    if len(headings)>1:raise ValueError('sim_courier_section_ambiguous')
+    if headings:
+        heading=headings[0];section=[]
+        for sibling in heading.next_siblings:
+            if (getattr(sibling,'name',None) and re.fullmatch(r'h[1-6]',sibling.name)
+                    and int(sibling.name[1])<=int(heading.name[1])):break
+            section.append(str(sibling))
+        return html_text(''.join(section))
+    # Only a genuinely unstructured fragment can use the legacy label anchor.
+    # Flattening an unknown heading layout would lose service boundaries.
+    if all_headings:raise ValueError('sim_courier_section_missing_or_ambiguous')
+    # A service label is still required; preceding prices never belong here.
+    value=content(nodes)
+    anchors=list(re.finditer(r'Курьерская\s+доставка\s+SIM[-‑]карты',value,re.I))
+    if len(anchors)!=1:raise ValueError('sim_courier_section_missing_or_ambiguous')
+    return value[anchors[0].start():]
+
+
+def gpb_subscription(value,label):
+    """Read only this card's price block, preserving explicit price phases."""
+    price=flat(value).split('Мили «Аэрофлот Бонус»',1)[0].removeprefix(label).strip()
+    if re.fullmatch(r'Бесплатно\.?',price,re.I):return '0',None
+    phased=re.fullmatch(
+        rf'(?:(?P<free>Бесплатно)|(?P<first>{NUM})\s*₽\s*в\s+месяц)\s*[—–-]\s*'
+        rf'(?P<months>{NUM})\s+месяц(?:а|ев)?\s*,\s*далее\s*[—–-]\s*'
+        rf'(?P<later>{NUM})\s*₽\s*в\s+месяц\.?',price,re.I)
+    if phased:
+        first='0' if phased['free'] else literal_number(phased['first'])
+        later=literal_number(phased['later'])
+        if first is None or later is None:raise ValueError('gpb_monthly_cost_invalid')
+        months=whole_count(phased['months'],'gpb_introductory_duration_invalid')
+        return later,{'monthly_rub':first,'months':months,'evidence':price}
+    monthly=re.fullmatch(rf'({NUM})\s*₽\s*в\s+месяц\.?',price,re.I)
+    if monthly:
+        cost=literal_number(monthly[1])
+        if cost is None:raise ValueError('gpb_monthly_cost_invalid')
+        return cost,None
+    if re.search(r'₽|далее|бесплатно',price,re.I):
+        raise ValueError('gpb_subscription_price_missing_or_ambiguous')
+    return None,None
+
+
+def mileage_multiplier(value):
+    """Keep full literal factors; repeated matching claims may not conflict."""
+    folded=literal_lines(value)
+    pattern=rf'(?:(?P<word>двойные|тройные|четверные)|(?P<number>{NUM})[-‑]кратные)\s+мили\b'
+    factors=[];evidence=[]
+    for found in re.finditer(pattern,folded,re.I):
+        if found['word']:
+            factor=str({'двойные':2,'тройные':3,'четверные':4}[found['word'].casefold()])
+        else:
+            prefix=folded[:found.start('number')]
+            # The reviewed title's spaced dash separates its name and claim;
+            # a sign on the numerical factor is not that title separator.
+            title_separator=re.search(r'(?:^|\n)Поколения Utair\s+[-–—]\s+$',prefix,re.I)
+            if (not number_starts_here(folded,found.start('number'))
+                    or re.search(r'[\w.,]$',prefix)
+                    or re.search(r'\d\s*[/:]\s*$',prefix)
+                    or re.search(r'[+−–—-]\s*$',prefix) and not title_separator):
+                raise ValueError('generations_reward_multiplier_invalid')
+            factor=literal_number(found['number'])
+            if factor is None or Decimal(factor)<=0:
+                raise ValueError('generations_reward_multiplier_invalid')
+        factors.append(factor);evidence.append(found[0])
+    if len(set(factors))>1:raise ValueError('generations_reward_multiplier_ambiguous')
+    if not factors:return None,None
+    factor=factors[0]
+    return int(factor) if factor.isdecimal() else factor,evidence[0]
+
+
 def date_label(pattern,value):
     m=re.search(pattern,flat(value),re.I)
     if not m:return None,None
@@ -189,14 +264,11 @@ def parse_known_rule(source,raw,url,observed_at):
             rate=match(r'Мили «Аэрофлот Бонус» ('+NUM+r') мил[ьяи] за ('+NUM+r') ₽ покупок',value,'gpb_rate_missing')
             cap=match(r'Максимум миль в месяц ('+NUM+r')(?= Переводы|$)',value,'gpb_cap_missing')
             benefit_clauses.append(label+': '+rate[0]+'; '+cap[0])
-            monthly=re.search(r'(?:далее\s*[—–-]\s*)?('+NUM+r')\s*₽\s*в\s+месяц',value,re.I)
-            if monthly and (literal_number(monthly[1]) is None
-                            or not number_starts_here(value,monthly.start(1))):
-                raise ValueError('gpb_monthly_cost_invalid')
-            cost=literal_number(monthly[1]) if monthly else '0' if re.search(r'Бесплатно',value,re.I) else None
-            paid=(float(cost)>0) if cost is not None else None
+            cost,introduction=gpb_subscription(value,label)
+            paid=(Decimal(cost)>0) if cost is not None else None
             options.append({'subscription':paid,'label':label,'miles':number(rate[1]),'basis_rub':number(rate[2]),
                 'monthly_cap_miles':number(cap[1]),'monthly_subscription_rub':cost,'evidence':value})
+            if introduction:options[-1]['introductory_subscription']=introduction
         minimum=match(r'Минимальная сумма покупок по карте в месяц [—–-] ('+NUM+r') ₽',terms,'gpb_minimum_missing')
         service=owned_match(r'Стоимость обслуживания',r'Стоимость обслуживания ('+NUM+r') ₽',terms,'gpb_service_fee_missing')
         notify=unique_match(r'со? ('+NUM+r') месяца [—–-] ('+NUM+r') ₽/мес',
@@ -256,20 +328,24 @@ def parse_known_rule(source,raw,url,observed_at):
         details['earning_rules']=earning_rules(terms)
         if not details['earning_rules']:raise ValueError('comfort_base_rate_missing')
     elif handler=='students':
-        age=match(r'до (\d+) лет \(включительно\)',terms,'student_age_missing')
-        activation=match(r'в течение (\d+) рабочих дней',terms,'student_activation_time_missing')
+        age=owned_match(r'до (?=[^;\n]*?\(включительно\))',
+                        rf'до ({NUM}) (?:год(?:а)?|лет) \(включительно\)',terms,'student_age_missing')
+        activation=owned_match(r'в течение',rf'в течение ({NUM}) рабоч(?:их|его) дн(?:ей|я)\b',
+                               terms,'student_activation_time_missing')
         expiry=unique_match(r'до (\d{1,2}) ('+'|'.join(MONTHS)+r') следующего учебного года',
                             terms,'student_relative_expiry_missing')
         # A leap year validates possible month/day pairs without assigning an
         # actual calendar year to the source's relative academic-year expiry.
         date(2000,MONTHS[expiry[2].casefold()],int(expiry[1]))
-        details.update(age_max_inclusive=int(age[1]),activation_workdays=int(activation[1]),
+        details.update(age_max_inclusive=whole_count(age[1],'student_age_invalid'),
+                       activation_workdays=whole_count(activation[1],'student_activation_time_invalid'),
                        entitlement_expiry_text=expiry[0])
         warnings.append('relative_student_entitlement_expiry_not_calendar_offer_end')
     elif handler=='sim':
-        delivery=owned_match(r'Стоимость услуги',r'Стоимость услуги [–—-] ('+NUM+r') руб',terms,'sim_delivery_price_missing')
-        replacement=owned_match(r'Дополнительно оплачивается замена SIM-карты',r'Дополнительно оплачивается замена SIM-карты [–—-] ('+NUM+r') руб',terms,'sim_replacement_price_missing')
-        free=match(r'Для участников программы T2 Selection услуга предоставляется бесплатно',terms,'sim_selection_delivery_missing')
+        courier=sim_delivery_terms(nodes)
+        delivery=owned_match(r'Стоимость услуги',r'Стоимость услуги [–—-] ('+NUM+r') руб',courier,'sim_delivery_price_missing')
+        replacement=owned_match(r'Дополнительно оплачивается замена SIM-карты',r'Дополнительно оплачивается замена SIM-карты [–—-] ('+NUM+r') руб',courier,'sim_replacement_price_missing')
+        free=match(r'Для участников программы T2 Selection услуга предоставляется бесплатно',courier,'sim_selection_delivery_missing')
         details['fees']={'delivery_standard_rub':number(delivery[1]),'replacement_rub':number(replacement[1]),
                          'delivery_selection_rub':'0','evidence':[delivery[0],replacement[0],free[0]]}
     elif handler=='magnit':
@@ -294,17 +370,21 @@ def parse_known_rule(source,raw,url,observed_at):
             'evidence':terms.split('Как минимум',1)[0]}
         details['miles_payment']={'minimum_cash_rub':number(cash[1]),'evidence':'Как минимум'+terms.split('Как минимум',1)[1]}
     elif handler=='generations':
-        young=match(r'от (\d+) до (\d+) лет',terms,'generations_youth_age_missing')
-        senior=match(r'от (\d+) лет \(для женщин\), от (\d+) лет \(для мужчин\)',terms,'generations_senior_age_missing')
+        young=owned_match(r'от (?=[^,;\n]*?\bдо\b)',rf'от ({NUM}) до ({NUM}) (?:год(?:а)?|лет)\b',
+                          terms,'generations_youth_age_missing')
+        senior=owned_match(r'от (?=(?:(?!\bот\b)[^,;\n])*?\(для женщин\))',
+                           rf'от ({NUM}) (?:год(?:а)?|лет) \(для женщин\), от ({NUM}) (?:год(?:а)?|лет) \(для мужчин\)',
+                           terms,'generations_senior_age_missing')
+        ages=[whole_count(v,'generations_age_invalid') for v in (*young.groups(),*senior.groups())]
+        if ages[0]>ages[1]:raise ValueError('generations_youth_age_interval_invalid')
         youthcode=match(r'для молодежи\s+([A-Z][A-Z0-9]+)',terms,'generations_youth_code_missing')
         seniorcode=match(r'для людей старшего поколения\s+([A-Z][A-Z0-9]+)',terms,'generations_senior_code_missing')
         life=match(r'Срок действия миль.{0,60}составляет ('+NUM+r') (?:год(?:а)?|лет)\b',terms,'generations_reward_lifetime_missing')
-        multiplier=re.search(r'(двойные|тройные|четверные|\d+-кратные) мили',terms,re.I)
-        factor=({'двойные':2,'тройные':3,'четверные':4}.get(multiplier[1].lower()) or int(multiplier[1].split('-')[0])) if multiplier else None
-        details.update(reward_multiplier=factor,reward_multiplier_evidence=multiplier[0] if multiplier else None,
+        factor,multiplier_evidence=mileage_multiplier(terms)
+        details.update(reward_multiplier=factor,reward_multiplier_evidence=multiplier_evidence,
           reward_lifetime_years=whole_count(life[1],'generations_reward_lifetime_invalid'),reward_lifetime_evidence=life[0],
-          audiences=[{'audience':'youth','age_min':int(young[1]),'age_max':int(young[2]),'promo_code':youthcode[1],'evidence':[young[0],youthcode[0]]},
-                     {'audience':'senior','women_age_min':int(senior[1]),'men_age_min':int(senior[2]),'promo_code':seniorcode[1],'evidence':[senior[0],seniorcode[0]]}])
+          audiences=[{'audience':'youth','age_min':ages[0],'age_max':ages[1],'promo_code':youthcode[1],'evidence':[young[0],youthcode[0]]},
+                     {'audience':'senior','women_age_min':ages[2],'men_age_min':ages[3],'promo_code':seniorcode[1],'evidence':[senior[0],seniorcode[0]]}])
         warnings.append('reward_lifetime_is_not_offer_expiry')
     elif handler=='mir101':
         pattern=r'Срок проведения Акции: с (\d{1,2}) ('+'|'.join(MONTHS)+r') (\d{4}) года'

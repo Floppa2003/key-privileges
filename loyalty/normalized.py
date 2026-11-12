@@ -79,6 +79,7 @@ NUMBER = r'\d+(?:[ .,\u00a0\u202f]\d{3})*(?:[.,]\d+)?'
 # group such as "1 00%" can be rediscovered as the apparently valid suffix 00%.
 NUMERIC_TOKEN = r'\d+(?:(?:[.,]|[^\S\r\n]+)\d+)*'
 _HSPACE = r'[^\S\r\n]'
+PERCENT_BOUND = rf'(?:до|от|не{_HSPACE}+(?:более|менее)(?:{_HSPACE}+чем)?)'
 _PERCENT = re.compile(
     rf'\bот{_HSPACE}+(?P<word_lo>{NUMERIC_TOKEN}){_HSPACE}*%?{_HSPACE}+до{_HSPACE}+(?P<word_hi>{NUMERIC_TOKEN}){_HSPACE}*%'
     rf'|(?<![\d.])(?:(?P<lo>{NUMERIC_TOKEN}){_HSPACE}*%?{_HSPACE}*[–—-]{_HSPACE}*)?(?P<value>{NUMERIC_TOKEN}){_HSPACE}*%', re.I)
@@ -169,10 +170,10 @@ def percent_spans(value: str) -> list[dict]:
                 or (match[lower_key] is not None and
                     (lower is None or not 0 <= Decimal(lower) <= Decimal(upper)))):
             continue
-        prefix = value[max(0, match.start() - 12):match.start()]
+        prefix = value[:match.start()]
         qualifier = ('range' if lower is not None else
-                     'up_to' if re.search(r'\bдо[^\S\r\n]*$', prefix, re.I) else
-                     'at_least' if re.search(r'\bот[^\S\r\n]*$', prefix, re.I) else 'exact')
+                     'up_to' if re.search(rf'\b(?:до|не{_HSPACE}+более(?:{_HSPACE}+чем)?){_HSPACE}*$', prefix, re.I) else
+                     'at_least' if re.search(rf'\b(?:от|не{_HSPACE}+менее(?:{_HSPACE}+чем)?){_HSPACE}*$', prefix, re.I) else 'exact')
         result.append({'start': match.start(), 'end': match.end(), 'value': upper,
                        'min_value': lower, 'qualifier': qualifier})
     return result
@@ -255,6 +256,23 @@ def fixed_discount_amounts(value: str):
                           'qualifier':'up_to' if match['qual'] else 'exact'}
 
 
+def monetary_caps(value: str):
+    """One bounded cap grammar for reward exclusion and literal conditions.
+
+    Positions and explicit reward labels refer to the unchanged source. An
+    unlabelled maximum still needs a semantic owner in the common model.
+    """
+    pattern=(r'\b(?:максимум|максимальн\w*|лимит|не\s+более(?:\s+чем)?)'
+             r'(?:\s+(?:размер|сумм\w*|выплат\w*))?\s*[:—–-]?\s*'
+             r'(?:(?P<reward>скидк\w*|к[еэ]шб[еэ]к\w*)\s*'
+             r'(?:составля\w*\s*)?[:—–-]?\s*)?'
+             rf'(?P<value>{NUMERIC_TOKEN})\s*(?:₽|руб(?:лей|ля|ль|\.)?|RUB)')
+    for match in re.finditer(pattern,value,re.I):
+        amount=literal_number(match['value'])
+        if amount is not None and number_starts_here(value,match.start('value')):
+            yield match,amount
+
+
 def _postfix_rate_label(clause, end):
     for kind in ('discount','cashback','miles'):
         pattern=(r'\s*(?:\(\s*)?(?:постоянн\w*\s+)?'+TYPES[kind]+r'\w*\s*\)?')
@@ -318,13 +336,13 @@ def normalize_rates(value: str, *, heading_context: str = '', with_spans: bool =
                                    or (heading_kind and not before))
             price_tail = rf'(?:{price_band}\s*[-–—:]\s*)?'
             discounted_commission = ((before[-1][1] if before else heading_kind)=='discount'
-                and re.search(rf'(?:^|,|\bи)\s*на\s+комисси(?:ю|и)\s*{price_tail}(?:(?:—|–|:|до|от)\s*)*$', clause[:start], re.I))
+                and re.search(rf'(?:^|,|\bи)\s*на\s+комисси(?:ю|и)\s*{price_tail}(?:(?:—|–|:|{PERCENT_BOUND})\s*)*$', clause[:start], re.I))
             # A fee/prepayment band does not become a reward because an earlier
             # discount exists. Ordinary purchase/payment thresholds still can.
             charge_band = (r'\b(?:предоплат\w*|аванс\w*|НДС|налог\w*|комисси\w*|штраф\w*)\b'
-                           rf'[^%.,;\n]*?{price_band}\s*[-–—:]\s*(?:(?:до|от)\s+)?$')
+                           rf'[^%.,;\n]*?{price_band}\s*[-–—:]\s*(?:{PERCENT_BOUND}\s+)?$')
             if payment_context and not after and not discounted_commission and (
-                    re.search(payment+r'\s*(?:(?:в размере|составляет|—|–|:|до|от)\s*)*$', clause[:start], re.I)
+                    re.search(payment+rf'\s*(?:(?:в размере|составляет|—|–|:|{PERCENT_BOUND})\s*)*$', clause[:start], re.I)
                     or re.search(charge_band, clause[:start], re.I)
                     or re.match(r'\s*'+payment, clause[end:], re.I)):
                 continue
@@ -359,8 +377,13 @@ def normalize_rates(value: str, *, heading_context: str = '', with_spans: bool =
                     (bracket_cap or (role=='unknown' and basis['basis_unit'] in ('month','day')))):
                 rate['_reward_cap']=True
             result.append(rate)
+        cap_spans={m.span('value') for m,_ in monetary_caps(clause)}
         for m,amount in fixed_discount_amounts(clause):
             index=amount_indexes['RUB'];amount_indexes['RUB']+=1
+            # The bound labels this occurrence only. A later cap must not
+            # erase another fixed discount, and a cap is not an earned amount.
+            if m.span('value') in cap_spans:
+                continue
             if benefit_denied(clause,m.start(),m.end(),amounts=polarity_spans):continue
             rate={'kind':'discount','value':amount['value'],'unit':'RUB','qualifier':amount['qualifier'],
                   'basis_amount':None,'basis_unit':None,'evidence':clause}
@@ -382,9 +405,9 @@ def lexical_conditions(value: str) -> list[dict]:
             amount = literal_number(match[1])
             if amount is not None:
                 add('minimum_purchase',value=amount,unit='RUB',qualifier='at_least')
-        for match in re.finditer(rf'максимальн\w*\s+(?:размер\s+)?(?:скидк\w*|к[еэ]шб[еэ]к\w*)\s*(?:составля\w*\s*)?[:—–-]?\s*({NUMERIC_TOKEN})\s*(?:₽|руб\w*)',clause,re.I):
-            amount = literal_number(match[1])
-            if amount is not None:
+        for match,amount in monetary_caps(clause):
+            if (match['reward'] is not None and not benefit_denied(
+                    clause,match.start('reward'),match.end(),amounts=benefit_mentions(clause))):
                 add('maximum_benefit',value=amount,unit='RUB',qualifier='up_to')
         if re.search(r'\b(?:перв\w*\s+(?:заказ|покупк|бронирован)|нов\w*\s+(?:клиент|пользоват))',clause,re.I):
             # This is a referenced audience, not proof that every other audience is excluded.
