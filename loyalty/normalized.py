@@ -256,6 +256,23 @@ def fixed_discount_amounts(value: str):
                           'qualifier':'up_to' if match['qual'] else 'exact'}
 
 
+def monetary_caps(value: str):
+    """One bounded cap grammar for reward exclusion and literal conditions.
+
+    Positions and explicit reward labels refer to the unchanged source. An
+    unlabelled maximum still needs a semantic owner in the common model.
+    """
+    pattern=(r'\b(?:максимум|максимальн\w*|лимит|не\s+более(?:\s+чем)?)'
+             r'(?:\s+(?:размер|сумм\w*|выплат\w*))?\s*[:—–-]?\s*'
+             r'(?:(?P<reward>скидк\w*|к[еэ]шб[еэ]к\w*)\s*'
+             r'(?:составля\w*\s*)?[:—–-]?\s*)?'
+             rf'(?P<value>{NUMERIC_TOKEN})\s*(?:₽|руб(?:лей|ля|ль|\.)?|RUB)')
+    for match in re.finditer(pattern,value,re.I):
+        amount=literal_number(match['value'])
+        if amount is not None and number_starts_here(value,match.start('value')):
+            yield match,amount
+
+
 def _postfix_rate_label(clause, end):
     for kind in ('discount','cashback','miles'):
         pattern=(r'\s*(?:\(\s*)?(?:постоянн\w*\s+)?'+TYPES[kind]+r'\w*\s*\)?')
@@ -360,12 +377,12 @@ def normalize_rates(value: str, *, heading_context: str = '', with_spans: bool =
                     (bracket_cap or (role=='unknown' and basis['basis_unit'] in ('month','day')))):
                 rate['_reward_cap']=True
             result.append(rate)
+        cap_spans={m.span('value') for m,_ in monetary_caps(clause)}
         for m,amount in fixed_discount_amounts(clause):
             index=amount_indexes['RUB'];amount_indexes['RUB']+=1
             # The bound labels this occurrence only. A later cap must not
             # erase another fixed discount, and a cap is not an earned amount.
-            if re.search(r'\b(?:максимум|максимальн\w*|лимит|не\s+более)'
-                         r'(?:\s+(?:размер|сумм\w*|выплат\w*))?\s*$',clause[:m.start()],re.I):
+            if m.span('value') in cap_spans:
                 continue
             if benefit_denied(clause,m.start(),m.end(),amounts=polarity_spans):continue
             rate={'kind':'discount','value':amount['value'],'unit':'RUB','qualifier':amount['qualifier'],
@@ -388,9 +405,9 @@ def lexical_conditions(value: str) -> list[dict]:
             amount = literal_number(match[1])
             if amount is not None:
                 add('minimum_purchase',value=amount,unit='RUB',qualifier='at_least')
-        for match in re.finditer(rf'максимальн\w*\s+(?:размер\s+)?(?:скидк\w*|к[еэ]шб[еэ]к\w*)\s*(?:составля\w*\s*)?[:—–-]?\s*({NUMERIC_TOKEN})\s*(?:₽|руб\w*)',clause,re.I):
-            amount = literal_number(match[1])
-            if amount is not None:
+        for match,amount in monetary_caps(clause):
+            if (match['reward'] is not None and not benefit_denied(
+                    clause,match.start('reward'),match.end(),amounts=benefit_mentions(clause))):
                 add('maximum_benefit',value=amount,unit='RUB',qualifier='up_to')
         if re.search(r'\b(?:перв\w*\s+(?:заказ|покупк|бронирован)|нов\w*\s+(?:клиент|пользоват))',clause,re.I):
             # This is a referenced audience, not proof that every other audience is excluded.

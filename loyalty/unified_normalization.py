@@ -16,7 +16,8 @@ from decimal import Decimal, InvalidOperation
 from urllib.parse import urlsplit, urlunsplit, parse_qsl, urlencode
 from normalized import (normalize_rates, percent_spans, number, NUMBER, TYPES,
                         NUMERIC_TOKEN, literal_number, number_starts_here,
-                        reward_amounts, reward_basis, fixed_discount_amounts, benefit_mentions)
+                        reward_amounts, reward_basis, fixed_discount_amounts, benefit_mentions,
+                        monetary_caps)
 from promo_codes import extract_promocodes
 from iso_datetime import parse_iso_datetime
 from reward_context import reward_role, benefit_denied, gift_spans
@@ -313,6 +314,21 @@ def _sentence_bounds(clause,start,end):
     left=max((m.end() for m in boundaries if m.end()<=start),default=0)
     right=min((m.start() for m in boundaries if m.start()>=end),default=len(clause))
     return left,right
+
+
+def _monetary_cap_kind(clause,cap):
+    """An explicit local payment owner cannot borrow a reward elsewhere."""
+    if cap['reward'] is not None:return 'benefit_cap'
+    left,right=_sentence_bounds(clause,cap.start(),cap.end())
+    prefix=re.split(r'[;,]|\b(?:а|но|или)\b',clause[left:cap.start()],flags=re.I)[-1]
+    payment=r'(?:предоплат\w*|оплат\w*|аванс\w*|НДС|налог\w*|комисси\w*|штраф\w*|стоимост\w*|цен[аыуе])'
+    owners=list(re.finditer(r'\b(?:(?P<reward>скидк\w*|к[еэ]шб[еэ]к\w*)|(?P<payment>'+payment+r'))\b',prefix,re.I))
+    payment_owned=((owners and owners[-1].lastgroup=='payment')
+                   or re.match(r'\s+'+payment+r'\b',clause[cap.end():right],re.I))
+    # Preserve the reviewed unlabelled-cap behavior only when no explicit
+    # local payment owner contradicts that reward context.
+    return ('benefit_cap' if not payment_owned and re.search(r'скид|к[еэ]шб[еэ]к',clause,re.I)
+            else 'maximum_amount_reference')
 
 
 def _rate_scope(clause,rate,spans):
@@ -981,18 +997,25 @@ def normalize_record(raw, *, as_of):
                 recognized=True
         for m,value in _amount_matches(rf'(?:заказ\w*|покупк\w*|чек\w*|бронировани\w*)\s+(?:на\s+сумму\s+)?от\s+({NUMERIC_TOKEN})\s*{MONEY}',clause):
             condition('minimum_purchase',path,value=value,unit='RUB',qualifier='at_least',scope=scope,fragment=clause,method='clause_candidate');recognized=True
-        for m,value in _amount_matches(rf'(?:максимум(?:\s+скидки)?|максимальн\w*\s+(?:размер\s+)?(?:скидк\w*|к[еэ]шб[еэ]к\w*)|лимит(?:\s+(?:скидк\w*|к[еэ]шб[еэ]к\w*))?|не более)\s*[:—–-]?\s*({NUMERIC_TOKEN})\s*{MONEY}',clause):
+        for m,value in monetary_caps(clause):
+            start=m.start('reward') if m['reward'] is not None else m.start()
+            if benefit_denied(clause,start,m.end(),amounts=benefit_mentions(clause)):continue
             # Match positions, not values: first/repeat caps may have equal
             # amounts. Otherwise use only this cap's original sentence.
             cap_scope=None
             for index,(amount,_) in enumerate(fixed_discount_amounts(clause)):
-                if amount.span('value')==m.span(1):
+                if amount.span('value')==m.span('value'):
                     cap_scope=clause_scopes.get(('RUB',index),{})
                     break
             if cap_scope is None:
                 left,right=_sentence_bounds(clause,m.start(),m.end())
                 cap_scope=_scope(clause[left:right])
-            condition('benefit_cap' if re.search(r'скид|к[еэ]шб[еэ]к',clause,re.I) else 'maximum_amount_reference',path,value=value,unit='RUB',qualifier='up_to',scope=cap_scope,fragment=clause,method='clause_candidate');recognized=True
+            kind=_monetary_cap_kind(clause,m)
+            cap=condition(kind,path,value=value,unit='RUB',qualifier='up_to',scope=cap_scope,fragment=clause,method='clause_candidate')
+            if kind=='maximum_amount_reference':
+                # A shared stage/evidence string is not an explicit reward link.
+                cap_owners[cap['id']]=set()
+            recognized=True
         classifiers={
             'stacking_restriction':r'не\s+суммир|не\s+сочета|not combin',
             'exclusion':r'исключ|кроме|не действует|не предоставля|не начисля|not valid|exclud',

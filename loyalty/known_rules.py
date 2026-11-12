@@ -73,7 +73,8 @@ def owned_match(anchor,pattern,value,reason):
 
 def sim_delivery_terms(nodes):
     """Own the courier service before interpreting its generic price labels."""
-    headings=[h for node in nodes for h in node.find_all(re.compile(r'^h[1-6]$'))
+    all_headings=[h for node in nodes for h in node.find_all(re.compile(r'^h[1-6]$'))]
+    headings=[h for h in all_headings
               if flat(html_text(h)).casefold()=='замена sim-карты без обращения в салон']
     if len(headings)>1:raise ValueError('sim_courier_section_ambiguous')
     if headings:
@@ -83,8 +84,10 @@ def sim_delivery_terms(nodes):
                     and int(sibling.name[1])<=int(heading.name[1])):break
             section.append(str(sibling))
         return html_text(''.join(section))
-    # Compatibility for the original plain article fragment. A service label
-    # is still required; prices preceding it never belong to courier delivery.
+    # Only a genuinely unstructured fragment can use the legacy label anchor.
+    # Flattening an unknown heading layout would lose service boundaries.
+    if all_headings:raise ValueError('sim_courier_section_missing_or_ambiguous')
+    # A service label is still required; preceding prices never belong here.
     value=content(nodes)
     anchors=list(re.finditer(r'Курьерская\s+доставка\s+SIM[-‑]карты',value,re.I))
     if len(anchors)!=1:raise ValueError('sim_courier_section_missing_or_ambiguous')
@@ -130,6 +133,7 @@ def mileage_multiplier(value):
             title_separator=re.search(r'(?:^|\n)Поколения Utair\s+[-–—]\s+$',prefix,re.I)
             if (not number_starts_here(folded,found.start('number'))
                     or re.search(r'[\w.,]$',prefix)
+                    or re.search(r'\d\s*[/:]\s*$',prefix)
                     or re.search(r'[+−–—-]\s*$',prefix) and not title_separator):
                 raise ValueError('generations_reward_multiplier_invalid')
             factor=literal_number(found['number'])

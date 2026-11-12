@@ -41,8 +41,11 @@ observation times and the input snapshot remain unchanged. Version/content hashe
 are expected to change. The replay is an immutable-data comparison, not a new
 collection or publication of the historical snapshot.
 
-The implementation replay has one changed semantic record: KARI's explicit
-`не более 30%` remains an upper bound instead of an exact rate. The reader grows
+The final replay has two changed semantic records: KARI's explicit
+`не более 30%` remains an upper bound instead of an exact rate, and the historical
+Aeroexpress wording `максимальная сумма кешбэка составляет 1 500 рублей` now
+produces a 1,500 RUB cap condition with its unchanged full evidence. This is a
+historical offer, not a claim that it is currently available. The reader grows
 from **1,198 to 1,199** rows, with exclusions decreasing from 203 to 202: FOTOLAB's
 10% service discount survives its separate product exclusion. This is not a new
 commercial offer; it was previously hidden by the reader's whole-line guard.
@@ -51,12 +54,42 @@ The existing GPB original price evidence is accepted with the free first month
 and later 399 RUB retained separately. Replaying retained student/Utair text
 preserves the existing IDs and numerical fields; this is not a live HTML replay.
 
+## Independent review and fix pass
+
+A fresh read-only reviewer checked implementation tree `323eed0` and reproduced
+four material failures beyond the first regression cases. All enter one test-first
+fix pass:
+
+- T2's legacy fallback is now available only for unstructured fragments. An
+  unknown heading layout cannot flatten away service boundaries and borrow a
+  following section's price.
+- Utair fractional/ratio continuations (`1/2`, `1:2`, including spaces) cannot
+  donate their trailing digit as a multiplier. An ordinary title colon remains
+  a valid delimiter.
+- A shared bounded monetary-cap grammar now handles ordinary punctuation,
+  `сумма` and `выплата` consistently across exclusion and condition extraction.
+- An explicitly payment-owned maximum remains an amount reference and cannot
+  become or link as a reward cap merely because another sentence has a discount.
+
+Two set-aside review examples were also graded material: an optional `чем`
+in the cap prefix must not manufacture a positive reward, and an explicitly
+denied cap must not become an active structured restriction. Equal denied/live
+cap occurrences remain independent. Twelve final-review test methods cover these
+repairs and compatibility controls; 28 failing assertions and two missing-cap
+assertion errors were observed before the fixes.
+
 ## Verification and publication
 
 Baseline: **2,431 Python tests and 7 Node tests passed**. Each repair has a public
 entrypoint regression observed failing before implementation. Per-task full-suite
 results, the independent whole-branch review and the exact CI/publication receipts
 are recorded with the associated pull request.
+
+Final fix-pass result: **2,473 Python tests passed in 93.581 seconds**, and
+**7 Node tests passed**. This adds 42 test methods across the implementation and
+review repairs without removing earlier regression tests. All 1,401 replay raw
+records and their source fingerprint are unchanged; no existing reader row was
+changed or removed.
 
 The existing request bridge refreshes T2 SIM, student rules, Utair generations,
 GPB rules, FlyStation and Ladoga. It uses existing source budgets and serialized
@@ -69,3 +102,6 @@ it does not claim arbitrary-prose understanding or universal numerical invarianc
 New document identities, unsupported currencies and changed layouts remain review
 boundaries. Unknown/conflicting values are not replaced by guessed facts. No LLM,
 new dependency, schedule, authentication path or access-control change is included.
+Alternative modifier placement such as `Максимальная скидка на повторные заказы
+1000 ₽` or `Лимит на повторные заказы — 1000 ₽` remains literal evidence without a
+new structured cap. Existing source-owned programme-rule projection is preserved.
