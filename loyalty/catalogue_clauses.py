@@ -12,7 +12,7 @@ from bs4 import BeautifulSoup
 from collections import Counter
 from datetime import date
 from decimal import Decimal
-from normalized import NUMERIC_TOKEN, literal_number
+from normalized import NUMERIC_TOKEN, literal_number, normalize_rates
 from quantity_offers import has_quantity_offer
 
 VERSION = "practical-catalogue-v2"
@@ -248,8 +248,9 @@ def benefit_claim(s, raw=None):
     # points-near-a-number fallback. Their count does not establish eligibility.
     if re.search(r'^Услуг[аи]\b.*?\bраз(?:а)?\s*[–—-]\s*[^;\n]{0,100}?Промо\s*-\s*балл',s,re.I):return False
     if re.search(r"двойную выгоду|родител\w* отмечают|\d+% успешных|процентил|"
-                 r"поэтому .{0,30}подарок|фирменные подарки для|"
-                 r"скидк\w* (?:не предоставля|не действ|не распространя)",s,re.I):return False
+                 r"поэтому .{0,30}подарок|фирменные подарки для",s,re.I):return False
+    if (re.search(r"скидк\w* (?:не предоставля|не действ|не распространя)",s,re.I)
+            and not any(r['kind'] in ('discount','cashback') for r in normalize_rates(s))):return False
     if re.search(r"(?:дарит|дарим|скидка|кешбэк|бонусы|составляет|от|до|за|при|на)\s*$",s,re.I):return False
     if OFFER.search(s) or promotional_price_claim(s,raw) or has_quantity_offer(s):return True
     if raw and len(s)<350 and re.search(r"\d\s*%",s) and (
