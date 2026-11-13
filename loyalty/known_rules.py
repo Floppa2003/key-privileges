@@ -13,11 +13,12 @@ from urllib.parse import urljoin,urlsplit,parse_qsl
 from bs4 import BeautifulSoup
 from html_text import html_text
 from normalized import (canonical_url,make_offer,number,NUMERIC_TOKEN,
-                        literal_number,number_starts_here)
+                        literal_number,number_starts_here,reward_amounts)
 from partner_pages import content,MONTHS
 from read_budget import within_source_budget
 from source_diagnostics import ParseError
 from known_rule_terms import retail_redemption_terms
+from reward_context import benefit_denied, mileage_formula_end
 
 CONFIG=json.loads(Path(__file__).with_suffix('.json').read_text(encoding='utf8'))
 NUM=NUMERIC_TOKEN
@@ -139,7 +140,8 @@ def mileage_multiplier(value):
             factor=literal_number(found['number'])
             if factor is None or Decimal(factor)<=0:
                 raise ValueError('generations_reward_multiplier_invalid')
-        factors.append(factor);evidence.append(found[0])
+        if benefit_denied(folded,found.start(),found.end()):continue
+        factors.append(factor);evidence.append(_mileage_evidence(folded,found.start(),found.end()))
     if len(set(factors))>1:raise ValueError('generations_reward_multiplier_ambiguous')
     if not factors:return None,None
     factor=factors[0]
@@ -153,19 +155,41 @@ def date_label(pattern,value):
     return date(int(year),MONTHS[month.lower()],int(day)).isoformat(),m[0]
 
 
-def earning_rules(value):
-    # Do not turn redemption percentages or background programme examples into
-    # earning. The caller passes only a reviewed earning section.
-    pattern=rf'(?P<n>{NUMERIC_TOKEN})\s+мил[ьяиюе]\w*(?:\s+начисляется)?(?:\s+«Аэрофлот\s+Бонус»)?\s+за\s+каждые\s+(?:потраченные\s+)?(?P<base>{NUMERIC_TOKEN})\s*(?:руб\w*|₽)'
-    found=[]
+def _mileage_evidence(value,start,end):
+    """Keep the complete owned sentence, including bounds and predicate."""
+    boundary=r'[.!?](?:\s|$)|[;\n]'
+    left=max((m.end() for m in re.finditer(boundary,value[:start])),default=0)
+    stop=re.search(boundary,value[end:])
+    right=end+stop.start()+1 if stop else len(value)
+    return value[left:right].strip()
+
+
+def _earning_rule_occurrences(value):
+    # Recognized denied formulas still establish the reviewed template. Missing
+    # or malformed formulas do not; callers retain their missing-template guard.
     folded=literal_lines(value)
-    for m in re.finditer(pattern,folded,re.I):
-        amount,basis=literal_number(m['n']),literal_number(m['base'])
-        if amount is None or basis is None or not number_starts_here(folded,m.start('n')):
-            continue
-        item={'value':amount,'unit':'miles','basis_amount':basis,
-              'basis_unit':'RUB','evidence':m[0]}
-        if item not in found:found.append(item)
+    tail=rf'\s+(?:начисляется\s+)?(?:«Аэрофлот\s+Бонус»\s+)?за\s+каждые\s+(?:потраченные\s+)?(?P<base>{NUMERIC_TOKEN})\s*(?:руб\w*\.?|₽)'
+    found=[]
+    for amount_match,amount in reward_amounts(folded,'miles'):
+        basis_match=re.match(tail,folded[amount_match.end():],re.I)
+        if not basis_match:continue
+        basis=literal_number(basis_match['base'])
+        if basis is None or Decimal(basis)<=0:continue
+        end=mileage_formula_end(folded,amount_match.end())
+        item={'value':amount['value'],'unit':'miles','basis_amount':basis,
+              'basis_unit':'RUB','evidence':_mileage_evidence(folded,amount_match.start(),end)}
+        if amount['qualifier']!='unspecified':item['qualifier']=amount['qualifier']
+        if amount['min_value'] is not None:item['min_value']=amount['min_value']
+        denied=benefit_denied(folded,amount_match.start(),end)
+        found.append((item,denied))
+    return found
+
+
+def earning_rules(value):
+    # The caller supplies only a reviewed earning section, not redemption terms.
+    found=[]
+    for item,denied in _earning_rule_occurrences(value):
+        if not denied and item not in found:found.append(item)
     return found
 
 
@@ -289,7 +313,7 @@ def parse_known_rule(source,raw,url,observed_at):
         earning=terms[first.end():second.start()].strip()
         redemption=terms[second.end():].strip()
         rules=earning_rules(earning)
-        if not rules:raise ValueError('retail_earning_rule_changed')
+        if not _earning_rule_occurrences(earning):raise ValueError('retail_earning_rule_changed')
         details.update(earning_rules=rules,redemption_rules=retail_redemption_terms(redemption),
                        earning_conditions=earning)
         benefit=earning
@@ -313,7 +337,7 @@ def parse_known_rule(source,raw,url,observed_at):
         first,second=section_markers(terms,'Условия начислений','Условия получения премий')
         earning=terms[first.end():second.start()]
         details.update(earning_rules=earning_rules(earning),redemption_rules={'evidence':terms[second.end():]})
-        if not details['earning_rules']:raise ValueError('skyshop_earning_rule_missing')
+        if not _earning_rule_occurrences(earning):raise ValueError('skyshop_earning_rule_missing')
         benefit=earning;warnings.append('rate_effective_date_not_full_offer_validity')
     elif handler=='x5':
         m=match(r'('+NUM+r') мил[ьяи] за каждые ('+NUM+r') балл(?:ов|а)?\b',terms,'x5_exchange_rule_missing')
@@ -322,11 +346,11 @@ def parse_known_rule(source,raw,url,observed_at):
         details['validity_evidence']=evidence
     elif handler in ('tripster','vipzal'):
         details['earning_rules']=earning_rules(terms)
-        if not details['earning_rules']:raise ValueError('partner_earning_rule_missing')
+        if not _earning_rule_occurrences(terms):raise ValueError('partner_earning_rule_missing')
         if handler=='tripster':warnings.append('publication_date_is_not_offer_start')
     elif handler=='comfort':
         details['earning_rules']=earning_rules(terms)
-        if not details['earning_rules']:raise ValueError('comfort_base_rate_missing')
+        if not _earning_rule_occurrences(terms):raise ValueError('comfort_base_rate_missing')
     elif handler=='students':
         age=owned_match(r'до (?=[^;\n]*?\(включительно\))',
                         rf'до ({NUM}) (?:год(?:а)?|лет) \(включительно\)',terms,'student_age_missing')

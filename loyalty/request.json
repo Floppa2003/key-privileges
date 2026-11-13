@@ -1,13 +1,16 @@
 {
-  "request_id": "2026-11-12-parser-numeric-followup",
+  "request_id": "2026-11-13-parser-semantic-ownership",
   "source_ids": [
-    "t2_sim_rules",
-    "rzd_student_rules",
     "utair_generations_rules",
-    "af_gpb_rules",
-    "flystation_public",
-    "ekp_ladoga_public"
+    "af_bootwood_rules",
+    "af_wolford_rules",
+    "af_iway_rules",
+    "af_skyshop_rules",
+    "af_tripster_rules",
+    "af_comfort_rules",
+    "af_vipzal_rules",
+    "hse_alumni"
   ],
-  "reason": "Refresh the reviewed source adapters after repairing courier-service price ownership, complete multipliers/count inflections, subscription price phases and full-sentence literal reward polarity. Use existing allowlisted collectors, budgets and serialized publication with destination readback; normalize all stored inputs with version 1.0.5. Keep partial/unavailable source reporting and original evidence; do not reinterpret a missing source as an empty completed catalogue.",
+  "reason": "Refresh the reviewed source-owned mileage templates and HSE coupon fallback after repairing occurrence-level denial, full earning bounds and cancelled-code extraction. Re-normalize all retained inputs with normalizer 1.0.6, including coupon cancellation/instruction boundaries and monetary condition ownership. Use existing allowlisted collectors, budgets and serialized publication with destination readback. Preserve original evidence and partial/unavailable source reporting.",
   "publish": true
 }

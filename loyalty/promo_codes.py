@@ -16,6 +16,8 @@ STOP = {'http', 'https', 'промокод', 'промокоды', 'акция',
             'скопировать введите ввести применить как срок сроки получение предоставляется '
             'воспользоваться from the is in of by sms смс').split())
 QUOTES = {'«': '»', '“': '”', '"': '"'}
+CANCELLATION_WORDS = {'больше', 'уже', 'временно', 'сейчас', 'пока',
+                      'недействителен', 'отменён', 'отменен', 'аннулирован'}
 
 
 def candidate(value: str, position: int, prefix: str) -> tuple[str | None, int]:
@@ -51,6 +53,8 @@ def candidate(value: str, position: int, prefix: str) -> tuple[str | None, int]:
             extra = re.match(r'[ \t]+[A-ZА-ЯЁ][A-ZА-ЯЁ0-9_.-]{1,29}(?![\w.-])', value[stop:])
             if not extra:
                 break
+            if extra[0].strip().rstrip('.').casefold() in STOP | CANCELLATION_WORDS:
+                break
             code += extra[0].rstrip('.')
             stop += extra.end()
             ended = extra[0].endswith('.')
@@ -79,31 +83,139 @@ def candidate(value: str, position: int, prefix: str) -> tuple[str | None, int]:
     return code, stop
 
 
+def promocode_occurrences(value: str, mention: re.Match) -> list[tuple[str, int, int]]:
+    """Map a label's literal members before resolving their shared predicate.
+
+    Only the existing plural label licenses quoted continuations. Positions
+    retain each member's original spelling and evidence boundary, while the
+    last member's end is the predicate boundary for the entire list.
+    """
+    position = mention.end()
+    code, stop = candidate(value, position, value[max(0, mention.start()-150):mention.start()])
+    if not code:
+        return []
+    members = [(code, position, stop)]
+    if re.fullmatch(r'промокоды\s*(?:[:—–-]\s*)?', mention[0], re.I):
+        for _ in range(8):
+            separator = re.match(r'[ \t]*(?:,|/|\bи\b|\bили\b)[ \t]*(?=[«“"])', value[stop:])
+            if not separator:
+                break
+            position = stop + separator.end()
+            more, end = candidate(value, position, '')
+            if not more:
+                break
+            members.append((more, position, end))
+            stop = end
+    return members
+
+
+def coupon_restriction_continuation(value: str, *, labels=(LABEL,)) -> bool:
+    """Whether the next source line/comma continues this applicability rule."""
+    continuation = re.split(r'[,;\r\n]|[.!?](?:\s|$)', value.lstrip(' \t,\r\n'), maxsplit=1)[0]
+    if re.match(r'(?:если|когда)\b', continuation, re.I):
+        return True
+    return bool(re.match(r'(?:[-–—]\s*)?(?:на|в|во|для|при|по|после|до|кроме)\b', continuation, re.I)
+                and not any(label.search(continuation) for label in labels))
+
+
+def promocode_cancelled(value: str, start: int, stop: int, *, labels=(LABEL,)) -> bool:
+    """Only an unconditional predicate owned by this literal cancels it.
+
+    Product/calendar exclusions and after-use/future conditions are not proof
+    of current cancellation. In particular, a colon can introduce a multiline
+    exclusion list rather than terminate an unconditional denial.
+    """
+    prefix = re.split(r'[.!?;\n]', value[:start])[-1]
+    # A sibling after a coupon-directed instruction or an adversative owns
+    # its own conditions. Other commas can be part of a conditional antecedent.
+    owned_start = component_start = 0
+    for boundary in re.finditer(r',\s*(?:(а|но|однако)\b)?', prefix, re.I):
+        component = prefix[component_start:boundary.start()]
+        instruction = any(
+            re.search(r'\b(?:используйте|примените|введите)\s*$', component[:mention.start()], re.I)
+            for label in labels for mention in label.finditer(component))
+        adversative = boundary[1] and any(label.search(prefix, 0, boundary.start()) for label in labels)
+        if instruction or adversative:
+            owned_start = boundary.end()
+        component_start = boundary.end()
+    prefix = prefix[owned_start:]
+    if re.search(r'\b(?:если|после|при)\b', prefix, re.I):
+        return False
+    tail = '' if value[max(0, stop-1):stop] == '.' else value[stop:]
+    postfix = re.split(r'[.!?;]', tail.lstrip(), maxsplit=1)[0]
+    modifier = r'(?:(?:больше|уже|временно|сейчас|пока)\s+)?'
+    denial = re.match(r'\s*' + modifier + r'(?:не\s+действу(?:ет|ют)|недействител(?:ен|ьны)|отмен[её]н(?:ы)?|аннулирован(?:ы)?)\b', postfix, re.I)
+    if denial:
+        # A restriction following the predicate is not whole-code cancellation.
+        remainder = postfix[denial.end():]
+        if not remainder.strip():
+            return True
+        if re.match(r'[ \t]*[,\r\n]', remainder):
+            # A comma or source line wrap can continue the applicability
+            # predicate. Read that condition before treating it as a boundary.
+            # A separate literal's clause cannot rescue this cancelled one.
+            return not coupon_restriction_continuation(remainder, labels=labels)
+        return False
+    if re.search(r'\bне\s+(?:используйте|применяйте)\s*$', prefix, re.I):
+        if re.match(r'[ \t]*[,\r\n]', tail):
+            return not coupon_restriction_continuation(tail, labels=labels)
+        return not postfix.strip()
+    return False
+
+
+def reconcile_promocode(code: str, texts: list[str], *, labels=None) -> str | None:
+    """Reconcile a native literal only against matching original occurrences.
+
+    Missing evidence leaves the native assertion intact. A separately live
+    occurrence of the same value survives; callers supply component evidence
+    when the native literal has an audience/card owner. Source-specific label
+    patterns are opt-in; they do not broaden generic coupon extraction.
+    """
+    labels = (LABEL,) if labels is None else labels
+    matches = []
+    for value in texts:
+        for mention in (match for label in labels for match in label.finditer(value)):
+            members = promocode_occurrences(value, mention)
+            if not members:
+                continue
+            cancelled = promocode_cancelled(value, mention.start(), members[-1][2], labels=labels)
+            for parsed, position, _ in members:
+                # Do not trim a native multiword value merely because it contains
+                # instruction words: the entire old literal must occur in source.
+                tail = value[position:]
+                same = parsed == code
+                contaminated = (code.startswith(parsed + ' ')
+                                and re.match(r'\s*(?:[:—–-]\s*)?' + re.escape(code) + r'(?=$|[^\w.-]|\.(?:\s|$))', tail))
+                if same or contaminated:
+                    matches.append(None if cancelled else parsed)
+    live = [value for value in matches if value is not None]
+    if code in live:
+        return code
+    return live[0] if live else None if matches else code
+
+
 def extract_promocodes(value: str, tables: list | None = None) -> dict:
+    return extract_promocodes_with_context(value, tables)
+
+
+def extract_promocodes_with_context(value: str, tables: list | None = None, *, labels=(LABEL,)) -> dict:
+    """Extract generic literals with the source's licensed sibling context.
+
+    Extra labels classify occurrence ownership only; their literal extraction
+    remains source-owned. Independent table occurrences retain their evidence.
+    """
     codes, evidence, delivery = [], [], []
     mentions = list(LABEL.finditer(value))
     for match in mentions:
         if match[0].casefold()=='промокода' and re.search(r'(?:\bдва|\bтри|\bчетыре|\d+)\s+$',value[max(0,match.start()-40):match.start()],re.I):
             continue
-        code, stop = candidate(value, match.end(), value[max(0, match.start()-150):match.start()])
-        if code and code not in codes:
-            codes.append(code)
-            evidence.append({'code': code, 'evidence': value[match.start():stop].strip()})
-        # Only a plural label licenses a list; do not treat arbitrary following
-        # quoted UI labels or phrases as more coupons.
-        if match[0].casefold() == 'промокоды' and code:
-            for _ in range(8):
-                separator = re.match(r'[ \t]*(?:,|/|\bи\b|\bили\b)[ \t]*(?=[«“"])', value[stop:])
-                if not separator:
-                    break
-                position = stop + separator.end()
-                more, stop = candidate(value, position, '')
-                if more and more not in codes:
-                    codes.append(more)
-                    evidence.append({'code': more, 'evidence': value[match.start():stop].strip()})
-                if not more:
-                    break
-        if match[0].casefold() == 'промокоды' and code:
+        members = promocode_occurrences(value, match)
+        cancelled = bool(members) and promocode_cancelled(value, match.start(), members[-1][2], labels=labels)
+        for code, _, stop in members:
+            if code not in codes and not cancelled:
+                codes.append(code)
+                evidence.append({'code': code, 'evidence': value[match.start():stop].strip()})
+        if match[0].casefold() == 'промокоды' and members:
             # Explicit 'CODE - percentage; CODE - percentage' offer lists only.
             # A later section or an unrelated word after a semicolon is not a code.
             section = re.split(r'\n\s*\n|(?<=[.!?])\s+(?=[А-ЯA-Z])', value[match.end():], maxsplit=1)[0]

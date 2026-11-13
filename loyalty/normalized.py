@@ -13,7 +13,7 @@ from model import clean_url
 from promo_codes import extract_promocodes
 from table_benefits import extract_table_benefits
 from recovered_contract import SOURCES as RECOVERED_SOURCES, http_url, validate_recovered
-from reward_context import reward_role, benefit_denied, gift_spans
+from reward_context import reward_role, benefit_denied, gift_spans, mileage_formula_end, forward_reward_basis
 
 VERSION = '2.9.6'
 HOSTS = {
@@ -219,11 +219,8 @@ def reward_basis(clause: str, start: int, end: int):
     # malformed/range base: it must not turn into a rate with no denominator.
     numeric = r'(?:от\s+)?[−+-]?\d[\w., \t\u00a0\u202f–—−-]*?'
     amount = rf'(?P<basis>{numeric})\s*(?P<unit>{unit})(?=\W|$)'
-    suffix = clause[end:]
-    if re.search(r'мил[ьяиюе]\w*$',clause[start:end],re.I):
-        suffix=re.sub(r'^\s+S7\b(?:\s+Airlines)?(?=\s+(?:за|в)\b)','',suffix,flags=re.I)
-    match = re.match(r'\s+(?:начисля\w+\s+)?за\s+(?:кажды[еий]\s+)?'
-                     r'(?:потраченн\w+\s+)?' + amount, suffix, re.I)
+    forward=forward_reward_basis(clause,end,miles=bool(re.search(r'мил[ьяиюе]\w*$',clause[start:end],re.I)))
+    match=forward if forward and forward['basis'] is not None else None
     if not match:
         prefix=re.sub(r'\bруб\.(?=\s)','руб ',clause[:start],flags=re.I)
         prefix=re.split(r'[.!?](?:\s|$)|[;\n]',prefix)[-1]
@@ -240,9 +237,9 @@ def reward_basis(clause: str, start: int, end: int):
                       'month' if word.startswith('месяц') else
                       'day' if re.match(r'дн|день', word) else 'points')
         return {'basis_amount': base, 'basis_unit': basis_unit}
-    if re.match(r'\s+в\s+месяц\b', suffix, re.I):
+    if forward and forward['month']:
         return {'basis_amount': '1', 'basis_unit': 'month'}
-    if re.match(r'\s+за\s+каждые\s+сутки\b', suffix, re.I):
+    if forward and forward['day']:
         return {'basis_amount': '1', 'basis_unit': 'day'}
     return {'basis_amount': None, 'basis_unit': None}
 
@@ -362,7 +359,13 @@ def normalize_rates(value: str, *, heading_context: str = '', with_spans: bool =
         for m,amount in reward_amounts(clause,'miles'):
             index=amount_indexes['miles'];amount_indexes['miles']+=1
             role=reward_role(clause,m.start(),m.end())
-            if role in ('denied','spend','reference'):
+            formula_end=mileage_formula_end(clause,m.end())
+            # An affirmative postfix after this denominator owns this reward,
+            # even when the quantity-only prefix inherited a sibling's denial.
+            if formula_end>m.end() and reward_role(clause,m.start(),formula_end)=='earn':
+                role='earn'
+            if (role in ('denied','spend','reference')
+                    or benefit_denied(clause,m.start(),formula_end)):
                 continue
             basis=reward_basis(clause,m.start(),m.end())
             if basis is None:

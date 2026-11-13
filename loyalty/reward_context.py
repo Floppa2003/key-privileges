@@ -13,7 +13,7 @@ _ACTION = re.compile(r'\b(?:(?P<earn>' + _EARN + r')|(?P<spend>' + _SPEND + r'))
 _BENEFIT_ACTION = re.compile(r'\b(?P<earn>' + _EARN +
                              r'|предостав\w*|выда\w*|действ\w*|верн\w*|возвращ\w*)\b', re.I)
 _DENIAL = r'(?:не|нельзя|невозможно)(?:\s+(?:буд\w*|мож\w*|смож\w*|вам|мы|вы)){0,2}'
-_MODIFIERS = r'(?:(?:буд\w*|уже|вам|нам|им|ему|ей|мне|тебе)\s+){0,3}'
+_MODIFIERS = r'(?:(?:буд\w*|уже|больше|временно|сейчас|пока|вам|нам|им|ему|ей|мне|тебе)\s+){0,3}'
 _PURCHASE = (r'(?:(?:на|за|при|после)\s+(?:(?:перв\w*|повторн\w*|кажд\w*)\s+)?'
              r'(?:заказ\w*|покупк\w*|визит\w*|посещени\w*|регистраци\w*|проживани\w*)\s+)?')
 # These spans only connect a shared action across a plain amount list. They do
@@ -109,13 +109,86 @@ def _owned_role(text, start, end, *, amounts=(), actions=_ACTION,
     return 'unknown'
 
 
+def forward_reward_basis(text, end, *, miles=False):
+    """Match existing forward denominator forms, preserving original offsets.
+
+    Numeric validity belongs to the caller. Consume malformed explicit tokens
+    too, so a bad denominator cannot silently become a denominator-free reward.
+    Mileage labels are accepted only for an already recognized miles quantity.
+    """
+    numeric=r'(?:от\s+)?[−+-]?\d[\w., \t\u00a0\u202f–—−-]*?'
+    unit=r'(?:₽|руб\w*\.?|RUB|(?:бонусн\w*\s+)?балл\w*|бонус(?:ов|а)?|дней|день|дня|месяц\w*)'
+    amount=rf'(?P<basis>{numeric})\s*(?P<unit>{unit})(?=\W|$)'
+    label=(r'(?:\s+S7\b(?:\s+Airlines)?(?=\s+(?:за|в)\b))?' if miles else '')
+    brand=r'(?:«Аэрофлот\s+Бонус»\s+)?' if miles else ''
+    return re.match(label+r'\s+(?:(?:начисля\w+\s+)?'+brand
+                    +r'за\s+(?:кажды[еий]\s+)?(?:потраченн\w+\s+)?'+amount
+                    +r'|(?P<month>в\s+месяц)\b|(?P<day>за\s+каждые\s+сутки)\b)',
+                    text[end:],re.I)
+
+
+def mileage_formula_end(text, end):
+    """Extend a miles quantity through its forward denominator, not its predicate."""
+    tail=forward_reward_basis(text,end,miles=True)
+    return end+tail.end() if tail else end
+
+
 def reward_role(text, start, end, *, amounts=()):
     """Action/reference owned by a literal points or miles quantity."""
     return _owned_role(text, start, end, amounts=amounts)
 
 
+def benefit_phrase_end(text, end):
+    """Complete a short nonnumeric marker's plain noun phrase, before its action."""
+    for _ in range(3):
+        word=re.match(r'\s+(?P<word>[^\W\d_]+)\b',text[end:])
+        if not word:break
+        token=word['word']
+        # Never cross an action, polarity, condition or sibling connector to
+        # borrow a later statement's denial. The shared grammar owns predicates.
+        if (_BENEFIT_ACTION.fullmatch(token) or re.fullmatch(_DENIAL,token,re.I)
+                or re.fullmatch(_MODIFIERS,token+' ',re.I)
+                or re.fullmatch(r'и|или|а|но|зато|однако|если|когда|на|для|при|за|'
+                                r'с|со|в|во|от|до|по|после|кроме',token,re.I)):
+            break
+        end+=word.end()
+    return end
+
+
+def benefit_phrase_spans(text, start, end):
+    """Plain nonnumeric components sharing a potential coordinated predicate."""
+    gifts=gift_spans(text)
+    def component_end(pos):
+        pos=benefit_phrase_end(text,pos)
+        for marker in gifts:
+            if pos<=marker.start() and re.fullmatch(r'\s*',text[pos:marker.start()]):
+                return marker.end()
+        return pos
+    spans=[(start,component_end(end))]
+    for _ in range(2):
+        end=spans[-1][1]
+        connector=re.match(r'\s+(?:и|или)(?=\s)',text[end:],re.I)
+        if not connector:break
+        after=end+connector.end()
+        following=component_end(after)
+        if following==after:break
+        start=after+len(re.match(r'\s*',text[after:])[0])
+        spans.append((start,following))
+    return spans
+
+
+def benefit_restriction_follows(text, end):
+    """A negative restriction predicate at this marker, with shared modifiers."""
+    return bool(re.match(r'\s*'+_MODIFIERS+_DENIAL+r'\s+'+_MODIFIERS
+                         +r'(?:предоставля\w*|действ\w*|распространя\w*)\b',text[end:],re.I))
+
+
 def benefit_denied(text, start, end, *, amounts=(), gift=False):
     """An explicit owned denial, preserving product/cash-equivalent exclusions."""
+    if not re.search(r'\d',text[start:end]):
+        components=benefit_phrase_spans(text,start,end)
+        end=components[0][1]
+        amounts=sorted(set(list(amounts)+components))
     def partial_exclusion(tail,action):
         if gift and re.match(r'\s+в\s+денежном\s+эквиваленте\b', tail, re.I):
             return True

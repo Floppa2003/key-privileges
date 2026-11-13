@@ -229,7 +229,7 @@ def project_common(raw,n,benefit,condition,code):
     privileges and quoted code words remain searchable, without inventing scope.
     """
     from unified_normalization import digest as common_digest, validate_normalized
-    from promo_codes import extract_promocodes
+    from promo_codes import extract_promocodes, reconcile_promocode
     d=raw['details']; item=d['public_item']
     label,body,activation,end,warnings,words=derived(item,raw['observed_at'],record_mode(d))
     require(raw['program']==PROGRAM and raw['partner']==text(item['name']) and raw['title']==text(item['name'])
@@ -238,7 +238,12 @@ def project_common(raw,n,benefit,condition,code):
             and raw['activation']==activation and raw['valid_from'] is None and raw['valid_until']==end
             and set(warnings).issubset(raw['source_warnings']) and d['code_words']==words
             and d['only_assist_equivalence'] is False and d['item_sha256']==digest(item),'common_fields')
-    require(raw['codes']==extract_promocodes('\n'.join((label,body,activation)))['codes'],'common_codes')
+    # Historical arrays can retain a cancelled literal or an uppercase prose
+    # tail. Accept only repairs grounded in the complete owned source fields;
+    # unrelated additions still fail the exact current-extraction comparison.
+    reconciled = [reconcile_promocode(value, [label,body,activation]) for value in raw['codes']]
+    reconciled = list(dict.fromkeys(value for value in reconciled if value is not None))
+    require(reconciled==extract_promocodes('\n'.join((label,body,activation)))['codes'],'common_codes')
     scope={'public_benefit_id':item['id'],'headline_label_only':True,'eligibility_not_verified':True}
     rules=[condition('owned_partner_rules','/conditions',scope=scope)]
     if activation: rules.append(condition('redemption_instructions','/activation',scope=scope))
