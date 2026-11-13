@@ -30,8 +30,8 @@ def promocode_delivery_methods(clause: str) -> list[str]:
     """Keep the channel owned by code availability, not by card/use actions.
 
     Preserve other existing references when the source does not resolve their
-    role. A card from an app, entering a code there, or a discount applying there
-    supplies explicit contrary evidence to app/account code issuance.
+    role. A card from an app, entering or activating a code there, or a discount
+    applying there supplies contrary evidence to app/account code issuance.
     """
     methods = []
     for method, pattern in (('sms', r'\b(?:SMS|СМС)\b'),
@@ -51,8 +51,15 @@ def promocode_delivery_methods(clause: str) -> list[str]:
                     r'\bпромокод\w*\s+(?:будет\s+)?(?:отображ\w*|выда\w*|прид[её]т|приход\w*)\b',
                     local, re.I)
                 redemption = LABEL.search(local) and re.search(r'\b(?:введите|ввести)\b', local, re.I)
+                activation = re.search(
+                    r'\b(?:активировать|активируйте|активация)\s+промокод\w*\b', local, re.I)
+                # A PDF wrap can leave the activation noun on the prior line.
+                # Only this short requirement fragment is negative evidence;
+                # unrelated restrictions do not cancel code availability.
+                unneeded_reference = re.fullmatch(
+                    rf'\s*промокода\s+в\s+{pattern}\s+не\s+требуется[.!?]?\s*', local, re.I)
                 applicability = re.search(r'\bпромокод\s+предоставляет\s+скидк\w*\b', local, re.I)
-                if not issuance and (redemption or applicability):
+                if not issuance and (redemption or activation or unneeded_reference or applicability):
                     continue
             methods.append(method)
             break
