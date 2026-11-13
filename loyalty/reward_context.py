@@ -29,12 +29,25 @@ _MENTION = re.compile(r'\d[\d., \t\u00a0\u202f]*\s+'
                       r'(?:балл\w*|бонус(?:ов|а)?|мил[ьяиюе]\w*)\b', re.I)
 _BALANCE = re.compile(r'\b(?:баланс\w*|номинал\w*|на\s+(?:(?:вашем|ваш)\s+)?сч[её]т[еу])\b', re.I)
 _PAYMENT_NOUN = re.compile(r'\b(?:оплат[ауыое]|стоимост\w*|цен[аыуе])\b', re.I)
+_MONTHLY_MILEAGE_PAYOUT_CAP = (r'\bлимит\s+выплат\w*\s+'
+                               r'(?:к[еэ]шб[еэ]к\w*\s*/\s*)?мил[ьяиюе]\w*\s+'
+                               r'в\s+месяц[⁰¹²³⁴⁵⁶⁷⁸⁹]*')
+
+
+def monthly_mileage_payout_cap(text, start):
+    """A nominal monthly payout limit owns this quantity, not a past award."""
+    return bool(re.search(_MONTHLY_MILEAGE_PAYOUT_CAP+r'\s*$', text[:start], re.I))
 
 
 def benefit_context_text(value):
-    """Mask an open antecedent's cancellation continuation, preserving offsets."""
+    """Keep explicit owner continuations together without changing offsets."""
     marker=r'(?:скидк\w*|к[еэ]шб[еэ]к\w*|бесплат\w*|подар\w*)'
     result=value
+    # Native PDF wrapping can divide the payout-limit label itself. Keep only
+    # that explicit nominal owner together in the temporary context buffer;
+    # unrelated lines and the preserved evidence remain unchanged.
+    for cap in re.finditer(_MONTHLY_MILEAGE_PAYOUT_CAP,value,re.I):
+        result=result[:cap.start()]+result[cap.start():cap.end()].replace('\n',' ')+result[cap.end():]
     for boundary in re.finditer(r'\n',value):
         before=re.split(r'[.!?](?:\s|$)|[;\n]',value[:boundary.start()])[-1]
         after=re.split(r'[.!?](?:\s|$)|[;\n]',value[boundary.end():])[0]

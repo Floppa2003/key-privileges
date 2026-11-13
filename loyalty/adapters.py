@@ -10,6 +10,7 @@ from html_text import html_text
 from normalized import make_offer, text, BLOCKED
 from partner_pages import CONFIG as PARTNER_PAGES,extract_partner_page,utair_partners,content as block_content
 from t2_source import page_records as t2_page_records,URLS as T2_URLS
+from owned_offer_dates import numbered_discount_end
 
 PROGRAMS = {'moskvich':'Карта «Москвича»','noname':'No Name Card','s7':'S7 Priority',
  'ural':'Уральские авиалинии — «Крылья»','rgo':'Программа лояльности членов РГО',
@@ -160,6 +161,7 @@ def extract(source: str,raw: str,url: str,observed_at: str) -> list[dict]:
             out_url=urlsplit(url)._replace(query='',fragment=card['id']).geturl()
             result.append(make_offer(source,card['id'],PROGRAMS[source],name,benefit,out_url,observed_at,
                           conditions=node_text(terms),tables=tables_in(terms),
+                          valid_until=numbered_discount_end(benefit,node_text(terms)),
                           redemption='\n'.join(node_text(x) for x in terms.select('ol')),
                           link_kind='page_anchor',locator='#'+card['id']))
     elif source=='rgo':
@@ -285,6 +287,7 @@ def ural_catalog(data,url,observed_at):
         target='https://www.uralairlines.ru/partners/#'+native
         records.append(make_offer('ural',native,PROGRAMS['ural'],p['name'],benefit,target,observed_at,
           conditions=text(raw)+'\n'+text(category.get('text')),category=category.get('name'),tables=tables_in(detail),
+          valid_until=numbered_discount_end(benefit,text(raw)),
           redemption='\n'.join(node_text(x) for x in detail.select('ol')),
           details={'city_ids':p.get('city',[]),'retrieval_url':url,'preview':text(p.get('text',{}).get('preview'))},
           link_kind='page_anchor',locator='#'+native))

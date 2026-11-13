@@ -14,7 +14,8 @@ from promo_codes import extract_promocodes
 from table_benefits import extract_table_benefits
 from recovered_contract import SOURCES as RECOVERED_SOURCES, http_url, validate_recovered
 from reward_context import (reward_role, benefit_denied, gift_spans, mileage_formula_end,
-                            forward_reward_basis, purchase_requirement_denied, benefit_context_text)
+                            forward_reward_basis, purchase_requirement_denied, benefit_context_text,
+                            monthly_mileage_payout_cap)
 
 VERSION = '2.9.6'
 HOSTS = {
@@ -281,6 +282,25 @@ def monetary_caps(value: str):
             yield match,amount
 
 
+def percentage_caps(clause: str):
+    """Bounded percentages with an explicit local spending/discount owner.
+
+    A preceding reward label alone cannot turn the bound on its eligible
+    spending base, or a combined discount ceiling, into another benefit.
+    Positions refer to the same validated percent spans as the rate parser.
+    """
+    owner = re.compile(r'(?P<spend>\bсумм\w*\s+оплат\w*)|(?P<discount>[сc]кидк\w*)', re.I)
+    for index, span in enumerate(percent_spans(clause)):
+        if span['min_value'] is not None:continue
+        prefix = re.split(r'[.!?](?:\s|$)|[;\n]', clause[:span['start']])[-1]
+        bound = re.search(r'\bне\s+(?:может\s+)?превыш\w*(?:\s+в\s+сумме)?\s*$', prefix, re.I)
+        if not bound:continue
+        owners = list(owner.finditer(prefix[:bound.start()]))
+        if owners:
+            yield index, span, ('maximum_amount_reference' if owners[-1].lastgroup == 'spend'
+                                else 'benefit_cap')
+
+
 def _postfix_rate_label(clause, end):
     for kind in ('discount','cashback','miles'):
         pattern=(r'\s*(?:\(\s*)?(?:постоянн\w*\s+)?'+TYPES[kind]+r'\w*\s*\)?')
@@ -320,10 +340,12 @@ def normalize_rates(value: str, *, heading_context: str = '', with_spans: bool =
         scoped_clause = re.sub(ruble_band, lambda match: match[0][:-1] + ' ', clause, flags=re.I)
         labels = [(m.start(), k) for k in ('discount','cashback') for m in re.finditer(TYPES[k],clause,re.I)]
         percentages=percent_spans(clause)
+        capped_percentages={index for index,_,_ in percentage_caps(clause)}
         polarity_spans=benefit_mentions(clause)
-        for span in percentages:
+        for local_index, span in enumerate(percentages):
             index = percent_index
             percent_index += 1
+            if local_index in capped_percentages:continue
             start, end = span['start'], span['end']
             before = sorted((pos,k) for pos,k in labels if pos < start)
             if before:
@@ -370,6 +392,7 @@ def normalize_rates(value: str, *, heading_context: str = '', with_spans: bool =
             result.append(r)
         for m,amount in reward_amounts(clause,'miles'):
             index=amount_indexes['miles'];amount_indexes['miles']+=1
+            if monthly_mileage_payout_cap(clause,m.start()):continue
             role=reward_role(clause,m.start(),m.end())
             formula_end=mileage_formula_end(clause,m.end())
             # An affirmative postfix after this denominator owns this reward,

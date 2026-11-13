@@ -1,10 +1,24 @@
-# Common normalization of all stored data — 1.0.8
+# Common normalization of all stored data — 1.0.9
 
 This is a deterministic **source-preserving projection**, not another web scrape,
 a new discount catalogue, a personal entitlement check, or a savings calculator.
 It consumes all five explicitly supported input datasets in the existing Google
 spreadsheet. The other three sheets are control/audit history, not benefit rows.
 All eight original sheets are read-only to this stage.
+
+Version 1.0.9 repairs encountered source formulations at both extraction and
+retained-input boundaries. A tariff applicability heading does not supply a
+literal coupon, and showing a membership card or entering an existing code in
+an app does not assert code issuance there. Explicit owned campaign periods in
+the supported Coral, alumni, numbered-benefit and article contexts supply
+compatible missing validity bounds; travel, redemption and publication dates
+remain separate. Eligible-spend percentage limits, combined discount ceilings
+and nominal monthly mileage caps are conditions rather than additional positive
+benefits, including the observed line wrap inside a payout-limit label. Source
+text and existing valid terms remain intact. Public regression fixtures are
+minimal anonymizations of actual encountered records; exact records and full
+replay evidence remain private. Source/common schemas and the reader format
+are unchanged.
 
 Version 1.0.8 resolves explicit cancellation and availability in the component's
 own context, retains wrapped conditional coupon restrictions, and assigns each

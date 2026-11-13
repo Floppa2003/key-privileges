@@ -17,15 +17,15 @@ from urllib.parse import urlsplit, urlunsplit, parse_qsl, urlencode
 from normalized import (normalize_rates, percent_spans, number, NUMBER, TYPES,
                         NUMERIC_TOKEN, literal_number, number_starts_here,
                         reward_amounts, reward_basis, fixed_discount_amounts, benefit_mentions,
-                        monetary_caps)
-from promo_codes import (LABEL, extract_promocodes, reconcile_promocode,
+                        monetary_caps, percentage_caps)
+from promo_codes import (LABEL, extract_promocodes, reconcile_promocode, reconcile_promocode_delivery,
                          coupon_restriction_continuation, coupon_owned_prefix,
                          promocode_occurrences, promocode_cancelled)
 from iso_datetime import parse_iso_datetime
 from reward_context import (reward_role, benefit_denied, gift_spans, mileage_formula_end,
                             purchase_requirement_denied, benefit_context_text)
 
-VERSION = '1.0.8'
+VERSION = '1.0.9'
 GROUPS = ('benefits', 'conditions', 'costs', 'codes')
 INPUT_TABS = {
     'parser_offers': (1, 26), 'loyalty_partner_benefits': (4, 13),
@@ -947,6 +947,8 @@ def normalize_record(raw, *, as_of):
            quality={'level':'partial','verification':'source_snapshot' if raw['origin']=='parser_offers' else 'legacy_not_reverified',
                     'issues':list(raw.get('source_warnings',[])),'unparsed_clause_count':0,'semantic_completeness':'not_certified'},
            relationships=[])
+    from owned_offer_dates import project_retained_validity
+    project_retained_validity(raw,n['validity'])
     if n['validity']['until']:n['validity']['status']='expired' if n['validity']['until']<as_of else 'within_stated_period'
     if n['validity']['from'] and n['validity']['from']>as_of:n['validity']['status']='not_started'
     if raw['kind'] in ('raw_page','source_observation') or raw.get('details',{}).get('extraction_method')=='digest_bound_visual_review':
@@ -981,6 +983,9 @@ def normalize_record(raw, *, as_of):
         if delivery=='literal' and path.startswith('/codes/'):
             value=reconcile_promocode(value,[text for _,text in _source_fields(raw)],labels=labels)
             if value is None:return None
+        if path.startswith('/details/promo_code_delivery/'):
+            reference=pointer(raw,'/'.join(path.split('/')[:4]))
+            if not reconcile_promocode_delivery(delivery,reference.get('evidence')):return None
         return add('codes','promo_code',path,value=value,scope=scope,delivery=delivery,fragment=fragment)
     if d.get('retrieval_method')=='konsierge_public_browser_capture_v1':
         from konsierge_catalog import project_common
@@ -1240,7 +1245,8 @@ def normalize_record(raw, *, as_of):
             scope={'source_label':labelled[2]} if labelled else {}
             code(value,'/details/explicit_code_cell',scope,fragment=item)
     for i,c in enumerate(d.get('promo_code_delivery',[])):
-        add('codes','code_delivery',f'/details/promo_code_delivery/{i}',delivery=c.get('method'))
+        if reconcile_promocode_delivery(c.get('method'),c.get('evidence')):
+            add('codes','code_delivery',f'/details/promo_code_delivery/{i}',delivery=c.get('method'))
     # A label and its literal coupon may occupy adjacent lines of one field.
     # Recover these before clause splitting, keeping the same local context and
     # never joining separate fields, blank sections or repeated ambiguous quotes.
@@ -1356,6 +1362,11 @@ def normalize_record(raw, *, as_of):
                     method='clause_candidate',reward_unit='miles' if kind=='earn_miles' else 'points' if kind=='earn_points' else None)
             component_benefits[owner].add(reward['id'])
             recognized=True
+        if not d.get('pages'):
+            for index,span,kind in percentage_caps(rate_text):
+                condition(kind,path,value=span['value'],unit='percent',qualifier='up_to',
+                          scope=rate_scopes.get(('percent',index),{}),fragment=clause,method='clause_candidate')
+                recognized=True
         if not d.get('pages'):
             for index,(m,amount) in enumerate(reward_amounts(clause,'points')):
                 value=amount['value']
