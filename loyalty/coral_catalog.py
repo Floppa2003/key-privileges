@@ -88,10 +88,23 @@ def own_text(node):
     return html_text(node)
 
 
-def explicit_end(body):
+def explicit_period(body):
     matches = re.findall(r'Срок\s+действия\s+предложения\s*:?\s*до\s+(\d{2})\.(\d{2})\.(\d{4})', body, re.I)
     dates = {date(int(y), int(m), int(d)).isoformat() for d, m, y in matches}
-    return next(iter(dates)) if len(dates) == 1 else None
+    ranges = re.findall(r'Срок\s+проведения\s+акции\s*:\s*'
+                        r'(\d{2}\.\d{2}\.\d{4})\s*[-–—]\s*(\d{2}\.\d{2}\.\d{4})(?!\d)', body, re.I)
+    from owned_offer_dates import calendar_date
+    periods = {(calendar_date(start), calendar_date(end)) for start, end in ranges}
+    if any(start > end for start, end in periods):
+        return None, None
+    dates.update(end for _, end in periods)
+    if len(dates) != 1 or len(periods) > 1:
+        return None, None
+    return (next(iter(periods))[0] if periods else None), next(iter(dates))
+
+
+def explicit_end(body):
+    return explicit_period(body)[1]
 
 
 def detail(raw, sid, entry, observed_at, retrieval):
@@ -169,14 +182,15 @@ def detail(raw, sid, entry, observed_at, retrieval):
     if auth_text:
         redemption.append(auth_text)
     links = [{'label': html_text(a), 'url': a['href']} for a in copy.select('a[href]')]
+    start, end = explicit_period(body)
     block = {'title': title, 'body': body, 'redemption': '\n'.join(redemption),
              'authentication_notice': auth_text, 'tables': tables, 'table_contexts': table_contexts,
-             'links': links, 'category': entry.get('category'), 'valid_until': explicit_end(body),
+             'links': links, 'category': entry.get('category'), 'valid_until': end,
              'public_editorial_information': editorial,
              'redemption_mode': ('purchase_request' if purchase_request else 'ticket_purchase' if ticket else 'partner_code_or_link') if sid == 'coral' else 'partner_code_or_link'}
     return make_offer(sid, 'path:'+urlsplit(url).path, 'CoralBonus — Клуб' if sid == 'coral' else 'CoralBonus — Акции',
         None, title, url, observed_at, title=title, conditions=body, redemption=block['redemption'],
-        category=entry.get('category'), tables=tables, valid_until=block['valid_until'],
+        category=entry.get('category'), tables=tables, valid_from=start, valid_until=block['valid_until'],
         record_kind=('source_observation' if editorial else 'partner_offer') if sid == 'coral' else 'campaign',
         source_status=('public_conditions_purchase_requires_login' if sid == 'coral' and (ticket or purchase_request) else
                        'public_conditions_coupon_requires_login') if auth_text else 'public_source_terms',
@@ -197,7 +211,8 @@ def validate_record(row):
     if (row['native_id'] != 'path:'+urlsplit(row['source_url']).path or row['partner_name'] is not None
         or row['title'] != b.get('title') or row['benefit_text'] != b.get('title')
         or row['conditions_text'] != b.get('body') or row['redemption_text'] != b.get('redemption')
-        or row['tables'] != b.get('tables') or row['valid_until'] != explicit_end(b.get('body', ''))
+        or row['tables'] != b.get('tables')
+        or (row['valid_from'], row['valid_until']) != explicit_period(b.get('body', ''))
         or (row['details'].get('coral_layout_revision') == 2 and (row['details'].get('public_editorial_information') != b.get('public_editorial_information') or row['details'].get('redemption_mode') != b.get('redemption_mode')))
         or row['category'] != b.get('category') or row['link_kind'] != 'detail_page'
         or row['benefit_url'] != row['source_url']

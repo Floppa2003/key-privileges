@@ -106,9 +106,12 @@ def hse_rates(value):
 
 def explicit_end(body):
     matches=list(re.finditer(r'(?:скидк\w*|предложени\w*)\s+действует\s+до\s+(\d{2}\.\d{2}\.\d{4})(?!\d)',body,re.I))
-    dates={m[1] for m in matches}
+    from owned_offer_dates import labelled_campaign_ends
+    dated=[(datetime.strptime(m[1],'%d.%m.%Y').date().isoformat(),m[0]) for m in matches]
+    dated.extend(labelled_campaign_ends(body))
+    dates={value for value,_ in dated}
     if len(dates)>1:raise ValueError('hse_ambiguous_end_dates')
-    if matches:return datetime.strptime(matches[0][1],'%d.%m.%Y').date().isoformat(),matches[0][0]
+    if dated:return dated[0]
     return None,None
 
 

@@ -321,6 +321,9 @@ def parse_bank_page(sid, raw, now):
         program='Единая карта петербуржца (ЕКП)';partner='НСПК';title='НСПК — объявление о кешбэке ЕКП'
         warnings.append('announcement_article_not_full_campaign_rules')
         details['scope']='published_article_not_complete_offer_catalogue'
+        from owned_offer_dates import labelled_campaign_ends
+        ends={value for value,_ in labelled_campaign_ends(terms)}
+        if len(ends)==1:end=next(iter(ends))
     else:
         if not any('Приветственные баллы РЖД за оформление карты' in label for label in labels):
             raise ValueError('uralsib_campaign_identity_changed')

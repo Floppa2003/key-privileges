@@ -20,6 +20,53 @@ CANCELLATION_WORDS = {'больше', 'уже', 'временно', 'сейча�
                       'недействителен', 'отменён', 'отменен', 'аннулирован'}
 
 
+def promocode_applicability_heading(value: str, mention: re.Match) -> bool:
+    """A relative applicability predicate introduces its products, not a code."""
+    return bool(re.search(r'\bна\s+которые\s+действует\s+$', value[:mention.start()], re.I)
+                and re.match(r'\s*:', value[mention.end():]))
+
+
+def promocode_delivery_methods(clause: str) -> list[str]:
+    """Keep the channel owned by code availability, not by card/use actions.
+
+    Preserve other existing references when the source does not resolve their
+    role. A card from an app, entering a code there, or a discount applying there
+    supplies explicit contrary evidence to app/account code issuance.
+    """
+    methods = []
+    for method, pattern in (('sms', r'\b(?:SMS|СМС)\b'),
+                            ('account', r'личн\w*\s+кабинет\w*'),
+                            ('app', r'приложени\w*')):
+        for match in re.finditer(pattern, clause, re.I):
+            left = max([0] + [m.end() for m in re.finditer(r'\s+[–—]\s+', clause[:match.start()])])
+            boundary = re.search(r'\s+[–—]\s+', clause[match.end():])
+            right = match.end() + boundary.start() if boundary else len(clause)
+            local = clause[left:right]
+            if method != 'sms':
+                prefix = clause[left:match.start()]
+                if re.search(r'\bкарт\w*\s+из\s+(?:мобильн\w*\s+)?$', prefix, re.I):
+                    continue
+                issuance = re.search(
+                    r'\b(?:получ\w*|выда\w*)\s+[«“"]?промокод\w*\b|'
+                    r'\bпромокод\w*\s+(?:будет\s+)?(?:отображ\w*|выда\w*|прид[её]т|приход\w*)\b',
+                    local, re.I)
+                redemption = LABEL.search(local) and re.search(r'\b(?:введите|ввести)\b', local, re.I)
+                applicability = re.search(r'\bпромокод\s+предоставляет\s+скидк\w*\b', local, re.I)
+                if not issuance and (redemption or applicability):
+                    continue
+            methods.append(method)
+            break
+    return methods
+
+
+def reconcile_promocode_delivery(method: str, value: str | None) -> bool:
+    """Recheck retained references when their original clause identifies a role."""
+    if not value or not LABEL.search(value):
+        return True
+    return any(method in promocode_delivery_methods(clause)
+               for clause in re.split(r'[\n;]|(?<=[.!?])\s+', value))
+
+
 def candidate(value: str, position: int, prefix: str) -> tuple[str | None, int]:
     # A label and its value can occupy adjacent source lines without a colon.
     # Do not cross a blank line into a different section.
@@ -209,7 +256,8 @@ def reconcile_promocode(code: str, texts: list[str], *, labels=None) -> str | No
             members = promocode_occurrences(value, mention)
             if not members:
                 continue
-            cancelled = promocode_cancelled(value, mention.start(), members[-1][2], labels=labels)
+            cancelled = (promocode_applicability_heading(value, mention)
+                         or promocode_cancelled(value, mention.start(), members[-1][2], labels=labels))
             for parsed, position, _ in members:
                 # Do not trim a native multiword value merely because it contains
                 # instruction words: the entire old literal must occur in source.
@@ -241,7 +289,8 @@ def extract_promocodes_with_context(value: str, tables: list | None = None, *, l
         if match[0].casefold()=='промокода' and re.search(r'(?:\bдва|\bтри|\bчетыре|\d+)\s+$',value[max(0,match.start()-40):match.start()],re.I):
             continue
         members = promocode_occurrences(value, match)
-        cancelled = bool(members) and promocode_cancelled(value, match.start(), members[-1][2], labels=labels)
+        cancelled = bool(members) and (promocode_applicability_heading(value, match)
+                                      or promocode_cancelled(value, match.start(), members[-1][2], labels=labels))
         for code, _, stop in members:
             if code not in codes and not cancelled:
                 codes.append(code)
@@ -279,14 +328,7 @@ def extract_promocodes_with_context(value: str, tables: list | None = None, *, l
         clause = clause.strip()
         if not LABEL.search(clause):
             continue
-        methods = []
-        if re.search(r'\b(?:SMS|СМС)\b', clause, re.I):
-            methods.append('sms')
-        if re.search(r'личн\w*\s+кабинет\w*', clause, re.I):
-            methods.append('account')
-        if re.search(r'приложени\w*', clause, re.I):
-            methods.append('app')
-        for method in methods:
+        for method in promocode_delivery_methods(clause):
             item = {'kind': 'delivery_reference', 'method': method, 'evidence': clause}
             if item not in delivery:
                 delivery.append(item)
