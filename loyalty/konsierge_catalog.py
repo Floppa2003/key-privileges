@@ -93,15 +93,38 @@ def record_mode(details):
     return mode
 
 
+def campaign_end(item):
+    """A dated registration, booking or payment condition is not offer expiry."""
+    day = r'\d{2}\.\d{2}\.\d{4}(?!\d)'
+    period = (r'сроки?\s+(?:действия|предоставления|проведения)\s+'
+              r'(?:акции|(?:спец\s*|специального\s+)?предложения|привилегии|привилегий)')
+    subject = r'(?:спец\s*|специальное\s+|данное\s+)?предложение|акция|привилеги[яи]'
+    label = text(item['offer'])
+    benefit = re.fullmatch(r'(скидка|к[еэ]шб[еэ]к)(?:\s+(?:до\s+)?\d+(?:[.,]\d+)?\s*%)?',label,re.I)
+    if benefit:
+        # A component's discount cannot expire a broader privilege record.
+        subject += '|' + re.escape(label) + '|' + benefit[1]
+    # Scope after the date still belongs to that component. Only a complete
+    # period can expire the record; "г." must not hide a lower-case continuation.
+    ending = (r'(?:[ \t]*г(?:ода)?\.?(?:[ \t]+включительно)?[ \t]*'
+              r'(?=$|\n|[!?;]|\.(?=[ \t]*(?:$|\n|(?-i:[А-ЯЁA-Z«]))))'
+              r'|(?:[ \t]+включительно)?[ \t]*(?=$|\n|[.!?;]))')
+    # The complete clause must name the offer, not a scoped extra campaign.
+    pattern = (r'(?:^|(?<=[.!?;])\s+|\n)[ \t]*(?:[-–—•]\s*)?(?:' + period + r'|(?:' + subject + r')\s+'
+               r'(?:действует|действуют|действительно|действительны))\s*:?\s*'
+               r'(?:на\s+размещение\s+)?(?:с\s+' + day + r'\s+)?до\s+(' + day + ')' + ending)
+    dates = {datetime.strptime(m,'%d.%m.%Y').date().isoformat()
+             for m in re.findall(pattern,label+'\n'+text(item['description']),re.I)}
+    return next(iter(dates)) if len(dates) == 1 else None
+
+
 def derived(item, observed_at, collection_mode='manual'):
     item_fields(item)
     require(collection_mode in ('manual', RECURRING_MODE), 'collection_mode')
     body = text(item['description']); warnings = list(WARNINGS)
     warnings.insert(4, 'manual_capture_not_recurring_collection' if collection_mode == 'manual'
                     else 'robots_preflight_skipped_by_project_owner')
-    dates = sorted({datetime.strptime(m,'%d.%m.%Y').date().isoformat()
-                    for m in re.findall(r'\bдо\s+(\d{2}\.\d{2}\.\d{4})',body)})
-    end = dates[0] if len(dates) == 1 else None
+    end = campaign_end(item)
     expiry = stamp(item['date_of_expiry']) if item['date_of_expiry'] else None
     conflict = bool(expiry and end and abs((expiry.date()-datetime.fromisoformat(end).date()).days) > 1)
     if conflict:
@@ -232,11 +255,26 @@ def project_common(raw,n,benefit,condition,code):
     from promo_codes import extract_promocodes, reconcile_promocode
     d=raw['details']; item=d['public_item']
     label,body,activation,end,warnings,words=derived(item,raw['observed_at'],record_mode(d))
+    date_warnings={'source_expiry_conflicts_with_description','customer_validity_not_established'}
+    required_warnings=set(warnings)
+    if raw['valid_until']!=end:
+        # Retained rows may carry the former unscoped "до DATE" projection.
+        # Accept only that reproducible old result; retain all source evidence.
+        old_dates={datetime.strptime(m,'%d.%m.%Y').date().isoformat()
+                   for m in re.findall(r'\bдо\s+(\d{2}\.\d{2}\.\d{4})',text(item['description']))}
+        old_end=next(iter(old_dates)) if len(old_dates)==1 else None
+        expiry=stamp(item['date_of_expiry']) if item['date_of_expiry'] else None
+        old_conflict=bool(expiry and old_end and abs((expiry.date()-datetime.fromisoformat(old_end).date()).days)>1)
+        if old_conflict:old_end=None
+        require(raw['valid_until']==old_end,'common_fields')
+        required_warnings-=date_warnings
+        if old_conflict:required_warnings.add('source_expiry_conflicts_with_description')
+        if not old_end:required_warnings.add('customer_validity_not_established')
     require(raw['program']==PROGRAM and raw['partner']==text(item['name']) and raw['title']==text(item['name'])
             and raw['kind']=='partner_offer' and raw['source_url']==ROOT and raw['link_kind']=='page_block'
             and raw['benefit_url'] is None and raw['benefit']==label and raw['conditions']==body
-            and raw['activation']==activation and raw['valid_from'] is None and raw['valid_until']==end
-            and set(warnings).issubset(raw['source_warnings']) and d['code_words']==words
+            and raw['activation']==activation and raw['valid_from'] is None
+            and required_warnings.issubset(raw['source_warnings']) and d['code_words']==words
             and d['only_assist_equivalence'] is False and d['item_sha256']==digest(item),'common_fields')
     # Historical arrays can retain a cancelled literal or an uppercase prose
     # tail. Accept only repairs grounded in the complete owned source fields;
@@ -259,6 +297,9 @@ def project_common(raw,n,benefit,condition,code):
     for i,delivery in enumerate(d.get('promo_code_delivery',[])):
         code(None,f'/details/promo_code_delivery/{i}/evidence',scope,delivery=delivery['method'])
     n['availability'].update(source_enabled=item['enabled'],source_expiry_utc=item['date_of_expiry'])
+    n['validity'].update(until=end,status=('expired' if end<n['validity']['as_of'] else 'within_stated_period') if end else 'unknown')
+    n['quality']['issues']=[w for w in n['quality']['issues'] if w not in date_warnings or w in warnings]
+    n['quality']['issues'].extend(w for w in warnings if w in date_warnings and w not in n['quality']['issues'])
     if 'source_expiry_conflicts_with_description' in warnings:n['validity']['status']='source_date_conflict'
     elif 'source_expiry_timestamp_elapsed' in warnings and not end:n['validity']['status']='source_expiry_elapsed_customer_period_unknown'
     n['quality']['level']='structured_with_review'

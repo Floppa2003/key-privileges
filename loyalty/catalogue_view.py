@@ -175,11 +175,19 @@ def campaign_expired(value, as_of, published_until=None):
 
 def record_row(n, as_of):
     raw=owned_source_text(n["raw"]); d=raw.get("details",{}); kind=raw["kind"]
+    # Source-owned normalization can repair retained projections while keeping
+    # the original stored row intact as evidence.
+    validity=n.get("validity",{})
+    for field,bound in (("valid_from","from"),("valid_until","until")):
+        if bound in validity:raw[field]=validity[bound]
     from source_lifecycle import reader_hold
     hold=reader_hold(raw,as_of)
     if hold:return None,hold
     if kind in NOISE_KIND:return None,"неразобранный источник"
     if raw.get("source_status")=="archived":return None,"архив источника"
+    if (raw.get("source_status") in ("cancelled","finished","disabled")
+            or n.get("availability",{}).get("source_enabled") is False):
+        return None,"неактивное предложение источника"
     if n.get("validity",{}).get("status")=="expired":return None,"истёкший срок"
     if d.get("public_editorial_information") or d.get("public_coral_block",{}).get("public_editorial_information"):
         return None,"реклама программы"
@@ -248,7 +256,7 @@ def record_row(n, as_of):
     if end and not start:period="до "+end
     if end:status="В пределах срока" if end>=as_of else "Истекло"
     if start and start>as_of:status="Ещё не началось"
-    warn=" ".join(raw.get("source_warnings",[]))
+    warn=" ".join(n.get("quality",{}).get("issues",raw.get("source_warnings",[])))
     if "conflict" in warn or "expiry_metadata" in warn:status="Проверь срок"
     if not period:
         v=raw.get("validity_raw")

@@ -13,7 +13,8 @@ from model import clean_url
 from promo_codes import extract_promocodes
 from table_benefits import extract_table_benefits
 from recovered_contract import SOURCES as RECOVERED_SOURCES, http_url, validate_recovered
-from reward_context import reward_role, benefit_denied, gift_spans, mileage_formula_end, forward_reward_basis
+from reward_context import (reward_role, benefit_denied, gift_spans, mileage_formula_end,
+                            forward_reward_basis, purchase_requirement_denied, benefit_context_text)
 
 VERSION = '2.9.6'
 HOSTS = {
@@ -308,8 +309,9 @@ def normalize_rates(value: str, *, heading_context: str = '', with_spans: bool =
     amount_indexes = {'miles':0,'RUB':0}
     heading_kinds = [k for k in ('discount','cashback') if re.search(TYPES[k],heading_context,re.I)]
     heading_kind = heading_kinds[0] if len(heading_kinds)==1 else None
-    for clause in re.split(r'[\n;]', text(value, markup=False)):
-        clause = clause.strip()
+    value=text(value, markup=False)
+    for match in re.finditer(r'[^\n;]+',benefit_context_text(value)):
+        clause = value[match.start():match.end()].strip()
         # In an explicit price band, "от 1000 руб. — 10%", the currency dot
         # is an abbreviation. Other sentence endings remain boundaries.
         # Keep character positions stable for the original label/rate spans.
@@ -414,9 +416,9 @@ def lexical_conditions(value: str) -> list[dict]:
         clause=clause.strip()
         if not clause:continue
         def add(kind,**kwargs):result.append({'kind':kind,'evidence':clause,**kwargs})
-        for match in re.finditer(rf'(?:заказ\w*|покупк\w*|чек\w*|бронировани\w*)\s+(?:на\s+сумму\s+)?от\s+({NUMERIC_TOKEN})\s*(?:₽|руб\w*)',clause,re.I):
+        for match in re.finditer(rf'(?:заказ\w*|покупк\w*|чек\w*|бронировани\w*)\s+(?:на\s+сумму\s+)?от\s+({NUMERIC_TOKEN})\s*(?:₽|руб\w*\.?|RUB)',clause,re.I):
             amount = literal_number(match[1])
-            if amount is not None:
+            if amount is not None and not purchase_requirement_denied(clause[:match.start()],clause[match.end():]):
                 add('minimum_purchase',value=amount,unit='RUB',qualifier='at_least')
         for match,amount in monetary_caps(clause):
             if (match['reward'] is not None and not benefit_denied(
