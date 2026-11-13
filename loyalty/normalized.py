@@ -224,10 +224,20 @@ def reward_basis(clause: str, start: int, end: int):
     if not match:
         prefix=re.sub(r'\bруб\.(?=\s)','руб ',clause[:start],flags=re.I)
         prefix=re.split(r'[.!?](?:\s|$)|[;\n]',prefix)[-1]
+        # A textual currency in an earlier ratio is not part of this basis.
+        reverse=list(re.finditer(r'\bза\s+кажды[еий]\b',prefix,re.I))
+        if reverse:prefix=prefix[reverse[-1].start():]
         action=r'(?:начисл\w+|получ\w+|заработ\w+)'
         bridge=r'(?:(?!\b'+action+r'\b)[^0-9;.!?]){0,120}'
         match = re.search(r'\bза\s+кажды[еий]\s+(?:потраченн\w+\s+)?' + amount
                           + bridge + action + r'\s*$',prefix,re.I)
+        if not match:
+            # A monetary ratio can use a dash/colon instead of an earning verb.
+            # Keep the separator adjacent to this reward, including its bound;
+            # another amount, action or statement cannot supply the denominator.
+            monetary=rf'(?P<basis>{numeric})\s*(?P<unit>₽|руб\w*|RUB)(?=\W|$)'
+            match=re.search(r'\bза\s+кажды[еий]\s+(?:потраченн\w+\s+)?'+monetary
+                            +r'\s*[–—:-]\s*(?:'+PERCENT_BOUND+r'\s+)?$',prefix,re.I)
     if match:
         base = literal_number(match['basis'])
         if base is None or Decimal(base)<=0:

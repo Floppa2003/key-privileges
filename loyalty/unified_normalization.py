@@ -20,9 +20,10 @@ from normalized import (normalize_rates, percent_spans, number, NUMBER, TYPES,
                         monetary_caps)
 from promo_codes import extract_promocodes, reconcile_promocode, coupon_restriction_continuation
 from iso_datetime import parse_iso_datetime
-from reward_context import reward_role, benefit_denied, gift_spans, mileage_formula_end
+from reward_context import (reward_role, benefit_denied, gift_spans, mileage_formula_end,
+                            purchase_requirement_denied)
 
-VERSION = '1.0.6'
+VERSION = '1.0.7'
 GROUPS = ('benefits', 'conditions', 'costs', 'codes')
 INPUT_TABS = {
     'parser_offers': (1, 26), 'loyalty_partner_benefits': (4, 13),
@@ -31,6 +32,8 @@ INPUT_TABS = {
 }
 NUM = NUMBER
 MONEY = r'(?:₽|руб(?:лей|ля|ль|\.)?|RUB)'
+QUOTED_LABEL = r'«[^»\n]{1,80}»|"[^"\n]{1,80}"'
+QUOTED_ALTERNATIVES = rf'(?:{QUOTED_LABEL})(?:\s+или\s+(?:{QUOTED_LABEL})){{0,3}}'
 ENGLISH_RATE_LABEL = re.compile(r'\b(?:discount|off|cashback)(?=\W|\d|$)', re.I)
 ENGLISH_RATE_ALIASES = {
     'discount': 'скидка', 'off': 'скидка', 'cashback': 'кешбэк',
@@ -215,10 +218,13 @@ def _mile_rule_contexts(raw, rule):
     if (rule.get('unit')!='miles' or rule.get('basis_unit')!='RUB'
             or not isinstance(literal,str) or not literal):return []
     result=[]
+    native_qualifiers=_explicit_qualifiers(rule.get('channel'))
     for path,text in _source_fields(raw):
+        if literal not in text:continue
+        phrases=_component_phrases(text) if native_qualifiers else {}
         for quote in re.finditer(re.escape(literal),text):
             candidates=[]
-            for match,amount in reward_amounts(text,'miles'):
+            for index,(match,amount) in enumerate(reward_amounts(text,'miles')):
                 # The retained excerpt can begin at a range's upper endpoint.
                 if not quote.start()<=match.start('value')<quote.end():continue
                 basis=reward_basis(text,match.start(),match.end())
@@ -234,8 +240,14 @@ def _mile_rule_contexts(raw, rule):
                 left=max((m.end() for m in re.finditer(r'[.!?](?:\s|$)|[;\n]',text[:match.start()])),default=0)
                 stop=re.search(r'[.!?](?:\s|$)|[;\n]',text[end:])
                 right=end+stop.start()+1 if stop else len(text)
-                candidates.append((denied,qualifier,amount['min_value'],path,text[left:right].strip()))
-            if len(candidates)==1:result.extend(candidates)
+                context=(denied,qualifier,amount['min_value'],path,text[left:right].strip())
+                candidates.append((context,_explicit_qualifiers(phrases.get(('miles',index),''))))
+            if native_qualifiers:
+                if len(candidates)>1:
+                    candidates=[c for c in candidates if _qualifiers_represented(native_qualifiers,c[1])]
+                else:
+                    candidates=[c for c in candidates if _qualifiers_compatible(native_qualifiers,c[1])]
+            if len(candidates)==1:result.append(candidates[0][0])
     return result
 
 
@@ -545,6 +557,93 @@ def _component_context(clause):
     return scopes,{key:(anchors[i]['family'],anchors[i]['ordinal']) for key,i in owners.items()}
 
 
+def _component_phrases(clause):
+    """Original local phrases for occurrence ownership, without changing scopes."""
+    anchors,_=_component_anchors(clause)
+    result={}
+    # Quoted label alternatives do not divide independent reward components.
+    boundaries=re.sub(QUOTED_ALTERNATIVES,lambda m:' ' * len(m[0]),clause,flags=re.I)
+    boundaries=re.sub(r'\bруб\.(?=\s*[-–—:])',lambda m:m[0][:-1]+' ',boundaries,flags=re.I)
+    separator=r',(?!\d)|[;+]|\b(?:и|а|но|или|зато|однако|and|or|but)\b'
+    for index,anchor in enumerate(anchors):
+        left,right=_sentence_bounds(boundaries,anchor['start'],anchor['end'])
+        if right<len(clause) and clause[right] in '.!?':right+=1
+        if index and left<=anchors[index-1]['end']<=anchor['start']:
+            previous=anchors[index-1]['end']
+            splits=list(re.finditer(separator,boundaries[previous:anchor['start']],re.I))
+            left=previous+splits[-1].end() if splits else anchor['start']
+        if index+1<len(anchors) and anchor['end']<=anchors[index+1]['start']<right:
+            following=anchors[index+1]['start']
+            splits=list(re.finditer(separator,boundaries[anchor['end']:following],re.I))
+            right=anchor['end']+splits[-1].start() if splits else following
+        result[(anchor['family'],anchor['ordinal'])]=clause[left:right].strip(' \t\r\n,;')
+    return result
+
+
+def _explicit_qualifiers(text):
+    """Literal channel/category qualifications used only to authorize ownership."""
+    if not isinstance(text,str):return {}
+    result={}
+    channels=set()
+    if re.search(r'\b(?:в|через)\s+(?:мобильн\w*\s+)?приложени\w*\b|\bapp\b',text,re.I):channels.add('app')
+    if re.search(r'\b(?:на|через)\s+сайт\w*\b|\b(?:site|website)\b',text,re.I):channels.add('site')
+    if channels:result['interface']=channels
+    modes=set()
+    if channels or re.search(r'\b(?:он-?лайн|online)\b',text,re.I):modes.add('online')
+    if re.search(r'\b(?:оф-?лайн|offline)\b',text,re.I):modes.add('offline')
+    if modes:result['mode']=modes
+    labelled=(r'\b(?P<kind>раздел\w*|категори\w*|приложени\w*|сайт\w*|магазин\w*)\s+'
+              r'(?P<labels>'+QUOTED_ALTERNATIVES+r')')
+    for match in re.finditer(labelled,text,re.I):
+        kind=match['kind'].casefold()
+        key=('category' if re.match(r'раздел|категори',kind) else 'app_name' if kind.startswith('приложени')
+             else 'site_name' if kind.startswith('сайт') else 'store_name')
+        result.setdefault(key,set()).update(' '.join(name[0][1:-1].split()).casefold()
+                                            for name in re.finditer(QUOTED_LABEL,match['labels']))
+    return result
+
+
+def _qualifiers_compatible(source, target):
+    # An unqualified local benefit can inherit an explicit local requirement.
+    # A broader or different explicitly qualified benefit cannot.
+    return all(target[key]<=values for key,values in source.items() if key in target)
+
+
+def _qualifiers_represented(native, candidate):
+    return bool(native) and all(key in candidate and candidate[key]<=values
+                                for key,values in native.items())
+
+
+def _structured_occurrences(rates, clause, rate_text, structured, owners):
+    """Reconcile complete signatures only with their unique literal occurrence."""
+    groups=defaultdict(list)
+    for index,rate in enumerate(rates):
+        signature=(clause,KIND.get(rate['kind'],rate['kind']),rate['value'],rate.get('qualifier','exact'),
+                   rate.get('min_value'),rate.get('basis_amount'),rate.get('basis_unit'))
+        if signature in structured:groups[signature].append(index)
+    if not groups:return set(),{}
+    phrases=_component_phrases(rate_text)
+    skipped=set();fragments={}
+    for signature,indexes in groups.items():
+        qualifiers={}
+        for index in indexes:
+            rate=rates[index]
+            key=(rate['unit'],rate.get('_percent_index') if rate['unit']=='percent' else rate.get('_amount_index'))
+            phrase=phrases.get(owners.get(key),clause)
+            qualifiers[index]=_explicit_qualifiers(phrase)
+            if len(indexes)>1 and phrase in clause:fragments[index]=phrase
+        for channel in structured[signature]:
+            native=_explicit_qualifiers(channel)
+            if len(indexes)==1:
+                candidates=[index for index in indexes if _qualifiers_compatible(native,qualifiers[index])]
+            else:
+                # Neither numeric equality nor position can choose between
+                # independent equal formulas. Require explicit native ownership.
+                candidates=[index for index in indexes if _qualifiers_represented(native,qualifiers[index])]
+            if len(candidates)==1:skipped.add(candidates[0])
+    return skipped,fragments
+
+
 def _monetary_condition_context(clause,start,end):
     """Return occurrence owners for a monetary condition in one finite component window.
 
@@ -762,6 +861,30 @@ def _amount_matches(pattern,clause):
             yield match,value
 
 
+def _purchase_minima(clause):
+    """Explicit purchase thresholds, retaining their local phrase ownership."""
+    purchase=r'(?:заказ\w*|покупк\w*|чек\w*|бронировани\w*)'
+    direct=rf'{purchase}\s+(?:на\s+сумму\s+)?от\s+({NUMERIC_TOKEN})\s*{MONEY}'
+    covered=set()
+    for match,value in _amount_matches(direct,clause):
+        covered.add(match.start(1))
+        yield match,value,False
+    # A channel/category or basket qualifier may intervene before the explicit
+    # "на сумму". Do not cross another purchase, benefit, amount or sentence.
+    opening=(r'(?:(?:в|на|через)\s+(?:раздел\w*|категори\w*|приложени\w*|сайт\w*|магазин\w*)'
+             r'|онлайн\b|офлайн\b|(?:сложив|добавив|положив|собрав|набрав)\b)')
+    other=(purchase+r'|[сc]кидк\w*|к[еэ]шб[еэ]к\w*|мил[ьяиюе]\w*|балл\w*|бонус\w*'
+           r'|подар\w*|доставк\w*|начисл\w*|получ\w*|не|нельзя|невозможно|но|а|или|зато|однако')
+    bridge=rf'(?:(?:{QUOTED_ALTERNATIVES})|(?!(?:\b(?:{other})\b))[^0-9.!?;\n«»"]){{1,160}}?'
+    extended=rf'\b{purchase}\s*,?\s+(?={opening}){bridge}\s+на\s+сумму\s+от\s+({NUMERIC_TOKEN})\s*{MONEY}'
+    for match,value in _amount_matches(extended,clause):
+        left,_=_sentence_bounds(clause,match.start(),match.end())
+        prefix=re.split(r'[,;]|\b(?:а|но|зато|однако)\b',clause[left:match.start()],flags=re.I)[-1]
+        if (match.start(1) not in covered
+                and not purchase_requirement_denied(prefix,clause[match.end():])):
+            yield match,value,True
+
+
 def _validate_as_of(as_of):
     # Validity comparisons require the same canonical date form on both sides.
     if not isinstance(as_of,str) or not re.fullmatch(r'[0-9]{4}-[0-9]{2}-[0-9]{2}',as_of):
@@ -929,7 +1052,7 @@ def normalize_record(raw, *, as_of):
             benefit('cashback',cashback['path'],value=cashback['value'],unit=cashback['unit'],
                     qualifier=cashback['qualifier'],scope=cashback['scope'],
                     fragment=cashback['evidence'],method='owned_source_clause')
-    structured_rates=set()
+    structured_rates=defaultdict(list)
     airline_rules=d.get('retrieval_method')=='aeroflot_airline_api_google_import_v1'
     if airline_rules:
         # These source coefficients use distance, not the ticket price. A fare
@@ -972,8 +1095,9 @@ def normalize_record(raw, *, as_of):
                     value_min=c.get('min_value'),fragment=fragment,
                     basis_value=c.get('basis_amount'),basis_unit=c.get('basis_unit'),reward_unit='miles' if kind=='earn_miles' else c.get('reward_unit','points'),scope=scope)
             if c.get('evidence'):
-                structured_rates.add((c['evidence'],kind,decimal(c['value']),c.get('qualifier','exact'),
-                                      c.get('min_value'),c.get('basis_amount'),c.get('basis_unit')))
+                signature=(c['evidence'],kind,decimal(c['value']),c.get('qualifier','exact'),
+                           c.get('min_value'),c.get('basis_amount'),c.get('basis_unit'))
+                structured_rates[signature].append(c.get('channel'))
     red=d.get('redemption_rules')
     redemption_path='/details/redemption_rules'
     if isinstance(red,dict):
@@ -1149,11 +1273,13 @@ def normalize_record(raw, *, as_of):
                     rates.append({'kind':'miles','value':span['value'],'min_value':span['min_value'],
                                   'unit':'percent','qualifier':span['qualifier'],'evidence':clause,
                                   '_percent_index':index})
-        for rr in rates:
+        represented,rate_fragments=_structured_occurrences(rates,clause,rate_text,structured_rates,rate_owners)
+        for rate_index,rr in enumerate(rates):
             if _discount_percent_is_product_exception(rate_text,rr,spans):continue
-            if rate_clause!=clause:rr['evidence']=clause
-            if (rr.get('evidence'),KIND.get(rr['kind'],rr['kind']),rr['value'],rr.get('qualifier','exact'),
-                    rr.get('min_value'),rr.get('basis_amount'),rr.get('basis_unit')) in structured_rates:continue
+            # Keep the same original quotation used by structured reconciliation
+            # available to the remaining lexical context checks.
+            rr['evidence']=clause
+            if rate_index in represented:continue
             rate_key=(rr['unit'],rr.get('_percent_index') if rr['unit']=='percent' else rr.get('_amount_index'))
             rate_scope=rate_scopes.get(rate_key,scope if rr['unit']!='percent' else {})
             owner=(path,clause,rate_owners.get(rate_key))
@@ -1177,7 +1303,7 @@ def normalize_record(raw, *, as_of):
                 kind=_cashback_kind(rate_text,rr,spans)
             reward=benefit(kind,path,value=rr['value'],unit=rr['unit'],qualifier=rr.get('qualifier','unspecified'),value_min=rr.get('min_value'),
                     basis_value=rr.get('basis_amount'),basis_unit=rr.get('basis_unit'),
-                    scope=rate_scope,fragment=clause,
+                    scope=rate_scope,fragment=rate_fragments.get(rate_index,clause),
                     method='clause_candidate',reward_unit='miles' if kind=='earn_miles' else 'points' if kind=='earn_points' else None)
             component_benefits[owner].add(reward['id'])
             recognized=True
@@ -1225,8 +1351,20 @@ def normalize_record(raw, *, as_of):
                 reward=benefit('gift',path,scope=clause_scopes.get(('gift',index),{}),fragment=clause,method='clause_candidate')
                 component_benefits[(path,clause,clause_owners.get(('gift',index)))].add(reward['id'])
                 recognized=True
-        for m,value in _amount_matches(rf'(?:заказ\w*|покупк\w*|чек\w*|бронировани\w*)\s+(?:на\s+сумму\s+)?от\s+({NUMERIC_TOKEN})\s*{MONEY}',clause):
+        for m,value,extended in _purchase_minima(clause):
             minimum_scope,owners=_monetary_condition_context(clause,m.start(),m.end())
+            if extended and owners is None:
+                # A separate local threshold sentence can own one explicitly
+                # staged component in this same field. Equal rates/stages in
+                # another field, or several local components, are insufficient.
+                candidates={clause_owners[key] for key,component_scope in clause_scopes.items()
+                            if minimum_scope and component_scope==minimum_scope}
+                owners=candidates if len(candidates)==1 else set()
+            if extended:
+                minimum_qualifiers=_explicit_qualifiers(m[0])
+                phrases=_component_phrases(clause)
+                owners={owner for owner in owners
+                        if _qualifiers_compatible(minimum_qualifiers,_explicit_qualifiers(phrases.get(owner,'')))}
             minimum=condition('minimum_purchase',path,value=value,unit='RUB',qualifier='at_least',scope=minimum_scope,fragment=clause,method='clause_candidate')
             if owners is not None:
                 cap_owners.setdefault(minimum['id'],set()).update((path,clause,key) for key in owners)
@@ -1284,11 +1422,18 @@ def normalize_record(raw, *, as_of):
     cap_benefits={cap:set().union(*(component_benefits[owner] for owner in owners))
                   for cap,owners in cap_owners.items()}
     _extend_repeated_purchase_links(n['benefits'],n['conditions'],cap_benefits,component_benefits,plain_minima)
+    # A narrowed quotation still belongs to its original clause's shared rules.
+    # Explicit monetary owners above continue to take precedence over this map.
+    lexical_contexts=defaultdict(set)
+    for (path,clause,_),benefits in component_benefits.items():
+        lexical_contexts[(path,clause)].update(benefits)
     for b in n['benefits']:
         b['condition_ids']=[c['id'] for c in n['conditions']
                             if ((b['id'] in cap_benefits[c['id']]) if c['id'] in cap_benefits else
                                 ({c['scope'].get('purchase_stage'),b['scope'].get('purchase_stage')}!={'first','repeat'}
-                                 and (c['evidence']==b['evidence'] or (c['scope'] and c['scope']==b['scope']))))]
+                                 and (c['evidence']==b['evidence']
+                                      or b['id'] in lexical_contexts.get((c['evidence']['path'],c['evidence']['text']),())
+                                      or (c['scope'] and c['scope']==b['scope']))))]
         b['condition_linkage']='same_evidence_or_explicit_scope_only'
         b['remaining_record_rules_require_review']=True
     n['quality']['level']='structured_with_review' if any(n[g] for g in GROUPS) else 'evidence_only'

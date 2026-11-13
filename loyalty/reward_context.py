@@ -6,14 +6,17 @@ project a bare amount belong to the source/common parsers.
 import re
 
 
-_BOUNDARY = r'[.!?](?:\s|$)|[;\n]|\b(?:но|зато|однако)\b'
+_BOUNDARY = r'[.!?](?:\s|$)|[;\n]|\b(?:но|зато|однако)\b|\bа(?=\s+за\s+кажды[еий]\b)'
 _EARN = r'получ\w*|начисл\w*|заработ\w*'
 _SPEND = r'спис\w*|спиш\w*|потрат\w*|трат\w*|оплат(?:и|я)\w*|оплач(?:ива|у)\w*|обмен(?:я|ива)\w*|конвертир\w*'
 _ACTION = re.compile(r'\b(?:(?P<earn>' + _EARN + r')|(?P<spend>' + _SPEND + r'))\b', re.I)
 _BENEFIT_ACTION = re.compile(r'\b(?P<earn>' + _EARN +
                              r'|предостав\w*|выда\w*|действ\w*|верн\w*|возвращ\w*)\b', re.I)
 _DENIAL = r'(?:не|нельзя|невозможно)(?:\s+(?:буд\w*|мож\w*|смож\w*|вам|мы|вы)){0,2}'
-_MODIFIERS = r'(?:(?:буд\w*|уже|больше|временно|сейчас|пока|вам|нам|им|ему|ей|мне|тебе)\s+){0,3}'
+_MODIFIER = r'(?:буд\w*|уже|больше|временно|сейчас|пока|вам|нам|им|ему|ей|мне|тебе)'
+_MODIFIERS = r'(?:'+_MODIFIER+r'\s+){0,3}'
+_RESTRICTION = re.compile(r'\s*\b'+_MODIFIERS+_DENIAL+r'\s+'+_MODIFIERS
+                          +r'(?:предоставля\w*|действ\w*|распространя\w*)\b',re.I)
 _PURCHASE = (r'(?:(?:на|за|при|после)\s+(?:(?:перв\w*|повторн\w*|кажд\w*)\s+)?'
              r'(?:заказ\w*|покупк\w*|визит\w*|посещени\w*|регистраци\w*|проживани\w*)\s+)?')
 # These spans only connect a shared action across a plain amount list. They do
@@ -23,6 +26,25 @@ _MENTION = re.compile(r'\d[\d., \t\u00a0\u202f]*\s+'
                       r'(?:балл\w*|бонус(?:ов|а)?|мил[ьяиюе]\w*)\b', re.I)
 _BALANCE = re.compile(r'\b(?:баланс\w*|номинал\w*|на\s+(?:(?:вашем|ваш)\s+)?сч[её]т[еу])\b', re.I)
 _PAYMENT_NOUN = re.compile(r'\b(?:оплат[ауыое]|стоимост\w*|цен[аыуе])\b', re.I)
+
+
+def purchase_requirement_denied(prefix, suffix):
+    """Whether a local purchase phrase owns a negative requirement predicate."""
+    mandatory = r'обязател(?:ен|ьн\w*)'
+    requirement = r'(?:(?:по)?треб(?:у|ова)\w*|нуж(?:ен|н\w*)|'+mandatory+r')'
+    negative = (_MODIFIERS+r'(?:не\s+'+_MODIFIERS+requirement
+                +r'|не'+mandatory+r')\b'
+                +r'(?:\s+'+_MODIFIER+r'){0,3}')
+    if re.search(r'\b'+negative+r'\s+'
+                 r'(?:(?:оформля\w*|дела\w*|соверша\w*)\s+)?'+_MODIFIERS
+                 +r'(?:(?:ваш\w*|сво\w*|перв\w*|повторн\w*|последующ\w*)\s+){0,3}$',
+                 prefix, re.I):
+        return True
+    # A closing predicate owns the purchase phrase. A subsequent instruction
+    # with its own argument, e.g. "больше не требуется предъявлять карту", does
+    # not close that phrase and must not cancel its actual threshold.
+    return bool(re.match(r'\s*(?:[–—:-]\s*)?'+negative+r'(?=\s*(?:[,.!?;]|$))',
+                         suffix, re.I))
 
 
 def _action_role(action, prefix, suffix=''):
@@ -179,12 +201,27 @@ def benefit_phrase_spans(text, start, end):
 
 def benefit_restriction_follows(text, end):
     """A negative restriction predicate at this marker, with shared modifiers."""
-    return bool(re.match(r'\s*'+_MODIFIERS+_DENIAL+r'\s+'+_MODIFIERS
-                         +r'(?:предоставля\w*|действ\w*|распространя\w*)\b',text[end:],re.I))
+    return bool(_RESTRICTION.match(text,end))
+
+
+def benefit_exclusion_spans(text):
+    """Relative clauses describing excluded products, not offered benefits."""
+    for predicate in _RESTRICTION.finditer(text):
+        tail=predicate.end()
+        relative=re.match(r'\s+(?:на|для|при|за)\s+[^,;.!?\n]+,\s*'
+                          r'(?:(?:на|для|с|по|в|при|за)\s+)?котор\w*\b',text[tail:],re.I)
+        if not relative:continue
+        start=tail+relative.end()
+        # A new comma/clause closes this relative clause. Decimal punctuation is
+        # part of a quoted quantity and must not turn its discount into a live offer.
+        boundary=re.search(_BOUNDARY+r'|\bа\b|,(?!\d)',text[start:],re.I)
+        yield start,start+boundary.start() if boundary else len(text)
 
 
 def benefit_denied(text, start, end, *, amounts=(), gift=False):
     """An explicit owned denial, preserving product/cash-equivalent exclusions."""
+    if any(left<=start and end<=right for left,right in benefit_exclusion_spans(text)):
+        return True
     if not re.search(r'\d',text[start:end]):
         components=benefit_phrase_spans(text,start,end)
         end=components[0][1]
