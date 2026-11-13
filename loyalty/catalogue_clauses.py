@@ -12,8 +12,9 @@ from bs4 import BeautifulSoup
 from collections import Counter
 from datetime import date
 from decimal import Decimal
-from normalized import NUMERIC_TOKEN, literal_number, normalize_rates
+from normalized import NUMERIC_TOKEN, literal_number, normalize_rates, benefit_mentions
 from quantity_offers import has_quantity_offer
+from reward_context import benefit_denied, benefit_phrase_end, benefit_restriction_follows
 
 VERSION = "practical-catalogue-v2"
 HEADERS = ["Партнёр","Программа","Выгода","Промокод / получение","Как получить",
@@ -90,7 +91,8 @@ EMPTY_RULE = re.compile(
     r"Услугу предоставляет .+ИНН \d+|Рекламодатель[: ].+)$", re.I)
 DEAD = re.compile(
     r"текущей активной кампании .*не найдено|"
-    r"(?:акция|предложение|кампания) (?:завершена|завершено|закончилась|не действует)|"
+    r"^(?:акция|предложение|кампания)\s+(?:(?:уже\s+)?(?:завершена|завершено|закончилась)\b|"
+    r"(?:(?:уже|больше|временно|сейчас|пока)\s+)?не\s+действует\s*[.!;]?$)|"
     r"^Промокод не найден$|^Нет действующих", re.I)
 ROLE = {"partner_offer":"Предложение","legacy_offer":"Предложение",
         "tier_benefit":"Привилегия уровня","membership_plan":"Условия участия",
@@ -241,6 +243,31 @@ def promotional_price_claim(s, raw=None):
     return False
 
 
+def _only_denied_offers(s):
+    """All literal offer markers have their own explicit denial."""
+    offers=list(OFFER.finditer(s))
+    mentions=benefit_mentions(s)
+    def denied(match):
+        start,end=match.span()
+        # OFFER uses stems and broad phrases. Complete its final word and any
+        # immediately adjacent quantity before resolving this occurrence's action.
+        end+=len(re.match(r'\w*',s[end:])[0])
+        for a,b in mentions:
+            if a<=end<b or (a>=end and re.fullmatch(r'\s*',s[end:a])):
+                end=max(end,b)
+                break
+        if not any(a<end and start<b for a,b in mentions):
+            end=benefit_phrase_end(s,end)
+            # An unquantified discount exclusion supplies no benefit by itself.
+            # Reject this marker only; a separate live perk remains eligible.
+            if (re.match(r'[сc]кидк',match[0],re.I)
+                    and benefit_restriction_follows(s,end)):
+                return True
+        return benefit_denied(s,start,end,amounts=mentions,
+                              gift=bool(re.search(r'в подарок|комплимент',match[0],re.I)))
+    return bool(offers) and all(denied(match) for match in offers)
+
+
 def benefit_claim(s, raw=None):
     """A percentage or a normal breakfast is not, by itself, a privilege."""
     if not s or is_boilerplate(s) or ((DESCRIPTIVE.search(s) or MARKETING.search(s)) and not re.search(r"[сc]кидк|к[еэ]шб[еэ]к|в подарок|бесплат",s,re.I)):return False
@@ -249,8 +276,7 @@ def benefit_claim(s, raw=None):
     if re.search(r'^Услуг[аи]\b.*?\bраз(?:а)?\s*[–—-]\s*[^;\n]{0,100}?Промо\s*-\s*балл',s,re.I):return False
     if re.search(r"двойную выгоду|родител\w* отмечают|\d+% успешных|процентил|"
                  r"поэтому .{0,30}подарок|фирменные подарки для",s,re.I):return False
-    if (re.search(r"скидк\w* (?:не предоставля|не действ|не распространя)",s,re.I)
-            and not any(r['kind'] in ('discount','cashback') for r in normalize_rates(s))):return False
+    if _only_denied_offers(s):return False
     if re.search(r"(?:дарит|дарим|скидка|кешбэк|бонусы|составляет|от|до|за|при|на)\s*$",s,re.I):return False
     if OFFER.search(s) or promotional_price_claim(s,raw) or has_quantity_offer(s):return True
     if raw and len(s)<350 and re.search(r"\d\s*%",s) and (
@@ -274,7 +300,7 @@ def meaningful_claim(raw, terms):
     usable=[v for v in candidates if benefit_claim(v,raw)]
     if not usable:usable=[v for v in units(terms) if benefit_claim(v,raw)]
     if not usable:
-        if raw["kind"]=="legacy_offer" and benefit and len(benefit)<400 and not is_boilerplate(benefit) and not DEAD.search(benefit):return benefit
+        if raw["kind"]=="legacy_offer" and benefit and len(benefit)<400 and not is_boilerplate(benefit) and not DEAD.search(benefit) and not _only_denied_offers(benefit):return benefit
         return ""
     # Other benefit clauses and restrictions remain in the conditions.
     for value in usable:
@@ -289,7 +315,11 @@ def full_code_display(n):
             item="Код: "+text(value)
             if c.get("scope",{}):
                 ev=c.get("evidence",{}).get("text","")
-                if ev and compact(ev)!=compact(value) and len(ev)<350:item+=" — "+compact(ev)
+                # Native-array evidence can be a historical malformed literal
+                # repaired from complete source prose. Keep it in evidence/raw,
+                # without presenting that old literal again in the code cell.
+                native=c.get("evidence",{}).get("path","").startswith("/codes/")
+                if ev and not native and compact(ev)!=compact(value) and len(ev)<350:item+=" — "+compact(ev)
             if item not in literals:literals.append(item)
         elif c.get("delivery"):
             method=DELIVERY.get(c["delivery"])

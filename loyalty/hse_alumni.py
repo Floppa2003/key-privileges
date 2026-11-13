@@ -7,7 +7,7 @@ from bs4 import BeautifulSoup,Comment,Tag
 from html_text import html_text
 from normalized import make_offer,text,normalize_rates,percent_spans
 from partner_pages import content
-from promo_codes import extract_promocodes,candidate
+from promo_codes import extract_promocodes_with_context,promocode_occurrences,promocode_cancelled
 from model import clean_url
 
 ROOT='https://alumni.hse.ru/loyalty/partners/'
@@ -54,23 +54,30 @@ WARNINGS=['source_publication_not_personal_eligibility','linked_partner_sites_no
           'validity_not_inferred_from_coupon_spelling_or_month_without_year','rates_have_separate_audience_and_product_scopes']
 
 
+CODE_LABEL = r'(?:[пp]\s*ромо[ -]?код(?:а|у|ом|ы)?|(?:ключев|кодов)\w*\s+слов\w*)\b'
+CODE_LABEL_PATTERNS = tuple(re.compile(pattern,re.I) for pattern in (
+    CODE_LABEL+r'\s*(?:[:—–-]\s*)?',
+    CODE_LABEL+r'\s+(?:на\s+)?\d+(?:[.,]\d+)?\s*%\s*[-—–:]?\s*',
+    CODE_LABEL+r'\s+и\s+скидка\s*:\s*',
+))
+
+
 def hse_codes(value,tables=None,*,preview=False):
     """Literal HSE label variants, including a percentage before the code."""
-    result=extract_promocodes('' if preview else value,[] if preview else tables)
-    label=r'(?:[пp]\s*ромо[ -]?код(?:а|у|ом|ы)?|(?:ключев|кодов)\w*\s+слов\w*)\b'
+    result=extract_promocodes_with_context('' if preview else value,[] if preview else tables,
+                                         labels=CODE_LABEL_PATTERNS)
     if preview:
-        if re.search(label,value,re.I):result['status']='mentioned_not_extracted'
+        if re.search(CODE_LABEL,value,re.I):result['status']='mentioned_not_extracted'
         return result
-    patterns=[label+r'\s*(?:[:—–-]\s*)?',
-              label+r'\s+(?:на\s+)?\d+(?:[.,]\d+)?\s*%\s*[-—–:]?\s*',
-              label+r'\s+и\s+скидка\s*:\s*']
-    for pattern in patterns:
-        for m in re.finditer(pattern,value,re.I):
-            code,end=candidate(value,m.end(),value[max(0,m.start()-150):m.start()])
-            if code and code not in result['codes']:
-                result['codes'].append(code);result['evidence'].append({'code':code,'evidence':value[m.start():end].strip()})
+    for pattern in CODE_LABEL_PATTERNS:
+        for m in pattern.finditer(value):
+            members=promocode_occurrences(value,m)
+            if not members or promocode_cancelled(value,m.start(),members[-1][2],labels=CODE_LABEL_PATTERNS):continue
+            for code,_,end in members:
+                if code not in result['codes']:
+                    result['codes'].append(code);result['evidence'].append({'code':code,'evidence':value[m.start():end].strip()})
     if result['codes']:result['status']='explicit_codes_extracted'
-    elif re.search(label,value,re.I):result['status']='mentioned_not_extracted'
+    elif re.search(CODE_LABEL,value,re.I):result['status']='mentioned_not_extracted'
     return result
 
 

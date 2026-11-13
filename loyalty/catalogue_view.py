@@ -152,7 +152,7 @@ def campaign_expired(value, as_of, published_until=None):
         return date(year,month,day)
     clauses=units(value)
     # Resolve the explicit status first, independently of malformed schedules.
-    if any(re.match(r'^(?:Срок акции уже ист[её]к\b|Акция\s+(?:уже\s+)?(?:завершена|завершилась|закончилась)\b)',clause,re.I)
+    if any(DEAD.search(clause) or re.match(r'^(?:Срок акции уже ист[её]к\b|Акция\s+(?:уже\s+)?(?:завершена|завершилась|закончилась)\b)',clause,re.I)
            for clause in clauses):return True
     ends=[]
     for clause in clauses:
@@ -184,7 +184,9 @@ def record_row(n, as_of):
     if d.get("public_editorial_information") or d.get("public_coral_block",{}).get("public_editorial_information"):
         return None,"реклама программы"
     source=raw.get("benefit_url") or raw.get("source_url") or ""
-    if re.search(r"В старой официальной подборке|Только в старой",raw.get("benefit",""),re.I) or DEAD.search(raw.get("benefit","")) or campaign_expired(raw.get("conditions",""),as_of,raw.get("valid_until")):
+    if re.search(r"В старой официальной подборке|Только в старой",raw.get("benefit",""),re.I) or campaign_expired(
+            "\n".join(raw.get(field,"") or "" for field in ("benefit","conditions")),
+            as_of,raw.get("valid_until")):
         return None,"неактивное предложение"
     if kind=="campaign" and re.search(
             r"победителям|розыгрыш|разыгрываем|\bшанс(?:ы|ов|ом|у|а)?\s+"
