@@ -14,7 +14,8 @@ from datetime import date
 from decimal import Decimal
 from normalized import NUMERIC_TOKEN, literal_number, normalize_rates, benefit_mentions
 from quantity_offers import has_quantity_offer
-from reward_context import benefit_denied, benefit_phrase_end, benefit_restriction_follows
+from reward_context import (benefit_denied, benefit_phrase_end,
+                            benefit_restriction_follows, benefit_exclusion_spans)
 
 VERSION = "practical-catalogue-v2"
 HEADERS = ["Партнёр","Программа","Выгода","Промокод / получение","Как получить",
@@ -247,7 +248,7 @@ def _only_denied_offers(s):
     """All literal offer markers have their own explicit denial."""
     offers=list(OFFER.finditer(s))
     mentions=benefit_mentions(s)
-    def denied(match):
+    def marker_end(match):
         start,end=match.span()
         # OFFER uses stems and broad phrases. Complete its final word and any
         # immediately adjacent quantity before resolving this occurrence's action.
@@ -258,6 +259,12 @@ def _only_denied_offers(s):
                 break
         if not any(a<end and start<b for a,b in mentions):
             end=benefit_phrase_end(s,end)
+        return end
+    excluded=list(benefit_exclusion_spans(s))
+    def denied(match):
+        start,end=match.start(),marker_end(match)
+        if any(a<=start<b for a,b in excluded):return True
+        if not any(a<end and start<b for a,b in mentions):
             # An unquantified discount exclusion supplies no benefit by itself.
             # Reject this marker only; a separate live perk remains eligible.
             if (re.match(r'[сc]кидк',match[0],re.I)
