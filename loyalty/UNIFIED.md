@@ -1,10 +1,19 @@
-# Common normalization of all stored data — 1.0.5
+# Common normalization of all stored data — 1.0.8
 
 This is a deterministic **source-preserving projection**, not another web scrape,
 a new discount catalogue, a personal entitlement check, or a savings calculator.
 It consumes all five explicitly supported input datasets in the existing Google
 spreadsheet. The other three sheets are control/audit history, not benefit rows.
 All eight original sheets are read-only to this stage.
+
+Version 1.0.8 resolves explicit cancellation and availability in the component's
+own context, retains wrapped conditional coupon restrictions, and assigns each
+coupon's purchase stage and labelled monetary cap to its original component.
+Short purchase thresholds use the same requirement-denial predicate as extended
+purchase instructions. Retained Konsierge rows rederive customer validity from
+their verified original item, preserving the entire stored input. Explicit
+source cancellation or disabling excludes an offer from the practical reader
+even when a future date remains. The source/common schemas are unchanged.
 
 ## Inputs and trust
 

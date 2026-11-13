@@ -18,12 +18,14 @@ from normalized import (normalize_rates, percent_spans, number, NUMBER, TYPES,
                         NUMERIC_TOKEN, literal_number, number_starts_here,
                         reward_amounts, reward_basis, fixed_discount_amounts, benefit_mentions,
                         monetary_caps)
-from promo_codes import extract_promocodes, reconcile_promocode, coupon_restriction_continuation
+from promo_codes import (LABEL, extract_promocodes, reconcile_promocode,
+                         coupon_restriction_continuation, coupon_owned_prefix,
+                         promocode_occurrences, promocode_cancelled)
 from iso_datetime import parse_iso_datetime
 from reward_context import (reward_role, benefit_denied, gift_spans, mileage_formula_end,
-                            purchase_requirement_denied)
+                            purchase_requirement_denied, benefit_context_text)
 
-VERSION = '1.0.7'
+VERSION = '1.0.8'
 GROUPS = ('benefits', 'conditions', 'costs', 'codes')
 INPUT_TABS = {
     'parser_offers': (1, 26), 'loyalty_partner_benefits': (4, 13),
@@ -359,6 +361,9 @@ def _owned_coupon_texts(raw, owned):
                     r'[,;]|\n(?!\s*(?:больше|уже|временно|сейчас|пока|не|отмен[её]н|аннулирован|недействителен)\b)',
                     value, re.I))
                 left = max([left] + [m.end() for m in boundaries if m.end() <= start])
+                prefix = coupon_owned_prefix(value, start)
+                if re.search(r'\b(?:если|после|при)\b', prefix, re.I):
+                    left = min(left, start - len(prefix))
                 right = min([right] + [m.start() for m in boundaries if m.start() >= end
                                       and not (m[0] != ';' and coupon_restriction_continuation(value[m.end():]))])
                 contexts.append(value[left:right])
@@ -380,10 +385,11 @@ def _clauses(raw, *, extra_covered_quotes=None):
             if start>=0 and value.find(literal,start+1)<0:
                 spans.append((start,start+len(literal)))
         # Preserve decimal periods, URLs, dates and the actual original substring.
-        for m in re.finditer(r'[^\n;]+',value):
-            clause=m.group().strip()
+        for m in re.finditer(r'[^\n;]+',benefit_context_text(value)):
+            literal=value[m.start():m.end()]
+            clause=literal.strip()
             if not clause:continue
-            start=m.start()+len(m.group())-len(m.group().lstrip())
+            start=m.start()+len(literal)-len(literal.lstrip())
             rate_clause=clause
             for left,right in spans:
                 left=max(start,left)-start
@@ -449,13 +455,8 @@ def _monetary_cap_kind(clause,cap):
             else 'maximum_amount_reference')
 
 
-def _rate_scope(clause,rate,spans):
-    """Bind explicit purchase stages to their own percent occurrence."""
-    index=rate.get('_percent_index')
-    if (type(index) is not int or not 0<=index<len(spans)
-            or spans[index]['value']!=rate['value']
-            or spans[index]['min_value']!=rate.get('min_value')):
-        return {}
+def _purchase_stage_scope(clause,index,spans):
+    """Bind explicit purchase stages to their own component occurrence."""
     span=spans[index]
     first=r'(?:перв(?:ый|ая|ое|ые|ого|ой|ую|ому|ым|ом|ых|ыми)|first)'
     stage=r'(?:'+first+r'|повторн\w*|последующ\w*|repeat|subsequent)'
@@ -465,7 +466,7 @@ def _rate_scope(clause,rate,spans):
     left,right=_sentence_bounds(clause,span['start'],span['end'])
     neighbours=[i for i,item in enumerate(spans)
                 if left<=item['start'] and item['end']<=right]
-    separator=r'[,;+]|\b(?:и|а|или|and|or|but)\b'
+    separator=r'[,;+\n]|\b(?:и|а|или|and|or|but)\b'
     def window(position):
         item=spans[neighbours[position]]
         lower,upper=left,right
@@ -520,6 +521,40 @@ def _rate_scope(clause,rate,spans):
     return _scope(clause[left:right]) if len(neighbours)==1 and not excluded else {}
 
 
+def _coupon_scopes(value):
+    """Keep each labelled coupon (or plural list) with its own stage."""
+    mentions=[]
+    for mention in LABEL.finditer(value):
+        members=promocode_occurrences(value,mention)
+        if members:
+            end=members[-1][2]
+            mentions.append({'start':mention.start(),'end':end-(value[end-1:end]=='.'),
+                             'members':members,
+                             'cancelled':promocode_cancelled(value,mention.start(),end)})
+    result=[]
+    extracted=extract_promocodes(value)['codes']
+    context=value
+    for mention in mentions:
+        # Literal coupon spelling is opaque, even when it contains FIRST/REPEAT.
+        start,end=mention['start'],mention['end']
+        context=context[:start]+' '*(end-start)+context[end:]
+    for index,mention in enumerate(mentions):
+        if mention['cancelled']:continue
+        scope=_purchase_stage_scope(context,index,mentions)
+        # An unqualified single code may refer to the immediately preceding
+        # sentence. A later or distant offer cannot supply its applicability.
+        left,right=_sentence_bounds(context,mention['start'],mention['end'])
+        if len(mentions)==1 and not scope and not _scope(context[left:right]):
+            previous=context[:left].rstrip().rstrip('.!?;')
+            previous_left,_=_sentence_bounds(previous,len(previous),len(previous))
+            scope=_scope(re.split(r'\n\s*\n',previous[previous_left:])[-1])
+        result.extend((code,scope) for code,_,_ in mention['members'] if code in extracted)
+    covered={code for code,_ in result}
+    # The extractor also licenses a semicolon-separated CODE - percent list.
+    result.extend((code,_scope(context)) for code in extracted if code not in covered)
+    return result
+
+
 def _component_anchors(clause):
     """Purchase-stage owners across different literal benefit components.
 
@@ -527,9 +562,12 @@ def _component_anchors(clause):
     quantities/markers are boundaries, even if they do not become benefits.
     """
     groups={'percent':percent_spans(clause)}
+    cap_starts={match.span('value'):match.start() for match,_ in monetary_caps(clause)}
     for family in ('points','miles','RUB'):
         matches=(fixed_discount_amounts(clause) if family=='RUB' else reward_amounts(clause,family))
-        groups[family]=[{'start':m.start(),'end':m.end(),**a} for m,a in matches]
+        groups[family]=[{'start':m.start(),'end':m.end(),**a,
+                         'cap_start':cap_starts.get(m.span('value')) if family=='RUB' else None}
+                        for m,a in matches]
     groups['gift']=[{'start':m.start(),'end':m.end(),'value':None,'min_value':None}
                     for m in gift_spans(clause,boundaries_only=True)]
     components=sorted(({**s,'family':family,'ordinal':i} for family,spans in groups.items()
@@ -538,6 +576,8 @@ def _component_anchors(clause):
     for span in components:
         bracket_cap=(span['family'] in ('points','miles') and
                      re.search(r'\(\s*(?:до|не\s+более)\s*$',clause[:span['start']],re.I))
+        bracket_cap=bracket_cap or (span.get('cap_start') is not None
+                     and re.search(r'\(\s*$',clause[:span['cap_start']]))
         denominator=(span['family'] in ('points','miles') and
                      re.search(r'\bза\s+(?:кажды[еий]\s+)?$',clause[:span['start']],re.I))
         if ((bracket_cap or denominator) and anchors and
@@ -551,8 +591,7 @@ def _component_anchors(clause):
 
 def _component_context(clause):
     anchors,owners=_component_anchors(clause)
-    scopes={key:_rate_scope(clause,{'_percent_index':index,'value':anchors[index]['value'],
-                                    'min_value':anchors[index]['min_value']},anchors)
+    scopes={key:_purchase_stage_scope(clause,index,anchors)
             for key,index in owners.items()}
     return scopes,{key:(anchors[i]['family'],anchors[i]['ordinal']) for key,i in owners.items()}
 
@@ -868,7 +907,8 @@ def _purchase_minima(clause):
     covered=set()
     for match,value in _amount_matches(direct,clause):
         covered.add(match.start(1))
-        yield match,value,False
+        if not purchase_requirement_denied(clause[:match.start()],clause[match.end():]):
+            yield match,value,False
     # A channel/category or basket qualifier may intervene before the explicit
     # "на сумму". Do not cross another purchase, benefit, amount or sentence.
     opening=(r'(?:(?:в|на|через)\s+(?:раздел\w*|категори\w*|приложени\w*|сайт\w*|магазин\w*)'
@@ -1175,9 +1215,16 @@ def normalize_record(raw, *, as_of):
         add('costs','subscription_cost',p,value=c.get('annual_rub'),unit='RUB',qualifier='exact',scope={**scope,'period':'year'})
         for f,label,limit in [('flight_discount_rub','flight_discount','flight_segments'),('baggage_discount_rub','baggage_discount','baggage_services')]:
             if c.get(f) is not None:benefit('discount',p,value=c[f],unit='RUB',qualifier='exact',scope={**scope,'service':label,'usage_limit':c.get(limit),'baggage_kg':c.get('baggage_kg') if f=='baggage_discount_rub' else None})
+    source_coupon_scopes=[item for _,text in _source_fields(raw) for item in _coupon_scopes(text)]
+    def coupon_scopes(c,local=None):
+        return ([local] if local else
+                [scope for value,scope in source_coupon_scopes if value==c and scope] or [{}])
     for i,c in enumerate(raw.get('codes',[])):
         if not isinstance(c,str):raise ValueError('Non-string source promo code')
-        if not any(x['value']==c and x['scope'] for x in n['codes']):code(c,f'/codes/{i}')
+        c=reconcile_promocode(c,[text for _,text in _source_fields(raw)])
+        if c is None:continue
+        if not any(x['value']==c and x['scope'] for x in n['codes']):
+            for scope in coupon_scopes(c):code(c,f'/codes/{i}',scope)
     explicit=d.get('explicit_code_cell','')
     if explicit:
         # Interpret each cell item independently: "none for exhibitions" is an
@@ -1211,7 +1258,9 @@ def normalize_record(raw, *, as_of):
                 ends=[p for separator in ('\n',';') if (p:=value.find(separator,stop))>=0]
                 fragment=value[left:min(ends) if ends else len(value)].strip()
                 if '\n' not in literal and wrapped_context:fragment=wrapped_context.strip()
-                code(item['code'],path,_scope(fragment),fragment=fragment)
+                for c,local in _coupon_scopes(fragment):
+                    if c==item['code']:
+                        for scope in coupon_scopes(c,local):code(c,path,scope,fragment=fragment)
     # Lexical projections are attached to the full original clause, never to every
     # partner in a roundup or every price in a source table.
     owned_heading=''
@@ -1378,7 +1427,11 @@ def normalize_record(raw, *, as_of):
             cap_scope=None;owners=None
             for index,(amount,_) in enumerate(fixed_discount_amounts(clause)):
                 if amount.span('value')==m.span('value'):
-                    cap_scope=clause_scopes.get(('RUB',index),{})
+                    key=('RUB',index)
+                    cap_scope=clause_scopes.get(key,{})
+                    owner=clause_owners.get(key)
+                    if owner is not None and owner!=key:
+                        cap_scope,owners=_monetary_condition_context(clause,m.start(),m.end())
                     break
             if cap_scope is None:
                 cap_scope,owners=_monetary_condition_context(clause,m.start(),m.end())
@@ -1406,9 +1459,12 @@ def normalize_record(raw, *, as_of):
             if re.search(pat,clause,re.I):
                 add('costs' if kind=='fee_reference' else 'conditions',kind,path,scope=scope,fragment=clause,method='clause_candidate');recognized=True
         promo=extract_promocodes(clause,[])
-        for c in promo['codes']:
-            if (reconcile_promocode(c,_owned_coupon_texts(raw,clause)) is not None
-                    and not any(x['value']==c for x in n['codes'])):code(c,path,scope,fragment=clause)
+        for c,coupon_scope in _coupon_scopes(clause):
+            if reconcile_promocode(c,_owned_coupon_texts(raw,clause)) is None:continue
+            for local in coupon_scopes(c,coupon_scope):
+                if not any(x['value']==c and (x['scope']==local
+                           or x['evidence']['path'].startswith(('/codes/','/details/')))
+                           for x in n['codes']):code(c,path,local,fragment=clause)
         for c in promo['delivery']:
             add('codes','code_delivery',path,delivery=c.get('method'),fragment=clause)
         if not recognized:n['quality']['unparsed_clause_count']+=1

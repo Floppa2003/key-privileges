@@ -118,6 +118,43 @@ def coupon_restriction_continuation(value: str, *, labels=(LABEL,)) -> bool:
                 and not any(label.search(continuation) for label in labels))
 
 
+def coupon_owned_prefix(value: str, start: int, *, labels=(LABEL,)) -> str:
+    """Original prefix for this occurrence, retaining wrapped antecedents."""
+    prefix = re.split(r'[.!?;]|\r?\n[ \t]*\r?\n', value[:start])[-1]
+    # A sibling after a coupon-directed instruction or an adversative owns
+    # its own conditions. Other commas can be part of a conditional antecedent.
+    owned_start = component_start = 0
+    for boundary in re.finditer(r'(?:,\s*|\r?\n[ \t]*)(?:(а|но|однако)\b)?', prefix, re.I):
+        component = prefix[component_start:boundary.start()]
+        mentions = [mention for label in labels for mention in label.finditer(component)]
+        instruction = any(
+            re.search(r'\b(?:используйте|примените|введите)\s*$', component[:mention.start()], re.I)
+            for mention in mentions)
+        adversative = boundary[1] and any(label.search(prefix, 0, boundary.start()) for label in labels)
+        # A real antecedent may wrap around a reference to another literal.
+        # Once that literal's main clause has its own predicate, its condition
+        # ends with the line. The predicate itself can occupy a wrapped line.
+        independent_line = False
+        if '\n' in boundary[0]:
+            context = prefix[owned_start:boundary.start()]
+            for mention in (m for label in labels for m in label.finditer(context)):
+                members = promocode_occurrences(context, mention)
+                if not members:
+                    continue
+                before = context[:mention.start()]
+                complete = re.match(r'\s+(?:действу(?:ет|ют)|действител(?:ен|ьны))\b',
+                                    context[members[-1][2]:], re.I)
+                open_if = re.search(r'\bесли\b[^,]*$', before, re.I)
+                if (not re.search(r'\b(?:если|после|при)\b', before, re.I)
+                        or complete and not open_if):
+                    independent_line = True
+                    break
+        if instruction or adversative or independent_line:
+            owned_start = boundary.end()
+        component_start = boundary.end()
+    return prefix[owned_start:]
+
+
 def promocode_cancelled(value: str, start: int, stop: int, *, labels=(LABEL,)) -> bool:
     """Only an unconditional predicate owned by this literal cancels it.
 
@@ -125,42 +162,36 @@ def promocode_cancelled(value: str, start: int, stop: int, *, labels=(LABEL,)) -
     of current cancellation. In particular, a colon can introduce a multiline
     exclusion list rather than terminate an unconditional denial.
     """
-    prefix = re.split(r'[.!?;\n]', value[:start])[-1]
-    # A sibling after a coupon-directed instruction or an adversative owns
-    # its own conditions. Other commas can be part of a conditional antecedent.
-    owned_start = component_start = 0
-    for boundary in re.finditer(r',\s*(?:(а|но|однако)\b)?', prefix, re.I):
-        component = prefix[component_start:boundary.start()]
-        instruction = any(
-            re.search(r'\b(?:используйте|примените|введите)\s*$', component[:mention.start()], re.I)
-            for label in labels for mention in label.finditer(component))
-        adversative = boundary[1] and any(label.search(prefix, 0, boundary.start()) for label in labels)
-        if instruction or adversative:
-            owned_start = boundary.end()
-        component_start = boundary.end()
-    prefix = prefix[owned_start:]
+    prefix = coupon_owned_prefix(value, start, labels=labels)
     if re.search(r'\b(?:если|после|при)\b', prefix, re.I):
         return False
     tail = '' if value[max(0, stop-1):stop] == '.' else value[stop:]
-    postfix = re.split(r'[.!?;]', tail.lstrip(), maxsplit=1)[0]
+    postfix = re.split(r'[.!?;]', tail, maxsplit=1)[0]
     modifier = r'(?:(?:больше|уже|временно|сейчас|пока)\s+)?'
-    denial = re.match(r'\s*' + modifier + r'(?:не\s+действу(?:ет|ют)|недействител(?:ен|ьны)|отмен[её]н(?:ы)?|аннулирован(?:ы)?)\b', postfix, re.I)
+    denial = re.match(r'\s*(?P<annotation>\(\s*)?' + modifier + r'(?:не\s+действу(?:ет|ют)|недействител(?:ен|ьны)|отмен[её]н(?:ы)?|аннулирован(?:ы)?)\b', postfix, re.I)
     if denial:
-        # A restriction following the predicate is not whole-code cancellation.
         remainder = postfix[denial.end():]
-        if not remainder.strip():
-            return True
-        if re.match(r'[ \t]*[,\r\n]', remainder):
-            # A comma or source line wrap can continue the applicability
-            # predicate. Read that condition before treating it as a boundary.
-            # A separate literal's clause cannot rescue this cancelled one.
-            return not coupon_restriction_continuation(remainder, labels=labels)
+        if denial['annotation']:
+            remainder = re.sub(r'^\s*\)', '', remainder, count=1)
+    elif re.search(r'\bне\s+(?:используйте|применяйте)\s*$', prefix, re.I):
+        remainder = postfix
+    else:
         return False
-    if re.search(r'\bне\s+(?:используйте|применяйте)\s*$', prefix, re.I):
-        if re.match(r'[ \t]*[,\r\n]', tail):
-            return not coupon_restriction_continuation(tail, labels=labels)
-        return not postfix.strip()
-    return False
+    if not remainder.strip():
+        return True
+    if re.match(r'[ \t]*[,\r\n]', remainder):
+        # A comma or source line wrap can continue the applicability
+        # predicate. A separate literal's clause cannot rescue this one.
+        return not coupon_restriction_continuation(remainder, labels=labels)
+    # A replacement or an explanation continues a complete cancellation.
+    # Other trailing prose remains conservative, including dates and product
+    # exclusions even when they are parenthesized or introduced by a dash.
+    explanation = r'(?:поскольку|потому\s+что|из-за|по\s+(?:причине|решению))\b'
+    return bool(re.match(
+        r'\s*(?:и\s+замен[её]н(?:ы)?\b|[-–—]\s*(?:примените|используйте|введите)\b|'
+        + explanation + r'|\(\s*(?:' + explanation
+        + r'|(?:акци\w*|предложени\w*)\s+(?:заверш\w*|законч\w*)\b|вместо\b))',
+        remainder, re.I))
 
 
 def reconcile_promocode(code: str, texts: list[str], *, labels=None) -> str | None:

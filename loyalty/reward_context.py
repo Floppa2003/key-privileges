@@ -10,8 +10,11 @@ _BOUNDARY = r'[.!?](?:\s|$)|[;\n]|\b(?:но|зато|однако)\b|\bа(?=\s+�
 _EARN = r'получ\w*|начисл\w*|заработ\w*'
 _SPEND = r'спис\w*|спиш\w*|потрат\w*|трат\w*|оплат(?:и|я)\w*|оплач(?:ива|у)\w*|обмен(?:я|ива)\w*|конвертир\w*'
 _ACTION = re.compile(r'\b(?:(?P<earn>' + _EARN + r')|(?P<spend>' + _SPEND + r'))\b', re.I)
-_BENEFIT_ACTION = re.compile(r'\b(?P<earn>' + _EARN +
-                             r'|предостав\w*|выда\w*|действ\w*|верн\w*|возвращ\w*)\b', re.I)
+_BENEFIT_ACTION = re.compile(r'\b(?:(?P<earn>' + _EARN +
+                             r'|предостав\w*|предусмотр\w*|доступ(?:ен|на|но|ны)'
+                             r'|выда\w*|действ\w*|верн\w*|возвращ\w*)|'
+                             r'(?P<denied>отмен[её]н(?:а|о|ы)?|аннулирован(?:а|о|ы)?|'
+                             r'недоступ(?:ен|на|но|ны)))\b', re.I)
 _DENIAL = r'(?:не|нельзя|невозможно)(?:\s+(?:буд\w*|мож\w*|смож\w*|вам|мы|вы)){0,2}'
 _MODIFIER = r'(?:буд\w*|уже|больше|временно|сейчас|пока|вам|нам|им|ему|ей|мне|тебе)'
 _MODIFIERS = r'(?:'+_MODIFIER+r'\s+){0,3}'
@@ -26,6 +29,21 @@ _MENTION = re.compile(r'\d[\d., \t\u00a0\u202f]*\s+'
                       r'(?:балл\w*|бонус(?:ов|а)?|мил[ьяиюе]\w*)\b', re.I)
 _BALANCE = re.compile(r'\b(?:баланс\w*|номинал\w*|на\s+(?:(?:вашем|ваш)\s+)?сч[её]т[еу])\b', re.I)
 _PAYMENT_NOUN = re.compile(r'\b(?:оплат[ауыое]|стоимост\w*|цен[аыуе])\b', re.I)
+
+
+def benefit_context_text(value):
+    """Mask an open antecedent's cancellation continuation, preserving offsets."""
+    marker=r'(?:скидк\w*|к[еэ]шб[еэ]к\w*|бесплат\w*|подар\w*)'
+    result=value
+    for boundary in re.finditer(r'\n',value):
+        before=re.split(r'[.!?](?:\s|$)|[;\n]',value[:boundary.start()])[-1]
+        after=re.split(r'[.!?](?:\s|$)|[;\n]',value[boundary.end():])[0]
+        if (re.search(r'\b(?:если|когда|при|после)\b',before,re.I)
+                and not re.search(r'\b'+marker,before,re.I)
+                and re.match(r'[ \t]*'+marker+r'\b',after,re.I)
+                and any(a.lastgroup=='denied' for a in _BENEFIT_ACTION.finditer(after))):
+            result=result[:boundary.start()]+' '+result[boundary.end():]
+    return result
 
 
 def purchase_requirement_denied(prefix, suffix):
@@ -48,10 +66,11 @@ def purchase_requirement_denied(prefix, suffix):
 
 
 def _action_role(action, prefix, suffix=''):
-    if re.search(r'\b' + _DENIAL + r'\s*$', prefix, re.I):
-        return 'denied'
-    if re.match(r'\s+(?:нельзя|невозможно|не\s+буд\w*)\b', suffix, re.I):
-        return 'denied'
+    negated = (re.search(r'\b' + _DENIAL + r'\s*$', prefix, re.I)
+               or re.match(r'\s+(?:нельзя|невозможно|не\s+буд\w*)\b', suffix, re.I))
+    if action.lastgroup == 'denied':
+        return 'earn' if negated else 'denied'
+    if negated:return 'denied'
     return 'earn' if action.lastgroup == 'earn' else 'spend'
 
 
@@ -62,12 +81,24 @@ def _owned_role(text, start, end, *, amounts=(), actions=_ACTION,
     A direct postfix action wins over an unrelated preceding action. A shared
     postfix action can cross only an otherwise bare coordinated amount list.
     """
+    text=benefit_context_text(text)
     boundary=_BOUNDARY+(r'|\bа\b' if mixed_list else '')
     left = max((m.end() for m in re.finditer(boundary, text[:start], re.I)), default=0)
     stop = re.search(boundary, text[end:], re.I)
     right = end + stop.start() if stop else len(text)
     prefix, suffix = text[left:start], text[end:right]
     spans = amounts or [(m.start(), m.end()) for m in _MENTION.finditer(text)]
+    antecedent_start=left
+    antecedent_end=start
+    for a,b in reversed(spans):
+        if not left<=a<b<=antecedent_end:continue
+        separator=r'\s*(?:,|\+|и|или)\s*'+(r'(?:\w+\s+){0,3}' if mixed_list else '')
+        if not re.fullmatch(separator,text[b:antecedent_end],re.I):
+            antecedent_start=max(b,text.rfind(',',b,antecedent_end)+1)
+            break
+        antecedent_end=a
+    conditional=bool(partial_exclusion and re.search(r'\b(?:если|когда|при|после)\b',
+                                                    text[antecedent_start:antecedent_end],re.I))
     # Reference markers own the entire otherwise bare coordinated list.
     # A new action or an affirmative contrast breaks the walk backwards.
     reference_start=start
@@ -106,15 +137,17 @@ def _owned_role(text, start, end, *, amounts=(), actions=_ACTION,
                          + _MODIFIERS + r'(?P<action>' + actions.pattern + r')',
                          following_suffix, re.I)
     if following:
-        if following['denial']:
+        action = actions.fullmatch(following['action'])
+        role = _action_role(action, following['denial'] or '',
+                            following_suffix[following.end():])
+        if role == 'denied':
+            if conditional and action.lastgroup=='denied':return 'earn'
             if (mixed_list and shared_following and
-                    not re.search(r'(?:[уюя]т(?:ся)?|[её]м|им|ены|лены)$',following['action'],re.I)):
+                    not re.search(r'(?:[уюя]т(?:ся)?|[её]м|им|[а-яё]ны)$',following['action'],re.I)):
                 return 'unknown'
             if partial_exclusion and partial_exclusion(following_suffix[following.end():],following['action']):
                 return 'earn'
-            return 'denied'
-        action = actions.fullmatch(following['action'])
-        return _action_role(action, '', following_suffix[following.end():])
+        return role
 
     # Account amounts describe a state/threshold until a new earning action.
     # A comma prevents an earlier balance condition owning the later reward.
@@ -127,7 +160,8 @@ def _owned_role(text, start, end, *, amounts=(), actions=_ACTION,
         return 'reference'
     if preceding:
         action = preceding[-1]
-        return _action_role(action, prefix[:action.start()], prefix[action.end():])
+        role = _action_role(action, prefix[:action.start()], prefix[action.end():])
+        return 'earn' if role=='denied' and conditional and action.lastgroup=='denied' else role
     return 'unknown'
 
 
