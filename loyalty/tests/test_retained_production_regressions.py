@@ -189,8 +189,7 @@ class RetainedProductionRegressions(unittest.TestCase):
                     (normalized_rate, '/benefit', 'first', [(value, '/benefit')]),
                     (normalized_rate, '/conditions', 'first', [(value, '/conditions')]),
                 ])
-                self.assertEqual([(c['kind'], c['value'], c['delivery']) for c in common['codes']],
-                                 [('code_delivery', None, 'app')])
+                self.assertEqual(common['codes'], [])
 
     def test_nonadjacent_minima_stay_with_their_distinct_components(self):
         for separator in (', ', '. ', '; ', '\n'):

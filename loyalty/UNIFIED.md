@@ -1,10 +1,21 @@
-# Common normalization of all stored data — 1.0.9
+# Common normalization of all stored data — 1.0.10
 
 This is a deterministic **source-preserving projection**, not another web scrape,
 a new discount catalogue, a personal entitlement check, or a savings calculator.
 It consumes all five explicitly supported input datasets in the existing Google
 spreadsheet. The other three sheets are control/audit history, not benefit rows.
 All eight original sheets are read-only to this stage.
+
+Version 1.0.10 repairs the next encountered offer-period and action-ownership
+forms. Labelled Coral periods accept the observed plural/action labels and
+numeric separators; public EKP offer text can supply its explicit end date;
+Magnit's written campaign range can share its stated end year. Retained inputs
+receive only compatible missing bounds from matching owned source evidence.
+Merchant login, ordering and applying a code in an app do not establish issuance.
+Cash-or-mileage prices and nominal mileage debt limits do not become earned
+miles. Existing literal codes, genuine terms, source text and provenance stay
+intact. The source/common schemas and reader format remain unchanged; public
+regressions use minimal anonymizations of the encountered clauses.
 
 Version 1.0.9 repairs encountered source formulations at both extraction and
 retained-input boundaries. A tariff applicability heading does not supply a

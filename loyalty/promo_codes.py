@@ -34,12 +34,13 @@ def promocode_delivery_methods(clause: str) -> list[str]:
     applying there supplies contrary evidence to app/account code issuance.
     """
     methods = []
+    action_boundary = r'\s+[–—]\s+|,\s*(?=(?:оформить|ввести)\b)'
     for method, pattern in (('sms', r'\b(?:SMS|СМС)\b'),
                             ('account', r'личн\w*\s+кабинет\w*'),
                             ('app', r'приложени\w*')):
         for match in re.finditer(pattern, clause, re.I):
-            left = max([0] + [m.end() for m in re.finditer(r'\s+[–—]\s+', clause[:match.start()])])
-            boundary = re.search(r'\s+[–—]\s+', clause[match.end():])
+            left = max([0] + [m.end() for m in re.finditer(action_boundary, clause[:match.start()], re.I)])
+            boundary = re.search(action_boundary, clause[match.end():], re.I)
             right = match.end() + boundary.start() if boundary else len(clause)
             local = clause[left:right]
             if method != 'sms':
@@ -50,7 +51,12 @@ def promocode_delivery_methods(clause: str) -> list[str]:
                     r'\b(?:получ\w*|выда\w*)\s+[«“"]?промокод\w*\b|'
                     r'\bпромокод\w*\s+(?:будет\s+)?(?:отображ\w*|выда\w*|прид[её]т|приход\w*)\b',
                     local, re.I)
-                redemption = LABEL.search(local) and re.search(r'\b(?:введите|ввести)\b', local, re.I)
+                # Login and ordering own their channels even when a neighboring
+                # action issues a code. Only action-introducing commas separate
+                # actions; commas in channel lists keep their shared predicate.
+                merchant_action = re.search(
+                    r'\b(?:перейдите|войдите|оформить)\b', local, re.I)
+                redemption = LABEL.search(local) and re.search(r'\b(?:введите|ввести|укажите)\b', local, re.I)
                 activation = re.search(
                     r'\b(?:активировать|активируйте|активация)\s+промокод\w*\b', local, re.I)
                 # A PDF wrap can leave the activation noun on the prior line.
@@ -58,8 +64,18 @@ def promocode_delivery_methods(clause: str) -> list[str]:
                 # unrelated restrictions do not cancel code availability.
                 unneeded_reference = re.fullmatch(
                     rf'\s*промокода\s+в\s+{pattern}\s+не\s+требуется[.!?]?\s*', local, re.I)
-                applicability = re.search(r'\bпромокод\s+предоставляет\s+скидк\w*\b', local, re.I)
-                if not issuance and (redemption or activation or unneeded_reference or applicability):
+                # 'По промокоду' describes application independently of the
+                # discount amount, decimal punctuation or currency abbreviation.
+                applicability = re.search(
+                    r'\bпромокод\s+предоставляет\s+скидк\w*\b|'
+                    r'\bпо\s+промокоду\b', local, re.I)
+                # An em dash can introduce the venues of application rather
+                # than a new action. Keep that explicit predicate attached to
+                # its channel even though navigation uses dash boundaries.
+                applicability = applicability or re.search(
+                    r'\bпромокод\s+доступен\s+для\s+применения\b',
+                    clause[:match.start()], re.I)
+                if not issuance and (merchant_action or redemption or activation or unneeded_reference or applicability):
                     continue
             methods.append(method)
             break
