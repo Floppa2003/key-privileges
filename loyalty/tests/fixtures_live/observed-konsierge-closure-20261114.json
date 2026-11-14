@@ -1,0 +1,62 @@
+{
+  "provenance": "Unchanged complete public native Konsierge objects from the 2026-11-14 retained capture. Test framing supplies a single-card DOM and pagination structure; source wording and metadata are not invented.",
+  "closed": {
+    "item": {
+      "created_at": "2025-07-02T11:55:52.329Z",
+      "date_of_expiry": null,
+      "date_of_release": "2025-07-02T11:55:51.848Z",
+      "description": "Ресторан закрыт до нового летнего сезона.",
+      "enabled": true,
+      "id": 2076,
+      "link": null,
+      "name": "Крыша",
+      "offer": "Скидка 10%",
+      "rubrics": [
+        {
+          "id": 92
+        },
+        {
+          "id": 23
+        }
+      ],
+      "updated_at": "2025-09-29T08:43:51.015Z"
+    },
+    "observed_at": "2026-11-14T12:19:32.114244+00:00",
+    "categories": [
+      {
+        "id": 23,
+        "name": "Рестораны",
+        "url": "https://konsierge.com/benefits?rubric_id=23"
+      }
+    ],
+    "source_run": "43594061340:1"
+  },
+  "closed_events_control": {
+    "item": {
+      "created_at": "2024-08-22T08:45:01.280Z",
+      "date_of_expiry": null,
+      "date_of_release": "2024-08-22T08:45:01.242Z",
+      "description": "Специально для вас доступен статус Gold в программе лояльности SimplePrivé.\n\nВаши привилегии по статусу Gold:\n\n- Скидка 30% на основной ассортимент Simple;\n- Скидка 15% в винотеках SimpleWine;\n- Скидка до 40% по спецпредложениям;\n- Доступ к редким и коллекционным позициям;\n- Закрытые дегустации;\n- Услуги от ведущих винных экспертов. \n\nВ SimplePrivé у вас также будет свой персональный менеджер, который решит любые винные задачи, поможет с выбором позиций и обеспечит комфортное получение заказа, где бы вы ни находились.\n\nЧтобы активировать статус Gold, пожалуйста, нажмите на кнопку «Подробнее».",
+      "enabled": true,
+      "id": 1890,
+      "link": null,
+      "name": "SimplePrivé",
+      "offer": "Скидка до 30%",
+      "rubrics": [
+        {
+          "id": 26
+        }
+      ],
+      "updated_at": "2024-08-22T09:00:45.489Z"
+    },
+    "observed_at": "2026-11-14T12:19:32.114244+00:00",
+    "categories": [
+      {
+        "id": 26,
+        "name": "Услуги и покупки",
+        "url": "https://konsierge.com/benefits?rubric_id=26"
+      }
+    ],
+    "source_run": "43594061340:1"
+  }
+}

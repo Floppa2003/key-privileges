@@ -1,0 +1,72 @@
+{
+  "provenance": "Unchanged public native-text excerpts; no dates are inferred from publication, acquisition, accrual, or travel stages.",
+  "vtb": {
+    "url": "https://www.vtb.ru/media-files/vtb.ru/sitepages/privilegia/karty/debetovye/privilegiya-aeroflot/usloviya_akcii_ko_dnyu_rozhdeniya.pdf",
+    "observed_at": "2026-09-17T10:06:48.885509+00:00",
+    "parent_source": "https://www.vtb.ru/privilegia/karty/debetovye/privilegiya-aeroflot/",
+    "parent_response_sha256": "5b300eaf18dc38bf82652440db5b73cb2f61ec3119677e0aa8505f5f02751594",
+    "label": "Условия акции Условия акции",
+    "original_page_sha256": "a58955eb9d5e4e6d9b3cc991e3b1769b06340949676a49460bd771533624fa84",
+    "document": {
+      "title": "Правила проведения специальной акции за использование совместной",
+      "pages": [
+        {
+          "method": "native_pdf_text",
+          "number": 1,
+          "sha256": "c4206d7c9797db0380bd56892a0bd17bede8a9b7ec4e7e2de3f65a93fca1b548",
+          "text": "Правила проведения специальной акции за использование совместной \nкарты ВТБ-Аэрофлот \n«27% дополнительных миль в честь 27-летия «Аэрофлот Бонус»» \n \nСрок проведения \nакции: \n27.04.2026 – 20.11.2026 \n \nСроки начисления миль на счет участника от банка-партнера за \nиспользование совместной карты для учета в акции: с \n01.05.2026 по 31.10.2026 \n \nСрок начисления дополнительных миль участникам: \nс 01.11.2026 по 20.11.2026 \n"
+        }
+      ],
+      "document_sha256": "83630bade518627e3495e96a9ec156e8e27633fd184902a81e4ec33712284d0a",
+      "page_count": 1,
+      "errors": [],
+      "ocr_pages": 0
+    },
+    "transport": {
+      "additional_ca_sha256": [
+        "936a43fea6e8e525bcc0f81acd9c3d21b4fc4b9b68acea7906d698005afc6504",
+        "f0ae589f36774f29ef3648f7984b08d42fcce6f1ffeeb6236d773daeb2744ea6"
+      ],
+      "anonymous": true,
+      "authenticated": true,
+      "encrypted": true,
+      "hostname_and_expiry_verified": true,
+      "profile": "russian_nuc_pinned_2026_09",
+      "scheme": "https",
+      "system_trust_changed": false
+    }
+  },
+  "mir": {
+    "url": "https://vamprivet.ru/supreme-restaurants",
+    "observed_at": "2026-11-14T10:14:19.324794+00:00",
+    "title": "Кешбэк 7% в изысканных ресторанах",
+    "excerpt": "Кешбэк 7% в изысканных ресторанах\nГастрономическое удовольствие с премиальными продуктами ПС «Мир»\nСрок проведения акции: 01.01.2026 г. — 31.12.2026 г. Организатор акции: АО «НСПК». Информация об организаторе, правилах проведения акции, партнерах акции, размере кешбэка доступны на сайте vamprivet.ru. Кешбэк — частичный возврат стоимости Товара в виде денежных средств или бонусов, баллов или иных единиц программы лояльности банка-эмитента.\n*C 01.10.2026 отдельные банки начисляют кешбэк по акции «Гастрономическое удовольствие с премиальными продуктами ПС «Мир» в виде бонусов, баллов или иных единиц валюты своей программы лояльности. Форма начисления кешбэка и условия его использования определяются правилами программы лояльности вашего банка. Клиенты данных банков могут принять участие в акции с 01.10.2026.",
+    "parent": {
+      "content_sha256": "360666a825a9307145bf3222942cf5f46775936749865bad842b9136bdfce2c4",
+      "field": "discountScheme",
+      "label": "Подробнее об участниках акции",
+      "observed_at": "2026-11-14T09:26:59.224303+00:00",
+      "original_link": "https://vamprivet.ru/supreme-restaurants",
+      "partner": "Рестораны Арама Мнацаканова",
+      "record_id": "e1d36f210b93f71d8d44c7b855155129673b06f05cb404182a7686fcc0fb7252",
+      "source_url": "https://ekp.spb.ru/api/portal/loyalty/partners"
+    },
+    "receipt": {
+      "bytes": 87549,
+      "charged_credits": 10,
+      "finished_at": "2026-11-14T10:15:04.754963+00:00",
+      "html_structure": {
+        "h1_count": 1,
+        "text_chars": 1762
+      },
+      "mime": "text/html",
+      "origin_status": 200,
+      "requested_at": "2026-11-14T10:14:59.584846+00:00",
+      "reserved_credits": 10,
+      "sha256": "5369b8b02de873020f31f77b74d6a333248dbfa01e31c952725ba93a1d31f76b",
+      "status": 200,
+      "transport": "datacenter",
+      "url": "https://vamprivet.ru/supreme-restaurants"
+    }
+  }
+}

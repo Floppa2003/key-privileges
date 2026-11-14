@@ -118,6 +118,12 @@ def campaign_end(item):
     return next(iter(dates)) if len(dates) == 1 else None
 
 
+def suspension_evidence(item):
+    """The complete owned description closes the sole restaurant privilege."""
+    body = text(item['description'])
+    return body if body == 'Ресторан закрыт до нового летнего сезона.' else None
+
+
 def derived(item, observed_at, collection_mode='manual'):
     item_fields(item)
     require(collection_mode in ('manual', RECURRING_MODE), 'collection_mode')
@@ -154,7 +160,8 @@ def validate_record(row):
             and row['title'] == text(item['name']) and row['record_kind'] == 'partner_offer'
             and row['source_url'] == ROOT and row['link_kind'] == 'page_block'
             and row['benefit_url'] is None and row['locator'] == 'public benefit id='+str(item['id'])
-            and row['source_status'] == 'public_catalogue_terms_unverified_eligibility'
+            and row['source_status'] == ('disabled' if suspension_evidence(item)
+                                         else 'public_catalogue_terms_unverified_eligibility')
             and row['benefit_text'] == label and row['conditions_text'] == body
             and row['redemption_text'] == activation and row['valid_from'] is None
             and row['valid_until'] == end,'record_fields')
@@ -232,7 +239,8 @@ def parse_capture(report, directory, source_run):
         rows.append(make_offer(SOURCE,str(item['id']),PROGRAM,item['name'],label,ROOT,report['observed_at'],
             title=item['name'],conditions=body,redemption=activation,category=' / '.join(x['name'] for x in cats) or None,
             link_kind='page_block',locator='public benefit id='+str(item['id']),valid_until=end,
-            source_status='public_catalogue_terms_unverified_eligibility',warnings=warnings,
+            source_status='disabled' if suspension_evidence(item) else 'public_catalogue_terms_unverified_eligibility',
+            warnings=warnings,
             details={**({'collection_mode':mode,'robots_policy':ROBOTS_POLICY} if mode == RECURRING_MODE else {}),
                      'retrieval_method':METHOD,'public_item':item,'item_sha256':digest(item),
                      'public_categories':cats,'only_assist_equivalence':False,'code_words':words,
@@ -246,12 +254,13 @@ def parse_capture(report, directory, source_run):
 
 
 def project_common(raw,n,benefit,condition,code):
-    """Do not promote department-specific rates, commissions or room credits.
+    """Keep the headline and literal detail rates with their own service scope.
 
-    The one headline benefit always links to the complete owned conditions. Rich
-    privileges and quoted code words remain searchable, without inventing scope.
+    Detail components are never standalone privileges. Every component retains
+    its original clause and the full owned rules; commissions and room credits
+    do not acquire discount semantics from a neighbouring percentage.
     """
-    from unified_normalization import digest as common_digest, validate_normalized
+    from unified_normalization import digest as common_digest, validate_normalized, _component_context
     from promo_codes import extract_promocodes, reconcile_promocode
     d=raw['details']; item=d['public_item']
     label,body,activation,end,warnings,words=derived(item,raw['observed_at'],record_mode(d))
@@ -292,11 +301,27 @@ def project_common(raw,n,benefit,condition,code):
     else:
         b=benefit('special_privilege','/benefit',scope=scope)
     b.update(condition_ids=[r['id'] for r in rules],condition_linkage='full_owned_record_rules',remaining_record_rules_require_review=True)
+    headline_rates={(r['kind'],r['value'],r['unit'],r['qualifier']) for r in rates}
+    component_scopes,_=_component_context(body)
+    for r in normalize_rates(body,with_spans=True):
+        if (r['kind'] != 'discount' or
+                (r['kind'],r['value'],r['unit'],r['qualifier']) in headline_rates):
+            continue
+        clause=r['evidence']
+        key=(r['unit'],r.get('_percent_index') if r['unit']=='percent' else r.get('_amount_index'))
+        local={**scope,**component_scopes.get(key,{}),'headline_label_only':False,'source_clause':clause}
+        detail=benefit('discount','/conditions',value=r['value'],unit=r['unit'],
+                       qualifier=r['qualifier'],value_min=r.get('min_value'),
+                       scope=local,fragment=clause,method='owned_source_clause')
+        detail.update(standalone_offer=False,condition_ids=[rule['id'] for rule in rules],
+                      condition_linkage='full_owned_record_rules',remaining_record_rules_require_review=True)
     for i,value in enumerate(raw['codes']):code(value,f'/codes/{i}',scope)
     for i,word in enumerate(words):code(word['value'],f'/details/code_words/{i}/value',scope,delivery='code_word')
     for i,delivery in enumerate(d.get('promo_code_delivery',[])):
         code(None,f'/details/promo_code_delivery/{i}/evidence',scope,delivery=delivery['method'])
     n['availability'].update(source_enabled=item['enabled'],source_expiry_utc=item['date_of_expiry'])
+    suspended=suspension_evidence(item)
+    if suspended:n['availability'].update(source_enabled=False,source_suspension_evidence=suspended)
     n['validity'].update(until=end,status=('expired' if end<n['validity']['as_of'] else 'within_stated_period') if end else 'unknown')
     n['quality']['issues']=[w for w in n['quality']['issues'] if w not in date_warnings or w in warnings]
     n['quality']['issues'].extend(w for w in warnings if w in date_warnings and w not in n['quality']['issues'])

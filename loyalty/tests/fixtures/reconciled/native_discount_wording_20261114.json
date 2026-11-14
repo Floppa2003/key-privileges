@@ -1,0 +1,22 @@
+{
+  "provenance": "Verbatim benefit clauses retained on 2026-11-14. The No Name public card was also read at https://nonameburo.com/card. Only the benefit and its native context are included; full private rows are excluded.",
+  "cases": [
+    {
+      "source_id": "noname",
+      "source_url": "https://nonameburo.com/card",
+      "program": "No Name Card",
+      "partner": "Pilates PMP",
+      "text": "20% на первое посещение бьюти и спорта, далее 10% на абонементы",
+      "details": {
+        "benefit_element_id": "1742547711969",
+        "pairing": "same_record_aligned_column_nearest_label"
+      }
+    },
+    {
+      "source_url": "https://media.utair.ru/status/",
+      "program": "Utair Status",
+      "partner": "Уровень Platinum",
+      "text": "персональная скидка на мерч номиналом 5 000 ₽ для себя и скидка друзьям"
+    }
+  ]
+}

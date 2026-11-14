@@ -57,6 +57,7 @@ def make_record(source, evidence, observed_at):
     return make_offer(source, f['native'], f['program'], f['partner'], f['benefit'], f['url'], observed_at,
         title=f['title'], conditions=f['conditions'], redemption=f['activation'], category=f['category'],
         record_kind=f.get('kind', 'partner_offer'), link_kind=f.get('link_kind', 'detail_page'),
+        source_status=f.get('source_status', 'published'),
         locator=f['locator'], valid_from=f.get('valid_from'), valid_until=f.get('valid_until'), details={'public_reward_evidence': evidence, 'public_reward_source': source,
             'retrieval_method': 'source_owned_public_rewards_v1', 'account_used': False},
         warnings=record_warnings(f) + f.get('warnings', []))
@@ -80,7 +81,7 @@ def validate_record(row):
               'conditions_text': f['conditions'], 'redemption_text': f['activation'],
               'category': f['category'], 'record_kind': f.get('kind', 'partner_offer'),
               'link_kind': f.get('link_kind', 'detail_page'), 'locator': f['locator'],
-              'source_status': 'published', 'valid_from': f.get('valid_from'), 'valid_until': f.get('valid_until')}
+              'source_status': f.get('source_status', 'published'), 'valid_from': f.get('valid_from'), 'valid_until': f.get('valid_until')}
     if any(row.get(k) != v for k, v in checks.items()) or not set(record_warnings(f) + f.get('warnings', [])).issubset(row.get('warnings', [])):
         raise ValueError('public_rewards_record_evidence_mismatch')
 
@@ -98,14 +99,37 @@ def project_common(raw, n, benefit, condition, code):
             if (source != 'magnit_partners_public' or raw.get(key)
                     or n['validity'][{'valid_from': 'from', 'valid_until': 'until'}[key]] != f.get(key)):
                 raise ValueError('public_rewards_common_evidence_mismatch')
+    if source == 'magnit_partners_public' and f.get('source_status') == 'finished':
+        n['availability'].update(source_enabled=False, source_completion_evidence=f['completion_evidence'])
+    if f.get('date_conflict_evidence'):
+        if any(literal not in raw['conditions'] for literal in f['date_conflict_evidence']):
+            raise ValueError('public_rewards_date_conflict_evidence')
+        n['validity']['status'] = 'source_date_conflict'
+        n['quality']['issues'].append('source_dates_conflict_with_owned_conditions')
     scope = f.get('scope', {})
     conditions = []
     if f['conditions']: conditions.append(condition('owned_programme_rules', '/conditions', scope=scope)['id'])
     if f['activation']: conditions.append(condition('activation_step', '/activation', scope=scope)['id'])
+    allowed_paths = ('/benefit', '/conditions', '/activation')
+    scoped_conditions = []
+    for term in f.get('condition_terms', []):
+        term = dict(term); own = term.pop('scope', {})
+        path = term.pop('path', '/conditions'); fragment = term.pop('fragment')
+        if path not in allowed_paths: raise ValueError('public_rewards_term_path')
+        obj = condition(term.pop('kind'), path, scope={**scope, **own}, fragment=fragment, **term)
+        scoped_conditions.append((own, obj['id']))
     for term in f['terms']:
         term = dict(term); local = {**scope, **term.pop('scope', {})}; fragment = term.pop('fragment')
-        obj = benefit(term.pop('kind'), '/benefit', scope=local, fragment=fragment, **term)
-        obj.update(condition_ids=conditions, condition_linkage='full_owned_record_rules', remaining_record_rules_require_review=True)
+        path = term.pop('path', '/benefit')
+        if path not in allowed_paths: raise ValueError('public_rewards_term_path')
+        dependent = 'standalone_offer' in term
+        if dependent and term.pop('standalone_offer') is not False:
+            raise ValueError('public_rewards_standalone_override')
+        obj = benefit(term.pop('kind'), path, scope=local, fragment=fragment, **term)
+        if dependent: obj['standalone_offer'] = False
+        linked = conditions + [ident for own, ident in scoped_conditions
+                               if all(local.get(key) == value for key, value in own.items())]
+        obj.update(condition_ids=linked, condition_linkage='full_owned_record_rules', remaining_record_rules_require_review=True)
     for i, value in enumerate(raw['codes']): code(value, '/codes/' + str(i), scope)
     n['quality']['level'] = 'structured_with_review'
     n['quality']['issues'].append('source_owned_reward_currency_and_audience_preserved')

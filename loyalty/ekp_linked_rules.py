@@ -204,8 +204,11 @@ def rows_for(data,entry,receipt,observed_at):
             parent_sha256=entry['parents'][0]['content_sha256'],label=entry['parents'][0]['label'],extra_details=detail)
     else:
         title,value=html_fields(data)
+        from owned_offer_dates import labelled_numeric_campaign_period
+        start,end=labelled_numeric_campaign_period(value)
         rows=[make_offer(SID,'html:'+sha(entry['url'].encode()),'ЕКП — связанные публичные условия',partner,'',
             entry['url'],observed_at,title=title,conditions=value,record_kind='program_rules',source_status='public_linked_rules_text',
+            valid_from=start,valid_until=end,
             details={**detail,'public_rule_text':value},warnings=['linked_rules_not_additional_discounts','user_eligibility_not_verified'])]
     for r in rows:
         r['warnings'].append('parent_snapshot_time_separate_from_document_read')
@@ -294,9 +297,11 @@ def validate_bundle(folder,run_id,commit,clock):
 
 def validate_record(r):
     d=r['details'];url=checked_url(r['source_url']);parents=d.get('parent_references',[])
+    from owned_offer_dates import labelled_numeric_campaign_period
+    period=labelled_numeric_campaign_period(d.get('public_rule_text','')) if not d.get('live_document_text') else (None,None)
     if (r['source_id']!=SID or d.get('retrieval_method')!=METHOD or not parents or len(parents)>200
         or r['record_kind'] not in ('program_rules','source_observation') or r['rates'] or r['tables']
-        or r['valid_from'] is not None or r['valid_until'] is not None
+        or (r['valid_from'],r['valid_until']) != period
         or any(d.get(k) is not False for k in ('source_account_used','eligibility_verified','recursive_links_read'))):
         raise ValueError('el_record_scope')
     for parent in parents:

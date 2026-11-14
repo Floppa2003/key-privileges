@@ -162,12 +162,37 @@ def source_fields(obs):
     return title,body,partner,benefit
 
 
+def explicit_period(obs):
+    """Use complete owned labels in string cells, never converted publication dates."""
+    from owned_offer_dates import calendar_date
+    body = '\n'.join(c['text'] if c['kind'] == 'string' else '\0'
+                     for c in checked_observation(obs))
+    full = r'(\d{2}\.\d{2}\.\d{4})(?!\d|\.\d|-\d)'
+    starts = {calendar_date(m[1]) for m in re.finditer(
+        r'Предложение\s+(?:действует|действительно)\s+с\s+' + full, body, re.I)}
+    ends = {calendar_date(m[1]) for m in re.finditer(
+        r'Срок\s+(?:проведения\s+акции|действия\s+предложения)\s*:?\s*до\s+'
+        + full, body, re.I)}
+    for match in re.finditer(
+            r'Период\s+проведения\s+акции\s*:\s*с\s+' + full
+            + r'\s+по\s+' + full, body, re.I):
+        starts.add(calendar_date(match[1]))
+        ends.add(calendar_date(match[2]))
+    # One shorter hotel-specific end must not replace the overall offer end.
+    if len(starts) > 1 or len(ends) > 1:
+        return None, None
+    start, end = next(iter(starts), None), next(iter(ends), None)
+    return (None, None) if start and end and start > end else (start, end)
+
+
 def detail(obs,observed_at):
     title,body,partner,benefit=source_fields(obs)
+    start,end=explicit_period(obs)
     warnings=list(WARNINGS)
     if any(c['kind']=='google_date' for c in obs['cells']):warnings.append('google_import_date_format_not_original_lexeme')
     return make_offer('rzd',urlsplit(obs['url']).path,'РЖД Бонус',partner,benefit,obs['url'],observed_at,
         title=title,conditions=body,record_kind='partner_offer' if benefit else 'source_observation',
+        valid_from=start,valid_until=end,
         source_status='public_google_import_text',locator=XPATH['detail'],warnings=warnings,
         details={'retrieval_method':METHOD,'import_observation':obs,'origin_http_status':None,
           'origin_response_bytes_retained':False,'origin_cache_age_verified':False,
@@ -187,7 +212,7 @@ def validate_record(r):
         or r['source_status']!='public_google_import_text' or r['link_kind']!='detail_page'
         or r['benefit_url']!=obs['url'] or r['locator']!=XPATH['detail']
         or r['record_kind']!=('partner_offer' if benefit else 'source_observation')
-        or r['valid_from'] is not None or r['valid_until'] is not None or not set(WARNINGS)<=set(r['warnings'])):
+        or (r['valid_from'],r['valid_until']) != explicit_period(obs) or not set(WARNINGS)<=set(r['warnings'])):
         raise ValueError('rzd_record_source_binding')
     if (d.get('retrieval_method')!=METHOD or d.get('origin_http_status') is not None
         or any(d.get(k) is not False for k in ('account_used','coupon_issued','origin_response_bytes_retained','origin_cache_age_verified','linked_terms_read','full_eligibility_verified'))):

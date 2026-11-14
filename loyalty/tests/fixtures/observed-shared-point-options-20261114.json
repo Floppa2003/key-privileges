@@ -1,0 +1,12 @@
+{
+  "provenance": "Minimally anonymized retained legacy point option declaration. Card and programme labels are anonymized; all numeric wording, separators, shared unit and declared type are preserved. This is not the private source record.",
+  "declared_benefit_type": "Баллы",
+  "benefit": "Дебетовая «Карта А» — 3 000; кредитная «Карта Б» — 6 000; Карта В / Premium — 8 000; максимум при нескольких участвующих картах — 14 000 баллов",
+  "conditions": "Нужно впервые оформить участвующую карту банка по странице акции\nНовые и действующие клиенты, впервые оформляющие конкретную участвующую карту; покупка от 3 000 ₽ по каждой карте; оформить через страницу акции\nОфициальная текущая страница банка указывает ставки 3k/6k/8k и максимум 14k",
+  "activation": "Перейти по странице акции банка / программы, оформить участвующую карту и выполнить покупку от 3 000 ₽",
+  "option_values": {
+    "Дебетовая «Карта А»": "3000",
+    "кредитная «Карта Б»": "6000",
+    "Карта В / Premium": "8000"
+  }
+}

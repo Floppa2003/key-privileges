@@ -1,0 +1,172 @@
+[
+  {
+    "source_url": "https://moskvichmag.ru/programma-loyalnosti/",
+    "declared_type": "Привилегия",
+    "benefit": "Взрослым: 10% на «Новичка», 15% на абонемент от 8 занятий; детям: 50% на первое занятие и 20% на первый месячный абонемент",
+    "conditions": "",
+    "expected_values": [
+      "10",
+      "15",
+      "50",
+      "20"
+    ],
+    "case": "adult_and_child_privileges"
+  },
+  {
+    "source_url": "https://azimuthotels.com/ru/info/bonus",
+    "declared_type": "Скидка/баллы",
+    "benefit": "Спецтариф до 10% с первого бронирования + начисление баллов за проживание и допуслуги + возможность оплатить баллами до 100% проживания",
+    "conditions": "Бесплатная регистрация; уровни Бонус / Серебряный / Золотой / Платиновый\nПрограмма не действует в A-Отелях и METROPOL Отель Москва",
+    "expected_values": [
+      "10"
+    ],
+    "case": "hotel_special_tariff_and_points"
+  },
+  {
+    "source_url": "https://media.utair.ru/status/",
+    "declared_type": "Бесплатные сервисы + скидки",
+    "benefit": "Все предыдущие привилегии + обычное место/место+/место+ на борту 0 ₽; апгрейд до Евробизнеса на борту за 5 000 ₽ или 5 000 миль; 1 бесплатное повышение класса в год; мильный долг до 10 000; ручная кладь 10 кг; +10 кг багажа; приоритетная поддержка; Fast Track; бизнес-зал +1 попутчик; Gold другу на 6 месяцев; повышение за мили онлайн начиная с тарифа Минимум",
+    "conditions": "У Gold отдельно есть 10% в «Городских парильнях»",
+    "expected_values": [
+      "10"
+    ],
+    "case": "status_gold_partner"
+  },
+  {
+    "source_url": "https://media.utair.ru/status/",
+    "declared_type": "Бесплатные сервисы + скидки",
+    "benefit": "Все предыдущие привилегии + бронирование/переоформление без сборов; персональная скидка на мерч номиналом 5 000 ₽ для себя и скидка друзьям; Status Platinum 24/7; до 2×40 кг багажа; дополнительная ручная кладь +10 кг (85×40×25); бесплатный спецбагаж; гарантия элитного уровня на следующий год; Gold другу на 12 месяцев; бесплатный бизнес-трансфер i’way или Яндекс Ultima/Комфорт+; гарантированный апгрейд 2 раза в год до вылета и неограниченно на борту; Fast Track с 2 попутчиками и детьми до 12; бизнес-зал с 2 попутчиками и детьми; бесплатный выбор мест всем пассажирам в бронировании",
+    "conditions": "У Platinum отдельно есть 20% в «Городских парильнях»",
+    "expected_values": [
+      "5000",
+      "20"
+    ],
+    "case": "status_platinum_partner"
+  },
+  {
+    "source_url": "https://www.rusimp.su/membership/friends",
+    "declared_type": "Пакет привилегий",
+    "benefit": "Неограниченный вход на год; 10% на программы музея; бесплатный аудиогид; ранние посещения 2 раза/мес; 10% у партнёров кафе/магазина",
+    "conditions": "Карта «Друг музея» — 5 000 ₽/год\nИндивидуальная карта, действует год с активации",
+    "expected_values": [
+      "10",
+      "10"
+    ],
+    "case": "museum_individual"
+  },
+  {
+    "source_url": "https://www.rusimp.su/membership/friends",
+    "declared_type": "Пакет привилегий",
+    "benefit": "Неограниченный вход владельцу + 1 гостю и 3 детям; 15% на программы; бесплатный аудиогид; ранние посещения; 10% у кафе/магазинов-партнёров",
+    "conditions": "Карта «Друзья музея» — 7 500 ₽/год\nКарта на год; на специальные мероприятия — владелец + один гость\nСкидка 15% на музейные программы против 10% у индивидуальной карты.",
+    "expected_values": [
+      "15",
+      "10"
+    ],
+    "case": "museum_extended_comparator"
+  },
+  {
+    "source_url": "https://t.me/s/mybspb",
+    "declared_type": "Скидка + бонусы",
+    "benefit": "−10% на заказ + 10% бонусами ЯРКО за первую покупку (до 500) или 5% за последующие (до 250)",
+    "conditions": "Нужна ЕКП, выпущенная Банком «Санкт-Петербург»\nАкция до 31.12.2026; оплата именно картой ЕКП от БСПБ на сайте, без СБП/QR; промокод действует неограниченное число раз и суммируется со скидками Горбилета",
+    "expected_values": [
+      "10"
+    ],
+    "case": "ticket_discount_and_staged_points"
+  },
+  {
+    "source_url": "https://www.park-hotel-graal.ru/uralpartners.html",
+    "declared_type": "Статусная скидка",
+    "benefit": "Синий 10%; Серебряный 10%; Золотой 15% на проживание",
+    "conditions": "",
+    "expected_tiers": [
+      "Синий",
+      "Серебряный",
+      "Золотой"
+    ],
+    "case": "hotel_tiers_blue_silver_gold"
+  },
+  {
+    "source_url": "https://online.smart-inc.ru/smartmedia/partner-projects/smart-ural-airlines",
+    "declared_type": "Статусная скидка",
+    "benefit": "Синий 5%; Серебряный 7%; Золотой 10% от стоимости курсов",
+    "conditions": "",
+    "expected_tiers": [
+      "Синий",
+      "Серебряный",
+      "Золотой"
+    ],
+    "case": "course_tiers"
+  },
+  {
+    "source_url": "https://hotel.iktport.ru/ru/akcii/drugie.html",
+    "declared_type": "Статусная скидка",
+    "benefit": "Синий 5%; Серебряный 7%; Золотой 10% на проживание",
+    "conditions": "",
+    "expected_tiers": [
+      "Синий",
+      "Серебряный",
+      "Золотой"
+    ],
+    "case": "airport_hotel_tiers"
+  },
+  {
+    "source_url": "https://sykt.arendacar.ru/news/novyj-partnjor-kompanii-uralskie-avialinii/",
+    "declared_type": "Статусная скидка",
+    "benefit": "Синий 5%; Серебряный 10%; Золотой 15%",
+    "conditions": "",
+    "expected_tiers": [
+      "Синий",
+      "Серебряный",
+      "Золотой"
+    ],
+    "case": "car_rental_tiers"
+  },
+  {
+    "source_url": "https://hotelamur.com/partners-bonus-ural-airlines/",
+    "declared_type": "Скидка",
+    "benefit": "Синий 5%; Серебряный 7%; Золотой 10% на проживание",
+    "conditions": "",
+    "expected_tiers": [
+      "Синий",
+      "Серебряный",
+      "Золотой"
+    ],
+    "case": "amur_hotel_tiers"
+  },
+  {
+    "source_url": "https://www.personalguide.ru/rossiya/novosibirsk/oteli/gorskiy-city-hotel",
+    "declared_type": "Скидка",
+    "benefit": "Синий 5%; Серебряный 10%; Золотой 15% на проживание",
+    "conditions": "",
+    "expected_tiers": [
+      "Синий",
+      "Серебряный",
+      "Золотой"
+    ],
+    "case": "gorskiy_hotel_tiers"
+  },
+  {
+    "source_url": "https://angarahotel.ru/stock/skidki-dlya-uchastnikov-programmy-krylya/",
+    "declared_type": "Статусная скидка",
+    "benefit": "Синий 5%; Серебряный 10%; Золотой 15% на проживание",
+    "conditions": "",
+    "expected_tiers": [
+      "Синий",
+      "Серебряный",
+      "Золотой"
+    ],
+    "case": "angara_hotel_tiers"
+  },
+  {
+    "source_url": "https://v.page/0ACuh",
+    "declared_type": "Скидка + баллы",
+    "benefit": "До 51% на первый заказ по промокоду + 500 баллов «РЖД Бонус»",
+    "conditions": "",
+    "expected_values": [
+      "51"
+    ],
+    "case": "first_order_discount_and_points"
+  }
+]

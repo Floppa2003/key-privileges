@@ -1,0 +1,41 @@
+{
+  "description": "Verbatim public HSE benefit clauses retained in the 2026-11-14 published-source snapshot. These are excerpts, not complete private Sheet rows. No wording, amounts, ordering or coupon spelling was fabricated.",
+  "cases": [
+    {
+      "source_url": "https://alumni.hse.ru/loyalty/partners/#mnogolososya",
+      "observed_at": "2026-11-14T12:19:32.114244+00:00",
+      "partner": "Много Лосося",
+      "program": "Карта выпускника НИУ ВШЭ",
+      "anchor": "mnogolososya",
+      "public_clause": "Дарим скидку -10% на повторные заказы и -20% на первый заказ на вкусные суши и роллы (и много чего ещё!) всем выпускникам Высшей Школы Экономики.",
+      "expected": [
+        [
+          "10",
+          "repeat"
+        ],
+        [
+          "20",
+          "first"
+        ]
+      ]
+    },
+    {
+      "source_url": "https://alumni.hse.ru/loyalty/partners/#drop",
+      "observed_at": "2026-11-14T12:19:32.114244+00:00",
+      "partner": "DROP me flowers",
+      "program": "Карта выпускника НИУ ВШЭ",
+      "anchor": "drop",
+      "public_clause": "Скидка 20% на первую покупку и 15% на следующие по промокоду «Вышка»",
+      "expected": [
+        [
+          "20",
+          "first"
+        ],
+        [
+          "15",
+          "repeat"
+        ]
+      ]
+    }
+  ]
+}

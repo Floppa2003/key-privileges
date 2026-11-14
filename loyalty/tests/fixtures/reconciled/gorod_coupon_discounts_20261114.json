@@ -1,0 +1,702 @@
+{
+  "provenance": "Captured anonymous public Gorod native objects; public catalogue IDs only. No spreadsheet row wrappers or activated personal coupon values.",
+  "records": [
+    {
+      "observed_at": "2026-09-25T10:18:26.887516+00:00",
+      "source": "gorod_public",
+      "evidence": {
+        "catalogue_partner_id": 3211,
+        "catalogue_title": "Скидка 20% на бронирование в «Отелло»",
+        "data": {
+          "address": {
+            "hasMap": false
+          },
+          "available": true,
+          "cashback": null,
+          "countdown": "2026-09-30T23:59:59",
+          "couponEndAt": "2026-09-30T23:59:59",
+          "endAt": "2026-09-30T23:59:59",
+          "howToAsList": [
+            "Получите купон.",
+            "Перейдите в раздел &laquo;Мои покупки&raquo; и откройте купон.&nbsp;",
+            "Перейдите на сайт по кнопке &laquo;Перейти на сайт&raquo; и оформите заказ.&nbsp;",
+            "На этапе бронирования введите код с купона в поле &laquo;Промокод&raquo;."
+          ],
+          "id": 19629,
+          "message": null,
+          "name": "Скидка 20% на 1-е бронирование в сервисе «Отелло»",
+          "partner": {
+            "available": true,
+            "id": 3211,
+            "name": "Отелло",
+            "subtitle": "Путешествия"
+          },
+          "price": {
+            "currencies": [],
+            "new": 0,
+            "old": null
+          },
+          "terms": "Срок действия купона &mdash; 30.09.2026.<br>\r\nПромокод предоставляет скидку 20%, но не более 2 000 ₽ при&nbsp;первом&nbsp;заказе&nbsp;новым&nbsp;пользователем.<br>\r\nСкидки по разным купонам не суммируются.<br>\r\nПромокод не действует при способе оплаты &laquo;Оплата на месте&raquo;.<br>\r\nПрименить промокод возможно только один раз.<br>\r\n&nbsp;<br><br><a href=\"https://api.troika-gorod.ru/storage/spb/1/9/19629/Otello_20_30092026.pdf\" target=\"_blank\">Смотреть полные правила акции</a>"
+        },
+        "kind": "coupon",
+        "native": "coupon:19629",
+        "page_sha256": "bcadf45cde233b4bd05381ca36feda39dc34e3fa9389ac2e2f620262ebf71d44",
+        "url": "https://gorodtroika.ru/bonus-plus/coupons/19629"
+      }
+    },
+    {
+      "observed_at": "2026-09-30T11:14:43.606863+00:00",
+      "source": "gorod_public",
+      "evidence": {
+        "catalogue_partner_id": 3511,
+        "catalogue_title": "Скидка 50% на напитки и 30% на меню в «Это кофе и еда»",
+        "data": {
+          "address": {
+            "details": "Россия, г.Москва, Трёхпрудный переулок, д. 10/2с2",
+            "hasMap": true
+          },
+          "available": true,
+          "cashback": {
+            "currency": "bonuses",
+            "text": "+10%"
+          },
+          "countdown": "2027-01-23T23:59:59",
+          "couponEndAt": "2027-01-23T23:59:59",
+          "endAt": "2027-01-23T23:59:59",
+          "howToAsList": [
+            "Купите купон на сайте или в мобильном приложении ГОРОД.",
+            "Забронируйте столик по телефону, сообщите номер и код купона.",
+            "Предъявите распечатанный или электронный купон перед заказом."
+          ],
+          "id": 19547,
+          "message": {
+            "backgroundColor": "#F4F5FB",
+            "body": "Остальное можно бонусами",
+            "textColor": "#1D1D1B",
+            "title": "Платите от 30 ₽"
+          },
+          "name": "Скидка 50% на напитки и 30% на все меню в кофейне «Это кофе и еда»",
+          "partner": {
+            "available": true,
+            "id": 3511,
+            "name": "Это кофе и еда",
+            "subtitle": "Кафе и рестораны"
+          },
+          "price": {
+            "currencies": [
+              "roubles",
+              "bonuses"
+            ],
+            "new": 150,
+            "old": null
+          },
+          "terms": "Срок действия купона &mdash; 23.01.2027.<br>\r\nСкидка не распространяется на завтраки и бизнес-ланчи, а также не суммируется с другими спецпредложениями компании.<br>\r\nКупон действует на одного человека.&nbsp;<br>\r\nМожно купить неограниченное количество купонов.<br>\r\nКаждым купоном можно воспользоваться только один раз.<br>\r\nПо купонам обслуживаются компании до 6 человек включительно.<br>\r\nОбслуживание компании от 7 человек считается оказанием услуги банкета (возможность оказания услуги и подробные условия уточняйте по телефону).<br>\r\nПеред покупкой купона уточните наличие свободных мест на интересующую дату.<br><br><a href=\"https://api.troika-gorod.ru/storage/spb/1/9/19547/skidka_50.pdf\" target=\"_blank\">Смотреть полные правила акции</a><br><br>Нажимая «Купить», вы принимаете условия <a href=\"https://api.troika-gorod.ru/storage/cpb/34/Publichnaja_oferta_realizacii_Tovarov_i_Kuponov_smeshannaja_oplata_v.pdf\" target=\"_blank\">Оферты</a>"
+        },
+        "kind": "coupon",
+        "native": "coupon:19547",
+        "page_sha256": "65f6fc7070ff8e34a88f05e5f497293a50be73ac0e6eab56fa1a3cb8ae38f850",
+        "url": "https://gorodtroika.ru/bonus-plus/coupons/19547"
+      }
+    },
+    {
+      "observed_at": "2026-11-14T12:19:32.114244+00:00",
+      "source": "gorod_public",
+      "evidence": {
+        "catalogue_partner_id": 3152,
+        "catalogue_title": "Пицца «Пепперони к заказу от 1790 ₽",
+        "data": {
+          "address": {
+            "hasMap": false
+          },
+          "available": true,
+          "cashback": null,
+          "countdown": "2026-12-31T23:59:59",
+          "couponEndAt": "2026-12-31T23:59:59",
+          "endAt": "2026-12-25T23:59:59",
+          "howToAsList": [
+            "Получите купон.",
+            "Перейдите в раздел &laquo;Мои покупки&raquo; и откройте купон.",
+            "Перейдите на сайт по кнопке &laquo;Перейти на сайт&raquo; и соберите корзину на сумму от&nbsp;1 790 ₽.&nbsp;",
+            "Введите код с купона в поле &laquo;Промокод&raquo; и нажмите &laquo;Применить&raquo;. Подарочная пицца добавится в корзину."
+          ],
+          "id": 19383,
+          "message": null,
+          "name": "Пицца «Пепперони» маленькая в подарок к заказу от 1790 ₽ в DOMИNO PIZZA",
+          "partner": {
+            "available": true,
+            "id": 3152,
+            "name": "DOMИNO PIZZA",
+            "subtitle": "Продукты и доставка еды"
+          },
+          "price": {
+            "currencies": [],
+            "new": 0,
+            "old": null
+          },
+          "terms": "Срок действия купона&nbsp;&mdash;&nbsp; 31.12.26.<br>\r\nСкидка не дейсвует на акционные товары и комбо наборы.&nbsp;<br>\r\n&nbsp;<br><br><a href=\"https://api.troika-gorod.ru/storage/spb/1/9/19383/domino_pizza_pepperoni.pdf\" target=\"_blank\">Смотреть полные правила акции</a>"
+        },
+        "kind": "coupon",
+        "native": "coupon:19383",
+        "page_sha256": "fb0e42430281cbb647c24aef69c71a25c3ac75f39e2e1e6e45292927efdc5b9d",
+        "url": "https://gorodtroika.ru/bonus-plus/coupons/19383"
+      }
+    },
+    {
+      "observed_at": "2026-11-14T12:19:32.114244+00:00",
+      "source": "gorod_public",
+      "evidence": {
+        "catalogue_partner_id": 3545,
+        "catalogue_title": "Скидка 20% на 1-й заказ в ресторане «Tвоя Pizza»",
+        "data": {
+          "address": {
+            "hasMap": false
+          },
+          "available": true,
+          "cashback": null,
+          "countdown": "2026-11-29T23:59:59",
+          "couponEndAt": "2026-11-29T23:59:59",
+          "endAt": "2026-11-29T23:59:59",
+          "howToAsList": [
+            "Получите купон.",
+            "Перейдите в раздел &laquo;Мои покупки&raquo; и откройте купон.",
+            "Перейдите на сайт по кнопке &laquo;Перейти на сайт&raquo; и соберите корзину от 990₽.&nbsp;",
+            "Введите промокод в специальное поле при оформлении заказа и нажмите &laquo;Применить&raquo;."
+          ],
+          "id": 19635,
+          "message": null,
+          "name": "Скидка 20% на 1-й заказ от 990₽ в ресторане «Tвоя Pizza»  ",
+          "partner": {
+            "available": true,
+            "id": 3545,
+            "name": "Твоя Pizza",
+            "subtitle": "Кафе и рестораны • Продукты и доставка еды"
+          },
+          "price": {
+            "currencies": [],
+            "new": 0,
+            "old": null
+          },
+          "terms": "Срок действия купона &ndash; 29.11.2026.<br><br><a href=\"https://api.troika-gorod.ru/storage/spb/1/9/19635/Tanuki_Tvoja_Pizza_20_291126.pdf\" target=\"_blank\">Смотреть полные правила акции</a>"
+        },
+        "kind": "coupon",
+        "native": "coupon:19635",
+        "page_sha256": "ba2a631a7e6ff736fefc784de441da7c1297e10fe7b8a893569619e71968bc92",
+        "url": "https://gorodtroika.ru/bonus-plus/coupons/19635"
+      }
+    },
+    {
+      "observed_at": "2026-11-14T12:19:32.114244+00:00",
+      "source": "gorod_public",
+      "evidence": {
+        "catalogue_partner_id": 3545,
+        "catalogue_title": "Скидка 15% на повторный заказ в «Tвоя Pizza»",
+        "data": {
+          "address": {
+            "hasMap": false
+          },
+          "available": true,
+          "cashback": null,
+          "countdown": "2026-11-29T23:59:59",
+          "couponEndAt": "2026-11-29T23:59:59",
+          "endAt": "2026-11-29T23:59:59",
+          "howToAsList": [
+            "Получите купон.",
+            "Перейдите в раздел &laquo;Мои покупки&raquo; и откройте купон.",
+            "Перейдите на сайт по кнопке &laquo;Перейти на сайт&raquo; и соберите корзину от 1 190₽.&nbsp;",
+            "Введите промокод в специальное поле при оформлении заказа и нажмите &laquo;Применить&raquo;."
+          ],
+          "id": 19648,
+          "message": null,
+          "name": "Скидка 15% на повторный заказ от 1 190₽ в «Tвоя Pizza» ",
+          "partner": {
+            "available": true,
+            "id": 3545,
+            "name": "Твоя Pizza",
+            "subtitle": "Кафе и рестораны • Продукты и доставка еды"
+          },
+          "price": {
+            "currencies": [],
+            "new": 0,
+            "old": null
+          },
+          "terms": "Срок действия купона &ndash; 29.11.2026.<br><br><a href=\"https://api.troika-gorod.ru/storage/spb/1/9/19648/Tanuki_Tvoja_Pizza_15_291126.pdf\" target=\"_blank\">Смотреть полные правила акции</a>"
+        },
+        "kind": "coupon",
+        "native": "coupon:19648",
+        "page_sha256": "d1efaa7f7d986c8b900b78867aa78b22091af4067d7cee47461cfcb853bc89ee",
+        "url": "https://gorodtroika.ru/bonus-plus/coupons/19648"
+      }
+    },
+    {
+      "observed_at": "2026-11-14T12:19:32.114244+00:00",
+      "source": "gorod_public",
+      "evidence": {
+        "catalogue_partner_id": 359,
+        "catalogue_title": "Максимальный кешбэк на 7 дней",
+        "data": {
+          "address": {
+            "hasMap": false
+          },
+          "available": true,
+          "cashback": null,
+          "countdown": null,
+          "couponEndAt": null,
+          "endAt": null,
+          "howToAsList": null,
+          "id": 2,
+          "message": null,
+          "name": "Максимальный кешбэк от партнеров на 7 дней",
+          "partner": {
+            "available": true,
+            "id": 359,
+            "name": "Город",
+            "subtitle": "Транспорт"
+          },
+          "price": {
+            "currencies": [
+              "bonuses"
+            ],
+            "new": 49,
+            "old": null
+          },
+          "terms": "Бустер начинает действовать автоматически после покупки. Дополнительно вводить его данные никуда не требуется.<br><br><a href=\"https://api.troika-gorod.ru/storage/spb/2/0/2/Pravila_Akcii_Podpiska_buster_na_7_uroven.pdf\" target=\"_blank\">Смотреть полные правила акции</a>"
+        },
+        "kind": "coupon",
+        "native": "coupon:2",
+        "page_sha256": "ace33d723665d6c795401218e24e69ec9c8320cb229944310fdf9d43652ef371",
+        "url": "https://gorodtroika.ru/bonus-plus/coupons/2"
+      }
+    },
+    {
+      "observed_at": "2026-11-14T12:19:32.114244+00:00",
+      "source": "gorod_public",
+      "evidence": {
+        "catalogue_partner_id": 2741,
+        "catalogue_title": "Скидка до 50% на блюда и скидка до 30% на напитки в «Колбасофф»",
+        "data": {
+          "address": {
+            "details": "Россия, г. Москва, ул. Митинская, д. д. 29, 2 эт., ТЦ «Митино Плаза»",
+            "hasMap": true,
+            "metroStations": [
+              {
+                "id": 433,
+                "latitude": 55.845734,
+                "lines": [
+                  {
+                    "color": "#0078BE",
+                    "name": "Арбатско-Покровская"
+                  }
+                ],
+                "longitude": 37.362154,
+                "name": "Митино"
+              }
+            ],
+            "schedule": "ежедневно с 12.00 до 00.00"
+          },
+          "available": true,
+          "cashback": {
+            "currency": "bonuses",
+            "text": "+10%"
+          },
+          "countdown": "2026-12-30T23:59:59",
+          "couponEndAt": "2026-12-30T23:59:59",
+          "endAt": "2026-12-30T23:59:59",
+          "howToAsList": [
+            "Купите купон на сайте или в мобильном приложении ГОРОД.",
+            "Забронируйте столик по телефону, сообщите номер и код купона.",
+            "Предъявите распечатанный или электронный купон перед заказом."
+          ],
+          "id": 19659,
+          "message": {
+            "backgroundColor": "#F4F5FB",
+            "body": "Остальное можно бонусами",
+            "textColor": "#1D1D1B",
+            "title": "Платите от 40 ₽"
+          },
+          "name": "Скидка до 50% на блюда из меню кухни и скидка до 30% на копчения, закуски и на напитки в ресторанах «Колбасофф»",
+          "partner": {
+            "available": true,
+            "id": 2741,
+            "name": "Колбасофф",
+            "subtitle": "Кафе и рестораны"
+          },
+          "price": {
+            "currencies": [
+              "roubles",
+              "bonuses"
+            ],
+            "new": 200,
+            "old": null
+          },
+          "terms": "Срок действия купона &mdash; 30.12.2026.<br>\r\nАкция действует в ресторанах по адресам:<br>\r\nст. м. &laquo;Октябрьское Поле&raquo;, ул. Маршала Бирюзова, д. 32, эт. 3 (ТРЦ &laquo;Пятая Авеню&raquo;)<br>\r\nст. м. &laquo;Митино&raquo;, Митинская ул., д. 29, эт. 2 (ТЦ &laquo;Плаза&raquo;)<br>\r\n<strong>Внимание!</strong>&nbsp;Список напитков, на которые распространяется скидка, необходимо уточнить у администраторов.&nbsp;<br>\r\nОбслуживание компании от 4 человек считается оказанием услуги банкета (возможность оказания услуги и подробные условия уточняйте по телефону)<br>\r\nСкидка не распространяется на напитки&nbsp; бизнес-ланчи, детское меню, раздел меню &laquo;Мороженое и сорбеты&raquo;, стейки, шаурму, креветки, копченые свиные уши, заказы навынос и не суммируется с другими спецпредложениями компании.<br>\r\nКупон действует на одного человека. Если вы идете компанией, покупайте купон на каждого.<br>\r\nДля детей до 6 лет отдельный купон не требуется.<br>\r\nПо купонам обслуживаются компании до 7 человек.<br>\r\nВозможность посещения для компании от 8 человек согласуйте с администратором.<br>\r\nМожно купить неограниченное количество купонов.<br>\r\nКаждым купоном можно воспользоваться только один раз.<br>\r\nПеред покупкой купона уточните наличие свободных мест на интересующую дату.<br><br><a href=\"https://api.troika-gorod.ru/storage/spb/1/9/19659/skidka_50_novaja_301226.pdf\" target=\"_blank\">Смотреть полные правила акции</a><br><br>Нажимая «Купить», вы принимаете условия <a href=\"https://api.troika-gorod.ru/storage/cpb/34/Publichnaja_oferta_realizacii_Tovarov_i_Kuponov_smeshannaja_oplata_v.pdf\" target=\"_blank\">Оферты</a>"
+        },
+        "kind": "coupon",
+        "native": "coupon:19659",
+        "page_sha256": "de4f608daedd1d1d8ee34aa77cfd0953bb7b674d054e3ae2d898e6c4fa670845",
+        "url": "https://gorodtroika.ru/bonus-plus/coupons/19659"
+      }
+    },
+    {
+      "observed_at": "2026-09-30T11:14:43.606863+00:00",
+      "source": "gorod_public",
+      "evidence": {
+        "catalogue_partner_id": 2516,
+        "catalogue_title": "Скидка 1 000₽ на бронирование отеля",
+        "data": {
+          "address": {
+            "hasMap": false
+          },
+          "available": true,
+          "cashback": null,
+          "countdown": "2026-09-30T23:59:59",
+          "couponEndAt": "2026-09-30T23:59:59",
+          "endAt": "2026-09-30T23:59:59",
+          "howToAsList": [
+            "Получите купон.",
+            "Перейдите в раздел &laquo;Мои покупки&raquo; и откройте купон.",
+            "Перейдите на сайт по кнопке &laquo;Перейти на сайт&raquo; , выберите понравившийся отель и нажмите &laquo;Забронировать&raquo;.",
+            "Введите код с купона в поле &laquo;У меня есть промокод&raquo; и нажмите &laquo;Применить&raquo;."
+          ],
+          "id": 19669,
+          "message": null,
+          "name": "Скидка 1 000₽ на бронирование отеля от 10 000₽ в сервисе «Яндекс Путешествия»",
+          "partner": {
+            "available": true,
+            "id": 2516,
+            "name": "Яндекс Путешествия",
+            "subtitle": "Путешествия"
+          },
+          "price": {
+            "currencies": [],
+            "new": 0,
+            "old": null
+          },
+          "terms": "Срок действия купона &mdash; до 30.09.26<br>\r\nМаксимальная скидка по купону &ndash; 1000 ₽.<br>\r\nПредложение не суммируется&nbsp;с другими акциями.<br>\r\n&nbsp;<br><br><a href=\"https://api.troika-gorod.ru/storage/spb/1/9/19669/jandeks_puteshestvija_1000.pdf\" target=\"_blank\">Смотреть полные правила акции</a>"
+        },
+        "kind": "coupon",
+        "native": "coupon:19669",
+        "page_sha256": "878b24a34751bcb15571d97cb8c49026410e41affa07e8b6601132afc4728b1a",
+        "url": "https://gorodtroika.ru/bonus-plus/coupons/19669"
+      }
+    },
+    {
+      "observed_at": "2026-11-14T12:19:32.114244+00:00",
+      "source": "gorod_public",
+      "evidence": {
+        "catalogue_partner_id": 3556,
+        "catalogue_title": "Лазерная коррекция зрения от 26 400₽ в клинике «Зрение.РФ»",
+        "data": {
+          "address": {
+            "hasMap": false
+          },
+          "available": true,
+          "cashback": null,
+          "countdown": "2027-01-31T23:59:59",
+          "couponEndAt": "2027-01-31T23:59:59",
+          "endAt": "2027-01-31T23:59:59",
+          "howToAsList": [
+            "<p>Приобретите купон.&nbsp;</p>",
+            "Запишитесь в клинику по телефону +7 499 110 27 95 и сообщите код купона.",
+            "<p>Посетите клинику по предварительной записи по адресу: г. Москва, Украинский бульвар, д. 6.</p>"
+          ],
+          "id": 19726,
+          "message": null,
+          "name": "Лазерная коррекция зрения от 26 400₽ за 1 глаз в клинике «Зрение.РФ»",
+          "partner": {
+            "available": true,
+            "id": 3556,
+            "name": "Зрение.РФ",
+            "subtitle": "Красота и здоровье • Салоны и клиники"
+          },
+          "price": {
+            "currencies": [
+              "bonuses"
+            ],
+            "new": 6,
+            "old": null
+          },
+          "terms": "Срок действия купона &mdash; до 31.01.27<br>\r\nИмеются противопоказания. Необходима консультация специалиста. 18+<br>\r\nСтоимость услуг является ориентировочной.&nbsp;Анализы и диагностика оплачиваются отдельно. Все осмотры включены в стоимость услуги. Окончательная стоимость определяется индивидуально по результатам консультации и диагностики.<br><br><a href=\"https://api.troika-gorod.ru/storage/spb/1/9/19726/ITG_18_09_Pravila_akcii_Ekspert_zrenie.pdf\" target=\"_blank\">Смотреть полные правила акции</a>"
+        },
+        "kind": "coupon",
+        "native": "coupon:19726",
+        "page_sha256": "a16524b1f90e3405a2ba13305a425f897fb11aba53d7bd7a411128ed94a9a7af",
+        "url": "https://gorodtroika.ru/bonus-plus/coupons/19726"
+      }
+    },
+    {
+      "observed_at": "2026-11-11T12:50:05.440629+00:00",
+      "source": "gorod_public",
+      "evidence": {
+        "catalogue_partner_id": 1463,
+        "catalogue_title": "Скидка 500₽ при покупке от 6 000₽ на AliExpress",
+        "data": {
+          "address": {
+            "hasMap": false
+          },
+          "available": true,
+          "cashback": null,
+          "countdown": "2026-11-11T23:59:59",
+          "couponEndAt": "2026-11-11T23:59:59",
+          "endAt": "2026-11-11T23:59:59",
+          "howToAsList": [
+            "Получите купон.",
+            "Перейдите в раздел &laquo;Мои покупки&raquo; и откройте купон.",
+            "Перейдите на сайт по кнопке &laquo;Перейти на сайт&raquo; и соберите корзину.",
+            "Введите промокод в специальное поле при оформлении заказа и нажмите &laquo;Применить&raquo;."
+          ],
+          "id": 19912,
+          "message": null,
+          "name": "Скидка 500₽ при покупке от 6 000₽ на AliExpress",
+          "partner": {
+            "available": true,
+            "id": 1463,
+            "name": "AliExpress",
+            "subtitle": "Гипермаркеты"
+          },
+          "price": {
+            "currencies": [],
+            "new": 0,
+            "old": null
+          },
+          "terms": "Срок действия купона &ndash; 11.11.2026.<br><br><a href=\"https://api.troika-gorod.ru/storage/spb/1/9/19912/AliEkspres.pdf\" target=\"_blank\">Смотреть полные правила акции</a>"
+        },
+        "kind": "coupon",
+        "native": "coupon:19912",
+        "page_sha256": "f9163d86a1c4aa02c6da9b6d136744cc84feb20b3d61b1f61d9b731731af9ccc",
+        "url": "https://gorodtroika.ru/bonus-plus/coupons/19912"
+      }
+    },
+    {
+      "observed_at": "2026-11-14T12:19:32.114244+00:00",
+      "source": "gorod_public",
+      "evidence": {
+        "catalogue_regions": [
+          "Москва и Московская область",
+          "Челябинск и Челябинская область",
+          "Нижний Новгород и Нижегородская область",
+          "Казань и Республика Татарстан",
+          "Екатеринбург и Свердловская область",
+          "Новосибирск и Новосибирская область",
+          "Краснодар и Краснодарский край",
+          "Уфа и Республика Башкортостан",
+          "Самара и Самарская область",
+          "Санкт-Петербург и Ленинградская область",
+          "Пермь и Пермский край",
+          "Тула и Тульская область"
+        ],
+        "data": {
+          "earn": {
+            "bonusByLevel": [
+              {
+                "conditions": {
+                  "1": {
+                    "percent": 4.6
+                  },
+                  "2": {
+                    "percent": 1.8
+                  }
+                },
+                "level": {
+                  "experience": 0,
+                  "id": 1,
+                  "name": "Новичок подземки",
+                  "number": 1,
+                  "percent": 0
+                },
+                "percent": 4.6
+              },
+              {
+                "conditions": {
+                  "1": {
+                    "percent": 5.2
+                  },
+                  "2": {
+                    "percent": 2.1
+                  }
+                },
+                "level": {
+                  "experience": 250,
+                  "id": 2,
+                  "name": "Пассажир буднего дня",
+                  "number": 2,
+                  "percent": 13
+                },
+                "percent": 5.2
+              },
+              {
+                "conditions": {
+                  "1": {
+                    "percent": 5.9
+                  },
+                  "2": {
+                    "percent": 2.3
+                  }
+                },
+                "level": {
+                  "experience": 600,
+                  "id": 3,
+                  "name": "Уверенный пересадочник",
+                  "number": 3,
+                  "percent": 27
+                },
+                "percent": 5.9
+              },
+              {
+                "conditions": {
+                  "1": {
+                    "percent": 6.5
+                  },
+                  "2": {
+                    "percent": 2.6
+                  }
+                },
+                "level": {
+                  "experience": 1100,
+                  "id": 7,
+                  "name": "Знаток линии",
+                  "number": 4,
+                  "percent": 40
+                },
+                "percent": 6.5
+              },
+              {
+                "conditions": {
+                  "1": {
+                    "percent": 7.1
+                  },
+                  "2": {
+                    "percent": 2.8
+                  }
+                },
+                "level": {
+                  "experience": 2000,
+                  "id": 4,
+                  "name": "Ветеран час-пик",
+                  "number": 5,
+                  "percent": 53
+                },
+                "percent": 7.1
+              },
+              {
+                "conditions": {
+                  "1": {
+                    "percent": 7.7
+                  },
+                  "2": {
+                    "percent": 3.1
+                  }
+                },
+                "level": {
+                  "experience": 3600,
+                  "id": 5,
+                  "name": "Призрак Кольцевой",
+                  "number": 6,
+                  "percent": 67
+                },
+                "percent": 7.7
+              },
+              {
+                "conditions": {
+                  "1": {
+                    "percent": 8.3
+                  },
+                  "2": {
+                    "percent": 3.3
+                  }
+                },
+                "level": {
+                  "experience": 6600,
+                  "id": 6,
+                  "name": "Хранитель подземки",
+                  "number": 7,
+                  "percent": 80
+                },
+                "percent": 8.3
+              }
+            ],
+            "bonusConditions": [
+              {
+                "id": 1,
+                "name": "Оплаченный заказ "
+              },
+              {
+                "id": 2,
+                "name": "оплаченный заказ со скидкой"
+              }
+            ],
+            "bonusValueType": "percent",
+            "hold": {
+              "description": "Бонусы будут начислены в течение 47 рабочих дней с момента покупки, но обычно быстрее",
+              "value": "47 дней"
+            },
+            "rulesFile": {
+              "name": "Правила партнера",
+              "url": "https://info.gorodtroika.ru/storage/pb/3/2/3240/Amazing_Red.pdf"
+            }
+          },
+          "partner": {
+            "bubbles": [
+              {
+                "label": "Начисление: до 8.3%",
+                "type": "earn_bonuses"
+              }
+            ],
+            "categoriesAsText": "Одежда, обувь, аксессуары",
+            "howTo": {
+              "footnote": "Начисление: до 8.3%",
+              "gotoBtnLabel": "Получить бонусы",
+              "items": [
+                {
+                  "icon": "alert",
+                  "name": "Есть особые условия получения бонусов",
+                  "type": "danger"
+                },
+                {
+                  "icon": "arrow",
+                  "name": "Нажмите на кнопку «Получить бонусы», перейдите на сайт партнера",
+                  "type": "default"
+                },
+                {
+                  "icon": "basket",
+                  "name": "Оформите заказ на сайте партнера",
+                  "type": "default"
+                },
+                {
+                  "icon": "circle",
+                  "name": "Оплатите покупку и получите бонусы",
+                  "type": "default"
+                },
+                {
+                  "icon": "clock",
+                  "name": "Бонусы будут начислены в течение 40 дней",
+                  "type": "default"
+                }
+              ],
+              "openerBtn": {
+                "label": "Получить бонусы",
+                "type": "modal"
+              },
+              "openerBtnLabel": "Получить бонусы",
+              "title": "Как получить бонусы"
+            },
+            "id": 3240,
+            "name": "Amazing Red",
+            "presenceType": [
+              "online"
+            ],
+            "rulesFile": {
+              "name": "Подробные условия",
+              "url": "https://info.gorodtroika.ru/storage/pb/3/2/3240/Amazing_Red.pdf"
+            },
+            "specialConditions": "<p>1. Нажмите кнопку &laquo;Получить бонусы&raquo;.<br>\n2. Дождитесь перенаправления на сайт партнера.<br>\n3. Оформите заказ, наполнив корзину строго после перехода в интернет-магазин из ГОРОДА.</p>\n\n<p>Точный размер начислений зависит от вашего&nbsp;уровня&nbsp;в ГОРОДЕ на момент подтверждения покупки партнером.</p>\n"
+          },
+          "spend": null
+        },
+        "kind": "partner",
+        "native": "partner:3240",
+        "page_sha256": "d055a3045a23a09261222b4f61e2e5c76e53b6bc05d1cc1cc57bbf14325c10b2",
+        "url": "https://gorodtroika.ru/partners/3240"
+      }
+    }
+  ]
+}

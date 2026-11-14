@@ -3,6 +3,7 @@ from __future__ import annotations
 import json,re
 from urllib.parse import urlsplit
 from bs4 import BeautifulSoup
+from normalized import NUMERIC_TOKEN,number,literal_number
 from public_reward_projection import plain,one,make_record
 from expansion_common import compact,sha,identity,iso,check_period,exclusion,ExcludedOffer,reported,add_error,PROGRAMS,links
 
@@ -87,16 +88,85 @@ def practical_content(html):
 def period(text):
     months=('января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря')
     # The encountered labelled range shares its final year across both bounds.
-    text=re.sub(r'(Срок проведения акции\s*:\s*)(\d{1,2})\s+('
-                + '|'.join(months) + r')\s*–\s*(\d{1,2})\s+('
+    text=re.sub(r'((?:Срок проведения акции|Период участия в акции)\s*:\s*)(?:с\s+)?(\d{1,2})\s+('
+                + '|'.join(months) + r')\s*(?:–|по)\s*(\d{1,2})\s+('
                 + '|'.join(months) + r')\s+(\d{4})',
                 lambda m:m[1]+'с '+m[2]+' '+m[3]+' '+m[6]+' – '+m[4]+' '+m[5]+' '+m[6],
                 text,flags=re.I)
     text=re.sub(r'(\d{1,2})\s+('+ '|'.join(months) +r')\s+(\d{4})',lambda m:m[1].zfill(2)+'.'+str(months.index(m[2].lower())+1).zfill(2)+'.'+m[3],text,flags=re.I)
-    pairs=re.findall(r'(?:Общий срок проведения акции|Срок проведения акции|Сроки акции|Период проведения акции|условия акции в период|Акция действует)\s*:?\s*с\s*(\d{2}\.\d{2}\.\d{4})(?:\s+года?)?\s*(?:по|до|–|-)\s*(\d{2}\.\d{2}\.\d{4})',text,re.I)
+    pairs=re.findall(r'(?:Общий срок проведения акции|Срок проведения акции|Сроки акции|Период проведения акции|Период участия в акции|Период выполнения условий|условия акции в период|Акция действует)\s*:?\s*(?:[сc]\s*)?(\d{2}\.\d{2}\.\d{4})(?:\s*г(?:ода?)?\.?)?\s*(?:по|до|–|—|-)\s*(\d{2}\.\d{2}\.\d{4})',text,re.I)
     ends=re.findall(r'(?:акци\w*\s+действует\s+до|предложение\s+действует\s+до|Срок\s+действия\s+акции\s*:\s*до)\s*(\d{2}\.\d{2}\.\d{4})',text,re.I)
     if len(set(pairs))>1 or (pairs and ends and set(ends)!={pairs[0][1]}):raise ValueError('magnit_conflicting_period')
     return (iso(pairs[0][0]),iso(pairs[0][1])) if pairs else (None,iso(ends[0]) if len(set(ends))==1 else None)
+
+
+MAGNIT_POINTS='Magnit_bonus_not_cash'
+
+
+def reward_clause_scope(line):
+    scope={'source_clause':line}
+    stages=set(re.findall(r'\bза (первую|повторную) покупку\b',line))
+    if len(stages)==1:
+        scope['purchase_stage']={'первую':'first','повторную':'repeat'}[stages.pop()]
+    return scope
+
+
+def owned_reward_terms(title,body):
+    """Native reward lists own their rates; costs, caps and later steps do not."""
+    terms=[dict(kind='partner_privilege',fragment=title)];conditions=[]
+    headline=re.match(r'^(до\s+)?('+NUMERIC_TOKEN+r')\s*(%\s*бонусами|бонусов)\b',title,re.I)
+    tiers=[]
+    if 'Условия мультиподписки Яндекс Плюс и начисления бонусов:' in body:
+        for match in re.finditer(r'(?m)^(Для [^\n]+:)\n(('+NUMERIC_TOKEN+r') бонусов Магнит Плюс)(?=\n|$)',body):
+            tiers.append(dict(kind='earn_points',value=number(match[3]),unit='points',qualifier='exact',
+                reward_unit=MAGNIT_POINTS,path='/conditions',fragment=match[0],
+                scope={'audience':match[1],'source_clause':match[0]}))
+    header=body.split('\nУсловия начисления',1)[0]
+    listed=[]
+    if headline and re.search(r'бонус\w* на карту Магнит',header):
+        # Only the initial source-owned reward block precedes this heading.
+        # Its short lines inherit the explicitly named Magnit reward currency.
+        for line in header.splitlines()[1:]:
+            match=re.match(r'^(?:•\s*)?(до\s+)?('+NUMERIC_TOKEN+r')%\s+(.+)$',line)
+            nominal=re.match(r'^('+NUMERIC_TOKEN+r') бонусов (.+)$',line)
+            if match and literal_number(match[2]) is not None:
+                listed.append(dict(kind='earn_points',value=number(match[2]),unit='percent',
+                    qualifier='up_to' if match[1] else 'exact',reward_unit=MAGNIT_POINTS,
+                    path='/conditions',fragment=line,scope=reward_clause_scope(line)))
+            elif nominal and literal_number(nominal[1]) is not None:
+                listed.append(dict(kind='earn_points',value=number(nominal[1]),unit='points',qualifier='exact',
+                    reward_unit=MAGNIT_POINTS,path='/conditions',fragment=line,scope=reward_clause_scope(line)))
+    if tiers or listed:
+        terms.extend(tiers or listed)
+    elif headline and literal_number(headline[2]) is not None:
+        terms.append(dict(kind='earn_points',value=number(headline[2]),
+            unit='percent' if headline[3].startswith('%') else 'points',
+            qualifier='up_to' if headline[1] else 'exact',reward_unit=MAGNIT_POINTS,
+            fragment=title,scope={'source_clause':title}))
+    # A dated extra coupon is its own component, not an expiry of the bonus rate.
+    from partner_pages import MONTHS
+    from owned_offer_dates import calendar_date
+    months='|'.join(MONTHS)
+    extra=(r'(?m)^С (\d{1,2}) ('+months+r') по (\d{1,2}) ('+months+r') (\d{4}) '
+           r'действует скидка \+ ('+NUMERIC_TOKEN+r')% на ([^\n]+) по промокоду: ([A-Z0-9_-]+)$')
+    for match in re.finditer(extra,header):
+        start=calendar_date(match[1]+' '+match[2]+' '+match[5])
+        end=calendar_date(match[3]+' '+match[4]+' '+match[5])
+        if start<=end and literal_number(match[6]) is not None:
+            terms.append(dict(kind='discount',value=number(match[6]),unit='percent',qualifier='exact',
+                path='/conditions',fragment=match[0],standalone_offer=False,
+                scope={'additional_discount':True,'product':match[7],'promo_code':match[8],
+                       'component_validity':{'from':start,'until':end},'source_clause':match[0]}))
+    cap=re.search(r'(?m)^Не начислим кешбэк, если за месяц уже получили\n- ('+NUMERIC_TOKEN
+                  +r') бонусов за покупки на кассе\n- или ('+NUMERIC_TOKEN
+                  +r') бонусов за онлайн-заказы(?=\n|$)',body)
+    if cap:
+        for index,channel in ((1,'cashdesk'),(2,'online')):
+            conditions.append(dict(kind='benefit_cap',value=number(cap[index]),unit='points',qualifier='up_to',
+                basis_value='1',basis_unit='month',reward_unit=MAGNIT_POINTS,fragment=cap[0],
+                scope={'purchase_channel':channel}))
+    return terms,conditions
+
 
 def source_fields(e):
     identity(e,SOURCE)
@@ -105,15 +175,18 @@ def source_fields(e):
     body=practical_content(e['content'])
     if len(body)<35 or not e['steps']:raise ValueError('magnit_detail_terms_missing')
     start,end=period(body)
+    completion=body.splitlines()[0] if re.match(r'^Акция\s+завершена\s+досрочно\b',body,re.I) else None
     title=compact(e['title'])
     # Use the complete offer-specific conditions, without reclassifying the cost
     # of another subscription (e.g. 399 RUB/month) as a Magnit card fee or reward.
     conditions=body+'\n'+e['disclaimer']
     if e.get('rule_links'):conditions+='\nПравила предложения: '+'; '.join(e['rule_links'])
+    terms,condition_terms=owned_reward_terms(title,body)
     return dict(native=e['native'],program=PROGRAMS[SOURCE],partner=compact(e['partner']),title=title,benefit=title,
         conditions=conditions.strip(),activation='Войти в профиль Магнит Плюс.\n'+e['steps'].strip(),url=e['url'],
         category=compact(e.get('category')) or 'Партнёры',locator='public partners-detail store, content and steps',
-        terms=[dict(kind='partner_privilege',fragment=title)],valid_from=start,valid_until=end,
+        terms=terms,condition_terms=condition_terms,valid_from=start,valid_until=end,
+        source_status='finished' if completion else 'published',completion_evidence=completion,
         scope={'Magnit_loyalty_membership_required':True,'eligibility_not_verified':True},
         warnings=['partner_subscription_cost_not_Magnit_card_service_fee','bonuses_not_cashback_to_bank_card'])
 

@@ -3,12 +3,56 @@ from __future__ import annotations
 import json,math,re
 from urllib.parse import urlencode
 from bs4 import BeautifulSoup
-from normalized import number
+from normalized import number,normalize_rates,NUMERIC_TOKEN,literal_number
 from public_reward_projection import plain,make_record
 from expansion_common import compact,sha,identity,iso,check_period,exclusion,ExcludedOffer,reported,add_error,PROGRAMS,next_store,links
 
 SOURCE='gorod_public';HOST='https://gorodtroika.ru';ROOT=HOST+'/bonus-plus/coupons'
 CURRENCIES={'roubles':'рубли','bonuses':'бонусы «Город»','coins':'жетоны «Город»'}
+
+
+def coupon_terms(benefit):
+    """Use the coupon's own explicit discount, separate from its acquisition price."""
+    stages=set()
+    if re.search(r'\b(?:перв\w*|1[-‑–](?:й|е|я|ю))\s+(?:заказ\w*|бронировани\w*|покупк\w*)',benefit,re.I):
+        stages.add('first')
+    if re.search(r'\bповторн\w*\s+(?:заказ\w*|бронировани\w*|покупк\w*)',benefit,re.I):
+        stages.add('repeat')
+    scope={'purchase_stage':next(iter(stages))} if len(stages)==1 else {}
+    terms=[]
+    for rate in normalize_rates(benefit):
+        if rate['kind']!='discount':continue
+        term=dict(kind='discount',value=rate['value'],unit=rate['unit'],
+                  qualifier=rate['qualifier'],fragment=benefit,scope=scope)
+        if rate.get('min_value') is not None:term['value_min']=rate['min_value']
+        terms.append(term)
+    return terms or [dict(kind='partner_privilege',fragment=benefit)]
+
+
+def coupon_reward_terms(data,conditions,activation,cashback_line):
+    """A coupon's own rewards are distinct from its price and merchant discount."""
+    terms=[];cashback=data.get('cashback') or {}
+    rate=re.fullmatch(r'\+('+NUMERIC_TOKEN+r')%',plain(cashback.get('text','')))
+    if cashback.get('currency')=='bonuses' and rate and literal_number(rate[1]) is not None:
+        terms.append(dict(kind='earn_points',value=number(rate[1]),unit='percent',qualifier='exact',
+            reward_unit='Gorod_bonus_not_cash',path='/conditions',fragment=cashback_line,
+            standalone_offer=False,scope={'reward_program':PROGRAMS[SOURCE],
+                'occasion':'coupon_purchase','source_clause':cashback_line}))
+    heading='Порядок и сроки начисления бонусов по акции:\n'
+    if heading in conditions and 'программы лояльности ГОРОД' in activation:
+        # Complete positive award lines own both the grant and the trigger. The
+        # source currently repeats "second month"; do not silently repair it.
+        for line in conditions.split(heading,1)[1].splitlines():
+            if not line.startswith('- '):break
+            award=re.fullmatch(r'- ('+NUMERIC_TOKEN+r') бонусов будут начислены '
+                r'(в течени[еи] \d+ календарных дней) от даты ([^;.\n]+)[;.]',line)
+            if award and literal_number(award[1]) is not None:
+                terms.append(dict(kind='earn_points',value=number(award[1]),unit='points',qualifier='exact',
+                    reward_unit='Gorod_bonus_not_cash',path='/conditions',fragment=line,
+                    standalone_offer=False,scope={'reward_program':PROGRAMS[SOURCE],
+                        'occasion':award[3],'crediting_clause':award[2],'source_clause':line}))
+    return terms
+
 
 def slim_partner(d):
     # Select only anonymous offer fields, not optional session/favourite/contact state.
@@ -60,10 +104,11 @@ def source_fields(e):
         benefit=name
         if name.startswith('Пицца на выбор при заказе') and 'Подарочная пицца добавится в корзину.' in activation:
             benefit=name.replace('Пицца на выбор','Пицца на выбор в подарок',1)
+        terms=coupon_terms(benefit)+coupon_reward_terms(d,conditions,activation,extra.strip())
         return dict(native=native,program=PROGRAMS[SOURCE],partner=compact(p['name']),title=name,benefit=benefit,
             conditions=cost.strip()+extra+'\n'+dates_text+'\n'+conditions,activation=activation,url=url,
             category=compact(p.get('subtitle')) or 'Купоны',valid_until=end,locator='couponViewStore.couponData',
-            terms=[dict(kind='partner_privilege',fragment=benefit)],scope={'coupon_id':d['id'],'coupon_purchase_or_activation_not_performed':True},
+            terms=terms,scope={'coupon_id':d['id'],'coupon_purchase_or_activation_not_performed':True},
             warnings=['coupon_price_separate_from_discount','coins_are_tokens_not_roubles']+(['coupon_presentation_method_not_disclosed']if presentation_unknown else [])+(['different_sale_and_coupon_end_dates_preserved']if len(set(dates))>1 else []))
     if kind!='partner':raise ValueError('gorod_unreviewed_record_kind')
     p=d['partner'];earn=d['earn']
@@ -89,7 +134,12 @@ def source_fields(e):
     # A headline-only redemption cap is retained as such, not as a cash discount.
     spend=[b['label']for b in p.get('bubbles') or [] if b.get('type')=='spend_bonuses' and b.get('label')]
     for s in spend:
-        line='Оплата накопленными бонусами: '+s;lines.append(line);terms.append(dict(kind='redeem_points',fragment=line,reward_unit='Gorod_bonus_not_cash'))
+        line='Оплата накопленными бонусами: '+s;lines.append(line)
+        term=dict(kind='redeem_points',fragment=line,reward_unit='Gorod_bonus_not_cash')
+        bound=re.fullmatch(r'Списание:\s*до ('+NUMERIC_TOKEN+r')%',s)
+        if bound and literal_number(bound[1]) is not None:
+            term.update(value=number(bound[1]),unit='percent',qualifier='up_to')
+        terms.append(term)
     if not lines:raise ExcludedOffer('no_concrete_partner_benefit')
     activation='\n'.join(plain(x['name'])for x in (p.get('howTo')or{}).get('items',[])if x.get('name'))
     conditions=plain(p.get('specialConditions')or'')

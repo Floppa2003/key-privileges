@@ -2,7 +2,7 @@
 import hashlib, re
 from bs4 import BeautifulSoup
 from public_reward_projection import one, plain, make_record
-from normalized import number
+from normalized import number,NUMERIC_TOKEN,literal_number
 URL='https://manteracongress.ru/loyalty-program'
 NAME='Mantera Resort & Congress'
 QUESTIONS=(
@@ -67,6 +67,18 @@ def source_fields(e):
         rules.append(tier+': сумма покупок за год '+threshold+'; начисление '+earn+'%; общий лимит списания до '+spend+'%.')
     conditions='\n'.join([*rules,e['participation'],e['context'],faq_text(e['faq']),
         'Индивидуальная возможность списания бонусов в отеле не подтверждена: таблица содержит общие лимиты программы.'])
+    birthday=re.search(r'(?m)^(Ваш день рождения[^\n]+)\n'
+        r'(Бонусы начисляются автоматически[^\n]+)\n'
+        r'(Бонусы начисляются всем зарегистрированным участникам программы лояльности[^\n]+)\n'
+        r'(Подарок будет доступен[^\n]+)',e['context'])
+    if birthday and NAME in birthday[1]:
+        gift=re.search(r'В качестве праздничного комплимента мы дарим вам ('+NUMERIC_TOKEN+r') бонусов!',birthday[1])
+        if gift and literal_number(gift[1]) is not None:
+            terms.append(dict(kind='earn_points',value=number(gift[1]),unit='points',qualifier='exact',
+                reward_unit='Mantera_bonus_not_cash',path='/conditions',fragment=birthday[0],
+                scope={'reward_program':PROGRAM,'occasion':'birthday','eligibility_clause':birthday[3],
+                       'crediting_clause':birthday[2],'bonus_validity_clause':birthday[4],
+                       'source_clause':birthday[0]}))
     return dict(native='hotel:mantera-resort-congress',program=PROGRAM,partner=NAME,title=PROGRAM+' → '+NAME,
         benefit='Начисление за проживание по статусу: '+'; '.join(claims),conditions=conditions,activation=e['activation'],
         url=URL,category='Отели / бонусы',locator='hotel programme introduction; observed tier table; all public FAQ answers',

@@ -1,0 +1,416 @@
+{
+  "description": "Exact public source excerpts from the retained 2026-11-14 input snapshot; no generated wording or private source rows.",
+  "cases": [
+    {
+      "name": "face_fit_independent_first_visit_price",
+      "source_url": "https://moskvichmag.ru/programma-loyalnosti/",
+      "observed_at": "2026-11-14T12:19:32.114244+00:00",
+      "partner": "Face Fit",
+      "program": "Карта «Москвича»",
+      "public_clause": "Стоимость первого визита 4000₽ и скидка 15% на абонементы при демонстрации карты «Москвича»",
+      "expected": [
+        [
+          "discount",
+          "15",
+          null
+        ]
+      ]
+    },
+    {
+      "name": "native_tier_minima_308",
+      "source_url": "https://vamprivet.ru/promo/produkty-pitaniya/rybnye-delikatesy-ikra-i-moreprodukty-3/",
+      "observed_at": "2026-09-24T10:11:58.060505+00:00",
+      "partner": "Осетровая ферма",
+      "program": "Привет! / Мир / СБП",
+      "public_clause": "– Перед оплатой убедитесь, что вы предоставили своему банку согласие на получение денежных средств (входящие переводы) посредством СБП. Как это сделать, вы можете уточнить в вашем банке – Выбирайте рыбные деликатесы, икру или морепродукты на сайте – При оформлении заказа введите код купона VAMPRIVET и подтвердите заказ – При подтверждении заказа сообщите менеджеру, что хотите оплатить через СБП по ссылке на оплату – Оплатите заказ через СБП по ссылке, направленной менеджером на ваш e-mail или телефон, указанные вами при подтверждении заказа и получите кешбэк: 3% за оплату заказа на сумму до 19 999,99 ₽ 5% за оплату заказа на сумму от 20 000 ₽ до 49 999,99 ₽ 10% за оплату заказа на сумму от 50 000 ₽ – Кешбэк не начисляется при оплате курьеру или в точке продаж, на заказы с самовывозом, на покупку живой рыбы и подарочных сертификатов, а также если при оформлении заказа не был указан промокод VAMPRIVET – Кешбэк будет начислен на счёт в банке, с которого проводили оплату, сразу после покупки – Информацию об ограничениях использования электронных денежных средств (включая электронные кошельки и предоплаченные карты) для получения кешбэка смотрите в разделе « Частые вопросы » – Специальная скидка для покупателей розничных магазинов: при оплате по СБП в любом магазине «Осетровая ферма» вы можете получить скидку 3%. Для этого сообщите кассиру о желании оплатить покупку по СБП и назовите промокод ВАМПРИВЕТ до проведения оплаты – Скидка предоставляется на любую покупку, оплаченную СБП (без ограничения минимальной суммы покупки, без ограничения общей суммы скидки), за исключением покупки живой рыбы, подарочных сертификатов и товаров, продаваемых по промо-цене (со скидкой). На каждую покупку предоставляется только одна скидка (скидки по разным основаниям льготы не суммируются)",
+      "expected_minimum_links": [
+        [
+          "cashback",
+          "3",
+          []
+        ],
+        [
+          "cashback",
+          "5",
+          [
+            "20000"
+          ]
+        ],
+        [
+          "cashback",
+          "10",
+          [
+            "50000"
+          ]
+        ],
+        [
+          "discount",
+          "3",
+          []
+        ]
+      ]
+    },
+    {
+      "name": "native_tier_minima_311",
+      "source_url": "https://vamprivet.ru/promo/raznoe/proverennaya-zashchita-kotoroy-doveryayut-2/",
+      "observed_at": "2026-09-24T10:11:58.060505+00:00",
+      "partner": "PRO32",
+      "program": "Привет! / Мир / СБП",
+      "public_clause": "– Перед оплатой убедитесь, что вы предоставили своему банку согласие на получение денежных средств (входящие переводы) посредством СБП. Как это сделать, вы можете уточнить в вашем банке – Оплачивайте покупки антивирусов Pro32 через СБП на сайте PRO32 и получайте кешбэк до 15%: 5% кешбэк на заказы до 1 999,99 ₽ 7% кешбэк на заказы от 2 000 ₽ до 2 999,99 ₽ 10% кешбэк на заказы от 3 000 ₽ – Принять участие в акции могут только клиенты, ранее не совершавшие покупок на сайте PRO32 – Акция доступна для клиентов, у которых предложение размещено в личном кабинете участника программы лояльности на vamprivet.ru – Акция действует только для физических лиц – Информацию об ограничениях использования электронных денежных средств (включая электронные кошельки и предоплаченные карты) для получения кешбэка смотрите в разделе «Частые вопросы»",
+      "expected_minimum_links": [
+        [
+          "cashback",
+          "15",
+          []
+        ],
+        [
+          "cashback",
+          "5",
+          []
+        ],
+        [
+          "cashback",
+          "7",
+          [
+            "2000"
+          ]
+        ],
+        [
+          "cashback",
+          "10",
+          [
+            "3000"
+          ]
+        ]
+      ]
+    },
+    {
+      "name": "native_tier_minima_385",
+      "source_url": "https://vamprivet.ru/promo/krasota-i-zdorovye/vsye-dlya-vashey-krasoty-1/",
+      "observed_at": "2026-09-15T12:55:33.779848+00:00",
+      "partner": "ЛЭТУАЛЬ",
+      "program": "Привет! / Мир / СБП",
+      "public_clause": "– Зарегистрируйтесь в программе лояльности на vamprivet.ru или в приложении «Привет!» и нажмите на кнопку «Получить промокод» – Ваш уникальный промокод будет отображаться в Личном кабинете на vamprivet.ru и в приложении «Привет!» в разделе «Промокоды и подарки». Успейте получить его до 15 сентября 2026, а активировать до 30 сентября 2026 – Выберите товар на сайте магазина или в приложении «ЛЭТУАЛЬ» и введите промокод в специальном поле – Оплатите покупку картой «Мир» и получите по промокоду: – Скидку 15% при заказе от 3 000 рублей – Скидку 25% при заказе от 6 000 рублей – Скидку 35% при заказе от 8 000 рублей Важно – Использовать промокод можно только один раз в период действия акции – Скидка по промокоду предоставляется на один чек – Скидка по промокоду не предоставляется при покупке сертификатов eCARDS и пластиковых подарочных сертификатов нового образца – Скидка по промокоду не суммируется с другими промокодами – Количество и ассортимент товаров, участвующих в акции, ограничены, подробнее с условиями можно ознакомиться по ссылке",
+      "expected_minimum_links": [
+        [
+          "discount",
+          "15",
+          [
+            "3000"
+          ]
+        ],
+        [
+          "discount",
+          "25",
+          [
+            "6000"
+          ]
+        ],
+        [
+          "discount",
+          "35",
+          [
+            "8000"
+          ]
+        ]
+      ]
+    },
+    {
+      "name": "native_subscription_or_signature_2336",
+      "source_url": "https://www.aeroflot.ru/partners/ws/v.0.0.3/json/partner/get?id=503504&lang=ru",
+      "observed_at": "2026-11-14T12:55:35.623926+00:00",
+      "partner": "FRENCH KISS",
+      "program": "Аэрофлот Бонус",
+      "source_field": "/details/semantic_fields/conditions",
+      "public_clause": "– Необходимо предъявить оригинал карты и сообщить о намерении оформить премию до формирования чека на стоимость товаров/услуг. – Списание миль производится посредством прокатывания карты через специальные считывающие терминалы с подтверждением операции путем введения ПИН-кода. – При успешном завершении операции печатается два экземпляра чека – один с подписью участника программы, остается в FRENCH KISS, другой передается участнику Программы.",
+      "expected_fee_reference": false
+    },
+    {
+      "name": "native_subscription_or_signature_179",
+      "source_url": "https://marketplace.s7.ru/partners/offer/Premier_2",
+      "observed_at": "2026-11-14T12:19:32.114244+00:00",
+      "partner": "PREMIER",
+      "program": "S7 Priority",
+      "source_field": "/conditions",
+      "public_clause": "Далее стоимость подписки — 399 руб/мес.",
+      "expected_fee_reference": true
+    },
+    {
+      "name": "native_monetary_cap_heading_308",
+      "source_url": "https://vamprivet.ru/promo/produkty-pitaniya/rybnye-delikatesy-ikra-i-moreprodukty-3/",
+      "observed_at": "2026-09-24T10:11:58.060505+00:00",
+      "partner": "Осетровая ферма",
+      "program": "Привет! / Мир / СБП",
+      "source_field": "/conditions",
+      "public_clause": "Лимит по сумме начисления\nне более 5 000 ₽ за весь период акции на клиента и номер телефона",
+      "expected_monetary_cap": [
+        "benefit_cap",
+        "5000",
+        "RUB"
+      ],
+      "expected_cap_basis": [
+        "1",
+        "campaign"
+      ]
+    },
+    {
+      "name": "native_monetary_cap_heading_311",
+      "source_url": "https://vamprivet.ru/promo/raznoe/proverennaya-zashchita-kotoroy-doveryayut-2/",
+      "observed_at": "2026-09-24T10:11:58.060505+00:00",
+      "partner": "PRO32",
+      "program": "Привет! / Мир / СБП",
+      "source_field": "/conditions",
+      "public_clause": "Лимит по сумме начисления\nне более 600 ₽ за весь период акции на клиента и номер телефона",
+      "expected_monetary_cap": [
+        "benefit_cap",
+        "600",
+        "RUB"
+      ],
+      "expected_cap_basis": [
+        "1",
+        "campaign"
+      ]
+    },
+    {
+      "name": "native_monetary_cap_heading_808",
+      "source_url": "https://www.primbank.ru/d/tariffs-aeroflot-bonus",
+      "observed_at": "2026-11-14T12:19:32.114244+00:00",
+      "partner": "Банк Приморье",
+      "program": "Аэрофлот Бонус",
+      "source_field": "/conditions",
+      "public_clause": "Комиссия 1%, максимум 1 000 руб.",
+      "expected_monetary_cap": [
+        "maximum_amount_reference",
+        "1000",
+        "RUB"
+      ]
+    },
+    {
+      "name": "native_repeat_condition_scope_553",
+      "source_url": "https://medsi.ru/actions/aeroflot-bonus-v-klinikakh-medsi/",
+      "observed_at": "2026-11-14T12:19:32.114244+00:00",
+      "partner": "МЕДСИ",
+      "program": "Аэрофлот Бонус",
+      "source_field": "/benefit",
+      "public_clause": "Для использования миль программы необходимо заранее получить ПИН-код в Личном кабинете участника программы «Аэрофлот Бонус», предъявить карту участника или сообщить номер карты с последующим использованием ранее полученного ПИН-кода для подтверждения списания миль в кассе клиники",
+      "expected_condition_stage": null
+    },
+    {
+      "name": "native_repeat_condition_scope_344",
+      "source_url": "https://vamprivet.ru/promo/internet-tv-svyazy/svyaz-bez-granits/",
+      "observed_at": "2026-09-24T10:11:58.060505+00:00",
+      "partner": "СанСим",
+      "program": "Привет! / Мир / СБП",
+      "source_field": "/conditions",
+      "public_clause": "Участие в акции возможно один раз в течение всего срока акции. Повторное участие в акции не допускается",
+      "expected_condition_stage": null
+    },
+    {
+      "name": "native_repeat_condition_scope_1676",
+      "source_url": "https://ekp.spb.ru/api/portal/loyalty/partners",
+      "observed_at": "2026-11-14T09:26:59.224303+00:00",
+      "partner": "CITTA DARTE",
+      "program": "Единая карта петербуржца",
+      "source_field": "/conditions",
+      "public_clause": "При повторной и последующих покупках скидка по ЕКП суммируется с картой лояльности магазина, и не суммируется с другими скидками и акциями",
+      "expected_condition_stage": "repeat"
+    },
+    {
+      "name": "native_repeat_condition_scope_101",
+      "source_url": "https://moskvichmag.ru/programma-loyalnosti/",
+      "observed_at": "2026-11-14T12:19:32.114244+00:00",
+      "partner": "Airo",
+      "program": "Карта «Москвича»",
+      "source_field": "/benefit",
+      "public_clause": "Скидка 25% на первый заказ по промокоду MMAG и 10% на все последующие заказы по промокоду MMAG10",
+      "expected_condition_stage": "multiple_stages"
+    },
+    {
+      "name": "native_repeat_condition_scope_3503",
+      "source_url": "https://ekp.spb.ru/api/portal/loyalty/partners",
+      "observed_at": "2026-11-14T09:26:59.224303+00:00",
+      "partner": "FMART by flowwow",
+      "program": "Единая карта петербуржца",
+      "source_field": "/conditions",
+      "public_clause": "на первый или повторный онлайн-заказ в магазинах FMART by flowwow",
+      "expected_condition_stage": "multiple_stages"
+    },
+    {
+      "name": "native_exclusion_list_2221",
+      "source_url": "https://rzd-bonus.ru/partners/11533/",
+      "observed_at": "2026-09-16T18:36:17.903769+00:00",
+      "partner": "Издательство «МИФ»",
+      "program": "РЖД Бонус",
+      "source_field": "/benefit",
+      "public_clause": "Баллы не начисляются:\n • За оптовые заказы.\n • За заказы стоимостью свыше 10 000 руб.\n • За заказы, оформленные со скидкой 100%. ",
+      "expected_benefits_outside_exclusion_list": [],
+      "expected_exclusion_evidence": "Баллы не начисляются:\n • За оптовые заказы.\n • За заказы стоимостью свыше 10 000 руб.\n • За заказы, оформленные со скидкой 100%."
+    },
+    {
+      "name": "native_exclusion_list_2235",
+      "source_url": "https://www.aeroflot.ru/partners/ws/v.0.0.3/json/partner/get?id=29&lang=ru",
+      "observed_at": "2026-11-14T12:55:35.623926+00:00",
+      "partner": "Lotte Hotels & Resorts",
+      "program": "Аэрофлот Бонус",
+      "source_field": "/details/semantic_fields/conditions",
+      "public_clause": "– Владельцы Серебряных карт программы «Аэрофлот Бонус» получают скидку 5% на проживание.\n– Владельцы Золотых карт программы «Аэрофлот Бонус» получают скидку 10% на проживание.\n– Владельцы Платиновых карт программы «Аэрофлот Бонус» получают скидку 15% на проживание.\nМили не начисляются:\n– Участникам программы лояльности «Leaders Club», а также участникам глобальной программы Privilege, реализуемой компаниями гостиничного дивизиона группы Lotte (Privilege, Lotte Hotel&Resorts), выбравшим при заселении в Гостиницу начисление привилегий по этим программам.\n– Сотрудникам отеля.\n– Лицам, проживающим по ваучерам отеля\n– Участникам - представителям индустрии туризма, проживающим в отеле по специальным тарифам\n– Лицам, проживающим по групповым тарифам.",
+      "expected_benefits_outside_exclusion_list": [
+        [
+          "discount",
+          "5"
+        ],
+        [
+          "discount",
+          "10"
+        ],
+        [
+          "discount",
+          "15"
+        ]
+      ],
+      "expected_exclusion_evidence": "Мили не начисляются:\n– Участникам программы лояльности «Leaders Club», а также участникам глобальной программы Privilege, реализуемой компаниями гостиничного дивизиона группы Lotte (Privilege, Lotte Hotel&Resorts), выбравшим при заселении в Гостиницу начисление привилегий по этим программам.\n– Сотрудникам отеля.\n– Лицам, проживающим по ваучерам отеля\n– Участникам - представителям индустрии туризма, проживающим в отеле по специальным тарифам\n– Лицам, проживающим по групповым тарифам."
+    },
+    {
+      "name": "native_owned_monetary_cap_1091",
+      "source_url": "https://coralbonus.ru/klub-privilegii/nedvizhimost/aps-dsk/",
+      "observed_at": "2026-11-14T15:51:46.680280+00:00",
+      "partner": null,
+      "program": "CoralBonus — Клуб",
+      "source_field": "/conditions",
+      "public_clause": "Бонусы начисляются в размере 1% от стоимости заключенного договора строительных работ, но не более 50 000 рублей",
+      "expected_monetary_cap": [
+        "benefit_cap",
+        "50000",
+        "RUB"
+      ]
+    },
+    {
+      "name": "native_owned_monetary_cap_1017",
+      "source_url": "https://coralbonus.ru/klub-privilegii/avtomobili/sitidraiv/",
+      "observed_at": "2026-11-14T15:51:46.680280+00:00",
+      "partner": null,
+      "program": "CoralBonus — Клуб",
+      "source_field": "/conditions",
+      "public_clause": "Только для владельцев карт лояльности CoralBonus действует эксклюзивное предложение – скидка 100% на первые две поездки* от Ситидрайв!\nКак воспользоваться предложением?\nНажмите на кнопку «Получить промокод» на этой странице\nСкачайте и зарегистрируйтесь в приложении Ситидрайв\nЗайдите в раздел «Промокоды себе и другу»\nВведите полученный промокод\nПерейти на сайт партнёра\n*Не более 360 руб. на каждую поездку. При стоимости до 360 руб. поездка за 1 руб. Действует до 31.12.2026 г. при аренде по поминутному и Фикс тарифу.",
+      "expected_footnote_cap": [
+        "benefit_cap",
+        "360",
+        "RUB"
+      ],
+      "owner_clause": "Только для владельцев карт лояльности CoralBonus действует эксклюзивное предложение – скидка 100% на первые две поездки* от Ситидрайв!",
+      "footnote_clause": "*Не более 360 руб. на каждую поездку. При стоимости до 360 руб. поездка за 1 руб. Действует до 31.12.2026 г. при аренде по поминутному и Фикс тарифу.",
+      "expected_cap_basis": [
+        "1",
+        "ride"
+      ]
+    },
+    {
+      "name": "native_monetary_cap_basis_309",
+      "source_url": "https://vamprivet.ru/promo/dlya-doma-i-sada/kukhnya-mechty-s-keshbekom-10/",
+      "observed_at": "2026-09-24T10:11:58.060505+00:00",
+      "partner": "Истинный дух (True Spirit)",
+      "program": "Привет! / Мир / СБП",
+      "source_field": "/conditions",
+      "public_clause": "Лимит по сумме начисления\nне более 200 000 ₽ за каждую оплату",
+      "expected_monetary_cap": [
+        "benefit_cap",
+        "200000",
+        "RUB"
+      ],
+      "expected_cap_basis": [
+        "1",
+        "payment"
+      ]
+    },
+    {
+      "name": "native_monetary_cap_basis_310",
+      "source_url": "https://vamprivet.ru/promo/transport/ekspress-v-aeroport-s-vygodoy-i-komfortom-1/",
+      "observed_at": "2026-09-24T10:11:58.060505+00:00",
+      "partner": "АЭРОЭКСПРЕСC",
+      "program": "Привет! / Мир / СБП",
+      "source_field": "/conditions",
+      "public_clause": "Лимит по сумме начисления\nне более 1 500 ₽ за месяц на клиента и номер телефона",
+      "expected_monetary_cap": [
+        "benefit_cap",
+        "1500",
+        "RUB"
+      ],
+      "expected_cap_basis": [
+        "1",
+        "month"
+      ]
+    },
+    {
+      "name": "native_monetary_cap_basis_405",
+      "source_url": "https://vamprivet.ru/promo/puteshestviya-i-otdyh/broniruyte-s-umom-otdykhayte-s-udovolstviem/",
+      "observed_at": "2026-09-24T10:11:58.060505+00:00",
+      "partner": "101HOTELS.COM",
+      "program": "Привет! / Мир / СБП",
+      "source_field": "/conditions",
+      "public_clause": "Лимит по сумме начисления\nне более 10000 ₽ за одно бронирование",
+      "expected_monetary_cap": [
+        "benefit_cap",
+        "10000",
+        "RUB"
+      ],
+      "expected_cap_basis": [
+        "1",
+        "booking"
+      ]
+    },
+    {
+      "name": "native_monetary_cap_basis_477",
+      "source_url": "https://vamprivet.ru/promo/mir-supreme/premialnye-poezdki-s-vygodoy-4/",
+      "observed_at": "2026-09-24T10:11:58.060505+00:00",
+      "partner": "ULTIMA Яндекс Go",
+      "program": "Привет! / Мир / СБП",
+      "source_field": "/conditions",
+      "public_clause": "Лимит по сумме начисления\nне более 500 ₽ за одну поездку Указанное ограничение применяется независимо от формы предоставления кешбэка",
+      "expected_monetary_cap": [
+        "benefit_cap",
+        "500",
+        "RUB"
+      ],
+      "expected_cap_basis": [
+        "1",
+        "ride"
+      ]
+    },
+    {
+      "name": "native_unowned_cap_suffix_350",
+      "source_url": "https://vamprivet.ru/promo/produkty-pitaniya/zakaz-tovarov-v-globus-s-vygodoy-2/",
+      "observed_at": "2026-09-24T10:11:58.060505+00:00",
+      "partner": "«ГЛОБУС»",
+      "program": "Привет! / Мир / СБП",
+      "source_field": "/conditions",
+      "public_clause": "Получите скидку 10% на два заказа. Максимальный размер скидки — 1 000 ₽ Важно – Промокод не действует на покупку электроники, бытовой техники, акционных товаров.",
+      "expected_monetary_cap": [
+        "benefit_cap",
+        "1000",
+        "RUB"
+      ],
+      "expected_cap_basis": [
+        null,
+        null
+      ]
+    },
+    {
+      "name": "native_unowned_cap_suffix_401",
+      "source_url": "https://vamprivet.ru/promo/puteshestviya-i-otdyh/planiruyte-puteshestviya-proshche-i-udobnee-s-otello-2/",
+      "observed_at": "2026-09-24T10:11:58.060505+00:00",
+      "partner": "Отелло",
+      "program": "Привет! / Мир / СБП",
+      "source_field": "/conditions",
+      "public_clause": "Промокод даёт скидку 22%, но не более 2 000 ₽ – Действует только на первое бронирование для новых клиентов в сервисе Отелло – Промокод не действует при способе оплаты «Оплата на месте» – На один чек можно применить только один промокод",
+      "expected_monetary_cap": [
+        "benefit_cap",
+        "2000",
+        "RUB"
+      ],
+      "expected_cap_basis": [
+        null,
+        null
+      ]
+    }
+  ]
+}

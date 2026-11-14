@@ -1,0 +1,63 @@
+[
+  {
+    "source_url": "https://vamprivet.ru/promo/transport/karshering-dlya-vashikh-dostizheniy/",
+    "text": "Регистрируйтесь в мобильном приложении «Делимобиль» ( AppStore , Google Play , RuStore ), указав промокод в специальном поле и получите 2 000 приветственных бонусов",
+    "value": "2000",
+    "unit": "points",
+    "qualifier": "unspecified"
+  },
+  {
+    "source_url": "https://www.primbank.ru/d/tariffs-aeroflot-bonus",
+    "text": "500 приветственных миль.",
+    "value": "500",
+    "unit": "miles",
+    "qualifier": "exact"
+  },
+  {
+    "source_url": "https://rzd-bonus.ru/promo/darim-3800-ballov-rzhd-bonus-po-kreditnoy-karte-alfa-banka_april/",
+    "text": "Получите 3800 премиальных баллов на счёт «РЖД Бонус».",
+    "value": "3800",
+    "unit": "points",
+    "qualifier": "unspecified"
+  },
+  {
+    "source_url": "https://ekp.spb.ru/api/portal/loyalty/partners",
+    "text": "Предъявителям ЕКП (женщинам старше 55 лет и мужчинам старше 60 лет) и ЕКП \"Серебряный возраст\" в подарок 1 500 бонусов по программе лояльности \"#НаЗдоровье\".",
+    "value": "1500",
+    "unit": "points",
+    "qualifier": "unspecified"
+  },
+  {
+    "source_url": "https://t.me/mybspb/1487",
+    "text": "Оформите потребительский кредит или рефинансирование до 31 августа и соберите до 12 000 бонусов ЯРКО (1 бонус = 1 рубль). Бонусами можно компенсировать свои покупки по карте!",
+    "value": "12000",
+    "unit": "points",
+    "qualifier": "up_to"
+  },
+  {
+    "source_url": "https://coralbonus.ru/promo/rixos-hotels-turkiye/",
+    "text": "Специально для незабываемого отдыха в отелях Rixos Hotels, мы дарим\nдо 25 000 дополнительных бонусов\nна ваш счёт!",
+    "value": "25000",
+    "unit": "points",
+    "qualifier": "up_to"
+  },
+  {
+    "source_url": "https://coralbonus.ru/promo/sherwood-2026/",
+    "text": "Специально для незабываемого отдыха в отелях Sherwood, мы дарим\n4 000 дополнительных бонусов\nна ваш счёт!",
+    "value": "4000",
+    "unit": "points",
+    "qualifier": "unspecified"
+  },
+  {
+    "source_url": "https://coralbonus.ru/promo/papillon-2026/",
+    "text": "Для Вашего отдыха в отелях сети Papillon мы дарим\n8 000\nдополнительных бонусов! Они уже на Вашем счёте!",
+    "value": "8000",
+    "unit": "points",
+    "qualifier": "unspecified"
+  },
+  {
+    "source_url": "https://coralbonus.ru/klub-privilegii/nedvizhimost/aps-dsk/",
+    "text": "Срок действия бонусов – 18 месяцев с момента начисления\n1 бонус = 1 рубль",
+    "value": null
+  }
+]

@@ -192,7 +192,8 @@ def source_fields(e):
             benefit=benefit,conditions=body,activation=e['registration'],url=ROOT,category='Москва / универмаг / привилегии',
             kind='tier_benefit' if claims else 'source_observation',link_kind='page_block',locator='loyality-terms; '+tier,
             scope={'member_tier':tier,'location':'Универмаг Цветной, Москва'},
-            terms=[dict(kind='partner_privilege',fragment=c) for c in claims])
+            terms=terms+[dict(kind='partner_privilege',fragment=c) for c in claims
+                         if not any(t['fragment']==c for t in terms)])
     doc=e['document'];cells=e['row']['cells'];floor=e['row']['floor'];count=len(names)
     if e['url']!='https://tsvetnoy.com/pdf/'+doc['key'] or len(cells)!=count+3:raise ValueError('tsvetnoy_brand_identity')
     native='brand:'+floor+':'+cells[0]

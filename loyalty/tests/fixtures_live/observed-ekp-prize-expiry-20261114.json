@@ -1,0 +1,733 @@
+{
+  "provenance": "Unchanged complete public native EKP API partner objects captured on 2026-11-14; no invented wording, account content or private source rows. The separate-acquisition controls preserve their literal missing year.",
+  "sole_prize": [
+    {
+      "row": {
+        "active": true,
+        "categories": [
+          {
+            "categoryId": 25,
+            "categoryName": "Карта \"МИР\""
+          }
+        ],
+        "description_authorized": false,
+        "discountScheme": "<p>Обменяйте 50 Приветов на приз: промокод на час игры в боулинг на одной дорожке в гостиничном комплексе «Малые Карелы». Промокод сохранится в <a href=\"https://vamprivet.ru/personal/non-monetary-prizes/\">личном кабинете</a></p>\n<p><strong>Как </strong><strong>использовать </strong><strong>промокод<br/></strong>1. Забронируйте игру в боулинг по номеру 8 (8182) 46-24-72 или на странице комплекса <a href=\"https://vk.com/malyekarely\">ВКонтакте</a> и сообщите промокод<br/>2. Перед получением услуги предъявите промокод администратору развлекательного центра туркомплекса «Малые Карелы» </p>\n<p>Промокод действует до 30 ноября 2026 включительно </p>\n<p><strong>Важно<br/></strong>— Получить и использовать промокод можно только один раз<br/>— Приз нельзя обменять на деньги</p>",
+        "id": "3434",
+        "loyaltyDescription": "на одной дорожке в комплексе «Малые Карелы»",
+        "name": "Гостиничный комплекс «Малые Карелы»",
+        "text": "Приморский р-н, д. Малые Карелы"
+      },
+      "observed_at": "2026-11-14T09:26:59.224303+00:00",
+      "request": {
+        "filters": {
+          "categories": [],
+          "name": "",
+          "qrDiscount": false,
+          "region": "98"
+        },
+        "pagination": {
+          "limit": 120,
+          "offset": 840
+        }
+      },
+      "response_sha": "cb0db62ee00d0d3602a6657ee4bd4e95e5a63c64900194d9e7a4421dcb02eb76",
+      "observed_total": 1044,
+      "completed_at": "2026-11-14T09:27:31.023Z"
+    },
+    {
+      "row": {
+        "active": true,
+        "categories": [
+          {
+            "categoryId": 25,
+            "categoryName": "Карта \"МИР\""
+          }
+        ],
+        "description_authorized": false,
+        "discountScheme": "<p>Обменяйте 50 Приветов на приз: промокод на бесплатный билет на двоих в музей «За лесами, за горами». Промокод сохранится в <a href=\"https://vamprivet.ru/personal/non-monetary-prizes/\">личном кабинете</a> </p>\n<p><strong>Как использовать  промокод<br/></strong>1. Запишитесь на посещение музея «За лесами, за горами» по номеру <a>+7 921 363-83-05</a> и сообщите промокод<br/>2. В день посещения покажите промокод на кассе музея </p>\n<p>Промокод действует до 31 декабря 2026 включительно </p>\n<p><strong>Важно<br/></strong>— По промокоду можно получить только входной билет, без экскурсии<br/>— Получить и использовать промокод можно только один раз</p>",
+        "id": "3416",
+        "loyaltyDescription": "в музей «За лесами, за горами»",
+        "name": "Музей русской сказки «За лесами, за горами»",
+        "text": "Санкт-Петербург"
+      },
+      "observed_at": "2026-11-14T09:26:59.224303+00:00",
+      "request": {
+        "filters": {
+          "categories": [],
+          "name": "",
+          "qrDiscount": false,
+          "region": "98"
+        },
+        "pagination": {
+          "limit": 120,
+          "offset": 840
+        }
+      },
+      "response_sha": "cb0db62ee00d0d3602a6657ee4bd4e95e5a63c64900194d9e7a4421dcb02eb76",
+      "observed_total": 1044,
+      "completed_at": "2026-11-14T09:27:31.023Z"
+    },
+    {
+      "row": {
+        "active": true,
+        "categories": [
+          {
+            "categoryId": 25,
+            "categoryName": "Карта \"МИР\""
+          }
+        ],
+        "description_authorized": false,
+        "discountScheme": "<p>Обменяйте 50 Приветов на приз: промокод на скидку 15% на оплату бронирования проживания в спа-отеле «Золотая Долина». Промокод сохранится в <a href=\"https://vamprivet.ru/personal/non-monetary-prizes/\">личном кабинете </a></p>\n<p><strong>Как </strong><strong>использовать</strong><strong> промокод<br/></strong>1. Перейдите на сайт <a href=\"http://zoldol.ru\">zoldol.ru</a> <br/>2. При бронировании номера введите промокод в соответствующее поле <br/>3. Оплатите бронирование со скидкой 15% </p>\n<p>Промокод действует до 30 ноября 2026 включительно</p>\n<p><strong>Важно<br/></strong>— Промокод не действует на бронирование на период новогодних праздников и не суммируется с другими скидками и специальными предложениями<br/>— Получить и использовать промокод можно только один раз</p>",
+        "id": "3419",
+        "loyaltyDescription": "на оплату бронирования проживания в отеле «Золотая Долина»",
+        "name": "Спа-отель «Золотая Долина»",
+        "text": "Ленинградская область"
+      },
+      "observed_at": "2026-11-14T09:26:59.224303+00:00",
+      "request": {
+        "filters": {
+          "categories": [],
+          "name": "",
+          "qrDiscount": false,
+          "region": "98"
+        },
+        "pagination": {
+          "limit": 120,
+          "offset": 840
+        }
+      },
+      "response_sha": "cb0db62ee00d0d3602a6657ee4bd4e95e5a63c64900194d9e7a4421dcb02eb76",
+      "observed_total": 1044,
+      "completed_at": "2026-11-14T09:27:31.023Z"
+    },
+    {
+      "row": {
+        "active": true,
+        "categories": [
+          {
+            "categoryId": 25,
+            "categoryName": "Карта \"МИР\""
+          }
+        ],
+        "description_authorized": false,
+        "discountScheme": "<p>Обменяйте 150 Приветов на приз: промокод на «Важский» пряник со вкусом «козули» при оплате от 500 ₽ в магазине «КООП-Маркет-ОКОЛО». Промокод сохранится в <a href=\"https://vamprivet.ru/personal/non-monetary-prizes/\">личном кабинете</a> </p>\n<p><strong>Как использовать промокод<br/></strong>1. Посетите магазин ««КООП-Маркет-ОКОЛО» по адресу г. Архангельск, ул. Поморская, д. 2<br/>2. Совершите любую покупку на сумму от 500 ₽ (покупки в вендинговом аппарате кофе не учитываются) и покажите промокод на кассе <br/>3. Получите «Важский» пряник со вкусом «козули» (140 гр.) </p>\n<p>Промокод действует до 30 декабря 2026 включительно </p>\n<p><strong>Важно<br/></strong>— Получить и использовать промокод можно только один раз <br/>— Приз нельзя обменять на деньги<br/>— Изображение на странице носит иллюстративный характер и не является фотографией приза</p>",
+        "id": "3421",
+        "loyaltyDescription": "со вкусом «козули» при оплате от 500 ₽ в магазине «КООП-Маркет-ОКОЛО»",
+        "name": "Магазин «КООП-Маркет-ОКОЛО»",
+        "text": "Архангельск"
+      },
+      "observed_at": "2026-11-14T09:26:59.224303+00:00",
+      "request": {
+        "filters": {
+          "categories": [],
+          "name": "",
+          "qrDiscount": false,
+          "region": "98"
+        },
+        "pagination": {
+          "limit": 120,
+          "offset": 840
+        }
+      },
+      "response_sha": "cb0db62ee00d0d3602a6657ee4bd4e95e5a63c64900194d9e7a4421dcb02eb76",
+      "observed_total": 1044,
+      "completed_at": "2026-11-14T09:27:31.023Z"
+    },
+    {
+      "row": {
+        "active": true,
+        "categories": [
+          {
+            "categoryId": 25,
+            "categoryName": "Карта \"МИР\""
+          }
+        ],
+        "description_authorized": false,
+        "discountScheme": "<p>Обменяйте 20 Приветов на приз: промокод на скидку 10% на проживание в отеле «Двина». Промокод сохранится в <a href=\"https://vamprivet.ru/personal/non-monetary-prizes/\">личном кабинете</a> </p>\n<p><strong>Как </strong><strong>использовать</strong><strong> промокод<br/></strong>При заселении покажите промокод на ресепшене отеля «Двина» по адресу г. Архангельск, Троицкий проспект, д. 52 </p>\n<p>Промокод действует до 30 ноября 2026 включительно </p>\n<p><strong>Важно<br/></strong>Получить и использовать промокод можно только один раз</p>",
+        "id": "3420",
+        "loyaltyDescription": "на проживание в отеле «Двина»",
+        "name": "Отель «Двина»",
+        "text": "Архангельск"
+      },
+      "observed_at": "2026-11-14T09:26:59.224303+00:00",
+      "request": {
+        "filters": {
+          "categories": [],
+          "name": "",
+          "qrDiscount": false,
+          "region": "98"
+        },
+        "pagination": {
+          "limit": 120,
+          "offset": 840
+        }
+      },
+      "response_sha": "cb0db62ee00d0d3602a6657ee4bd4e95e5a63c64900194d9e7a4421dcb02eb76",
+      "observed_total": 1044,
+      "completed_at": "2026-11-14T09:27:31.023Z"
+    },
+    {
+      "row": {
+        "active": true,
+        "categories": [
+          {
+            "categoryId": 25,
+            "categoryName": "Карта \"МИР\""
+          }
+        ],
+        "description_authorized": false,
+        "discountScheme": "<p>Обменяйте 50 Приветов на приз: промокод на бесплатную обзорную экскурсию по Финно-угорскому этнопарку на одного человека. Промокод сохранится в <a href=\"https://vamprivet.ru/personal/non-monetary-prizes/\">личном кабинете</a> </p>\n<p><strong>Как </strong><strong>использовать</strong><strong> промокод<br/></strong>1. Посетите Финно-угорский этнокультурный парк<strong> </strong>по адресу Республика Коми, Сыктывдинский р-н, с. Ыб, м. Сёрд, д. 19/1<br/>2. Покажите промокод на стойке приёма гостей парка</p>\n<p>Промокод действует до 31 декабря 2026 включительно </p>\n<p><strong>Важно<br/></strong>— Рекомендуется заранее забронировать посещение по номеру <a>8 800 201-03-96</a> или написать в <a href=\"https://vk.com/ethnopark\">сообщество ВКонтакте</a><br/>— Получить и использовать промокод можно только один раз</p>",
+        "id": "3432",
+        "loyaltyDescription": "по Финно-угорскому этнопарку на одного человека",
+        "name": "Финно-угорский этнопарк",
+        "text": "Республика Коми"
+      },
+      "observed_at": "2026-11-14T09:26:59.224303+00:00",
+      "request": {
+        "filters": {
+          "categories": [],
+          "name": "",
+          "qrDiscount": false,
+          "region": "98"
+        },
+        "pagination": {
+          "limit": 120,
+          "offset": 840
+        }
+      },
+      "response_sha": "cb0db62ee00d0d3602a6657ee4bd4e95e5a63c64900194d9e7a4421dcb02eb76",
+      "observed_total": 1044,
+      "completed_at": "2026-11-14T09:27:31.023Z"
+    },
+    {
+      "row": {
+        "active": true,
+        "categories": [
+          {
+            "categoryId": 25,
+            "categoryName": "Карта \"МИР\""
+          }
+        ],
+        "description_authorized": false,
+        "discountScheme": "<p>Обменяйте 150 Приветов на приз: промокод на книгу Александра Чежина «Партизаны Сортавальского района» в Сувенирных лавках парка «Бастiонъ». Промокод сохранится в <a href=\"https://vamprivet.ru/personal/non-monetary-prizes/\">личном кабинете</a> </p>\n<p><strong>Как использовать промокод<br/></strong>1. Посетите Исторический парк «Бастiонъ» по адресу Республика Карелия, г. Сортавала, ул. Приозерная, д.5<br/>2. Покажите промокод продавцу сувенирной лавки парка <br/>3. Получите книгу Александра Чежина «Партизаны Сортавальского района» </p>\n<p>Промокод действует до 30 ноября 2026 включительно </p>\n<p><strong>Важно<br/></strong>— Получить и использовать промокод можно только один раз<br/>— Приз нельзя обменять на деньги</p>",
+        "id": "3433",
+        "loyaltyDescription": "Александра Чежина «Партизаны Сортавальского района»",
+        "name": "Сувенирные лавки Исторического парка «Бастiонъ»",
+        "text": "Республика Карелия, г. Сортавала"
+      },
+      "observed_at": "2026-11-14T09:26:59.224303+00:00",
+      "request": {
+        "filters": {
+          "categories": [],
+          "name": "",
+          "qrDiscount": false,
+          "region": "98"
+        },
+        "pagination": {
+          "limit": 120,
+          "offset": 840
+        }
+      },
+      "response_sha": "cb0db62ee00d0d3602a6657ee4bd4e95e5a63c64900194d9e7a4421dcb02eb76",
+      "observed_total": 1044,
+      "completed_at": "2026-11-14T09:27:31.023Z"
+    },
+    {
+      "row": {
+        "active": true,
+        "categories": [
+          {
+            "categoryId": 25,
+            "categoryName": "Карта \"МИР\""
+          }
+        ],
+        "description_authorized": false,
+        "discountScheme": "<p>Обменяйте 50 Приветов на приз: промокод на билет за 1 ₽ на дневную экскурсионную прогулку от «Теплоход СПб». Промокод сохранится в <a href=\"https://vamprivet.ru/personal/non-monetary-prizes/\">личном кабинете</a> </p>\n<p><strong>Как </strong><strong>использовать</strong><strong> промокод<br/></strong>1. Перейдите на сайт <a href=\"https://porekamkanalam.ru/\">porekamkanalam.ru</a><br/>2. Выберите дневную прогулку на теплоходе <br/>3. Нажмите «Купить билет» и выберите 1 билет по тарифу «Основной» <br/>4. Введите промокод и оплатите билет за 1 ₽ </p>\n<p>Промокод действует до 4 ноября 2026 включительно </p>\n<p><strong>Важно<br/></strong>— Скидка действует только на прогулки на теплоходе по тарифу «Основной» при оплате билета на сайте<br/>— Скидка не суммируется с другими специальными предложениями<br/>— Получить и использовать промокод можно только один раз</p>",
+        "id": "3435",
+        "loyaltyDescription": "на дневную экскурсионную прогулку от «Теплоход СПб»",
+        "name": "Судоходная компания «Теплоход СПб»",
+        "text": "Санкт-Петербург"
+      },
+      "observed_at": "2026-10-26T14:16:52.760301+00:00",
+      "request": {
+        "filters": {
+          "categories": [],
+          "name": "",
+          "qrDiscount": false,
+          "region": "98"
+        },
+        "pagination": {
+          "limit": 120,
+          "offset": 840
+        }
+      },
+      "response_sha": "6f1e2e8612bf051f57161ca81ac1a0e34b849ded310fdee3e64c6a93c721a353",
+      "observed_total": 1055,
+      "completed_at": "2026-10-26T14:17:18.809Z"
+    },
+    {
+      "row": {
+        "active": true,
+        "categories": [
+          {
+            "categoryId": 25,
+            "categoryName": "Карта \"МИР\""
+          }
+        ],
+        "description_authorized": false,
+        "discountScheme": "<p>Обменяйте 20 Приветов на приз: промокод на cкидку 20% при оплате в рестобаре «Муха». Промокод сохранится в <a href=\"https://vamprivet.ru/personal/non-monetary-prizes/\">личном кабинете</a></p>\n<p><strong>Как </strong><strong>использовать</strong><strong> промокод<br/></strong>1. Посетите рестобар «Муха» по адресу Республика Карелия, г. Петрозаводск, пр-т Ленина, д. 15<br/>2. При заказе покажите промокод официанту или администратору зала</p>\n<p>Промокод действует до 31 декабря 2026 включительно</p>\n<p><strong>Важно<br/></strong>Получить и использовать промокод можно только один раз</p>",
+        "id": "3413",
+        "loyaltyDescription": "при оплате в рестобаре «Муха»",
+        "name": "Рестобар Муха",
+        "text": "Петрозаводск"
+      },
+      "observed_at": "2026-11-14T09:26:59.224303+00:00",
+      "request": {
+        "filters": {
+          "categories": [],
+          "name": "",
+          "qrDiscount": false,
+          "region": "98"
+        },
+        "pagination": {
+          "limit": 120,
+          "offset": 840
+        }
+      },
+      "response_sha": "cb0db62ee00d0d3602a6657ee4bd4e95e5a63c64900194d9e7a4421dcb02eb76",
+      "observed_total": 1044,
+      "completed_at": "2026-11-14T09:27:31.023Z"
+    },
+    {
+      "row": {
+        "active": true,
+        "categories": [
+          {
+            "categoryId": 25,
+            "categoryName": "Карта \"МИР\""
+          }
+        ],
+        "description_authorized": false,
+        "discountScheme": "<p>Обменяйте 50 Приветов на приз: промокод на бесплатный билет в один из филиалов Вологодского музея-заповедника. Промокод сохранится в <a href=\"https://vamprivet.ru/personal/non-monetary-prizes/\">личном кабинете</a> </p>\n<p><strong>Как </strong><strong>использовать</strong><strong> промокод<br/></strong>Покажите промокод на кассе одного из трёх филиалов Вологодского музея-заповедника:<br/>— Выставочный комплекс «Вологда на рубеже XIX – XX веков»<br/>— Дом-музей Петра I<br/>— Музей «Вологодская ссылка»</p>\n<p>Промокод действует до 30 ноября 2026 включительно </p>\n<p><strong>Важно<br/></strong>Получить и использовать промокод можно только один раз</p>",
+        "id": "3436",
+        "loyaltyDescription": "в один из филиалов Вологодского музея-заповедника",
+        "name": "Вологодский музей-заповедник",
+        "text": "Вологда"
+      },
+      "observed_at": "2026-11-14T09:26:59.224303+00:00",
+      "request": {
+        "filters": {
+          "categories": [],
+          "name": "",
+          "qrDiscount": false,
+          "region": "98"
+        },
+        "pagination": {
+          "limit": 120,
+          "offset": 840
+        }
+      },
+      "response_sha": "cb0db62ee00d0d3602a6657ee4bd4e95e5a63c64900194d9e7a4421dcb02eb76",
+      "observed_total": 1044,
+      "completed_at": "2026-11-14T09:27:31.023Z"
+    },
+    {
+      "row": {
+        "active": true,
+        "categories": [
+          {
+            "categoryId": 25,
+            "categoryName": "Карта \"МИР\""
+          }
+        ],
+        "description_authorized": false,
+        "discountScheme": "<p>Обменяйте 50 Приветов на приз: промокод на бесплатное занятие в тренажёрном зале для одного человека в гостиничном комплексе «Малые Карелы». Промокод сохранится в <a href=\"https://vamprivet.ru/personal/non-monetary-prizes/\">личном кабинете</a> </p>\n<p><strong>Как </strong><strong>использовать</strong><strong> промокод<br/></strong>Перед получением услуги покажите промокод в гостиничном комплексе «Малые Карелы» </p>\n<p>Промокод действует до 30 ноября 2026 включительно </p>\n<p><strong>Важно<br/></strong>— Получить и использовать промокод можно только один раз<br/>— Приз нельзя обменять на деньги</p>",
+        "id": "3438",
+        "loyaltyDescription": "в тренажёрном зале в комплексе «Малые Карелы» для одного человека",
+        "name": "Гостиничный комплекс «Малые Карелы»",
+        "text": "Приморский р-н, д. Малые Карелы"
+      },
+      "observed_at": "2026-11-14T09:26:59.224303+00:00",
+      "request": {
+        "filters": {
+          "categories": [],
+          "name": "",
+          "qrDiscount": false,
+          "region": "98"
+        },
+        "pagination": {
+          "limit": 120,
+          "offset": 840
+        }
+      },
+      "response_sha": "cb0db62ee00d0d3602a6657ee4bd4e95e5a63c64900194d9e7a4421dcb02eb76",
+      "observed_total": 1044,
+      "completed_at": "2026-11-14T09:27:31.023Z"
+    },
+    {
+      "row": {
+        "active": true,
+        "categories": [
+          {
+            "categoryId": 25,
+            "categoryName": "Карта \"МИР\""
+          }
+        ],
+        "description_authorized": false,
+        "discountScheme": "<p>Обменяйте 150 Приветов на приз: промокод на «Важский» пряник со вкусом «козули» при оплате от 300 ₽ в магазине «КООП-Кулинария». Промокод сохранится в <a href=\"https://vamprivet.ru/personal/non-monetary-prizes/\">личном кабинете</a></p>\n<p><strong>Как </strong><strong>использовать </strong><strong>промокод<br/></strong>1. Посетите магазин «КООП-Кулинария» по адресу г. Архангельск, пр. Ленинградский, д. 327<br/>2. Совершите любую покупку на сумму от 300 ₽ и покажите промокод на кассе<br/>3. Получите «Важский» пряник со вкусом «козули» (140 гр.) </p>\n<p>Промокод действует до 30 декабря 2026 включительно </p>\n<p><strong>Важно<br/></strong>— Получить и использовать промокод можно только один раз <br/>— Приз нельзя обменять на деньги<br/>— Изображение на странице носит иллюстративный характер и не является фотографией приза</p>",
+        "id": "3422",
+        "loyaltyDescription": "со вкусом «козули» при оплате от 300 ₽ в магазине «КООП-Кулинария»",
+        "name": "Магазин «КООП-Кулинария»",
+        "text": "Архангельск"
+      },
+      "observed_at": "2026-11-14T09:26:59.224303+00:00",
+      "request": {
+        "filters": {
+          "categories": [],
+          "name": "",
+          "qrDiscount": false,
+          "region": "98"
+        },
+        "pagination": {
+          "limit": 120,
+          "offset": 840
+        }
+      },
+      "response_sha": "cb0db62ee00d0d3602a6657ee4bd4e95e5a63c64900194d9e7a4421dcb02eb76",
+      "observed_total": 1044,
+      "completed_at": "2026-11-14T09:27:31.023Z"
+    },
+    {
+      "row": {
+        "active": true,
+        "categories": [
+          {
+            "categoryId": 25,
+            "categoryName": "Карта \"МИР\""
+          }
+        ],
+        "description_authorized": false,
+        "discountScheme": "<p>Обменяйте 20 Приветов на приз: промокод на cкидку 10% при оплате в рестобаре «Муха». Промокод сохранится в <a href=\"https://vamprivet.ru/personal/non-monetary-prizes/\">личном кабинете</a></p>\n<p><strong>Как </strong><strong>использовать</strong><strong> промокод<br/></strong>1. Посетите рестобар «Муха» по адресу Республика Карелия, г. Петрозаводск, пр-т Ленина, д. 15<br/>2. При заказе покажите промокод официанту или администратору зала </p>\n<p>Промокод действует до 31 декабря 2026 включительно </p>\n<p><strong>Важно<br/></strong>Получить и использовать промокод можно только один раз</p>",
+        "id": "3414",
+        "loyaltyDescription": "при оплате в рестобаре «Муха»",
+        "name": "Рестобар Муха",
+        "text": "Петрозаводск"
+      },
+      "observed_at": "2026-11-14T09:26:59.224303+00:00",
+      "request": {
+        "filters": {
+          "categories": [],
+          "name": "",
+          "qrDiscount": false,
+          "region": "98"
+        },
+        "pagination": {
+          "limit": 120,
+          "offset": 840
+        }
+      },
+      "response_sha": "cb0db62ee00d0d3602a6657ee4bd4e95e5a63c64900194d9e7a4421dcb02eb76",
+      "observed_total": 1044,
+      "completed_at": "2026-11-14T09:27:31.023Z"
+    },
+    {
+      "row": {
+        "active": true,
+        "categories": [
+          {
+            "categoryId": 25,
+            "categoryName": "Карта \"МИР\""
+          }
+        ],
+        "description_authorized": false,
+        "discountScheme": "<p>Обменяйте 50 Приветов на приз: промокод на бесплатный билет на посещение «Музея природы». Промокод сохранится в <a href=\"https://vamprivet.ru/personal/non-monetary-prizes/\">личном кабинете</a> </p>\n<p><strong>Как </strong><strong>использовать</strong><strong> промокод<br/></strong>1. Посетите «Музей природы» Архангельского краеведческого музея по адресу г. Архангельск, пл. Ленина, д. 2 <br/>2. Покажите промокод на кассе музея </p>\n<p>Промокод действует до 30 ноября 2026 включительно </p>\n<p><strong>Важно<br/></strong>— Билет даёт право на посещение всех выставок и экспозиций музея. Экскурсии в билет не входят<br/>— Получить и использовать промокод можно только один раз</p>",
+        "id": "3439",
+        "loyaltyDescription": "билет на посещение «Музея природы» в Архангельске по промокоду",
+        "name": "Архангельский краеведческий музей (Музей природы)",
+        "text": "Архангельск"
+      },
+      "observed_at": "2026-11-14T09:26:59.224303+00:00",
+      "request": {
+        "filters": {
+          "categories": [],
+          "name": "",
+          "qrDiscount": false,
+          "region": "98"
+        },
+        "pagination": {
+          "limit": 120,
+          "offset": 840
+        }
+      },
+      "response_sha": "cb0db62ee00d0d3602a6657ee4bd4e95e5a63c64900194d9e7a4421dcb02eb76",
+      "observed_total": 1044,
+      "completed_at": "2026-11-14T09:27:31.023Z"
+    },
+    {
+      "row": {
+        "active": true,
+        "categories": [
+          {
+            "categoryId": 25,
+            "categoryName": "Карта \"МИР\""
+          }
+        ],
+        "description_authorized": false,
+        "discountScheme": "<p>Обменяйте 150 Приветов на приз: промокод на эксклюзивную открытку с подписью автора в музее «Лисьи Огни». Промокод сохранится в <a href=\"https://vamprivet.ru/personal/non-monetary-prizes/\">личном кабинете</a><br/><br/><strong>Как </strong><strong>использовать</strong><strong> промокод<br/></strong>1. Посетите музей «Лисьи Огни»<strong> </strong>по адресу Республика Карелия, г. Петрозаводск, ул. Ригачина, д. 7Б<br/>2. Обратитесь на кассу (стойку администрации) <br/>3. Покажите промокод и получите открытку </p>\n<p>Промокод действует до 30 сентября 2026 включительно</p>\n<p><strong>Важно<br/></strong>— Получить и использовать промокод можно только один раз <br/>— Приз нельзя обменять на деньги</p>",
+        "id": "3411",
+        "loyaltyDescription": "с подписью автора в музее «Лисьи Огни»",
+        "name": "Музей «Лисьи огни»",
+        "text": "Петрозаводск"
+      },
+      "observed_at": "2026-09-21T14:09:05.994866+00:00",
+      "request": {
+        "filters": {
+          "categories": [],
+          "name": "",
+          "qrDiscount": false,
+          "region": "98"
+        },
+        "pagination": {
+          "limit": 120,
+          "offset": 840
+        }
+      },
+      "response_sha": "184ac02468b586d660ae71b1a8d3a0af2d8ca445e18142523dabf02a3e95b953",
+      "observed_total": 1047,
+      "completed_at": "2026-09-21T14:09:51.389Z"
+    },
+    {
+      "row": {
+        "active": true,
+        "categories": [
+          {
+            "categoryId": 25,
+            "categoryName": "Карта \"МИР\""
+          }
+        ],
+        "description_authorized": false,
+        "discountScheme": "<p>Обменяйте 20 Приветов на приз: промокод на скидку 20% на входной билет в Вологодскую областную картинную галерею. Промокод сохранится в <a href=\"https://vamprivet.ru/personal/non-monetary-prizes/\">личном кабинете</a></p>\n<p><strong>Как </strong><strong>использовать</strong><strong> промокод<br/></strong>1. Посетите Вологодскую областную картинную галерею по адресу г. Вологда, ул. Мира, д. 34  <br/>2. Перед оплатой покажите промокод на кассе музея </p>\n<p>Промокод действует до 30 ноября 2026 включительно </p>\n<p><strong>Важно<br/></strong>Получить и использовать промокод можно только один раз</p>",
+        "id": "3442",
+        "loyaltyDescription": "на билет в Вологодскую областную картинную галерею",
+        "name": "Вологодская областная картинная галерея",
+        "text": "Вологда"
+      },
+      "observed_at": "2026-11-14T09:26:59.224303+00:00",
+      "request": {
+        "filters": {
+          "categories": [],
+          "name": "",
+          "qrDiscount": false,
+          "region": "98"
+        },
+        "pagination": {
+          "limit": 120,
+          "offset": 840
+        }
+      },
+      "response_sha": "cb0db62ee00d0d3602a6657ee4bd4e95e5a63c64900194d9e7a4421dcb02eb76",
+      "observed_total": 1044,
+      "completed_at": "2026-11-14T09:27:31.023Z"
+    },
+    {
+      "row": {
+        "active": true,
+        "categories": [
+          {
+            "categoryId": 25,
+            "categoryName": "Карта \"МИР\""
+          }
+        ],
+        "description_authorized": false,
+        "discountScheme": "<p>Обменяйте 20 Приветов на приз: промокод на скидку 10% на услуги проживания в гостиничном комплексе «Малые Карелы». Промокод сохранится в <a href=\"https://vamprivet.ru/personal/non-monetary-prizes/\">личном кабинете </a></p>\n<p><strong>Как </strong><strong>использовать </strong><strong>промокод<br/></strong>Перед получением услуги покажите промокод в гостиничном комплексе «Малые Карелы» </p>\n<p>Промокод действует до 30 ноября 2026 включительно </p>\n<p><strong>Важно<br/></strong>Получить и использовать промокод можно только один раз</p>",
+        "id": "3449",
+        "loyaltyDescription": "на услуги проживания в комплексе «Малые Карелы»",
+        "name": "Гостиничный комплекс «Малые Карелы»",
+        "text": "Приморский р-н, д. Малые Карелы"
+      },
+      "observed_at": "2026-11-14T09:26:59.224303+00:00",
+      "request": {
+        "filters": {
+          "categories": [],
+          "name": "",
+          "qrDiscount": false,
+          "region": "98"
+        },
+        "pagination": {
+          "limit": 120,
+          "offset": 840
+        }
+      },
+      "response_sha": "cb0db62ee00d0d3602a6657ee4bd4e95e5a63c64900194d9e7a4421dcb02eb76",
+      "observed_total": 1044,
+      "completed_at": "2026-11-14T09:27:31.023Z"
+    },
+    {
+      "row": {
+        "active": true,
+        "categories": [
+          {
+            "categoryId": 25,
+            "categoryName": "Карта \"МИР\""
+          }
+        ],
+        "description_authorized": false,
+        "discountScheme": "<p>Обменяйте 50 Приветов на приз: промокод на скидку 50% на любую регулярную водную прогулку от «Теплоход СПб». Промокод сохранится в <a href=\"https://vamprivet.ru/personal/non-monetary-prizes/\">личном кабинете</a></p>\n<p><strong>Как </strong><strong>использовать</strong><strong> промокод<br/></strong>1. Перейдите на сайт <a href=\"https://porekamkanalam.ru/\">porekamkanalam.ru</a><br/>2. Выберите прогулку на теплоходе <br/>3. Нажмите «Купить билет» и выберите 1 билет по тарифу «Основной» <br/>4. Введите промокод и оплатите билет со скидкой 50% </p>\n<p>Промокод действует до 4 ноября 2026 включительно </p>\n<p><strong>Важно<br/></strong>— Скидка действует только на прогулки на теплоходе по тарифу «Основной» при оплате билета на сайте<br/>— Скидка не суммируется с другими специальными предложениями<br/>— Получить и использовать промокод можно только один раз</p>",
+        "id": "3441",
+        "loyaltyDescription": "на любую регулярную водную прогулку от «Теплоход СПб»",
+        "name": "Судоходная компания «Теплоход СПб»",
+        "text": "Санкт-Петербург"
+      },
+      "observed_at": "2026-10-26T14:16:52.760301+00:00",
+      "request": {
+        "filters": {
+          "categories": [],
+          "name": "",
+          "qrDiscount": false,
+          "region": "98"
+        },
+        "pagination": {
+          "limit": 120,
+          "offset": 840
+        }
+      },
+      "response_sha": "6f1e2e8612bf051f57161ca81ac1a0e34b849ded310fdee3e64c6a93c721a353",
+      "observed_total": 1055,
+      "completed_at": "2026-10-26T14:17:18.809Z"
+    }
+  ],
+  "separate_acquisition_controls": [
+    {
+      "row": {
+        "active": true,
+        "categories": [
+          {
+            "categoryId": 25,
+            "categoryName": "Карта \"МИР\""
+          }
+        ],
+        "description_authorized": false,
+        "discountScheme": "<p>До 30 ноября обменяйте 20 Приветов на приз: промокод на скидку 30% на посещение «Музея алмазов» с аудиогидом. Промокод сохранится в <a href=\"https://vamprivet.ru/personal/non-monetary-prizes/\">личном кабинете</a> </p>\n<p><strong>Как </strong><strong>использовать </strong><strong>промокод<br/></strong>1. Посетите Музей алмазов Архангельской области по адресу г. Архангельск, пр. Чумбарова-Лучинского, д. 29<br/>2. Покажите промокод администратору музея </p>\n<p>Промокод действует до 31 декабря 2026 включительно </p>\n<p><strong>Важно<br/></strong>Получить и использовать промокод можно только один раз</p>",
+        "id": "3417",
+        "loyaltyDescription": "на посещение «Музея алмазов» с аудиогидом",
+        "name": "Музей алмазов Архангельской области",
+        "text": "Архангельск"
+      },
+      "observed_at": "2026-11-14T09:26:59.224303+00:00",
+      "request": {
+        "filters": {
+          "categories": [],
+          "name": "",
+          "qrDiscount": false,
+          "region": "98"
+        },
+        "pagination": {
+          "limit": 120,
+          "offset": 840
+        }
+      },
+      "response_sha": "cb0db62ee00d0d3602a6657ee4bd4e95e5a63c64900194d9e7a4421dcb02eb76",
+      "observed_total": 1044,
+      "completed_at": "2026-11-14T09:27:31.023Z"
+    },
+    {
+      "row": {
+        "active": true,
+        "categories": [
+          {
+            "categoryId": 25,
+            "categoryName": "Карта \"МИР\""
+          }
+        ],
+        "description_authorized": false,
+        "discountScheme": "<p>До 30 ноября обменяйте 300 Приветов на суперприз: промокод на настоящий сертифицированный бриллиант от «Музея алмазов». Промокод сохранится в <a href=\"https://vamprivet.ru/personal/non-monetary-prizes/\">личном кабинете</a> </p>\n<p><strong>Как </strong><strong>использовать</strong><strong> промокод<br/></strong>1. Посетите Музей алмазов Архангельской области по адресу г. Архангельск, пр. Чумбарова-Лучинского, д. 29<br/>2. Покажите промокод администратору музея<br/>3. Получите 1 сертифицированный натуральный бриллиант. Огранённый алмаз, добытый и обработанный на территории Архангельской области </p>\n<p>Промокод действует до 31 декабря 2027 включительно </p>\n<p><strong>Важно<br/></strong>— Получить и использовать промокод можно только один раз <br/>— Приз нельзя обменять на деньги<br/>— Изображение на странице носит иллюстративный характер и не является фотографией приза</p>",
+        "id": "3412",
+        "loyaltyDescription": "Настоящий бриллиант от «Музея алмазов»",
+        "name": "Музей алмазов Архангельской области",
+        "text": "Архангельск"
+      },
+      "observed_at": "2026-09-21T14:09:05.994866+00:00",
+      "request": {
+        "filters": {
+          "categories": [],
+          "name": "",
+          "qrDiscount": false,
+          "region": "98"
+        },
+        "pagination": {
+          "limit": 120,
+          "offset": 840
+        }
+      },
+      "response_sha": "184ac02468b586d660ae71b1a8d3a0af2d8ca445e18142523dabf02a3e95b953",
+      "observed_total": 1047,
+      "completed_at": "2026-09-21T14:09:51.389Z"
+    },
+    {
+      "row": {
+        "active": true,
+        "categories": [
+          {
+            "categoryId": 25,
+            "categoryName": "Карта \"МИР\""
+          }
+        ],
+        "description_authorized": false,
+        "discountScheme": "<p>До 18 октября обменяйте 50 Приветов на приз: промокод на бесплатный билет в парк Ораниенбаум на одного человека. Промокод сохранится в <a href=\"https://vamprivet.ru/personal/non-monetary-prizes/\">личном кабинете</a> </p>\n<p><strong>Как </strong><strong>использовать </strong><strong>промокод<br/></strong>1. Отправьте промокод на почту отдела по связям с общественностью музея-заповедника «Петергоф»: <a>pr@peterhofmuseum.ru</a> <br/>2. Получите в ответном письме онлайн-билет <br/>3. Покажите штрихкод с билета для прохода в парк Ораниенбаум </p>\n<p>Промокод действует до 18 октября 2026 включительно </p>\n<p><strong>Важно<br/></strong>— Получить и использовать промокод можно только один раз<br/>— Приз нельзя обменять на деньги</p>",
+        "id": "3437",
+        "loyaltyDescription": "в парк Ораниенбаум на одного человека",
+        "name": "Музей-заповедник «Петергоф»",
+        "text": "Санкт-Петербург"
+      },
+      "observed_at": "2026-09-21T14:09:05.994866+00:00",
+      "request": {
+        "filters": {
+          "categories": [],
+          "name": "",
+          "qrDiscount": false,
+          "region": "98"
+        },
+        "pagination": {
+          "limit": 120,
+          "offset": 720
+        }
+      },
+      "response_sha": "9a23d1f6dbb2a1426422af98ad30e457f01b4e6ea80b79886581e106ccb49b11",
+      "observed_total": 1047,
+      "completed_at": "2026-09-21T14:09:48.837Z"
+    },
+    {
+      "row": {
+        "active": true,
+        "categories": [
+          {
+            "categoryId": 25,
+            "categoryName": "Карта \"МИР\""
+          }
+        ],
+        "description_authorized": false,
+        "discountScheme": "<p>До 30 ноября обменяйте 20 Приветов на приз: промокод на скидку 10% при оплате в магазине-кафе «ХАУКИ ЛОХИ» (HAUKI LOHI). Промокод сохранится в <a href=\"https://vamprivet.ru/personal/non-monetary-prizes/\">личном кабинете</a> </p>\n<p><strong>Как </strong><strong>использовать</strong><strong> промокод<br/></strong>1. Посетите магазин-кафе «ХАУКИ ЛОХИ» (HAUKI LOHI) по адресу Республика Карелия, г. Сортавала, ул. Чкалова, д. 1<br/>2. Перед оплатой покажите промокод на кассе </p>\n<p>Промокод действует до 30 ноября 2026 включительно </p>\n<p><strong>Важно<br/></strong>Получить и использовать промокод можно только один раз</p>",
+        "id": "3448",
+        "loyaltyDescription": "при оплате в магазине «ХАУКИ ЛОХИ» (HAUKI LOHI)",
+        "name": "Магазин «ХАУКИ ЛОХИ» (HAUKI LOHI)",
+        "text": "Республика Карелия, г. Сортавала"
+      },
+      "observed_at": "2026-11-14T09:26:59.224303+00:00",
+      "request": {
+        "filters": {
+          "categories": [],
+          "name": "",
+          "qrDiscount": false,
+          "region": "98"
+        },
+        "pagination": {
+          "limit": 120,
+          "offset": 840
+        }
+      },
+      "response_sha": "cb0db62ee00d0d3602a6657ee4bd4e95e5a63c64900194d9e7a4421dcb02eb76",
+      "observed_total": 1044,
+      "completed_at": "2026-11-14T09:27:31.023Z"
+    }
+  ]
+}

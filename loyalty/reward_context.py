@@ -7,7 +7,7 @@ import re
 
 
 _BOUNDARY = r'[.!?](?:\s|$)|[;\n]|\b(?:но|зато|однако)\b|\bа(?=\s+за\s+кажды[еий]\b)'
-_EARN = r'получ\w*|начисл\w*|заработ\w*'
+_EARN = r'получ\w*|начисл\w*|заработ\w*|дар(?:ит|им)|соберите|пополнится'
 _SPEND = r'спис\w*|спиш\w*|потрат\w*|трат\w*|оплат(?:и|я)\w*|оплач(?:ива|у)\w*|обмен(?:я|ива)\w*|конвертир\w*'
 _ACTION = re.compile(r'\b(?:(?P<earn>' + _EARN + r')|(?P<spend>' + _SPEND + r'))\b', re.I)
 _BENEFIT_ACTION = re.compile(r'\b(?:(?P<earn>' + _EARN +
@@ -25,13 +25,16 @@ _PURCHASE = (r'(?:(?:на|за|при|после)\s+(?:(?:перв\w*|повто
 # These spans only connect a shared action across a plain amount list. They do
 # not create or validate a quantity, and cannot cross another action/condition.
 _MENTION = re.compile(r'\d[\d., \t\u00a0\u202f]*\s+'
-                      r'(?:(?:дополнительн\w*|бонусн\w*)\s+){0,2}'
+                      r'(?:(?:дополнительн\w*|бонусн\w*|приветственн\w*|премиальн\w*)\s+){0,2}'
                       r'(?:балл\w*|бонус(?:ов|а)?|мил[ьяиюе]\w*)\b', re.I)
 _BALANCE = re.compile(r'\b(?:баланс\w*|номинал\w*|на\s+(?:(?:вашем|ваш)\s+)?сч[её]т[еу])\b', re.I)
 _PAYMENT_NOUN = re.compile(r'\b(?:оплат[ауыое]|стоимост\w*|цен[аыуе])\b', re.I)
 _MONTHLY_MILEAGE_PAYOUT_CAP = (r'\bлимит\s+выплат\w*\s+'
                                r'(?:к[еэ]шб[еэ]к\w*\s*/\s*)?мил[ьяиюе]\w*\s+'
                                r'в\s+месяц[⁰¹²³⁴⁵⁶⁷⁸⁹]*')
+_NIGHTLY_POINT_HEADING = (r'\bполучайте\s+баллы\s+'
+                          r'(?:в\s+программе\s+«(?P<program>[^»\n]+)»\s+)?'
+                          r'за\s+каждую\s+ночь:\s*')
 
 
 def monthly_mileage_payout_cap(text, start):
@@ -39,10 +42,100 @@ def monthly_mileage_payout_cap(text, start):
     return bool(re.search(_MONTHLY_MILEAGE_PAYOUT_CAP+r'\s*$', text[:start], re.I))
 
 
+def nominal_reward_cap(text, start):
+    """An explicit nominal reward ceiling immediately owns this quantity."""
+    fronted=re.search(r'\b(?:в\s+месяц\s+можно\s+получить\s+до|'
+                      r'за\s+одну\s+ночь\s+проживания\s+начисляется\s+не\s+более)\s*$',
+                      text[:start],re.I)
+    if fronted:return fronted
+    direct=re.search(r'\b(?:максимально|макс\.)\s*[:—–-]?\s*$',text[:start],re.I)
+    if direct:return direct
+    head=(r'\bлимит\b|\bмаксимальн(?:ый|ая|ое)\s+(?:размер|сумма|количество)\b|'
+          r'\bмаксимум\b|'
+          r'\bограничение\s+по\s+(?:начислению|обмену)\b')
+    label=r'«[^»\n]*»|"[^"\n]*"'
+    return re.search(r'(?:'+head+r')(?:(?:'+label+r')|[^0-9.!?;\n]){0,230}$', text[:start], re.I)
+
+
+def nominal_reward_cap_basis(text, start, end):
+    """The literal period/transaction named by a nominal ceiling, if any."""
+    cap=nominal_reward_cap(text,start)
+    if not cap:return {'basis_amount':None,'basis_unit':None}
+    tail=re.split(r'[.!?](?:\s|$)|[;\n]',text[end:])[0]
+    local=cap[0]+tail
+    units=(('month',r'\bв\s+месяц\b'), ('day',r'\bв\s+день\b'),
+           ('night',r'\bза\s+одну\s+ночь\b'),
+           ('campaign',r'\bза\s+период\s+акции\b'),
+           ('order',r'\bза\s+(?:один\s+)?заказ\b'),
+           ('receipt',r'\bв\s+одном\s+чеке\b'),
+           ('purchase',r'\bза\s+(?:одну\s+)?покупку\b'),
+           ('contract',r'\bза\s+заключение\s+договора\b'))
+    unit=next((unit for unit,pattern in units if re.search(pattern,local,re.I)),None)
+    return {'basis_amount':'1' if unit else None,'basis_unit':unit}
+
+
+def nominal_reward_cap_kind(cap):
+    return 'exchange_limit' if re.search(r'\bобмен',cap[0],re.I) else 'benefit_cap'
+
+
+def nightly_reward_heading(text, start):
+    """The explicit nightly header of this same coordinated point sentence."""
+    prefix=re.split(r'[.!?](?:\s|$)|;',text[:start])[-1]
+    return re.search(_NIGHTLY_POINT_HEADING,prefix,re.I)
+
+
 def benefit_context_text(value):
     """Keep explicit owner continuations together without changing offsets."""
     marker=r'(?:скидк\w*|к[еэ]шб[еэ]к\w*|бесплат\w*|подар\w*)'
     result=value
+    # One observed nightly point sentence wraps between its denominator
+    # heading and the weekday/weekend quantities. Preserve their shared owner.
+    for nightly in re.finditer(_NIGHTLY_POINT_HEADING+_MENTION.pattern+r'[^.!?;]*',value,re.I):
+        result=(result[:nightly.start()]+result[nightly.start():nightly.end()].replace('\n',' ')
+                +result[nightly.end():])
+    # The observed Coral redemption sentence wraps between its payment verb
+    # and instrumental reward unit. Keep that explicit owner with its rate.
+    for payment in re.finditer(r'\b(?:оплачивайте|оплатите)\s+(?:баллами|бонусами|милями)\s+'
+                               r'(?:(?:до|от)\s+)?\d[\d., ]*%',value,re.I):
+        result=result[:payment.start()]+result[payment.start():payment.end()].replace('\n',' ')+result[payment.end():]
+    for statement in re.finditer(r'\bначисление\s+баллов\s+составит\s*[—–:-]?\s*'+_MENTION.pattern,value,re.I):
+        result=result[:statement.start()]+result[statement.start():statement.end()].replace('\n',' ')+result[statement.end():]
+    for amount in _MENTION.finditer(value):
+        booking=re.match(r'\s*\n[ \t]*на\s+бронирование\s+стоимостью[^\n]+',value[amount.end():],re.I)
+        if booking:
+            end=amount.end()+booking.end()
+            result=result[:amount.start()]+result[amount.start():end].replace('\n',' ')+result[end:]
+    # A layout break between an explicit earning verb and its literal amount
+    # cannot discard the verb. Only whitespace and a numeric bound may bridge
+    # the action and amount; unrelated paragraphs remain separate clauses.
+    award_verb=r'получ(?:ите|айте|ить)|начисл(?:им|ят|ит)|заработайте|дар(?:ит|им)|соберите'
+    for award in re.finditer(r'\b(?:'+award_verb+r')\s+(?:(?:до|от|не\s+более)\s+)?'
+                             +_MENTION.pattern,value,re.I):
+        result=result[:award.start()]+result[award.start():award.end()].replace('\n',' ')+result[award.end():]
+    for amount in _MENTION.finditer(value):
+        basis=forward_reward_basis(value,amount.end(),miles=bool(re.search(r'мил[ьяиюе]\w*$',amount[0],re.I)))
+        if basis:
+            end=amount.end()+basis.end()
+            fragment=value[amount.start():end]
+            # Capitalized standalone card headings remain section boundaries.
+            # Quoted program names are part of the same reward formula.
+            if all(re.match(r'[ \t]*(?:[а-яёa-z0-9]|«(?:РЖД|Аэрофлот)\s+Бонус»)',fragment[m.end():])
+                   for m in re.finditer(r'\n',fragment)):
+                result=result[:amount.start()]+fragment.replace('\n',' ')+result[end:]
+    # Native RZD text wraps one paired earning sentence between its reward,
+    # denominator and purchase-stage qualifier. Join only the continuation
+    # of that explicit sentence, retaining every original character offset.
+    paired=r'\b(?:получайте|получите|начисляем)\s+\d[\d., \t\u00a0\u202f]*\s+балл\w*\b'
+    for earning in re.finditer(paired,value,re.I):
+        stop=re.search(r'[.!?](?:\s|$)|;|\n[ \t]*\n',value[earning.end():])
+        end=earning.end()+stop.start() if stop else len(value)
+        fragment=value[earning.start():end]
+        breaks=list(re.finditer(r'\n',fragment))
+        if (breaks and len(list(_MENTION.finditer(fragment)))>1
+                and re.search(r'\bза\s+кажды[еий]\b',fragment,re.I)
+                and all(not fragment[b.end():].strip()
+                        or re.match(r'[ \t]*[а-яёa-z]',fragment[b.end():]) for b in breaks)):
+            result=result[:earning.start()]+result[earning.start():end].replace('\n',' ')+result[end:]
     # Native PDF wrapping can divide the payout-limit label itself. Keep only
     # that explicit nominal owner together in the temporary context buffer;
     # unrelated lines and the preserved evidence remain unchanged.
@@ -94,12 +187,22 @@ def _owned_role(text, start, end, *, amounts=(), actions=_ACTION,
     A direct postfix action wins over an unrelated preceding action. A shared
     postfix action can cross only an otherwise bare coordinated amount list.
     """
+    if any(left<=start and end<=right for left,right in benefit_exclusion_lists(text)):
+        return 'denied'
     text=benefit_context_text(text)
     boundary=_BOUNDARY+(r'|\bа\b' if mixed_list else '')
     left = max((m.end() for m in re.finditer(boundary, text[:start], re.I)), default=0)
     stop = re.search(boundary, text[end:], re.I)
     right = end + stop.start() if stop else len(text)
     prefix, suffix = text[left:start], text[end:right]
+    # A literal correction can name a prior rate before stating the current
+    # one. The marker owns only an otherwise bare amount/list, so an existing
+    # customer label such as "Старый пользователь" remains eligible context.
+    historical=(r'\b(?:прежн(?:ие|ий|яя|ее)|стар(?:ые|ый|ая|ое))\s+'
+                r'(?:промо\s+)?(?:\d[\d., \t\u00a0\u202f]*\s*'
+                r'(?:%|балл\w*|бонус\w*|мил[ьяиюе]\w*)?\s*(?:\+|и)\s*)*$')
+    if re.search(historical,prefix,re.I):
+        return 'reference' if references else 'denied'
     spans = amounts or [(m.start(), m.end()) for m in _MENTION.finditer(text)]
     antecedent_start=left
     antecedent_end=start
@@ -128,7 +231,12 @@ def _owned_role(text, start, end, *, amounts=(), actions=_ACTION,
     if references and re.search(r'\bза\s+(?:кажды[еий]\s+)?$', prefix, re.I):
         return 'reference'
 
-    preceding = list(actions.finditer(prefix))
+    # A completed parenthetical qualifier belongs to its preceding component.
+    # In the observed clinic clause it denies handing out CT/3D copies, while
+    # the following comma introduces an affirmative surgery discount.
+    parenthetical=[m.span() for m in re.finditer(r'\([^()]*\)\s*,\s*',prefix)]
+    preceding = [action for action in actions.finditer(prefix)
+                 if not any(a<=action.start()<b for a,b in parenthetical)]
     following_suffix = suffix
     shared_following=False
     own_prefix = bool(preceding and ',' not in prefix[preceding[-1].end():]
@@ -186,14 +294,54 @@ def forward_reward_basis(text, end, *, miles=False):
     Mileage labels are accepted only for an already recognized miles quantity.
     """
     numeric=r'(?:от\s+)?[−+-]?\d[\w., \t\u00a0\u202f–—−-]*?'
-    unit=r'(?:₽|руб\w*\.?|RUB|(?:бонусн\w*\s+)?балл\w*|бонус(?:ов|а)?|дней|день|дня|месяц\w*)'
+    unit=(r'(?:₽|руб\w*\.?|RUB|\$|USD|доллар(?:а|ов)?(?:\s+США)?|€|EUR|евро|'
+          r'(?:бонусн\w*\s+)?балл\w*|(?:кешбэк\s+)?бонус(?:ов|а)?|мил[ьяиюе]\w*|'
+          r'дней|день|дня|месяц\w*)')
     amount=rf'(?P<basis>{numeric})\s*(?P<unit>{unit})(?=\W|$)'
-    label=(r'(?:\s+S7\b(?:\s+Airlines)?(?=\s+(?:за|в)\b))?' if miles else '')
-    brand=r'(?:«Аэрофлот\s+Бонус»\s+)?' if miles else ''
-    return re.match(label+r'\s+(?:(?:начисля\w+\s+)?'+brand
+    program=r'«Аэрофлот\s+Бонус»|«РЖД\s+Бонус»|«Крылья»|MILE·ON·AIR|AZIMUT\s+Bonus|S7(?:\s+Airlines)?'
+    label=r'(?:\s+(?P<program>'+program+r'))?'
+    brand=r'(?:(?P<post_program>«Аэрофлот\s+Бонус»)\s+)?' if miles else ''
+    amount+=r'(?:\s+(?P<basis_program>'+program+r'))?'
+    return re.match(label+r'(?:\s+(?:(?:начисля\w+\s+)?'+brand
                     +r'за\s+(?:кажды[еий]\s+)?(?:потраченн\w+\s+)?'+amount
-                    +r'|(?P<month>в\s+месяц)\b|(?P<day>за\s+каждые\s+сутки)\b)',
+                    +r'|(?P<month>(?:в|каждый)\s+месяц|за\s+продление\s+опции\s+каждый\s+месяц|за\s+месяц\s+подписки)\b'
+                    +r'|(?P<year>за\s+год\s+подписки)\b|(?P<day>за\s+каждые\s+сутки)\b'
+                    +r'|(?P<night>за\s+каждую\s+ночь)\b|(?P<order>за\s+каждый\s+заказ)\b'
+                    +r'|(?P<purchase>за\s+каждую\s+покупку)\b|(?P<booking>за\s+каждое\s+бронирование)\b'
+                    +r'|(?P<package>за\s+каждый\s+пакет)\b)'
+                    +r'|\s*/\s*(?P<slash_basis>'+numeric+r')\s*(?P<slash_unit>₽|руб\w*\.?|RUB)(?=\W|$))',
                     text[end:],re.I)
+
+
+def reward_equivalence_prefix(text, start):
+    """The complete left side of a literal money/reward conversion line."""
+    prefix=re.split(r'[.!?](?:\s|$)|[;\n]',text[:start])[-1]
+    numeric=r'\d[\d., \t\u00a0\u202f]*'
+    unit=r'₽|руб\w*|RUB|(?:бонусн\w*\s+)?балл\w*|бонус(?:ов|а)?|мил[ьяиюе]\w*'
+    program=r'AZIMUT\s+Bonus|[XХ]5\s+Клуб|MILE·ON·AIR|«Аэрофлот\s+Бонус»'
+    return re.fullmatch(r'\s*[-–—•]?\s*(?P<basis>'+numeric+r')\s*(?P<unit>'+unit+r')'
+                        r'(?:\s+(?P<program>'+program+r'))?\s*[=–—]\s*',prefix,re.I)
+
+
+def reward_formula_scope(text, start, end):
+    """Keep explicitly named reward programs on their own side of conversion."""
+    forward=forward_reward_basis(text,end,miles=bool(re.search(r'мил[ьяиюе]\w*$',text[start:end],re.I)))
+    scope={}
+    heading=nightly_reward_heading(text,start)
+    if heading and heading['program']:scope['reward_program']=heading['program']
+    if forward:
+        program=forward['program'] or forward.groupdict().get('post_program')
+        if program:scope['reward_program']=program.strip('«»')
+        if forward['basis_program']:scope['basis_program']=forward['basis_program'].strip('«»')
+        option=re.match(r'\s+(?P<preposition>без|с)\s+«(?:Газпром\s+Бонус\s+)?Плюс»',
+                        text[end+forward.end():],re.I)
+        if option:scope['subscription']=option['preposition'].casefold()=='с'
+    reverse=reward_equivalence_prefix(text,start)
+    if reverse and reverse['program']:
+        scope['basis_program']=reverse['program'].strip('«»')
+        program=re.match(r'\s+(«Аэрофлот\s+Бонус»|MILE·ON·AIR)',text[end:],re.I)
+        if program:scope['reward_program']=program[1].strip('«»')
+    return scope
 
 
 def mileage_formula_end(text, end):
@@ -205,6 +353,14 @@ def mileage_formula_end(text, end):
 def reward_role(text, start, end, *, amounts=()):
     """Action/reference owned by a literal points or miles quantity."""
     prefix = text[:start]
+    # A worked arithmetic result is not a flat award independent of its
+    # example purchase and multiplier; preserve that calculation in raw text.
+    if re.search(r'\d[\d., \t\u00a0\u202f]*\s*\*\s*\d[\d., \t\u00a0\u202f]*\s*=\s*$',prefix):
+        return 'reference'
+    # An amount inside a named campaign is a reference to that campaign,
+    # including its quoted imperative, rather than an additional award here.
+    if re.search(r'\bакци[яи]\s+[«"][^»"\n]*$', prefix, re.I):
+        return 'reference'
     # In a cash-or-rewards price, "за" owns both alternatives. The cash
     # amount is not a reward mention, so the ordinary coordinated-list walk
     # cannot carry that preposition to the second amount.
@@ -216,7 +372,25 @@ def reward_role(text, start, end, *, amounts=()):
     # a debt label elsewhere in a multi-benefit clause suppress earnings.
     if re.search(r'\bмильн\w*\s+задолженность\s+до\s*$', prefix, re.I):
         return 'reference'
-    return _owned_role(text, start, end, amounts=amounts)
+    # The nominal exchange minimum names inputs to conversion. The marker
+    # may own both quantities in the original bonus-and-miles list.
+    if (re.search(r'\bминимально\b[^.;!?\n]*$', prefix, re.I)
+            and re.match(r'\s+для\s+обмена\b', text[end:], re.I)):
+        return 'reference'
+    role = _owned_role(text, start, end, amounts=amounts)
+    if role=='unknown' and re.search(r'\bв\s+подарок\s*$',prefix,re.I):
+        return 'earn'
+    forward=forward_reward_basis(text,end,miles=bool(re.search(r'мил[ьяиюе]\w*$',text[start:end],re.I)))
+    if (role=='unknown' and forward and
+            (any(forward[name] for name in ('day','night','order','purchase','booking','package'))
+             or forward['month'] and re.match(r'каждый\b',forward['month'],re.I))):
+        return 'earn'
+    # A bare reward-to-money equation states redemption value. Retain an
+    # explicit earning action, but never manufacture one from the equation.
+    if (role == 'unknown' and re.match(r'\s*=\s*\d[\d., \t\u00a0\u202f]*\s*'
+                                      r'(?:₽|руб\w*\.?|RUB)(?=\W|$)', text[end:], re.I)):
+        return 'reference'
+    return role
 
 
 def benefit_phrase_end(text, end):
@@ -261,6 +435,29 @@ def benefit_phrase_spans(text, start, end):
 def benefit_restriction_follows(text, end):
     """A negative restriction predicate at this marker, with shared modifiers."""
     return bool(_RESTRICTION.match(text,end))
+
+
+def owned_starred_footnote(value):
+    """Return one native star marker and its one later starred footnote."""
+    if not isinstance(value,str) or value.count('*')!=2:return None
+    lines=list(re.finditer(r'^[^\n]*\*[^\n]*$',value,re.M))
+    if len(lines)!=2:return None
+    owner,note=(match[0].strip() for match in lines)
+    if owner.startswith('*') or not note.startswith('*'):return None
+    return {'owner':owner,'note':note,
+            'evidence':value[lines[0].start():lines[1].end()].strip()}
+
+
+def benefit_exclusion_lists(text):
+    """An explicit negative reward heading owns its adjacent literal bullets."""
+    heading=(r'^[ \t]*(?:баллы|мили|бонусы|к[еэ]шб[еэ]к|скидк[аи])\s+не\s+'
+             r'(?:начисля\w*|предоставля\w*|действ\w*|распространя\w*)'
+             r'(?:[ \t]+за)?[ \t]*:[ \t]*\r?$')
+    for match in re.finditer(heading,text,re.I|re.M):
+        end=match.end()
+        while item:=re.match(r'\n[ \t]*[-–—•][ \t]*\S[^\n]*',text[end:]):
+            end+=item.end()
+        if end>match.end():yield match.start(),end
 
 
 def benefit_exclusion_spans(text):

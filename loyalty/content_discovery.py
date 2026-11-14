@@ -7,7 +7,7 @@ from __future__ import annotations
 import hashlib
 import re
 from bs4 import BeautifulSoup, Comment
-from normalized import normalize_rates, percent_spans, fixed_discount_amounts, NUMERIC_TOKEN, PERCENT_BOUND
+from normalized import normalize_rates, percent_spans, fixed_monetary_rewards, NUMERIC_TOKEN, PERCENT_BOUND
 
 
 def compact(value):
@@ -62,6 +62,35 @@ def sentences(value):
     return [s.strip() for s in re.split(r'\n|(?<=[.!?])\s+(?=[А-ЯЁA-Z])', value) if s.strip()]
 
 
+def owned_discount_components(value, *, path='/conditions', exclude=(), withhold_dated=False):
+    """Literal discounts in an already validated source-owned practical field.
+
+    Keep the complete clause and record rules; these are not new standalone
+    merchant offers. Dated coupons can remain in evidence when this source
+    does not have an independently owned component-validity contract.
+    """
+    terms=[]
+    for rate in normalize_rates(value):
+        clause=rate['evidence']
+        if rate['kind']!='discount' or clause in exclude:
+            continue
+        if withhold_dated and re.search(r'\b\d{1,2}\.\d{1,2}\.\d{2,4}\b',clause):
+            continue
+        term={k:rate[k] for k in ('kind','value','unit','qualifier')}
+        if rate.get('min_value') is not None:term['value_min']=rate['min_value']
+        if terms and clause.startswith('*') and terms[-1]['fragment'].endswith('*'):
+            previous=terms[-1]
+            same=all(previous.get(k)==v for k,v in term.items())
+            pair=re.search(re.escape(previous['fragment'])+r'\s*\n\s*'+re.escape(clause),value)
+            if same and pair:
+                previous['fragment']=pair[0]
+                previous['scope']['source_clause']=pair[0]
+                continue
+        terms.append(dict(term,path=path,fragment=clause,scope={'source_clause':clause},
+                          standalone_offer=False))
+    return terms
+
+
 def literal_benefits(body):
     """Recognized reward clauses, scoped to their full original sentence.
 
@@ -88,7 +117,7 @@ A quoted price or a non-stacking rule alone is not a positive reward.
         reverse=amount+r'\s+'+word
         phrases=[m for pattern in (forward,reverse) for m in re.finditer(pattern,clause,re.I)]
         occurrences={'percent':[(s['start'],s['end']) for s in percent_spans(clause)],
-                     'RUB':[(m.start(),m.end()) for m,_ in fixed_discount_amounts(clause)]}
+                     'RUB':[(m.start(),m.end()) for m,_,_ in fixed_monetary_rewards(clause)]}
         rates=[]
         # The full sentence decides polarity/payment ownership. Phrase matches
         # only establish that this particular occurrence is directly labelled;

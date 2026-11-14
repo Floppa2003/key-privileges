@@ -5,6 +5,7 @@ from urllib.parse import urlsplit, urljoin
 from bs4 import BeautifulSoup
 from normalized import number
 from public_reward_projection import plain, one, make_record
+from content_discovery import owned_discount_components
 
 SOURCE='backit_public'
 ROOT='https://backit.me/ru/cashback/shops'
@@ -73,8 +74,10 @@ def source_fields(e):
     if not claims:raise ExcludedOffer('no_positive_tariff')
     if not e.get('activation') or not e.get('conditions'):raise ValueError('backit_missing_practical_terms')
     if not re.search(r'зарегистрирован|уч[её]тн|регистрац|Войдите|Вход',e['activation'],re.I):raise ValueError('backit_activation_owner')
+    conditions='\n'.join([e['conditions'],*zero_tariffs]+(['Период повышенного кешбэка: '+e['promo_period']] if e.get('promo_period') else []))
+    terms.extend(owned_discount_components(conditions,withhold_dated=True))
     return dict(native=urlsplit(url).path.rsplit('/',1)[-1],program=PROGRAM,partner=name,title='Backit → '+name,
-        valid_from=valid_from,valid_until=valid_until,period_year_inferred=any(len(x.split('.'))==2 for x in re.findall(r'\b\d{1,2}\.\d{1,2}(?:\.\d{4})?\b',e.get('promo_period',''))),benefit='\n'.join(claims),conditions='\n'.join([e['conditions'],*zero_tariffs]+(['Период повышенного кешбэка: '+e['promo_period']] if e.get('promo_period') else [])),activation='\n'.join([e['activation'],*coupons]),category='Покупки / услуги / денежный кешбэк',url=url,
+        valid_from=valid_from,valid_until=valid_until,period_year_inferred=any(len(x.split('.'))==2 for x in re.findall(r'\b\d{1,2}\.\d{1,2}(?:\.\d{4})?\b',e.get('promo_period',''))),benefit='\n'.join(claims),conditions=conditions,activation='\n'.join([e['activation'],*coupons]),category='Покупки / услуги / денежный кешбэк',url=url,
         locator='.shop-rates > .row; .shop-conditions; scoped cashback instructions',terms=terms,
         scope={'shop_slug':urlsplit(url).path.rsplit('/',1)[-1],'eligibility_not_verified':True},warnings=['cashback_not_upfront_discount','payout_method_and_minimum_require_account_review']+(['merchant_specific_conditions_not_displayed'] if e.get('merchant_conditions_absent') else []))
 

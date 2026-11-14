@@ -1,0 +1,488 @@
+{
+  "provenance": "Verbatim clauses from public source responses retained in the 2026-11-14 published corpus. Labels, punctuation, words and numbers are unchanged. Expected results were reviewed independently.",
+  "cases": [
+    {
+      "name": "mismatched_public_quote",
+      "source_url": "https://nonameburo.com/card",
+      "observed_at": "2026-11-14T12:19:32.114244+00:00",
+      "program": "No Name Card",
+      "partner": "Banya RESORT Архангельское",
+      "kind": "partner_offer",
+      "field": "benefit",
+      "public_clause": "Скидка 20% на аренду домов. Для активации необходимо написать администраторам промокод \"NONAMEBURO'",
+      "expected_codes": [
+        "NONAMEBURO"
+      ],
+      "expected_delivery": [],
+      "retained_delivery": []
+    },
+    {
+      "name": "hyphenated_public_codes",
+      "source_url": "https://sykt.arendacar.ru/news/novyj-partnjor-kompanii-uralskie-avialinii/",
+      "observed_at": "2026-11-14T12:19:32.114244+00:00",
+      "program": "Уральские авиалинии — «Крылья»",
+      "partner": "Cars&GO",
+      "kind": "program_rules",
+      "field": "benefit",
+      "public_clause": "Клуб Проката Автомобилей «CARS&GO» — стал партнером Авиакомпании «Уральские авиалинии».\nРады сообщить, что участники программы лояльности «Крылья» могут воспользоваться скидками на аренду автомобилей в нашем клубе проката.\nКак получить скидку:\nПри бронировании автомобиля на сайте необходимо ввести промо-код, в соответствии с вашей картой программы лояльности «Крылья»\n— Скидка 5% для держателей «синей» карты по промо-коду «Крылья5»\n— Скидка 10% для держателей «серебряной» карты по промо-коду «Крылья10»\n— Скидка 15% для держателей «золотой» карты по промо-коду «Крылья15»\nПартнер предоставляет скидку владельцам карт программы лояльности «Крылья» при бронировании на сайте или по телефону при предъявлении карты/виртуальной карты из мобильного приложения:\nКарта предъявляется при оплате (с другими акциями/скидками не суммируется).\nЖелаем Вам приятного и комфортного путешествия!",
+      "expected_codes": [
+        "Крылья5",
+        "Крылья10",
+        "Крылья15"
+      ],
+      "expected_delivery": [],
+      "retained_delivery": []
+    },
+    {
+      "name": "delivery_8",
+      "source_url": "https://vamprivet.ru/promo/apteki/zdorove-po-vygodnoy-tsene-1/",
+      "observed_at": "2026-09-24T10:11:58.060505+00:00",
+      "program": "Привет! / Мир / СБП",
+      "partner": "Максавит",
+      "kind": "partner_offer",
+      "field": "benefit",
+      "public_clause": "Скидка 5% на любой заказ от 2 000 ₽ на сайте «Максавит» или в приложении «Аптека Максавит — заказ лекарств» по промокоду",
+      "expected_codes": [],
+      "expected_delivery": [],
+      "retained_delivery": [
+        "app"
+      ]
+    },
+    {
+      "name": "delivery_15",
+      "source_url": "https://vamprivet.ru/promo/razvlecheniya/kino-i-videovselennye-v-odnoy-podpiske/",
+      "observed_at": "2026-09-24T10:11:58.060505+00:00",
+      "program": "Привет! / Мир / СБП",
+      "partner": "PREMIER",
+      "kind": "partner_offer",
+      "field": "benefit",
+      "public_clause": "Подписка PREMIER х RUTUBE при активации промокода на сайте или в мобильном приложении",
+      "expected_codes": [],
+      "expected_delivery": [],
+      "retained_delivery": [
+        "app"
+      ]
+    },
+    {
+      "name": "delivery_50",
+      "source_url": "https://msk.t2.ru/bolshe/offers",
+      "observed_at": "2026-10-23T10:14:11.464056+00:00",
+      "program": "T2 «Больше»",
+      "partner": "Яндекс Лавка",
+      "kind": "partner_offer",
+      "field": "conditions",
+      "public_clause": "Промокод действует только в мобильном приложении Лавки.",
+      "expected_codes": [],
+      "expected_delivery": [],
+      "retained_delivery": [
+        "app"
+      ]
+    },
+    {
+      "name": "delivery_54",
+      "source_url": "https://t.me/ekpcard/5538",
+      "observed_at": "2026-11-14T12:19:32.114244+00:00",
+      "program": "ЕКП — официальные объявления",
+      "partner": null,
+      "kind": "announcement",
+      "field": "benefit",
+      "public_clause": "📱промокоды на sms, минуты и гигабайты от оператора мобильной связи «t2».",
+      "expected_codes": [],
+      "expected_delivery": [],
+      "retained_delivery": [
+        "sms"
+      ]
+    },
+    {
+      "name": "delivery_59",
+      "source_url": "https://spb.t2.ru/bolshe/offers",
+      "observed_at": "2026-11-14T12:19:32.114244+00:00",
+      "program": "T2 «Больше»",
+      "partner": "EnerGO",
+      "kind": "partner_offer",
+      "field": "conditions",
+      "public_clause": "Полученный промокод нужно применить в приложении до 31.12.2026.",
+      "expected_codes": [],
+      "expected_delivery": [],
+      "retained_delivery": [
+        "app"
+      ]
+    },
+    {
+      "name": "delivery_64",
+      "source_url": "https://media.utair.ru/status",
+      "observed_at": "2026-11-14T12:19:32.114244+00:00",
+      "program": "Utair Status",
+      "partner": "Utair",
+      "kind": "tier_benefit",
+      "field": "benefit",
+      "public_clause": "Полный список партнеров в вашем личном кабинете уровней Gold и Platinum в разделе \"Акции и промокоды\"",
+      "expected_codes": [],
+      "expected_delivery": [],
+      "retained_delivery": [
+        "account"
+      ]
+    },
+    {
+      "name": "delivery_66",
+      "source_url": "https://ut0.ru/ZNxBpY",
+      "observed_at": "2026-11-14T12:19:32.114244+00:00",
+      "program": "Utair Status",
+      "partner": "Utair",
+      "kind": "program_rules",
+      "field": "conditions",
+      "public_clause": "применения промокода в личном кабинете и действует остаток календарного года,",
+      "expected_codes": [],
+      "expected_delivery": [],
+      "retained_delivery": [
+        "account"
+      ]
+    },
+    {
+      "name": "delivery_67",
+      "source_url": "https://ut0.ru/cuOyfc",
+      "observed_at": "2026-11-14T12:19:32.114244+00:00",
+      "program": "Utair Status",
+      "partner": "Utair",
+      "kind": "program_rules",
+      "field": "conditions",
+      "public_clause": "применения промокода в личном кабинете и действует в течение двух месяцев.",
+      "expected_codes": [],
+      "expected_delivery": [],
+      "retained_delivery": [
+        "account"
+      ]
+    },
+    {
+      "name": "delivery_71",
+      "source_url": "https://coralbonus.ru/klub-privilegii/vse-dlya-doma-i-otdykha/airo/",
+      "observed_at": "2026-11-14T15:51:46.680280+00:00",
+      "program": "CoralBonus — Клуб",
+      "partner": null,
+      "kind": "partner_offer",
+      "field": "conditions",
+      "public_clause": "Введите полученный промокод при оформлении заказа на сайте/в мобильном приложении Airo или сообщите его менеджеру по телефону",
+      "expected_codes": [],
+      "expected_delivery": [],
+      "retained_delivery": [
+        "app"
+      ]
+    },
+    {
+      "name": "delivery_72",
+      "source_url": "https://coralbonus.ru/klub-privilegii/avtomobili/portal/",
+      "observed_at": "2026-11-14T15:51:46.680280+00:00",
+      "program": "CoralBonus — Клуб",
+      "partner": null,
+      "kind": "partner_offer",
+      "field": "conditions",
+      "public_clause": "Введите полученный промокод на терминале оплаты перед въездом в бокс или в мобильном приложении «Умная мойка» в специальное поле",
+      "expected_codes": [],
+      "expected_delivery": [],
+      "retained_delivery": [
+        "app"
+      ]
+    },
+    {
+      "name": "delivery_73",
+      "source_url": "https://coralbonus.ru/klub-privilegii/zdorov-e/medsi/",
+      "observed_at": "2026-11-14T15:51:46.680280+00:00",
+      "program": "CoralBonus — Клуб",
+      "partner": null,
+      "kind": "partner_offer",
+      "field": "conditions",
+      "public_clause": "• После регистрации в приложении нажмите на иконку с тремя точками в правом нижнем углу экрана, в списке выбрать поле «Промокоды»",
+      "expected_codes": [],
+      "expected_delivery": [],
+      "retained_delivery": [
+        "app"
+      ]
+    },
+    {
+      "name": "delivery_76",
+      "source_url": "https://ekp.spb.ru/api/portal/loyalty/partners",
+      "observed_at": "2026-11-14T09:26:59.224303+00:00",
+      "program": "Единая карта петербуржца",
+      "partner": "PREMIER",
+      "kind": "partner_offer",
+      "field": "benefit",
+      "public_clause": "при активации промокода на сайте или в мобильном приложении",
+      "expected_codes": [],
+      "expected_delivery": [],
+      "retained_delivery": [
+        "app"
+      ]
+    },
+    {
+      "name": "delivery_78",
+      "source_url": "https://ekp.spb.ru/api/portal/loyalty/partners",
+      "observed_at": "2026-11-14T09:26:59.224303+00:00",
+      "program": "Единая карта петербуржца",
+      "partner": "Максавит",
+      "kind": "partner_offer",
+      "field": "benefit",
+      "public_clause": "на любой заказ от 2 000 ₽ на сайте «Максавит» или в приложении «Аптека Максавит — заказ лекарств» по промокоду",
+      "expected_codes": [],
+      "expected_delivery": [],
+      "retained_delivery": [
+        "app"
+      ]
+    },
+    {
+      "name": "delivery_55",
+      "source_url": "https://t.me/ekpcard/5209",
+      "observed_at": "2026-11-14T12:19:32.114244+00:00",
+      "program": "ЕКП — официальные объявления",
+      "partner": null,
+      "kind": "announcement",
+      "field": "benefit",
+      "public_clause": "Ознакомиться с программой лояльности и узнать промокод можно на портале по ссылке или в мобильном приложении ЕКП в разделе «Скидки и бонусы» — «Партнёры».",
+      "expected_codes": [],
+      "expected_delivery": [
+        "app"
+      ],
+      "retained_delivery": [
+        "app"
+      ]
+    },
+    {
+      "name": "delivery_65",
+      "source_url": "https://msk.t2.ru/journal/article/more-loyalty",
+      "observed_at": "2026-11-14T12:19:32.114244+00:00",
+      "program": "T2 «Больше»",
+      "partner": "T2",
+      "kind": "program_rules",
+      "field": "benefit",
+      "public_clause": "Нажмите на кнопку «Активировать» – вы получите уведомление с промокодом или другой информацией о предложении в SMS, а также на электронную почту, указанную при регистрации.",
+      "expected_codes": [],
+      "expected_delivery": [
+        "sms"
+      ],
+      "retained_delivery": [
+        "sms"
+      ]
+    },
+    {
+      "name": "delivery_68",
+      "source_url": "https://ut0.ru/qzWiWH",
+      "observed_at": "2026-11-14T12:19:32.114244+00:00",
+      "program": "Utair Status",
+      "partner": "Utair",
+      "kind": "program_rules",
+      "field": "conditions",
+      "public_clause": "- промокод направляется в формате СМС -сообщения на номер телефона",
+      "expected_codes": [],
+      "expected_delivery": [
+        "sms"
+      ],
+      "retained_delivery": [
+        "sms"
+      ]
+    },
+    {
+      "name": "delivery_77",
+      "source_url": "https://ekp.spb.ru/api/portal/loyalty/partners",
+      "observed_at": "2026-11-14T09:26:59.224303+00:00",
+      "program": "Единая карта петербуржца",
+      "partner": "Гостиничный комплекс «Малые Карелы»",
+      "kind": "partner_offer",
+      "field": "activation",
+      "public_clause": "Промокод сохранится в личном кабинете",
+      "expected_codes": [],
+      "expected_delivery": [
+        "account"
+      ],
+      "retained_delivery": [
+        "account"
+      ]
+    },
+    {
+      "name": "delivery_79",
+      "source_url": "https://konsierge.com/benefits",
+      "observed_at": "2026-11-14T12:19:32.114244+00:00",
+      "program": "Konsierge — публичные привилегии",
+      "partner": "OSKELLY",
+      "kind": "partner_offer",
+      "field": "conditions",
+      "public_clause": "Чтобы воспользоваться привилегией, пожалуйста, обратитесь в чат мобильного приложения для получения промокода.",
+      "expected_codes": [],
+      "expected_delivery": [
+        "app"
+      ],
+      "retained_delivery": [
+        "app"
+      ]
+    },
+    {
+      "name": "unrelated_order_app",
+      "source_url": "https://vamprivet.ru/promo/produkty-pitaniya/khudeyte-legko-khudeyte-so-vkusom-1/",
+      "observed_at": "2026-09-24T10:11:58.060505+00:00",
+      "program": "Привет! / Мир / СБП",
+      "partner": "BeFit",
+      "kind": "partner_offer",
+      "field": "conditions",
+      "public_clause": "Успейте получить его до 31 декабря 2026, а активировать до 31 января 2027 – Переходите на сайт BeFit или в приложение «Befit: Доставка здоровой еды» ( Google Play , AppStore , AppGallery , RuStore ), выбирайте программу питания и нажимайте «Заказать» – При оформлении заказа отметьте «У меня есть промокод», введите его в специальном окне, нажмите «Применить» и получите скидку 2 000 ₽ на первый заказ – Скидка действует только для новых клиентов, ранее не оформлявшивших заказ на сайте или в приложении Befit",
+      "expected_codes": [],
+      "expected_delivery": [],
+      "retained_delivery": [
+        "app"
+      ]
+    },
+    {
+      "name": "separate_payment_account_and_app",
+      "source_url": "https://vamprivet.ru/promo/razvlecheniya/vselennaya-razvlecheniy-v-odnoy-multipodpiske/",
+      "observed_at": "2026-09-24T10:11:58.060505+00:00",
+      "program": "Привет! / Мир / СБП",
+      "partner": "Wink",
+      "kind": "partner_offer",
+      "field": "conditions",
+      "public_clause": "Успейте получить его до 30 сентября 2026, а активировать до 15 октября 2026 – Войдите или зарегистрируйтесь на Wink в приложении ( Google Play , App Store , RuStore , AppGallery ), на сайте или SmartTV – Привяжите банковскую карту в личном кабинете Wink в приложении в разделе «Способы оплаты» или на сайте в разделе «Платежи и подписки» – Введите промокод в разделе «Активировать промокод» и получите 30 дней подписки «Wink Всё в одном» бесплатно",
+      "expected_codes": [],
+      "expected_delivery": [],
+      "retained_delivery": [
+        "account"
+      ]
+    },
+    {
+      "name": "quoted_button_before_merchant_account",
+      "source_url": "https://vamprivet.ru/promo/avtovladelycam/poluchite-bonus-za-oformlenie-osago-4/",
+      "observed_at": "2026-09-24T10:11:58.060505+00:00",
+      "program": "Привет! / Мир / СБП",
+      "partner": "Banki.ru",
+      "kind": "partner_offer",
+      "field": "activation",
+      "public_clause": "«Получить промокод» Активируйте полученный промокод На сайте Банки.ру по специальной ссылке Оформите полис ОСАГО Через 50 дней после оформления зайдите в личный кабинет Банки.ру, перейдите в раздел",
+      "expected_codes": [],
+      "expected_delivery": [],
+      "retained_delivery": [
+        "account"
+      ]
+    },
+    {
+      "name": "support_channel",
+      "source_url": "https://msk.t2.ru/bolshe/offers",
+      "observed_at": "2026-10-23T10:14:11.464056+00:00",
+      "program": "T2 «Больше»",
+      "partner": "Яндекс Лавка",
+      "kind": "partner_offer",
+      "field": "conditions",
+      "public_clause": "Если у вас возникли трудности с промокодом или появились вопросы по работе онлайн-магазина, обратитесь в поддержку Яндекс Лавки через сайт , приложение или бот в Telegram @yasupport.",
+      "expected_codes": [],
+      "expected_delivery": [],
+      "retained_delivery": [
+        "app"
+      ]
+    },
+    {
+      "name": "plural_application_channel",
+      "source_url": "https://backit.me/ru/cashback/shops/streetbeat",
+      "observed_at": "2026-11-14T12:19:32.114244+00:00",
+      "program": "Backit — денежный кешбэк",
+      "partner": "STREET BEAT",
+      "kind": "partner_offer",
+      "field": "conditions",
+      "public_clause": "Промокоды действуют только на сайте и в приложении",
+      "expected_codes": [],
+      "expected_delivery": [],
+      "retained_delivery": [
+        "app"
+      ]
+    },
+    {
+      "name": "use_only_in_merchant_app",
+      "source_url": "https://x5club.ru/partners/230",
+      "observed_at": "2026-10-08T12:07:38.985165+00:00",
+      "program": "X5 Клуб — партнёры",
+      "partner": "«Вкусно — и точка»",
+      "kind": "partner_offer",
+      "field": "conditions",
+      "public_clause": "Промокод можно использовать только в мобильном приложении «Вкусно – и точка».",
+      "expected_codes": [],
+      "expected_delivery": [],
+      "retained_delivery": [
+        "app"
+      ]
+    },
+    {
+      "name": "order_exclusion_channels",
+      "source_url": "https://magnit.ru/partners/1760",
+      "observed_at": "2026-11-14T12:19:32.114244+00:00",
+      "program": "Магнит Плюс — партнёры",
+      "partner": "Hoff",
+      "kind": "partner_offer",
+      "field": "conditions",
+      "public_clause": "за заказы с применением промокода, заказы в приложении и через колл-центр",
+      "expected_codes": [],
+      "expected_delivery": [],
+      "retained_delivery": [
+        "app"
+      ]
+    },
+    {
+      "name": "obtained_from_programme_account",
+      "source_url": "https://vamprivet.ru/promo/krasota-i-zdorovye/chekap-zubov-dlya-zdorovoy-ulybki-1/",
+      "observed_at": "2026-09-24T10:11:58.060505+00:00",
+      "program": "Привет! / Мир / СБП",
+      "partner": "Дева-Дент (Deva-Dent)",
+      "kind": "partner_offer",
+      "field": "conditions",
+      "public_clause": "При себе необходимо иметь паспорт и скриншот полученного промокода из личного кабинета – По промокоду услуга «Приём (осмотр, консультация) врача-стоматолога» предоставляется за 0 ₽.",
+      "expected_codes": [],
+      "expected_delivery": [
+        "account"
+      ],
+      "retained_delivery": [
+        "account"
+      ]
+    },
+    {
+      "name": "retrieval_heading_programme_app",
+      "source_url": "https://vamprivet.ru/promo/avtovladelycam/poluchite-bonus-za-oformlenie-osago-4/",
+      "observed_at": "2026-09-24T10:11:58.060505+00:00",
+      "program": "Привет! / Мир / СБП",
+      "partner": "Banki.ru",
+      "kind": "partner_offer",
+      "field": "activation",
+      "public_clause": "Как получить бонусы Получите промокод Зарегистрируйтесь на vamprivet.ru или в приложении «Привет!» и нажмите кнопку",
+      "expected_codes": [],
+      "expected_delivery": [
+        "app"
+      ],
+      "retained_delivery": [
+        "app"
+      ]
+    },
+    {
+      "name": "barcode_saved_in_programme_account",
+      "source_url": "https://vamprivet.ru/promo/produkty-pitaniya/pokupki-v-lente-s-vygodoy-po-shtrikhkodu-4/",
+      "observed_at": "2026-09-24T10:11:58.060505+00:00",
+      "program": "Привет! / Мир / СБП",
+      "partner": "Лента",
+      "kind": "partner_offer",
+      "field": "conditions",
+      "public_clause": "Вы перейдёте на сайт «Ленты», где откроется страница со штрихкодом – Для вашего удобства советуем сделать скриншот штрихкода, чтобы он был у вас под рукой при оплате в магазине – Приз с вашим уникальным штрихкодом также будет отображаться в Личном кабинете на vamprivet.ru в разделе «Промокоды и подарки».",
+      "expected_codes": [],
+      "expected_delivery": [
+        "account"
+      ],
+      "retained_delivery": [
+        "account"
+      ]
+    },
+    {
+      "name": "registration_redeems_code_in_merchant_app",
+      "source_url": "https://vamprivet.ru/promo/transport/karshering-dlya-vashikh-dostizheniy/",
+      "observed_at": "2026-09-16T10:03:33.556363+00:00",
+      "program": "Привет! / Мир / СБП",
+      "partner": "Делимобиль",
+      "kind": "partner_offer",
+      "field": "conditions",
+      "public_clause": "Успейте получить его до 16 сентября 2026, а активировать до 30 сентября 2026 – Регистрируйтесь в мобильном приложении «Делимобиль» ( AppStore , Google Play , RuStore ), указав промокод в специальном поле и получите 2 000 приветственных бонусов Дополнительно – Воспользоваться промокодом можно один раз – Баллами можно погасить до 50% стоимости поездки или расходовать бонусы постепенно – В акции участвуют следующие города: Москва, Санкт-Петербург, Екатеринбург, Казань, Нижний Новгород, Новосибирск, Ростов-на-Дону, Самара, Тольятти, Тула, Сочи, Пермь и Уфа",
+      "expected_codes": [],
+      "expected_delivery": [],
+      "retained_delivery": [
+        "app"
+      ]
+    }
+  ]
+}
