@@ -183,6 +183,7 @@ def record_row(n, as_of):
     from source_lifecycle import reader_hold
     hold=reader_hold(raw,as_of)
     if hold:return None,hold
+    if kind=="announcement":return None,"анонс без проверенных условий"
     if kind in NOISE_KIND:return None,"неразобранный источник"
     if raw.get("source_status")=="archived":return None,"архив источника"
     if (raw.get("source_status") in ("cancelled","finished","disabled")

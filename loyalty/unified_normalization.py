@@ -17,7 +17,7 @@ from urllib.parse import urlsplit, urlunsplit, parse_qsl, urlencode
 from normalized import (normalize_rates, percent_spans, number, NUMBER, TYPES,
                         NUMERIC_TOKEN, literal_number, number_starts_here,
                         reward_amounts, reward_basis, fixed_discount_amounts, benefit_mentions,
-                        monetary_caps, percentage_caps)
+                        monetary_caps, percentage_caps, rate_clause_contexts)
 from promo_codes import (LABEL, extract_promocodes, reconcile_promocode, reconcile_promocode_delivery,
                          coupon_restriction_continuation, coupon_owned_prefix,
                          promocode_occurrences, promocode_cancelled)
@@ -25,7 +25,7 @@ from iso_datetime import parse_iso_datetime
 from reward_context import (reward_role, benefit_denied, gift_spans, mileage_formula_end,
                             purchase_requirement_denied, benefit_context_text)
 
-VERSION = '1.0.10'
+VERSION = '1.0.11'
 GROUPS = ('benefits', 'conditions', 'costs', 'codes')
 INPUT_TABS = {
     'parser_offers': (1, 26), 'loyalty_partner_benefits': (4, 13),
@@ -385,11 +385,11 @@ def _clauses(raw, *, extra_covered_quotes=None):
             if start>=0 and value.find(literal,start+1)<0:
                 spans.append((start,start+len(literal)))
         # Preserve decimal periods, URLs, dates and the actual original substring.
-        for m in re.finditer(r'[^\n;]+',benefit_context_text(value)):
-            literal=value[m.start():m.end()]
+        for left,right,list_heading in rate_clause_contexts(value):
+            literal=value[left:right]
             clause=literal.strip()
             if not clause:continue
-            start=m.start()+len(literal)-len(literal.lstrip())
+            start=left+len(literal)-len(literal.lstrip())
             rate_clause=clause
             for left,right in spans:
                 left=max(start,left)-start
@@ -397,10 +397,10 @@ def _clauses(raw, *, extra_covered_quotes=None):
                 if left<right:
                     # Separators cannot join labels or bases across removed text.
                     rate_clause=rate_clause[:left]+';'*(right-left)+rate_clause[right:]
-            key=(clause,rate_clause)
+            key=(clause,rate_clause,list_heading)
             if key in seen:continue
             seen.add(key)
-            yield path,clause,rate_clause
+            yield path,clause,rate_clause,list_heading
 
 
 def _scope(clause):
@@ -570,6 +570,8 @@ def _component_anchors(clause):
                         for m,a in matches]
     groups['gift']=[{'start':m.start(),'end':m.end(),'value':None,'min_value':None}
                     for m in gift_spans(clause,boundaries_only=True)]
+    groups['free_delivery']=[{'start':m.start(),'end':m.end(),'value':None,'min_value':None}
+                             for m in re.finditer(r'\bбесплатн\w*\s+доставк\w*',clause,re.I)]
     components=sorted(({**s,'family':family,'ordinal':i} for family,spans in groups.items()
                        for i,s in enumerate(spans)),key=lambda s:(s['start'],s['end']))
     anchors=[];owners={}
@@ -947,10 +949,14 @@ def normalize_record(raw, *, as_of):
            quality={'level':'partial','verification':'source_snapshot' if raw['origin']=='parser_offers' else 'legacy_not_reverified',
                     'issues':list(raw.get('source_warnings',[])),'unparsed_clause_count':0,'semantic_completeness':'not_certified'},
            relationships=[])
-    from owned_offer_dates import project_retained_validity
+    from owned_offer_dates import project_retained_validity, retained_mir_start_conflict, MIR_START_CONFLICT
     project_retained_validity(raw,n['validity'])
     if n['validity']['until']:n['validity']['status']='expired' if n['validity']['until']<as_of else 'within_stated_period'
     if n['validity']['from'] and n['validity']['from']>as_of:n['validity']['status']='not_started'
+    if retained_mir_start_conflict(raw):
+        n['validity']['from']=None
+        if n['validity']['status']!='expired':n['validity']['status']='source_date_conflict'
+        if MIR_START_CONFLICT not in n['quality']['issues']:n['quality']['issues'].append(MIR_START_CONFLICT)
     if raw['kind'] in ('raw_page','source_observation') or raw.get('details',{}).get('extraction_method')=='digest_bound_visual_review':
         n['quality']['level']='evidence_only';n['quality']['issues'].append('evidence_only_no_automatic_benefits')
         validate_normalized(n);return n
@@ -1281,12 +1287,12 @@ def normalize_record(raw, *, as_of):
             and isinstance(heading,str) and heading
             and raw.get('benefit','').startswith(heading+': ')):
         owned_heading=heading
-    for path,clause,rate_clause in (() if airline_rules else _clauses(raw,extra_covered_quotes=covered_quotes)):
+    for path,clause,rate_clause,list_heading in (() if airline_rules else _clauses(raw,extra_covered_quotes=covered_quotes)):
         scope=_scope(clause);recognized=rate_clause!=clause
         # Do not derive benefits from unassigned raw PDF table text.
         # The hotel's published heading labels only its owned benefit section;
         # common conditions and unrelated sources cannot inherit that label.
-        heading_context=owned_heading if path=='/benefit' else ''
+        heading_context=(owned_heading if path=='/benefit' else '') or list_heading
         rate_text=rate_clause.removeprefix(heading_context+': ') if heading_context else rate_clause
         spans=percent_spans(rate_text)
         rate_scopes,rate_owners=_component_context(rate_text)

@@ -10,7 +10,7 @@ from html_text import html_text
 from normalized import make_offer, text, BLOCKED
 from partner_pages import CONFIG as PARTNER_PAGES,extract_partner_page,utair_partners,content as block_content
 from t2_source import page_records as t2_page_records,URLS as T2_URLS
-from owned_offer_dates import numbered_discount_end
+from owned_offer_dates import numbered_discount_end, mir_start_conflict, MIR_START_CONFLICT
 
 PROGRAMS = {'moskvich':'Карта «Москвича»','noname':'No Name Card','s7':'S7 Priority',
  'ural':'Уральские авиалинии — «Крылья»','rgo':'Программа лояльности членов РГО',
@@ -89,6 +89,10 @@ def mir_detail(data: dict,url: str,observed_at: str) -> list[dict]:
     def iso(value):
         return datetime.strptime(value,'%d.%m.%Y').date().isoformat() if value else None
     dates={k:iso(p.get(v)) for k,v in [('valid_from','startDate'),('valid_until','endDate')]}
+    date_warnings=[]
+    if mir_start_conflict(templates,dates['valid_from'],dates['valid_until']):
+        dates['valid_from']=None
+        date_warnings.append(MIR_START_CONFLICT)
     status='cancelled' if p.get('promoIsCancelled') else 'finished' if p.get('promoIsFinished') else p.get('status','unknown')
     links=[]
     for x in (p.get('templates') or []):
@@ -103,7 +107,8 @@ def mir_detail(data: dict,url: str,observed_at: str) -> list[dict]:
     r=make_offer('mir',p['xml_id'],PROGRAMS['mir'],p.get('owner',{}).get('name'),benefit,url,observed_at,
          conditions='\n'.join((x['title']+'\n'+x['text']).strip() for x in templates if x['text']),
          redemption=text(p.get('freeFormBlock')),title=p.get('name',''),category=p.get('short_desc'),
-         details=details,source_status=status,locator='promoDetail.promo.promoAction',**dates)
+         details=details,source_status=status,locator='promoDetail.promo.promoAction',
+         warnings=date_warnings,**dates)
     return [r]
 
 
