@@ -86,6 +86,12 @@ def practical_content(html):
 
 def period(text):
     months=('января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря')
+    # The encountered labelled range shares its final year across both bounds.
+    text=re.sub(r'(Срок проведения акции\s*:\s*)(\d{1,2})\s+('
+                + '|'.join(months) + r')\s*–\s*(\d{1,2})\s+('
+                + '|'.join(months) + r')\s+(\d{4})',
+                lambda m:m[1]+'с '+m[2]+' '+m[3]+' '+m[6]+' – '+m[4]+' '+m[5]+' '+m[6],
+                text,flags=re.I)
     text=re.sub(r'(\d{1,2})\s+('+ '|'.join(months) +r')\s+(\d{4})',lambda m:m[1].zfill(2)+'.'+str(months.index(m[2].lower())+1).zfill(2)+'.'+m[3],text,flags=re.I)
     pairs=re.findall(r'(?:Общий срок проведения акции|Срок проведения акции|Сроки акции|Период проведения акции|условия акции в период|Акция действует)\s*:?\s*с\s*(\d{2}\.\d{2}\.\d{4})(?:\s+года?)?\s*(?:по|до|–|-)\s*(\d{2}\.\d{2}\.\d{4})',text,re.I)
     ends=re.findall(r'(?:акци\w*\s+действует\s+до|предложение\s+действует\s+до|Срок\s+действия\s+акции\s*:\s*до)\s*(\d{2}\.\d{2}\.\d{4})',text,re.I)

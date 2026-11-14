@@ -204,6 +204,18 @@ def mileage_formula_end(text, end):
 
 def reward_role(text, start, end, *, amounts=()):
     """Action/reference owned by a literal points or miles quantity."""
+    prefix = text[:start]
+    # In a cash-or-rewards price, "за" owns both alternatives. The cash
+    # amount is not a reward mention, so the ordinary coordinated-list walk
+    # cannot carry that preposition to the second amount.
+    if re.search(r'\bза\s+\d[\d., \t\u00a0\u202f]*\s*'
+                 r'(?:₽|руб\w*\.?|RUB)\s+или\s*$', prefix, re.I):
+        return 'reference'
+    # A nominal overdraft limit describes available spending, not an award.
+    # Anchor its owner immediately before this quantity, rather than letting
+    # a debt label elsewhere in a multi-benefit clause suppress earnings.
+    if re.search(r'\bмильн\w*\s+задолженность\s+до\s*$', prefix, re.I):
+        return 'reference'
     return _owned_role(text, start, end, amounts=amounts)
 
 

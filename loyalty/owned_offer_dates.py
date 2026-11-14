@@ -59,6 +59,44 @@ def project_retained_validity(raw, validity):
             and raw.get('conditions') == block.get('body')):
         from coral_catalog import explicit_period
         start, end = explicit_period(block['body'])
+    elif (raw.get('program') == 'Единая карта петербуржца'
+          and details.get('method') == 'anonymous_source_catalogue_api'):
+        from ekp_catalog import public_row, fields, explicit_end, sha, API, ROOT, REGION, query
+        row = details.get('public_partner', {})
+        try:
+            if (public_row(row) == row and details.get('public_partner_sha256') == sha(row)
+                    and details.get('api_url') == API and raw.get('source_url') == API
+                    and details.get('protected_terms_retained') is False
+                    and details.get('catalogue_root') == ROOT
+                    and details.get('source_region_parameter') == REGION
+                    and details.get('origin_http_status') == 200
+                    and details.get('source_active') is row['active']
+                    and details.get('request') == query(details.get('request', {}).get('pagination', {}).get('offset'))
+                    and re.fullmatch(r'[a-f0-9]{64}', details.get('source_response_sha256', ''))
+                    and details.get('public_detail_url') == ROOT+'tiles/'+row['id']+'?region='+REGION
+                    and all(details.get(k) is False for k in
+                            ('detail_url_individually_opened', 'linked_terms_read', 'user_eligibility_verified'))):
+                f = fields(row)
+                checks = {'partner': 'partner_name', 'title': 'title', 'kind': 'record_kind',
+                          'benefit': 'benefit_text', 'conditions': 'conditions_text',
+                          'activation': 'redemption_text', 'source_status': 'source_status'}
+                if all(raw.get(k) == f[v] for k, v in checks.items()):
+                    end = explicit_end(row)
+        except (ValueError, KeyError, TypeError):
+            return
+    elif details.get('public_reward_source') == 'magnit_partners_public':
+        from public_reward_projection import fields
+        try:
+            f = fields('magnit_partners_public', details['public_reward_evidence'])
+            checks = {'program': 'program', 'partner': 'partner', 'title': 'title',
+                      'source_url': 'url', 'benefit': 'benefit', 'conditions': 'conditions',
+                      'activation': 'activation'}
+            if (details.get('account_used') is False
+                    and raw.get('kind') == f.get('kind', 'partner_offer')
+                    and all(raw.get(k) == f[v] for k, v in checks.items())):
+                start, end = f.get('valid_from'), f.get('valid_until')
+        except (ValueError, KeyError, TypeError):
+            return
     elif details.get('scope') == 'only_cards_in_current_public_partner_inventory':
         block = details.get('public_catalog_block', {})
         if raw.get('conditions') == block.get('body'):

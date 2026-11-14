@@ -91,9 +91,13 @@ def project_common(raw, n, benefit, condition, code):
     f = fields(source, d['public_reward_evidence'])
     checks = {'program': f['program'], 'partner': f['partner'], 'title': f['title'],
               'source_url': f['url'], 'benefit': f['benefit'], 'conditions': f['conditions'],
-              'activation': f['activation'], 'kind': f.get('kind', 'partner_offer'),
-              'valid_from': f.get('valid_from'), 'valid_until': f.get('valid_until')}
+              'activation': f['activation'], 'kind': f.get('kind', 'partner_offer')}
     if any(raw.get(k) != v for k, v in checks.items()): raise ValueError('public_rewards_common_evidence_mismatch')
+    for key in ('valid_from', 'valid_until'):
+        if raw.get(key) != f.get(key):
+            if (source != 'magnit_partners_public' or raw.get(key)
+                    or n['validity'][{'valid_from': 'from', 'valid_until': 'until'}[key]] != f.get(key)):
+                raise ValueError('public_rewards_common_evidence_mismatch')
     scope = f.get('scope', {})
     conditions = []
     if f['conditions']: conditions.append(condition('owned_programme_rules', '/conditions', scope=scope)['id'])

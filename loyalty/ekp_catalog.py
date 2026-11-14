@@ -106,6 +106,17 @@ def fields(row):
                 benefit_text=benefit,conditions_text=conditions,redemption_text=redemption)
 
 
+def explicit_end(row):
+    """Only an active, public offer's explicit action-end sentence owns a date."""
+    if fields(row)['record_kind'] != 'partner_offer':
+        return None
+    from owned_offer_dates import calendar_date
+    dates = {calendar_date(m[1]) for m in re.finditer(
+        r'Акция\s+действует\s+по\s+(\d{2}\.\d{2}\.\d{4})(?!\d|\.\d|-\d)',
+        plain(row.get('loyaltyDescription', '')), re.I)}
+    return next(iter(dates)) if len(dates) == 1 else None
+
+
 def make_record(row,observed_at,*,request,response_sha,observed_total,completed_at):
     from normalized import make_offer
     row=public_row(row);f=fields(row)
@@ -119,7 +130,7 @@ def make_record(row,observed_at,*,request,response_sha,observed_total,completed_
         'protected_terms_retained':False,'category_semantics':'mixed_source_tags_not_eligible_regions'}
     return make_offer('ekp','partner:'+row['id']+':region:'+REGION,'Единая карта петербуржца',
         f['partner_name'],f['benefit_text'],API,observed_at,title=f['title'],conditions=f['conditions_text'],
-        redemption=f['redemption_text'],record_kind=f['record_kind'],source_status=f['source_status'],
+        valid_until=explicit_end(row),redemption=f['redemption_text'],record_kind=f['record_kind'],source_status=f['source_status'],
         link_kind='page_block',locator='partners[id='+row['id']+']; filter.region='+REGION,details=evidence,
         warnings=['public_api_fields_not_full_eligibility_check','source_tags_not_eligible_region_claim',
                   'unread_linked_rules_and_image_only_terms','published_dates_not_automatically_inferred'])
@@ -134,7 +145,7 @@ def validate_record(record):
     if any(record[k]!=text(v, markup=False) for k,v in f.items()):raise ValueError('ekp_owned_fields_mismatch')
     if (record['source_url']!=API or record['native_id']!='partner:'+row['id']+':region:'+REGION
         or record['link_kind']!='page_block' or record['benefit_url'] is not None or record['category'] is not None
-        or record['tables'] or record['valid_from'] is not None or record['valid_until'] is not None
+        or record['tables'] or record['valid_from'] is not None or record['valid_until'] != explicit_end(row)
         or d.get('method')!='anonymous_source_catalogue_api' or d.get('api_url')!=API
         or d.get('catalogue_root')!=ROOT or d.get('request')!=query(d.get('request',{}).get('pagination',{}).get('offset'))
         or d.get('source_region_parameter')!=REGION or d.get('public_partner_sha256')!=sha(row)

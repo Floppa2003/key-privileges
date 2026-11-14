@@ -91,8 +91,8 @@ def own_text(node):
 def explicit_period(body):
     matches = re.findall(r'Срок\s+действия\s+предложения\s*:?\s*до\s+(\d{2})\.(\d{2})\.(\d{4})', body, re.I)
     dates = {date(int(y), int(m), int(d)).isoformat() for d, m, y in matches}
-    ranges = re.findall(r'Срок\s+проведения\s+акции\s*:\s*'
-                        r'(\d{2}\.\d{2}\.\d{4})\s*[-–—]\s*(\d{2}\.\d{2}\.\d{4})(?!\d)', body, re.I)
+    ranges = re.findall(r'(?:Сроки?\s+проведения|Срок\s+действия)\s+акции\s*:\s*'
+                        r'(\d{2}\.\d{2}\.\d{4})\s*(?:[-–—]|по)\s*(\d{2}\.\d{2}\.\d{4})(?!\d)', body, re.I)
     from owned_offer_dates import calendar_date
     periods = {(calendar_date(start), calendar_date(end)) for start, end in ranges}
     if any(start > end for start, end in periods):

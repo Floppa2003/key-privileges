@@ -25,7 +25,7 @@ from iso_datetime import parse_iso_datetime
 from reward_context import (reward_role, benefit_denied, gift_spans, mileage_formula_end,
                             purchase_requirement_denied, benefit_context_text)
 
-VERSION = '1.0.9'
+VERSION = '1.0.10'
 GROUPS = ('benefits', 'conditions', 'costs', 'codes')
 INPUT_TABS = {
     'parser_offers': (1, 26), 'loyalty_partner_benefits': (4, 13),
