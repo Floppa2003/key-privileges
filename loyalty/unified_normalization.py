@@ -16,16 +16,22 @@ from decimal import Decimal, InvalidOperation
 from urllib.parse import urlsplit, urlunsplit, parse_qsl, urlencode
 from normalized import (normalize_rates, percent_spans, number, NUMBER, TYPES,
                         NUMERIC_TOKEN, literal_number, number_starts_here,
-                        reward_amounts, reward_basis, fixed_discount_amounts, benefit_mentions,
-                        monetary_caps, percentage_caps, rate_clause_contexts)
+                        reward_amounts, reward_basis, fixed_monetary_rewards, benefit_mentions,
+                        monetary_caps, percentage_caps, rate_clause_contexts,
+                        native_discount_heading)
 from promo_codes import (LABEL, extract_promocodes, reconcile_promocode, reconcile_promocode_delivery,
                          coupon_restriction_continuation, coupon_owned_prefix,
                          promocode_occurrences, promocode_cancelled)
 from iso_datetime import parse_iso_datetime
 from reward_context import (reward_role, benefit_denied, gift_spans, mileage_formula_end,
-                            purchase_requirement_denied, benefit_context_text)
+                            purchase_requirement_denied, benefit_context_text, nominal_reward_cap,
+                            nominal_reward_cap_basis, nominal_reward_cap_kind, reward_formula_scope,
+                            owned_starred_footnote)
+from reward_percentages import percentage_rewards
+from reward_nominals import (point_declaration_role, percent_point_ceiling,
+                             shared_point_card_options, demo_topup_bonuses)
 
-VERSION = '1.0.11'
+VERSION = '1.0.12'
 GROUPS = ('benefits', 'conditions', 'costs', 'codes')
 INPUT_TABS = {
     'parser_offers': (1, 26), 'loyalty_partner_benefits': (4, 13),
@@ -385,7 +391,17 @@ def _clauses(raw, *, extra_covered_quotes=None):
             if start>=0 and value.find(literal,start+1)<0:
                 spans.append((start,start+len(literal)))
         # Preserve decimal periods, URLs, dates and the actual original substring.
-        for left,right,list_heading in rate_clause_contexts(value):
+        # A native line wrap can separate the purchase noun from its bound.
+        # Preserve offsets and the original evidence while keeping that one
+        # syntactically incomplete phrase together for component ownership.
+        contexts=value
+        wrapped=(r'\b(?:заказ\w*|покупк\w*|чек\w*|бронировани\w*)[ \t]*\n'
+                 r'(?=[ \t]*(?:от|до|не\s+менее|свыше|более)\s+'+NUMERIC_TOKEN+r'\s*'+MONEY+')')
+        for match in re.finditer(wrapped,value,re.I):
+            contexts=contexts[:match.start()]+contexts[match.start():match.end()].replace('\n',' ')+contexts[match.end():]
+        clause_contexts=([(0,len(contexts),'')] if _cleaning_purchase_sequence(contexts)
+                         else rate_clause_contexts(contexts))
+        for left,right,list_heading in clause_contexts:
             literal=value[left:right]
             clause=literal.strip()
             if not clause:continue
@@ -399,23 +415,45 @@ def _clauses(raw, *, extra_covered_quotes=None):
                     rate_clause=rate_clause[:left]+';'*(right-left)+rate_clause[right:]
             key=(clause,rate_clause,list_heading)
             if key in seen:continue
+            if list_heading and (list_heading+' '+clause,list_heading+' '+rate_clause,'') in seen:
+                continue
             seen.add(key)
             yield path,clause,rate_clause,list_heading
 
 
 def _scope(clause):
     scope={}
-    if re.search(r'перв\w*\s+(?:заказ|покупк|визит|посещен)|first\s+(?:order|visit|purchase)',clause,re.I):scope['purchase_stage']='first'
-    if re.search(r'последующ|повторн|repeat|subsequent',clause,re.I):
-        scope['purchase_stage']='multiple_stages' if 'purchase_stage' in scope else 'repeat'
+    first=r'(?:перв(?:ый|ая|ое|ые|ого|ой|ую|ому|ым|ом|ых|ыми)|first)'
+    repeat=r'(?:последующ\w*|повторн\w*|repeat|subsequent)'
+    noun=(r'(?:(?:онлайн[-\s])?(?:заказ\w*|покупк\w*|визит\w*|посещен\w*|'
+          r'чистк\w*|при[её]м\w*|бронирован\w*|обращен\w*|подключен\w*|'
+          r'orders?|visits?|purchases?))\b')
+    first_purchase=bool(re.search(r'\b'+first+r'\s+'+noun,clause,re.I)
+                        or re.search(r'\b'+first+r'\s+(?:или|и|or|and)\s+'
+                                     +repeat+r'\s+'+noun,clause,re.I))
+    if re.search(r'перв\w*\s+(?:заказ|покупк|визит|посещен)|first\s+(?:order|visit|purchase)',clause,re.I):
+        scope['purchase_stage']='first'
+    # Repeating a PIN step, coupon issuance or participation does not identify
+    # a purchase stage. Ellipsis is owned only by an explicit first purchase.
+    repeat_purchase=bool(re.search(r'\b'+repeat+r'\s+'+noun,clause,re.I))
+    if first_purchase and re.search(r'\b(?:на|за|при)\s+(?:все\s+)?'+repeat
+                                    +r'(?=\s*(?:по\b|при\b|с\b|[,;.!?()]|$))',clause,re.I):
+        repeat_purchase=True
+    if repeat_purchase:
+        scope['purchase_stage']='multiple_stages' if first_purchase or 'purchase_stage' in scope else 'repeat'
     return scope
+
+
+def _cap_boundary_text(clause):
+    """Keep the observed cap abbreviation from ending its own parenthesis."""
+    return re.sub(r'(\bмакс)\.(?=\s*\d)',r'\1 ',clause,flags=re.I)
 
 
 def _sentence_bounds(clause,start,end):
     """Original-text boundaries, preserving decimals and ruble abbreviations."""
     # A lowercase continuation after "руб." stays in the price clause. A capitalized
     # next sentence remains a boundary; this is not a general tokenizer.
-    boundaries=[m for m in re.finditer(r'[.!?](?:\s|$)|;',clause)
+    boundaries=[m for m in re.finditer(r'[.!?](?:\s|$)|;',_cap_boundary_text(clause))
                 if not (m[0].startswith('.') and re.search(r'\bруб\Z',clause[:m.start()],re.I)
                         and re.match(r'\s+[а-яёa-z]',clause[m.start()+1:]))]
     left=max((m.end() for m in boundaries if m.end()<=start),default=0)
@@ -449,10 +487,68 @@ def _monetary_cap_kind(clause,cap):
         return 'benefit_cap'
     if owner in ('payment','purchase'):return 'maximum_amount_reference'
     if owner in ('reward','explicit'):return 'benefit_cap'
+    # A percentage of the contract price is the basis of this explicit bonus
+    # award. Its following monetary ceiling limits the award, not that price.
+    bonus_basis=(r'\b(?:бонусы|баллы|мили)\s+начисля\w*\s+в\s+размере\s+'
+                 +NUMERIC_TOKEN+r'\s*%\s+от\s+стоимост\w*'
+                 r'[^0-9%.!?;\n]{0,120}?(?:,\s*)?(?:но\s+)?$')
+    if re.search(bonus_basis,clause[left:cap.start()],re.I):return 'benefit_cap'
     # Keep the existing unlabelled reward-cap convention only in the absence
     # of an explicit local spending/payment owner.
     return ('benefit_cap' if re.search(r'скид|к[еэ]шб[еэ]к',clause,re.I)
             else 'maximum_amount_reference')
+
+
+def _owned_accrual_cap_evidence(raw,path,clause):
+    """Retain an immediately owned source heading for an otherwise bare bound."""
+    if not re.match(r'\s*(?:не\s+более|не\s+больше|максимум)\b',clause,re.I):
+        return None
+    value=pointer(raw,path)
+    if not isinstance(value,str):return None
+    pattern=(r'^[ \t]*Лимит\s+по\s+сумме\s+начисления[ \t]*\r?\n[ \t]*'
+             +re.escape(clause)+r'(?=[ \t]*\r?$)')
+    matches=list(re.finditer(pattern,value,re.I|re.M))
+    return matches[0][0].strip() if len(matches)==1 else None
+
+
+def _monetary_cap_basis(clause,cap):
+    """An explicit period or transaction following this monetary ceiling."""
+    _,right=_sentence_bounds(clause,cap.start(),cap.end())
+    tail=re.split(r'[,;]|\b(?:но|а|или)\b',clause[cap.end():right],maxsplit=1,flags=re.I)[0]
+    patterns={
+        'campaign':r'\b(?:за|на)\s+(?:весь\s+)?период\s+(?:проведения\s+)?акции\b',
+        'month':r'\b(?:за|в)\s+(?:(?:каждый|один)\s+)?месяц\b',
+        'day':r'\b(?:за|в)\s+(?:(?:каждый|один)\s+)?день\b',
+        'payment':r'\b(?:за|на)\s+(?:(?:каждую|одну)\s+)?оплату\b',
+        'booking':r'\b(?:за|на)\s+(?:(?:каждое|одно)\s+)?бронирование\b',
+        'ride':r'\b(?:за|на)\s+(?:(?:каждую|одну)\s+)?поездку\b',
+        'order':r'\b(?:за|на)\s+(?:(?:каждый|один)\s+)?заказ\b',
+        'receipt':r'\b(?:за|на)\s+(?:(?:каждый|один)\s+)?чек\b',
+        'purchase':r'\b(?:за|на)\s+(?:(?:каждую|одну)\s+)?покупку\b',
+        'contract':r'\b(?:за|на)\s+(?:(?:каждый|один)\s+)?договор\b',
+    }
+    audience=(r'^\s*[*.]?\s*(?:(?:на|для)\s+(?:(?:одного|одну|каждого)\s+)?'
+              r'(?:клиента|участника|пассажира|человека|карту)\s+)?')
+    units=[unit for unit,pattern in patterns.items() if re.match(audience+pattern,tail,re.I)]
+    return {'basis_value':1,'basis_unit':units[0]} if len(units)==1 else {}
+
+
+def _owned_monetary_cap_footnote(raw,path,clause):
+    """A single starred reward and a single starred bound retain their owner."""
+    if not re.match(r'^\*\s*(?:не\s+более|не\s+больше|максимум)\b',clause,re.I):
+        return None
+    value=pointer(raw,path)
+    footnote=owned_starred_footnote(value)
+    if footnote is None or footnote['note']!=clause:return None
+    owner=footnote['owner']
+    rates=normalize_rates(owner,with_spans=True)
+    if len(rates)!=1:return None
+    rate=rates[0]
+    key=(rate['unit'],rate.get('_percent_index') if rate['unit']=='percent'
+         else rate.get('_amount_index'))
+    _,owners=_component_context(owner)
+    if key not in owners:return None
+    return {'evidence':footnote['evidence'],'owner':(path,owner,owners[key])}
 
 
 def _purchase_stage_scope(clause,index,spans):
@@ -463,6 +559,8 @@ def _purchase_stage_scope(clause,index,spans):
     ordinary_noun=r'(?:заказ\w*|покупк\w*|визит\w*|посещен\w*|orders?|purchases?|visits?)\b'
     noun=(r'(?:'+ordinary_noun+r'|(?:чистк\w*|при[её]м\w*|бронирован\w*|'
           r'обращен\w*|подключен\w*)\b)')
+    service_noun=r'(?:заняти\w*|(?:месячн\w*\s+)?абонемент\w*)\b'
+    first_service=r'перв(?:ый|ого|ому|ым|ом|ая|ой|ую|ое)'
     left,right=_sentence_bounds(clause,span['start'],span['end'])
     neighbours=[i for i,item in enumerate(spans)
                 if left<=item['start'] and item['end']<=right]
@@ -489,9 +587,18 @@ def _purchase_stage_scope(clause,index,spans):
     markers=[(left+m.start(),left+m.end(),
               'first' if re.match(r'перв|first',m[0],re.I) else 'repeat')
              for m in re.finditer(r'\b(?:повторн\w*|последующ\w*|repeat|subsequent)\b|'
+                                  r'\bследующ\w*\b(?=\s+(?:месячн\w*\s+)?абонемент\w*)|'
+                                  r'\b'+first_service+r'\b(?=\s+'+service_noun+')|'
                                   r'\b(?:перв\w*|first)\b(?=\s+'+ordinary_noun+')|'
                                   r'\b'+first+r'\b(?=\s+'+noun+'|'+shared+')',
                                   clause[left:right],re.I)]
+    # "На следующие" omits the purchase noun in an explicit first/repeat
+    # contrast. A bare "next" booking/month is not a repeat-customer rule.
+    if re.search(r'\b'+first+r'\s+'+noun,clause[left:right],re.I):
+        markers.extend((left+m.start(1),left+m.end(1),'repeat')
+                       for m in re.finditer(r'\bна\s+(?:все\s+)?(следующие)\b'
+                                            r'(?=\s*(?:по\b|при\b|с\b|[,;.!?]|$))',
+                                            clause[left:right],re.I))
     # An explicitly excluded purchase stage is a rule, not an affirmative
     # scope for that benefit. Other components still keep their own stages.
     exclusion=(r'\bне\s+(?:(?:будет|будут)\s+)?'
@@ -500,6 +607,11 @@ def _purchase_stage_scope(clause,index,spans):
               and re.search(exclusion,clause[lower:m[0]],re.I) for lower,upper in windows)]
     markers=[m for m in markers if m not in excluded]
     local={kind for start,end,kind in markers if owned_left<=start and end<=owned_right}
+    # Only this sequential rate inherits the explicit earlier first visit.
+    # Do not turn its ellipsis into a shared stage for another sibling offer.
+    if (not local and any(kind=='first' and end<=owned_left for _,end,kind in markers)
+            and re.fullmatch(r'\s*далее\s+',clause[owned_left:span['start']],re.I)):
+        local={'repeat'}
     all_stages={kind for _,_,kind in markers}
     first,last=spans[neighbours[0]],spans[neighbours[-1]]
     if not local and markers:
@@ -514,7 +626,7 @@ def _purchase_stage_scope(clause,index,spans):
                        and all(re.fullmatch(r'[\s,]*(?:(?:и|или|and|or)\b[\s,]*)?',
                                             clause[spans[a]['end']:spans[b]['start']],re.I)
                                for a,b in zip(neighbours,neighbours[1:])))
-        if shared_prefix or shared_suffix or (same_family and len(all_stages)>1):
+        if shared_prefix or shared_suffix:
             local=all_stages
     if local:
         return {'purchase_stage':next(iter(local)) if len(local)==1 else 'multiple_stages'}
@@ -562,9 +674,12 @@ def _component_anchors(clause):
     quantities/markers are boundaries, even if they do not become benefits.
     """
     groups={'percent':percent_spans(clause)}
+    percent_directions=percentage_rewards(clause,groups['percent'])
+    boundary_text=_cap_boundary_text(clause)
     cap_starts={match.span('value'):match.start() for match,_ in monetary_caps(clause)}
     for family in ('points','miles','RUB'):
-        matches=(fixed_discount_amounts(clause) if family=='RUB' else reward_amounts(clause,family))
+        matches=(((m,a) for m,a,_ in fixed_monetary_rewards(clause))
+                 if family=='RUB' else reward_amounts(clause,family))
         groups[family]=[{'start':m.start(),'end':m.end(),**a,
                          'cap_start':cap_starts.get(m.span('value')) if family=='RUB' else None}
                         for m,a in matches]
@@ -572,18 +687,44 @@ def _component_anchors(clause):
                     for m in gift_spans(clause,boundaries_only=True)]
     groups['free_delivery']=[{'start':m.start(),'end':m.end(),'value':None,'min_value':None}
                              for m in re.finditer(r'\bбесплатн\w*\s+доставк\w*',clause,re.I)]
+    # An independently priced first visit owns its stage even though a plain
+    # visit price is not a discount benefit. Do not lend it to a coordinated
+    # subscription discount ("первого визита 4000₽ и скидка 15% ...").
+    priced_purchase=(r'\b(?:перв\w*|повторн\w*|последующ\w*)\s+'
+                     r'(?:визит\w*|посещен\w*|заказ\w*|покупк\w*|при[её]м\w*|бронирован\w*)'
+                     r'\s*[-—–:]?\s*(?P<price>'+NUMERIC_TOKEN+r')\s*'+MONEY)
+    groups['price_reference']=[
+        {'start':m.start(),'end':m.end(),'value':None,'min_value':None}
+        for m in re.finditer(priced_purchase,clause,re.I)
+        if not any(s['start']<m.end() and m.start('price')<s['end']
+                   for spans in groups.values() for s in spans)]
     components=sorted(({**s,'family':family,'ordinal':i} for family,spans in groups.items()
                        for i,s in enumerate(spans)),key=lambda s:(s['start'],s['end']))
     anchors=[];owners={}
     for span in components:
+        nominal_cap=(nominal_reward_cap(clause,span['start'])
+                     if span['family'] in ('points','miles') else None)
+        previous_end=(_sentence_bounds(clause,anchors[-1]['start'],anchors[-1]['end'])[1]
+                      if anchors else None)
+        cap_continuation=(nominal_cap and anchors and
+                          re.fullmatch(r'[.!?]\s*',clause[previous_end:nominal_cap.start()]))
+        if (anchors and (nominal_cap or span['family']=='points' and percent_point_ceiling(clause[:span['start']]))):
+            left,right=_sentence_bounds(clause,span['start'],span['end'])
+            rate_owners=[a for a in anchors if a['family']=='percent' and left<=a['start']<right
+                    and percent_directions.get(a['ordinal'],{}).get('kind')
+                    in ('earn_points','earn_miles','earn_rewards','cashback')]
+            # An explicit nominal ceiling continues one affirmative rate in
+            # this same sentence. A list with several rates remains ambiguous.
+            cap_continuation=cap_continuation or (len(rate_owners)==1 and rate_owners[0] is anchors[-1])
         bracket_cap=(span['family'] in ('points','miles') and
                      re.search(r'\(\s*(?:до|не\s+более)\s*$',clause[:span['start']],re.I))
         bracket_cap=bracket_cap or (span.get('cap_start') is not None
                      and re.search(r'\(\s*$',clause[:span['cap_start']]))
+        bracket_cap=bracket_cap or (nominal_cap and re.search(r'\(\s*$',clause[:nominal_cap.start()]))
         denominator=(span['family'] in ('points','miles') and
                      re.search(r'\bза\s+(?:кажды[еий]\s+)?$',clause[:span['start']],re.I))
-        if ((bracket_cap or denominator) and anchors and
-                not re.search(r'[.!?](?:\s|$)|[;\n]',clause[anchors[-1]['end']:span['start']])):
+        if (cap_continuation or (bracket_cap or denominator) and anchors and
+                not re.search(r'[.!?](?:\s|$)|[;\n]',boundary_text[anchors[-1]['end']:span['start']])):
             owners[(span['family'],span['ordinal'])]=len(anchors)-1
         else:
             owners[(span['family'],span['ordinal'])]=len(anchors)
@@ -591,10 +732,62 @@ def _component_anchors(clause):
     return anchors,owners
 
 
+def _cleaning_purchase_sequence(value):
+    """The retained first/second/others list explicitly shares its service noun."""
+    percent=NUMERIC_TOKEN+r'\s*%'
+    return re.fullmatch(r'\s*(?P<first>'+percent+r'\s+first cleaning)\s*;\s*'
+                        r'(?P<second>'+percent+r'\s+second)\s*;\s*'
+                        r'(?P<others>'+percent+r'\s+others)\s*[.!]?\s*',value,re.I)
+
+
+def _service_audience_scope(clause,anchor,phrase):
+    """Adult/child service restrictions belong to the local stated component."""
+    if not re.search(r'\b(?:заняти\w*|абонемент\w*)\b',phrase,re.I):return {}
+    pattern=r'\b(?:для ((?:взрослых|детей)(?:\s+и\s+(?:взрослых|детей))?)|(Взрослым|детям):)'
+    def labels(value):
+        return {'children' if word.casefold() in ('детей','детям') else 'adults'
+                for m in re.finditer(pattern,value,re.I)
+                for word in re.findall(r'взрослых|взрослым|детей|детям',m[1] or m[2],re.I)}
+    audience=labels(phrase)
+    if not audience:
+        left,right=_sentence_bounds(clause,anchor['start'],anchor['end'])
+        # A single explicit group label may qualify its comma-separated list.
+        # Mixed adult/child clauses can only use their local label.
+        audience=labels(clause[left:right])
+    if len(audience)!=1:return {}
+    owned=re.sub(r'\s+Разовая скидка\s*$','',phrase,flags=re.I).strip()
+    return {'audience':next(iter(audience)),'source_clause':owned}
+
+
 def _component_context(clause):
     anchors,owners=_component_anchors(clause)
     scopes={key:_purchase_stage_scope(clause,index,anchors)
             for key,index in owners.items()}
+    numbered_pass=bool(re.search(r'\bпервый абонемент\b',clause,re.I)
+                       and re.search(r'\bна второй и третий при последовательном продлении\b',clause,re.I))
+    phrases=(_component_phrases(clause) if numbered_pass or re.search(
+        r'\b(?:для (?:взрослых|детей)|Взрослым:|детям:)',clause,re.I) else {})
+    cleaning=_cleaning_purchase_sequence(clause)
+    for key,index in owners.items():
+        anchor=anchors[index]
+        if anchor['family']!='percent':continue
+        phrase=phrases.get((anchor['family'],anchor['ordinal']),'')
+        scopes[key].update(_service_audience_scope(clause,anchor,phrase))
+        if numbered_pass and re.search(r'\bна второй и третий при последовательном продлении\b',phrase,re.I):
+            scopes[key].update(purchase_stage='repeat',purchase_ordinals=[2,3],
+                               purchase_unit='subscription',source_clause=phrase)
+        if cleaning and len(anchors)==3:
+            ordinal=anchor['ordinal']
+            scopes[key].update(purchase_stage='first' if ordinal==0 else 'repeat',
+                               purchase_unit='cleaning',
+                               source_clause=cleaning[('first','second','others')[ordinal]])
+            scopes[key]['purchase_ordinal' if ordinal<2 else 'purchase_ordinal_min']=ordinal+1
+        # The literal tier list qualifies this mileage percentage and any
+        # nominal limit explicitly attached to it, never the neighbouring row.
+        tiers=re.match(r'\s+милями\s*[—–-]\s*для\s+уровней\s+'
+                       r'(?P<tiers>[A-Za-z]+(?:\s*,\s*[A-Za-z]+)*)(?=\s*[.!?]|\s*$)',
+                       clause[anchor['end']:],re.I)
+        if tiers:scopes[key]['tiers']=re.split(r'\s*,\s*',tiers['tiers'])
     return scopes,{key:(anchors[i]['family'],anchors[i]['ordinal']) for key,i in owners.items()}
 
 
@@ -707,6 +900,19 @@ def _monetary_condition_context(clause,start,end):
                    and not _scope(clause[left:anchors[0]['start']]))
     if shared_prefix or (coordinated and (end<=anchors[0]['start'] or start>=anchors[-1]['end'])):
         return _scope(clause[left:right]),keys
+    # Flattened source lists can omit punctuation between spend tiers. The
+    # literal "5% за оплату заказа от ... 10% ..." still names this rate's
+    # own purchase threshold; one unrelated unsplit gap must not link every
+    # tier's minimum to every sibling benefit in the complete source clause.
+    preceding=[a for a in anchors if a['end']<=start]
+    if preceding and re.match(r'(?:заказ|покупк|чек|бронировани)\w*\b',clause[start:end],re.I):
+        owner=preceding[-1]
+        tail=clause[owner['end']:start]
+        direct=(r'\s*(?:(?:скидк\w*|к[еэ]шб[еэ]к\w*)\s+)?'
+                r'(?:на|за|при)\s+(?:(?:оплат\w*|сумм\w*)\s+)?')
+        if re.fullmatch(direct,tail,re.I):
+            return (_purchase_stage_scope(clause,anchors.index(owner),anchors),
+                    {(owner['family'],owner['ordinal'])})
     boundaries=[left]
     for a,b in zip(anchors,anchors[1:]):
         splits=list(re.finditer(r',(?!\d)|[;+]|\b(?:и|а|или|and|or|but)\b',
@@ -789,6 +995,64 @@ def _english_rates(clause, *, heading_context='', with_spans=False):
                      r'(?:(?:of|is|at|equals)\s+)+', r'\1 ', working, flags=re.I)
     return [{**rate, 'evidence': clause}
             for rate in normalize_rates(working, heading_context=heading_context,with_spans=with_spans)]
+
+
+def _declared_discount_heading(raw, path, clause=''):
+    """A native discount field labels its own benefit text, never other cells."""
+    declared=raw.get('details',{}).get('declared_benefit_type','')
+    if (raw['origin']=='loyalty_partner_benefits' and path=='/conditions'
+            and declared=='Бесплатные сервисы + скидки'
+            and re.match(r'^У\s+(?:Gold|Platinum)\s+отдельно\s+есть\s+\d+\s*%\s+в\s+«[^»]+»',clause)):
+        return 'Скидка'
+    if path != '/benefit':
+        return ''
+    if (raw['origin'] == 'parser_offers' and raw.get('program') == 'No Name Card'
+            and raw.get('source_url') == 'https://nonameburo.com/card'
+            and raw.get('link_kind') == 'page_block'
+            and raw.get('details', {}).get('pairing') == 'same_record_aligned_column_nearest_label'):
+        return native_discount_heading('noname', raw.get('benefit', ''))
+    if re.search(r'\b(?:в\s+прежней\s+базе|в\s+старой\s+официальной\s+подборке|'
+                 r'не\s+подтверждено|требуют\s+подтверждения)\b', raw.get('benefit',''), re.I):
+        return ''
+    if raw['origin'] in ('yandex_discounts_complete_all', 'VG_community_offers'):
+        return 'Скидка'
+    if (raw['origin']=='loyalty_partner_benefits' and re.search(r'скидк',declared,re.I)
+            and not re.search(r'к[еэ]шб[еэ]к|спеццен',declared,re.I)):
+        # Literal point/mileage units still own their individual components.
+        # The native discount label only supplies the unlabelled price part.
+        return 'Скидка'
+    if (raw['origin']=='loyalty_partner_benefits' and declared in ('Привилегия','Пакет привилегий')
+            and re.search(r'\d+\s*%\s+(?:на|у)\s+',clause,re.I)
+            and not re.search(r'балл|бонус|мил[ьяиюе]|к[еэ]шб[еэ]к|годовых',clause,re.I)):
+        return 'Скидка'
+    return ''
+
+
+def _declared_reward_heading(raw, path):
+    if path!='/benefit' or raw.get('origin')!='loyalty_partner_benefits':return ''
+    if re.search(r'\b(?:в\s+прежней\s+базе|в\s+старой\s+официальной\s+подборке|'
+                 r'не\s+подтверждено|требуют\s+подтверждения)\b',raw.get('benefit',''),re.I):return ''
+    declared=raw.get('details',{}).get('declared_benefit_type','')
+    allowed={'Баллы','Бонусы','Мили','Начисление бонусов','Бонусы/кешбэк','Бонусы/привилегии',
+             'Статусное начисление','Повышенное начисление','Кешбэк'}
+    return declared if declared in allowed else ''
+
+
+def _legacy_package_comparison_echo(raw, path, clause):
+    """A museum package's restatement also compares a different membership.
+
+    The own programme discount is already stated in this record's benefit;
+    the following individual-card percentage is not another package benefit.
+    """
+    if (raw['origin']!='loyalty_partner_benefits' or path!='/conditions'
+            or raw.get('details',{}).get('declared_benefit_type')!='Пакет привилегий'):
+        return False
+    comparison=re.fullmatch(r'Скидка\s+('+NUMERIC_TOKEN+r')\s*%\s+на\s+музейные\s+программы\s+'
+                            r'против\s+'+NUMERIC_TOKEN+r'\s*%\s+у\s+индивидуальной\s+карты\.?',clause,re.I)
+    if not comparison:return False
+    own=literal_number(comparison[1]);text=raw.get('benefit','')
+    return any(span['value']==own and re.match(r'\s+на\s+программы\b',text[span['end']:],re.I)
+               for span in percent_spans(text))
 
 
 def _discount_percent_is_product_exception(clause, rate, spans):
@@ -904,10 +1168,18 @@ def _amount_matches(pattern,clause):
 
 def _purchase_minima(clause):
     """Explicit purchase thresholds, retaining their local phrase ownership."""
-    purchase=r'(?:заказ\w*|покупк\w*|чек\w*|бронировани\w*)'
+    purchase=r'(?:заказ\w*|покупк\w*|чек\w*|бронировани\w*)(?:\(и\))?'
     direct=rf'{purchase}\s+(?:на\s+сумму\s+)?от\s+({NUMERIC_TOKEN})\s*{MONEY}'
     covered=set()
     for match,value in _amount_matches(direct,clause):
+        covered.add(match.start(1))
+        if not purchase_requirement_denied(clause[:match.start()],clause[match.end():]):
+            yield match,value,False
+    # The retained tour cashback states its eligible payment in both a short
+    # headline and the imperative purchase instruction. These are spending
+    # thresholds, not another monetary reward.
+    tour=rf'\b(?:оплату\s+тура|оплатите\s+тур\s+стоимостью)\s+от\s+({NUMERIC_TOKEN})\s*{MONEY}'
+    for match,value in _amount_matches(tour,clause):
         covered.add(match.start(1))
         if not purchase_requirement_denied(clause[:match.start()],clause[match.end():]):
             yield match,value,False
@@ -925,6 +1197,67 @@ def _purchase_minima(clause):
         if (match.start(1) not in covered
                 and not purchase_requirement_denied(prefix,clause[match.end():])):
             yield match,value,True
+
+
+def _purchase_bounds(clause):
+    """Literal spend/payment bounds, including their comparator and price phase."""
+    covered=set()
+    for match,value,extended in _purchase_minima(clause):
+        covered.add(match.start(1))
+        yield match,value,extended,'minimum_purchase','at_least',{}
+    purchase=r'(?:заказ\w*|покупк\w*|чек\w*|бронировани\w*)'
+    bound=r'(?:не\s+менее|свыше|более|до|от)'
+    amount=rf'{bound}\s+({NUMERIC_TOKEN})\s*{MONEY}'
+    # Product, merchant, card and delivery nouns may qualify the purchase.
+    # A new purchase, reward, action or contrast cannot be crossed to borrow
+    # the next component's amount. Quoted merchant/category names stay whole.
+    stop=(purchase+r'|от|до|не|свыше|более|но|а|или|зато|однако|если|когда|'
+          r'скидк\w*|к[еэ]шб[еэ]к\w*|балл\w*|мил[ьяиюе]\w*|бонус\w*|'
+          r'подар\w*|выгод\w*|получ\w*|начисл\w*|состав\w*|предостав\w*|верн\w*|возвращ\w*')
+    word=rf'(?!(?:{stop})\b)[^\W\d_][\w/-]*'
+    qualifiers=rf'(?:(?:{QUOTED_ALTERNATIVES}|{word})\s+){{0,9}}?'
+    qualified=rf'\b{purchase}\s+{qualifiers}'
+    nominal=(rf'(?:минимальн\w*\s+|общ\w*\s+)?сумм\w*\s+{purchase}'
+             r'(?:,\s*за\s+котор\w*\s+начисля\w*\s+(?:мил[ьяиюе]\w*|балл\w*|бонус\w*)\s*,)?'
+             r'(?:\s+до\s+скидки)?\s+(?:должна\s+(?:быть|составлять)|составляет)\s+')
+    patterns=(
+        (qualified+amount,'purchase'),
+        (rf'\b{purchase},\s+сумма\s+которых\s+{amount}','purchase'),
+        (nominal+amount,'purchase'),
+        (r'минимальн\w*\s+сумм\w*\s+к\s+доплате(?:\s+по\s+кассовому\s+чеку)?'
+         r'\s+составля\w*\s+'+amount,'cash_payment'),
+        (qualified+rf'от\s+{NUMERIC_TOKEN}\s*{MONEY}\s+до\s+({NUMERIC_TOKEN})\s*{MONEY}',
+         'purchase_range'),
+    )
+    for pattern,role in patterns:
+        for match,value in _amount_matches(pattern,clause):
+            if (match.start(1) in covered
+                    # Tier qualification may combine spending, purchase count
+                    # and alternative periods; it is not a direct offer bound.
+                    or re.search(r'\bприсваивается\s+за\s+',clause[:match.start()],re.I)
+                    or purchase_requirement_denied(clause[:match.start()],clause[match.end():])
+                    or benefit_denied(clause,match.start(),match.end(),amounts=benefit_mentions(clause))):
+                continue
+            if role=='purchase_range':
+                lower=re.search(r'\bот\s+('+NUMERIC_TOKEN+r')\s*'+MONEY,match[0],re.I)
+                if lower is None or match.start()+lower.start(1) not in covered:continue
+            covered.add(match.start(1))
+            comparator=re.search(r'(не\s+менее|свыше|более|до|от)\s*$',clause[match.start():match.start(1)],re.I)[1]
+            qualifier=('greater_than' if comparator.casefold() in ('свыше','более') else
+                       'up_to' if comparator.casefold()=='до' else 'at_least')
+            kind=('maximum_' if qualifier=='up_to' else 'minimum_')+role.removesuffix('_range')
+            extra={}
+            if re.search(r'\bдо\s+скидки\b',match[0],re.I):extra['price_phase']='before_discount'
+            if (re.match(r'покупки\b',match[0],re.I)
+                    and re.search(r'\b(?:на\s+)?общ(?:ую|ей)\s+(?:сумму|стоимостью)\b',match[0],re.I)):
+                extra['spending_basis']='aggregate'
+            left,right=_sentence_bounds(clause,match.start(),match.end())
+            suffix=clause[match.end():right]
+            if re.match(r'\s*\(без\s+уч[её]та\s+стоимости\s+доставки\)',suffix,re.I):
+                extra['delivery_included']=False
+            if re.match(r'\s*после\s+вычета\s+товаров-исключений\b',suffix,re.I):
+                extra['excluded_products_removed']=True
+            yield match,value,False,kind,qualifier,extra
 
 
 def _validate_as_of(as_of):
@@ -962,6 +1295,8 @@ def normalize_record(raw, *, as_of):
         validate_normalized(n);return n
     d=raw.get('details',{})
     n['availability']={k:d.get(k) for k in ('source_is_started','source_prize_suspended')}
+    from ekp_catalog import project_retained_availability
+    project_retained_availability(raw,n['availability'])
     if d.get('pages'):n['quality']['issues'].append('pdf_table_semantics_not_inferred')
     if raw['kind']=='announcement':n['quality']['issues'].append('announcement_is_not_verified_current_offer')
     supplemental=raw['kind'] in ('program_rules','tier_benefit','announcement','raw_page')
@@ -1025,7 +1360,8 @@ def normalize_record(raw, *, as_of):
         n['content_sha256']=digest({k:v for k,v in n.items() if k!='content_sha256'})
         validate_normalized(n);return n
     if d.get('scope')=='only_cards_in_current_public_partner_inventory':
-        from hse_alumni import PROGRAM,ROOT,claim_text,hse_rates,source_location,CODE_LABEL_PATTERNS
+        from hse_alumni import (PROGRAM,ROOT,claim_text,hse_rates,source_location,CODE_LABEL_PATTERNS,
+                               hse_rate_signature,hse_coupon_instructions)
         block=d.get('public_catalog_block',{})
         if (raw['program']!=PROGRAM or raw['source_url']!=source_location(block,True)[0]
             or raw['conditions']!=block.get('body') or raw['benefit']!=claim_text(block.get('body',''))):
@@ -1034,16 +1370,33 @@ def normalize_record(raw, *, as_of):
         if block.get('identity_method'):
             scope.update(identity_method=block['identity_method'],detail_heading=block['detail_heading'])
         rule=condition('owned_partner_rules','/conditions',scope=scope)
-        for rate in hse_rates(raw['benefit']):
-            local={**scope,**_scope(rate['evidence'])}
+        rates=hse_rates(raw['benefit'],with_spans=True)
+        counts=Counter(hse_rate_signature(rate) for rate in rates)
+        instructions=hse_coupon_instructions(raw['conditions']);code_owners=defaultdict(list)
+        for rate in rates:
+            clause=rate['evidence']
+            rate_scopes,_=_component_context(clause)
+            key=(rate['unit'],rate.get('_percent_index') if rate['unit']=='percent'
+                 else rate.get('_amount_index'))
+            local={**scope,**rate_scopes.get(key,{})};linked=[rule['id']]
             if rate['evidence'] in d.get('month_limited_clauses',[]):
                 local['calendar_constraint_text']=rate['evidence']
+            signature=hse_rate_signature(rate)
+            own=[section for section in instructions if section['signature']==signature]
+            if counts[signature]==1 and len(own)==1:
+                section=own[0];local['promo_code']=section['codes'][0]
+                action=condition('activation_step','/conditions',scope=local,
+                                 fragment=section['evidence'],method='owned_source_clause')
+                linked.append(action['id'])
+                for value in section['codes']:
+                    if local not in code_owners[value]:code_owners[value].append(local)
             b=benefit(rate['kind'],'/benefit',value=rate['value'],unit=rate['unit'],
                 qualifier=rate['qualifier'],value_min=rate.get('min_value'),scope=local,
                 fragment=rate['evidence'],method='owned_source_clause')
-            b.update(condition_ids=[rule['id']],condition_linkage='full_owned_record_rules',remaining_record_rules_require_review=True)
+            b.update(condition_ids=linked,condition_linkage='full_owned_record_rules',remaining_record_rules_require_review=True)
         for i,value in enumerate(raw['codes']):
-            code(value,f'/codes/{i}',scope,labels=CODE_LABEL_PATTERNS)
+            owners=code_owners.get(value,[])
+            code(value,f'/codes/{i}',owners[0] if len(owners)==1 else scope,labels=CODE_LABEL_PATTERNS)
         n['quality']['level']='structured_with_review'
         n['quality']['issues'].append('month_product_audience_and_code_scopes_require_owned_rules')
         n['content_sha256']=digest({k:v for k,v in n.items() if k!='content_sha256'})
@@ -1103,6 +1456,67 @@ def normalize_record(raw, *, as_of):
             benefit('cashback',cashback['path'],value=cashback['value'],unit=cashback['unit'],
                     qualifier=cashback['qualifier'],scope=cashback['scope'],
                     fragment=cashback['evidence'],method='owned_source_clause')
+    def cover_owned_quote(literal):
+        # Native typed rules can quote a PDF phrase whose layout whitespace
+        # differs in the summary. Match only that complete phrase, once per
+        # field, and retain the actual original fragment as the covered span.
+        if not isinstance(literal,str) or not literal.strip():return
+        pattern=r'\s+'.join(re.escape(part) for part in literal.split())
+        if literal[0].isalnum():pattern=r'(?<!\w)'+pattern
+        if literal[-1].isalnum():pattern+=r'(?!\w)'
+        for path,text in _source_fields(raw):
+            matches=list(re.finditer(pattern,text))
+            if len(matches)==1:covered_quotes.setdefault(path,[]).append(matches[0][0])
+    for path,text in _source_fields(raw):
+        for match,topup,bonus in demo_topup_bonuses(text):
+            local={'occasion':'demo_account_topup','timing_basis':'customer_demo_period',
+                   'source_clause':match[0]}
+            reward=benefit('earn_rewards',path,value=bonus,unit='RUB',qualifier='exact',
+                           scope=local,fragment=match[0],method='owned_source_clause')
+            reward['standalone_offer']=False
+            component_benefits[(path,match[0],None)].add(reward['id'])
+            condition('required_account_topup',path,value=topup,unit='RUB',qualifier='exact',
+                      scope=local,fragment=match[0],method='owned_source_clause')
+            condition('timing_condition',path,scope=local,fragment=match['timing'],
+                      method='owned_source_clause')
+    point_options=shared_point_card_options(raw.get('benefit',''),
+                    declared_type=_declared_reward_heading(raw,'/benefit'))
+    if point_options:
+        owner=('/benefit',raw['benefit'],'shared_point_card_options')
+        for option in point_options['options']:
+            reward=benefit('earn_points','/benefit',value=option['value'],unit='points',
+                           qualifier='exact',reward_unit='points',scope={'card_option':option['label']},
+                           method='owned_source_clause')
+            component_benefits[owner].add(reward['id'])
+        cap=condition('benefit_cap','/benefit',value=point_options['cap'],unit='points',qualifier='up_to',
+                      scope={'limit_scope':'multiple_participating_cards'},
+                      fragment=point_options['cap_evidence'],method='owned_source_clause')
+        cap_owners.setdefault(cap['id'],set()).add(owner)
+        for field in ('conditions','activation'):
+            if raw.get(field):
+                rule=condition('owned_option_rules','/'+field,method='owned_source_clause')
+                cap_owners.setdefault(rule['id'],set()).add(owner)
+    def cover_owned_option_restatements(option):
+        # The public bank FAQ repeats the same typed options under shared
+        # denominator/cap headings. Only a complete matching label and number
+        # licenses coverage; a bare equal amount elsewhere remains independent.
+        item=(rf'(?P<value>{NUMERIC_TOKEN})\s+мил[ьяиюе]\w*\s+'
+              r'(?P<preposition>с\s+сервисом|без\s+сервиса)\s+(?P<label>[^\n]+)')
+        item_line=rf'[ \t]*{NUMERIC_TOKEN}\s+мил[ьяиюе]\w*\s+(?:с\s+сервисом|без\s+сервиса)\s+[^\n]+'
+        headings=(
+            (rf'За\s+каждые\s+(?P<basis>{NUMERIC_TOKEN})\s+рубл\w*\s+покупок\s+вам\s+будет\s+начислено:', 'miles'),
+            (r'Максимальное\s+кол-во\s+миль\s+в\s+месяц', 'monthly_cap_miles'),
+        )
+        for path,text in _source_fields(raw):
+            for heading,key in headings:
+                for group in re.finditer(heading+rf'\n(?P<items>{item_line}(?:\n{item_line})*)',text,re.I):
+                    if key=='miles' and literal_number(group['basis'])!=str(option['basis_rub']):continue
+                    for match in re.finditer(item,group['items'],re.I):
+                        label=('С ' if match['preposition'].casefold().startswith('с ') else 'Без ')+match['label']
+                        if (search_key(label)==search_key(option['label'])
+                                and literal_number(match['value'])==str(option.get(key))):
+                            literal=match[0]
+                            if text.count(literal)==1:covered_quotes.setdefault(path,[]).append(literal)
     structured_rates=defaultdict(list)
     airline_rules=d.get('retrieval_method')=='aeroflot_airline_api_google_import_v1'
     if airline_rules:
@@ -1133,11 +1547,12 @@ def normalize_record(raw, *, as_of):
         for j,v in enumerate(c.get('promo_codes',[])):
             v=reconcile_promocode(v,_owned_coupon_texts(raw,c.get('evidence')))
             if v is not None:code(v,p+f'/promo_codes/{j}',scope)
-    for field in ('earning_rules','flight_bonus_rates'):
-        for i,c in enumerate(d.get(field,[])):
+    for field in ('earning_rules','flight_bonus_rates','earning_rule'):
+        items=([d[field]] if isinstance(d.get(field),dict) else []) if field=='earning_rule' else d.get(field,[])
+        for i,c in enumerate(items):
             c,reconciled_evidence=_reconciled_mile_rule(raw,c)
             if c is None:continue
-            p=f'/details/{field}/{i}';unit=c.get('unit','unknown');kind='earn_miles' if unit=='miles' else 'earn_points' if c.get('reward_unit')=='program_bonus' else KIND.get(c.get('kind'), 'earn_rewards')
+            p=f'/details/{field}'+('' if field=='earning_rule' else f'/{i}');unit=c.get('unit','unknown');kind='earn_miles' if unit=='miles' else 'earn_points' if c.get('reward_unit')=='program_bonus' else KIND.get(c.get('kind'), 'earn_rewards')
             fragment=None
             if reconciled_evidence:p,fragment=reconciled_evidence
             scope={'source_rule':field}
@@ -1149,6 +1564,7 @@ def normalize_record(raw, *, as_of):
                 signature=(c['evidence'],kind,decimal(c['value']),c.get('qualifier','exact'),
                            c.get('min_value'),c.get('basis_amount'),c.get('basis_unit'))
                 structured_rates[signature].append(c.get('channel'))
+                if field=='earning_rule':cover_owned_quote(c['evidence'])
     red=d.get('redemption_rules')
     redemption_path='/details/redemption_rules'
     if isinstance(red,dict):
@@ -1170,8 +1586,17 @@ def normalize_record(raw, *, as_of):
         if red.get('minimum_cash_percent') is not None:condition('minimum_cash_payment',redemption_path,value=red['minimum_cash_percent'],unit='percent_of_order',qualifier='at_least')
     for i,c in enumerate(d.get('mileage_options',[])):
         p=f'/details/mileage_options/{i}';scope={'option':c['label']}
-        benefit('earn_miles',p,value=c['miles'],unit='miles',basis_value=c['basis_rub'],basis_unit='RUB',qualifier='exact',scope=scope,reward_unit='miles')
-        condition('reward_cap',p,value=c.get('monthly_cap_miles'),unit='miles',qualifier='up_to',scope={**scope,'period':'month'})
+        reward=benefit('earn_miles',p,value=c['miles'],unit='miles',basis_value=c['basis_rub'],basis_unit='RUB',qualifier='exact',scope=scope,reward_unit='miles')
+        cap=condition('reward_cap',p,value=c.get('monthly_cap_miles'),unit='miles',qualifier='up_to',scope={**scope,'period':'month'})
+        owner=(p,None,'mileage_option')
+        component_benefits[owner].add(reward['id']);cap_owners[cap['id']]={owner}
+        literal=c.get('evidence','')
+        for match,amount in reward_amounts(literal,'miles'):
+            basis=reward_basis(literal,match.start(),match.end())
+            if (amount['value']==str(c['miles']) and basis
+                    and basis=={'basis_amount':str(c['basis_rub']),'basis_unit':'RUB'}):
+                cover_owned_quote(literal[match.start():mileage_formula_end(literal,match.end())])
+        cover_owned_option_restatements(c)
         intro=c.get('introductory_subscription')
         ongoing_scope={**scope,'period':'month'}
         if intro:
@@ -1186,7 +1611,13 @@ def normalize_record(raw, *, as_of):
         benefit('earn_points',p,value=c['points'],unit='points',qualifier='exact',scope=scope,reward_unit=c.get('reward_unit','points'))
     for i,c in enumerate(d.get('spend_reward_tiers',[])):
         p=f'/details/spend_reward_tiers/{i}';scope={k:v for k,v in c.items() if k not in ('miles','evidence')}
-        benefit('earn_miles',p,value=c['miles'],unit='miles',basis_value=d.get('earning_basis_rub'),basis_unit='RUB',scope=scope,reward_unit='miles',qualifier='exact')
+        reward=benefit('earn_miles',p,value=c['miles'],unit='miles',basis_value=d.get('earning_basis_rub'),basis_unit='RUB',scope=scope,reward_unit='miles',qualifier='exact')
+        component_benefits[('/details/spend_reward_tiers',None,'monthly_spending')].add(reward['id'])
+        cover_owned_quote(c.get('evidence'))
+    if d.get('welcome_miles') is not None and d.get('welcome_miles_evidence'):
+        benefit('earn_miles','/details/welcome_miles_evidence',value=d['welcome_miles'],unit='miles',
+                qualifier='exact',reward_unit='miles',scope={'reward_event':'welcome'})
+        cover_owned_quote(d['welcome_miles_evidence'])
     for i,c in enumerate(d.get('audiences',[])):
         p=f'/details/audiences/{i}';scope={k:v for k,v in c.items() if k not in ('evidence','promo_code')}
         condition('audience',p,scope=scope)
@@ -1206,7 +1637,10 @@ def normalize_record(raw, *, as_of):
         'activation_workdays':('activation_delay','workdays','up_to',None),
     }
     for key,(kind,unit,q,period) in scalar_conditions.items():
-        if d.get(key) is not None:condition(kind,'/details/'+key,value=d[key],unit=unit,qualifier=q,scope={'period':period} if period else {})
+        if d.get(key) is not None:
+            cap=condition(kind,'/details/'+key,value=d[key],unit=unit,qualifier=q,scope={'period':period} if period else {})
+            if key=='monthly_miles_cap' and d.get('spend_reward_tiers'):
+                cap_owners[cap['id']]={('/details/spend_reward_tiers',None,'monthly_spending')}
     for key in ('qualification','source_eligibility_flags','membership_component','tier','required_program','required_tariff',
                 'required_entry_url','required_entry_evidence','checkout_deadline','family','miles_payment','payment_badges',
                 'subscription','fees','service_fee_conditions','earning_conditions','redemption_rules','limitations','audience','activation'):
@@ -1288,6 +1722,9 @@ def normalize_record(raw, *, as_of):
             and raw.get('benefit','').startswith(heading+': ')):
         owned_heading=heading
     for path,clause,rate_clause,list_heading in (() if airline_rules else _clauses(raw,extra_covered_quotes=covered_quotes)):
+        # This complete closed list, including its final cap, is already
+        # projected from its own shared unit. Other fields remain independent.
+        if point_options and path=='/benefit':continue
         scope=_scope(clause);recognized=rate_clause!=clause
         # Do not derive benefits from unassigned raw PDF table text.
         # The hotel's published heading labels only its owned benefit section;
@@ -1299,17 +1736,26 @@ def normalize_record(raw, *, as_of):
         clause_scopes,clause_owners=(rate_scopes,rate_owners) if rate_text==clause else _component_context(clause)
         rates=[]
         if not d.get('pages'):
-            rate_parser = _english_rates if ENGLISH_RATE_LABEL.search(rate_text) else normalize_rates
-            rates = rate_parser(rate_text, heading_context=heading_context,with_spans=True)
-            # Only the known legacy Discount column supplies an implicit
-            # label. A bare percent in Notes or another source does not.
-            if (path=='/benefit' and raw['origin'] in ('yandex_discounts_complete_all','VG_community_offers')
-                    and re.fullmatch(r'\s*('+NUM+r')\s*%\s*',rate_clause)
-                    and len(spans)==1 and spans[0]['min_value'] is None):
-                rates.append({'kind':'discount','value':spans[0]['value'],'unit':'percent',
-                              'qualifier':'exact','evidence':clause,'_percent_index':0})
+            declared_heading=_declared_discount_heading(raw,path,rate_text)
+            reward_heading=_declared_reward_heading(raw,path)
+            english_column=declared_heading and raw['origin'] in ('yandex_discounts_complete_all','VG_community_offers')
+            rate_parser = _english_rates if ENGLISH_RATE_LABEL.search(rate_text) or english_column else normalize_rates
+            rates = rate_parser(rate_text, heading_context=heading_context or declared_heading or reward_heading,with_spans=True)
+            if _legacy_package_comparison_echo(raw,path,rate_text):rates=[]
             for m,value in _amount_matches(r'(?:up to\s+)?('+NUMERIC_TOKEN+r')\s*RUB\s+(?:off|discount)\b',rate_clause):
                 rates.append({'kind':'discount','value':value,'unit':'RUB','qualifier':'up_to' if re.search('up to',m[0],re.I) else 'exact','evidence':clause})
+            directions=percentage_rewards(rate_text,spans,heading_context=heading_context or reward_heading)
+            covered={rate.get('_percent_index') for rate in rates if rate['unit']=='percent'}
+            for index,item in directions.items():
+                if index in covered:continue
+                if item['kind'] not in ('redeem_rewards','earn_rewards'):continue
+                span=spans[index];rate_scope=rate_scopes.get(('percent',index),{})
+                reward=benefit(item['kind'],path,value=span['value'],value_min=span['min_value'],
+                               unit='percent_of_order' if item['kind']=='redeem_rewards' else 'percent',
+                               qualifier=span['qualifier'],reward_unit=item['reward_unit'],
+                               scope=rate_scope,fragment=clause,method='clause_candidate')
+                component_benefits[(path,clause,rate_owners.get(('percent',index)))].add(reward['id'])
+                recognized=True
         if not d.get('pages') and re.search(r'\d\s*%.*милями',rate_clause,re.I):
             covered={rate.get('_percent_index') for rate in rates if rate['unit']=='percent'}
             for index,span in enumerate(spans):
@@ -1343,12 +1789,18 @@ def normalize_record(raw, *, as_of):
             if rate_index in represented:continue
             rate_key=(rr['unit'],rr.get('_percent_index') if rr['unit']=='percent' else rr.get('_amount_index'))
             rate_scope=rate_scopes.get(rate_key,scope if rr['unit']!='percent' else {})
+            rate_scope={**rate_scope,**rr.get('_reward_scope',{})}
+            if (raw['origin']=='loyalty_partner_benefits' and path=='/benefit'
+                    and rr['kind']=='discount' and rr['unit']=='percent'):
+                tier=re.fullmatch(r'\s*(Синий|Серебряный|Золотой)\s+',
+                                  rate_text[:spans[rr['_percent_index']]['start']],re.I)
+                if tier:rate_scope['member_tier']=tier[1]
             owner=(path,clause,rate_owners.get(rate_key))
             if rr.get('_reward_cap'):
-                cap=condition('benefit_cap',path,value=rr['value'],unit=rr['unit'],qualifier='up_to',
+                cap=condition(rr.get('_reward_cap_kind','benefit_cap'),path,value=rr['value'],unit=rr['unit'],qualifier='up_to',
                           basis_value=rr['basis_amount'],basis_unit=rr['basis_unit'],
                           scope=rate_scope,fragment=clause,method='clause_candidate')
-                cap_owners.setdefault(cap['id'],set()).add(owner)
+                if not rr.get('_option_cap'):cap_owners.setdefault(cap['id'],set()).add(owner)
                 recognized=True
                 continue
             # Locally labelled discount/cashback rates already exclude payment
@@ -1369,27 +1821,75 @@ def normalize_record(raw, *, as_of):
             component_benefits[owner].add(reward['id'])
             recognized=True
         if not d.get('pages'):
-            for index,span,kind in percentage_caps(rate_text):
+            for index,span,kind in percentage_caps(rate_text,heading_context=heading_context or _declared_reward_heading(raw,path)):
                 condition(kind,path,value=span['value'],unit='percent',qualifier='up_to',
                           scope=rate_scopes.get(('percent',index),{}),fragment=clause,method='clause_candidate')
                 recognized=True
+            for index,item in directions.items():
+                if item['kind']!='earn_points':continue
+                # A closed parenthesis can omit the already literal point
+                # unit. Stop at this rate's next percentage or sentence;
+                # dates and monetary quantities cannot match the bare cap.
+                right=spans[index+1]['start'] if index+1<len(spans) else len(rate_text)
+                tail=re.split(r'[.!?](?:\s|$)|[;\n]',rate_text[spans[index]['end']:right])[0]
+                for cap_match in re.finditer(r'\(\s*(?:до|не\s+более)\s*('+NUMERIC_TOKEN+r')\s*\)',tail,re.I):
+                    amount=literal_number(cap_match[1])
+                    if amount is None:continue
+                    cap=condition('benefit_cap',path,value=amount,unit='points',qualifier='up_to',
+                                  scope=rate_scopes.get(('percent',index),{}),fragment=clause,method='clause_candidate')
+                    cap_owners.setdefault(cap['id'],set()).add((path,clause,rate_owners.get(('percent',index))))
+                    recognized=True
+            for span in spans:
+                if re.match(r'\s+от\s+(?:суммы\s+чека|стоимости\s+бронирования)\s+'
+                            r'необходимо\s+оплатить\s+(?:банковской\s+картой|денежными\s+средствами)',
+                            rate_text[span['end']:],re.I):
+                    if not any(c['kind']=='minimum_cash_payment' and c['value']==span['value']
+                               and c['evidence']['path'].startswith('/details/redemption_rules') for c in n['conditions']):
+                        condition('minimum_cash_payment',path,value=span['value'],unit='percent_of_order',
+                                  qualifier='at_least',fragment=clause,method='clause_candidate')
+                    recognized=True
         if not d.get('pages'):
-            for index,(m,amount) in enumerate(reward_amounts(clause,'points')):
+            previous_point_award_end=None
+            point_amounts=list(reward_amounts(clause,'points',heading_context=list_heading))
+            point_rates=[{'kind':'points','unit':'points','value':amount['value'],
+                          'qualifier':'exact' if amount['qualifier']=='unspecified' else amount['qualifier'],
+                          'min_value':amount['min_value'],'_amount_index':index,
+                          **(reward_basis(clause,m.start(),m.end()) or {})}
+                         for index,(m,amount) in enumerate(point_amounts)]
+            represented_points,_=_structured_occurrences(point_rates,clause,clause,structured_rates,clause_owners)
+            for index,(m,amount) in enumerate(point_amounts):
+                if index in represented_points:continue
                 value=amount['value']
                 amount_scope=clause_scopes.get(('points',index),{})
+                amount_scope={**amount_scope,**reward_formula_scope(clause,m.start(),m.end())}
                 owner=(path,clause,clause_owners.get(('points',index)))
                 role=reward_role(clause,m.start(),m.end())
                 prefix=clause[:m.start()]
                 basis=reward_basis(clause,m.start(),m.end())
                 if basis is None:continue
+                nominal_cap=nominal_reward_cap(clause,m.start())
+                if nominal_cap:basis=nominal_reward_cap_basis(clause,m.start(),m.end())
                 bracket_cap=re.search(r'\(\s*(?:до|не\s+более)\s*$',prefix,re.I)
                 period_cap=(role not in ('denied','spend','reference') and amount['qualifier']=='up_to'
                             and (bracket_cap or (role=='unknown' and basis['basis_unit'] in ('month','day'))))
-                if period_cap:
-                    cap=condition('benefit_cap',path,value=value,unit='points',qualifier='up_to',
+                if nominal_cap or period_cap or percent_point_ceiling(prefix):
+                    cap=condition(nominal_reward_cap_kind(nominal_cap) if nominal_cap else 'benefit_cap',
+                              path,value=value,unit='points',qualifier='up_to',
                               basis_value=basis['basis_amount'],basis_unit=basis['basis_unit'],
                               scope=amount_scope,fragment=clause,method='clause_candidate')
                     cap_owners.setdefault(cap['id'],set()).add(owner)
+                    recognized=True
+                    continue
+                role=point_declaration_role(clause,m.start(),m.end(),role=role,basis=basis,
+                    heading=list_heading,declared=bool(re.search(r'балл|бонус|начисление',
+                                                    _declared_reward_heading(raw,path),re.I)),
+                    previous_award_end=previous_point_award_end)
+                if role in ('redemption_allowance','multiplier'):
+                    reward=benefit('redeem_rewards' if role=='redemption_allowance' else 'reward_multiplier',
+                        path,value=value,unit='points' if role=='redemption_allowance' else 'multiplier',
+                        qualifier=amount['qualifier'],value_min=amount['min_value'],
+                        scope=amount_scope,fragment=clause,method='clause_candidate',reward_unit='points')
+                    component_benefits[owner].add(reward['id'])
                     recognized=True
                     continue
                 if role!='earn' and not (role=='unknown' and re.search(r'\+\s*$',prefix)):
@@ -1408,6 +1908,14 @@ def normalize_record(raw, *, as_of):
                         value_min=amount['min_value'],basis_value=basis['basis_amount'],basis_unit=basis['basis_unit'],
                         scope=amount_scope,fragment=clause,method='clause_candidate',reward_unit='points')
                 component_benefits[owner].add(reward['id'])
+                previous_point_award_end=m.end()
+                recognized=True
+            for m,value in _amount_matches(r'\bБонус\s+(?:(?:до|от)\s+)?('+NUMERIC_TOKEN+r')\s*'+MONEY+r'(?=\W|$)',clause):
+                if (m.start()!=0 or benefit_denied(clause,m.start(),m.end(),amounts=benefit_mentions(clause))):continue
+                qualifier='up_to' if re.search(r'\bдо\b',m[0],re.I) else 'at_least' if re.search(r'\bот\b',m[0],re.I) else 'exact'
+                reward=benefit('earn_rewards',path,value=value,unit='RUB',qualifier=qualifier,
+                               fragment=clause,method='clause_candidate')
+                component_benefits[(path,clause,None)].add(reward['id'])
                 recognized=True
         if not d.get('pages'):
             projected_gifts={(m.start(),m.end()) for m in gift_spans(clause)}
@@ -1417,8 +1925,9 @@ def normalize_record(raw, *, as_of):
                 reward=benefit('gift',path,scope=clause_scopes.get(('gift',index),{}),fragment=clause,method='clause_candidate')
                 component_benefits[(path,clause,clause_owners.get(('gift',index)))].add(reward['id'])
                 recognized=True
-        for m,value,extended in _purchase_minima(clause):
+        for m,value,extended,minimum_kind,minimum_qualifier,minimum_extra in _purchase_bounds(clause):
             minimum_scope,owners=_monetary_condition_context(clause,m.start(),m.end())
+            minimum_scope={**minimum_scope,**minimum_extra}
             if extended and owners is None:
                 # A separate local threshold sentence can own one explicitly
                 # staged component in this same field. Equal rates/stages in
@@ -1431,7 +1940,7 @@ def normalize_record(raw, *, as_of):
                 phrases=_component_phrases(clause)
                 owners={owner for owner in owners
                         if _qualifiers_compatible(minimum_qualifiers,_explicit_qualifiers(phrases.get(owner,'')))}
-            minimum=condition('minimum_purchase',path,value=value,unit='RUB',qualifier='at_least',scope=minimum_scope,fragment=clause,method='clause_candidate')
+            minimum=condition(minimum_kind,path,value=value,unit='RUB',qualifier=minimum_qualifier,scope=minimum_scope,fragment=clause,method='clause_candidate')
             if owners is not None:
                 cap_owners.setdefault(minimum['id'],set()).update((path,clause,key) for key in owners)
                 if _plain_repeated_purchase_rule(clause,m.start(),m.end()):plain_minima.add(minimum['id'])
@@ -1442,7 +1951,7 @@ def normalize_record(raw, *, as_of):
             # Match positions, not values: first/repeat caps may have equal
             # amounts. Otherwise use only this cap's original sentence.
             cap_scope=None;owners=None
-            for index,(amount,_) in enumerate(fixed_discount_amounts(clause)):
+            for index,(amount,_,_) in enumerate(fixed_monetary_rewards(clause)):
                 if amount.span('value')==m.span('value'):
                     key=('RUB',index)
                     cap_scope=clause_scopes.get(key,{})
@@ -1452,9 +1961,16 @@ def normalize_record(raw, *, as_of):
                     break
             if cap_scope is None:
                 cap_scope,owners=_monetary_condition_context(clause,m.start(),m.end())
-            kind=_monetary_cap_kind(clause,m)
-            cap=condition(kind,path,value=value,unit='RUB',qualifier='up_to',scope=cap_scope,fragment=clause,method='clause_candidate')
-            if kind=='maximum_amount_reference':
+            labelled_cap=_owned_accrual_cap_evidence(raw,path,clause)
+            footnote=_owned_monetary_cap_footnote(raw,path,clause)
+            kind='benefit_cap' if labelled_cap or footnote else _monetary_cap_kind(clause,m)
+            cap_basis=_monetary_cap_basis(clause,m) if kind=='benefit_cap' else {}
+            cap=condition(kind,path,value=value,unit='RUB',qualifier='up_to',scope=cap_scope,
+                          **cap_basis,
+                          fragment=labelled_cap or (footnote['evidence'] if footnote else clause),method='clause_candidate')
+            if footnote:
+                cap_owners.setdefault(cap['id'],set()).add(footnote['owner'])
+            elif kind=='maximum_amount_reference':
                 # A shared stage/evidence string is not an explicit reward link.
                 cap_owners[cap['id']]=set()
             elif owners is not None:
@@ -1470,7 +1986,7 @@ def normalize_record(raw, *, as_of):
             'timing_condition':r'в течение|до \d+ числа|календарн|рабочих дней|within \d+|Sunday|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday',
             'activation_step':r'активиру|зарегистриру|перейдите|укажите|введите|получите.*код|свяжитесь|apply.*code|enter.*code|register',
             'choice_reference':r'\bили\b|либо|на выбор|вместо|\bor\b|choose|select',
-            'fee_reference':r'комисси|стоимость.*подпис|автопродлен|commission|subscription fee',
+            'fee_reference':r'комисси|стоимость.*подписк|автопродлен|commission|subscription fee',
         }
         for kind,pat in classifiers.items():
             if re.search(pat,clause,re.I):

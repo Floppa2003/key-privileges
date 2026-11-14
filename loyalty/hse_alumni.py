@@ -1,11 +1,12 @@
 """HSE public inventory joined to source-owned anchors or current card headings."""
 from __future__ import annotations
 import hashlib,json,re
+from collections import Counter
 from urllib.parse import urljoin,urlsplit
 from datetime import datetime
 from bs4 import BeautifulSoup,Comment,Tag
 from html_text import html_text
-from normalized import make_offer,text,normalize_rates,percent_spans
+from normalized import make_offer,text,normalize_rates,percent_spans,NUMERIC_TOKEN
 from partner_pages import content
 from promo_codes import extract_promocodes_with_context,promocode_occurrences,promocode_cancelled
 from model import clean_url
@@ -82,16 +83,33 @@ def hse_codes(value,tables=None,*,preview=False):
 
 
 
-def hse_rates(value):
+INSTRUCTION_QUESTION=re.compile(r'Как воспользоваться скидкой\s+'+NUMERIC_TOKEN
+    +r'\s*%(?:\s+на первый заказ)?\?',re.I)
+INSTRUCTION_CODE=re.compile(r'Введите промокод\s+\S+\s+получите скидку\s+'
+    +NUMERIC_TOKEN+r'\s*%(?:\s+\(но не более [^\n)]+\))?',re.I)
+
+
+def hse_rate_signature(rate):
+    return tuple(rate.get(key) for key in ('kind','value','unit','qualifier','min_value',
+                                         'basis_amount','basis_unit'))
+
+
+def instruction_rate_clause(clause):
+    return bool(INSTRUCTION_QUESTION.fullmatch(clause) or INSTRUCTION_CODE.fullmatch(clause))
+
+
+def hse_rates(value, *, with_spans=False):
     """Published coupon percentages are discounts, not payment prerequisites."""
     rows=[]
     for clause in value.splitlines():
         eligible=[]
-        for span in percent_spans(clause):
+        percentages=percent_spans(clause)
+        for span in percentages:
             if re.match(r'\s*(?:[-—–]\s*)?(?:оплат|предоплат|платеж|аванс)',clause[span['end']:],re.I):continue
             eligible.append(span)
         amounts={span['value'] for span in eligible}
-        parsed=[r for r in normalize_rates(clause) if r['unit']!='percent' or r['value'] in amounts]
+        parsed=[r for r in normalize_rates(clause,with_spans=with_spans)
+                if r['unit']!='percent' or r['value'] in amounts]
         if not parsed and len(eligible)==1 and CLAIM.search(clause):
             span=eligible[0]
             # Only the already-owned public benefit clause can supply this type.
@@ -100,8 +118,35 @@ def hse_rates(value):
                      'basis_amount':None,'basis_unit':None,'evidence':clause}]
             if span['min_value'] is not None:
                 parsed[0]['min_value']=span['min_value']
+            if with_spans:parsed[0]['_percent_index']=percentages.index(span)
         rows.extend(parsed)
-    return rows
+    offers=Counter(hse_rate_signature(rate) for rate in rows
+                   if not instruction_rate_clause(rate['evidence']))
+    # Only the observed questions/code-entry restatements can be suppressed.
+    # Equal independent components remain separate, and a rate appearing only
+    # in an instruction is not discarded without a unique published offer.
+    return [rate for rate in rows if not instruction_rate_clause(rate['evidence'])
+            or offers[hse_rate_signature(rate)]!=1]
+
+
+def hse_coupon_instructions(value):
+    """Keep a numeric heading, its intervening steps and matching code together."""
+    lines=value.splitlines();sections=[]
+    for start,heading in enumerate(lines):
+        if not INSTRUCTION_QUESTION.fullmatch(heading):continue
+        rates=hse_rates(heading)
+        if len(rates)!=1:continue
+        signature=hse_rate_signature(rates[0])
+        for end in range(start+1,len(lines)):
+            line=lines[end]
+            if INSTRUCTION_QUESTION.fullmatch(line):break
+            if not INSTRUCTION_CODE.fullmatch(line):continue
+            actions=hse_rates(line);codes=hse_codes(line)['codes']
+            if len(actions)==1 and hse_rate_signature(actions[0])==signature and len(codes)==1:
+                sections.append({'signature':signature,'evidence':'\n'.join(lines[start:end+1]),
+                                 'codes':codes})
+            break
+    return sections
 
 
 def explicit_end(body):

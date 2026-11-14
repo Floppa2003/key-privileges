@@ -1,0 +1,103 @@
+{
+  "provenance": {
+    "retained_at": "2026-11-14",
+    "coral_source_run": "43612232710:1",
+    "excerpts": "Verbatim excerpts of retained source text; no full native rows or personal codes."
+  },
+  "coral_awards": [
+    {
+      "source_url": "https://coralbonus.ru/klub-privilegii/nedvizhimost/nazare/",
+      "text": "И сейчас покупка квартиры здесь становится еще выгоднее: только для держателей карт CoralBonus девелопер Мангазея дарит 100 000 бонусов при покупке квартиры в ЖК «НАЗАРЕ́»!",
+      "value": "100000",
+      "qualifier": "unspecified"
+    },
+    {
+      "source_url": "https://coralbonus.ru/klub-privilegii/nedvizhimost/aura/",
+      "text": "Преимущества на этом не заканчиваются: для держателей карт CoralBonus девелопер Мангазея дарит 150 000 бонусов на путешествие при покупке квартиры в ЖК «АУРА»!",
+      "value": "150000",
+      "qualifier": "unspecified"
+    },
+    {
+      "source_url": "https://coralbonus.ru/klub-privilegii/nedvizhimost/muza/",
+      "text": "Для держателей карт CoralBonus девелопер Мангазея дарит 150 000 бонусов на путешествие при покупке квартиры в ЖК «МУЗА»!",
+      "value": "150000",
+      "qualifier": "unspecified"
+    },
+    {
+      "source_url": "https://coralbonus.ru/klub-privilegii/nedvizhimost/zhk-prestizh/",
+      "text": "Эксклюзивное предложение только для держателей карт CoralBonus: застройщик дарит до 400 000 бонусов на путешествие при покупке квартиры в ЖК «Престиж»!",
+      "value": "400000",
+      "qualifier": "up_to"
+    },
+    {
+      "source_url": "https://coralbonus.ru/promo/wyndham-garden-ajman-corniche/",
+      "text": "А для полного счастья мы дарим 1 000 дополнительных бонусов на отдых в отеле Wyndham Garden Ajman Corniche! Они уже у вас на счёте!",
+      "value": "1000",
+      "qualifier": "unspecified"
+    },
+    {
+      "source_url": "https://coralbonus.ru/promo/ramada-hotel-suites-ajman/",
+      "text": "Специально для вашего спокойного отдыха мы дарим 1 000 дополнительных бонусов на бронирование отеля Ramada Hotel & Suites Ajman! Они уже на вашем счёте!",
+      "value": "1000",
+      "qualifier": "unspecified"
+    },
+    {
+      "source_url": "https://coralbonus.ru/promo/ramada-beach-hotel-ajman/",
+      "text": "Для Вашего безупречного отдыха в отеле Ramada Beach Hotel Ajman, мы дарим 1 000 дополнительных бонусов! Они уже на вашем счёте!",
+      "value": "1000",
+      "qualifier": "unspecified"
+    },
+    {
+      "source_url": "https://coralbonus.ru/promo/fujairah-rotana-resort-spa/",
+      "text": "Специально для вашего лучшего семейного отдыха в отеле Fujairah Rotana Resort & Spa мы дарим вам 2 000 дополнительных бонусов! Они уже на вашем счёте!",
+      "value": "2000",
+      "qualifier": "unspecified"
+    },
+    {
+      "source_url": "https://coralbonus.ru/promo/hampton-by-hilton-marjan-island/",
+      "text": "Специально для вас мы дарим 1 000 дополнительных бонусов на отдых в отеле Hampton By Hilton Marjan Island. Они уже на вашем счёте!",
+      "value": "1000",
+      "qualifier": "unspecified"
+    },
+    {
+      "source_url": "https://coralbonus.ru/promo/zhemchuzhina-vostoka/",
+      "text": "Дарим 10 000 дополнительных бонусов на путешествие в жемчужину Востока!",
+      "value": "10000",
+      "qualifier": "unspecified"
+    },
+    {
+      "source_url": "https://coralbonus.ru/promo/zhemchuzhina-vostoka/",
+      "text": "Чтобы ваше путешествие в жемчужину Востока стало ещё волшебнее, мы дарим 10 000 дополнительных бонусов на счёт!",
+      "value": "10000",
+      "qualifier": "unspecified"
+    },
+    {
+      "source_url": "https://coralbonus.ru/promo/rixos-tersane-istanbul/",
+      "text": "Специально для незабываемого отдыха в отелях Rixos Tersane, мы дарим до 5 000 дополнительных бонусов на ваш счёт!",
+      "value": "5000",
+      "qualifier": "up_to"
+    },
+    {
+      "source_url": "https://coralbonus.ru/promo/rixos-hotels-v-egipte/",
+      "text": "Специально для незабываемого отдыха в отелях Rixos Hotels, мы дарим до 15 000 дополнительных бонусов на ваш счёт!",
+      "value": "15000",
+      "qualifier": "up_to"
+    }
+  ],
+  "utair_redemption": {
+    "source_url": "https://media.utair.ru/status",
+    "text": "Как потратить мили\n1 миля = 1 рубль — и никаких сложных расчетов\nПереведите накопленные мили в благотворительные фонды и помогите детям, животным или природе.\nСемья\nСтаньте главой Семьи или вступите в Семью к близким и тратьте мили вместе.\nПодробнее\nМили для добрых дел\n1 миля = 1 рубль"
+  },
+  "vkusomania_exchange": {
+    "source_url": "https://vkusomania.ru/partners/aeroflot/",
+    "text": "Обмен бонусов «Вкусомания» на мили «Аэрофлот Бонус» и обратно; минимально 1 200 бонусов для обмена бонусов и 100 миль для обмена миль"
+  },
+  "otello_caps": {
+    "source_url": "https://www.utair.ru/support/2/kakiye_partnery_est_u_utair_status",
+    "text": "Otello — начисление миль от стоимости бронирования:\n10% милями — для уровней Silver, Gold, Platinum. Лимит начисления за один заказ 3 000 миль.\n8% милями — для уровней Start, Basic, Bronze. Лимит начисления за один заказ 2 000 миль."
+  },
+  "rzd_campaign_reference": {
+    "source_url": "https://rzd-bonus.ru/promo/darim-3800-ballov-rzhd-bonus-po-kreditnoy-karte-alfa-banka_april/",
+    "text": "Дарим 3800 баллов «РЖД Бонус» по кредитной карте Альфа-Банка\n Акция действует также для участников, ранее выпустивших дебетовую карту в \nрамках акции «Дарим 2000 баллов «РЖД Бонус» по Альфа-Карте». "
+  }
+}

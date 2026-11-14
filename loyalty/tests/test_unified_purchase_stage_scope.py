@@ -99,8 +99,9 @@ class PurchaseStageScopes(unittest.TestCase):
                 '12% суммы бронирования милями не начисляются. Скидка 25%.'):
             with self.subTest(literal=literal):
                 result = self.project(literal)
-                self.assertEqual([(b['kind'], b['value']) for b in result['benefits']],
-                                 [('discount', '25')])
+                expected=[('discount','25')]
+                if 'Оплатите' in literal:expected.append(('redeem_rewards','50'))
+                self.assertCountEqual([(b['kind'], b['value']) for b in result['benefits']],expected)
 
     def test_shared_single_stage_stays_shared(self):
         for literal in (

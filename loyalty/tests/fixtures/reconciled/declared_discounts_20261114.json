@@ -1,0 +1,155 @@
+{
+  "provenance": "Verbatim retained commercial clauses and declared field labels from the 2026-11-14 corpus. Private row identifiers, complete source rows and coupon values are omitted. Source wording is not generated.",
+  "cases": [
+    {
+      "origin": "loyalty_partner_benefits",
+      "text": "До 10% уже с первого бронирования",
+      "declared_type": "Скидка",
+      "expected_discounts": [
+        "10"
+      ],
+      "expected_qualifier": "up_to"
+    },
+    {
+      "origin": "loyalty_partner_benefits",
+      "text": "До 40% на страховые продукты",
+      "declared_type": "Скидка",
+      "expected_discounts": [
+        "40"
+      ],
+      "expected_qualifier": "up_to"
+    },
+    {
+      "origin": "loyalty_partner_benefits",
+      "text": "До 37% + бесплатный пробный урок",
+      "declared_type": "Скидка + подарок",
+      "expected_discounts": [
+        "37"
+      ],
+      "expected_qualifier": "up_to"
+    },
+    {
+      "origin": "loyalty_partner_benefits",
+      "text": "Синий 10%; Серебряный 10%; Золотой 15% на проживание",
+      "declared_type": "Статусная скидка",
+      "expected_discounts": [
+        "10",
+        "10",
+        "15"
+      ],
+      "expected_qualifier": "exact"
+    },
+    {
+      "origin": "loyalty_partner_benefits",
+      "text": "На Масловке: 10% первый визит, 5% последующие; на Новой Риге: 10% первое бронирование дома, далее чаепитие с самоваром",
+      "declared_type": "Скидка + комплимент",
+      "expected_discounts": [
+        "10",
+        "5",
+        "10"
+      ],
+      "expected_qualifier": "exact"
+    },
+    {
+      "origin": "yandex_discounts_complete_all",
+      "text": "30% first cleaning; 20% second; 10% others",
+      "declared_type": null,
+      "expected_discounts": [
+        "30",
+        "20",
+        "10"
+      ],
+      "expected_qualifier": "exact"
+    },
+    {
+      "origin": "yandex_discounts_complete_all",
+      "text": "25% first order; 15% subsequent orders",
+      "declared_type": null,
+      "expected_discounts": [
+        "25",
+        "15"
+      ],
+      "expected_qualifier": "exact"
+    },
+    {
+      "origin": "yandex_discounts_complete_all",
+      "text": "Up to 20%",
+      "declared_type": null,
+      "expected_discounts": [
+        "20"
+      ],
+      "expected_qualifier": "up_to"
+    },
+    {
+      "origin": "yandex_discounts_complete_all",
+      "text": "Up to 22%",
+      "declared_type": null,
+      "expected_discounts": [
+        "22"
+      ],
+      "expected_qualifier": "up_to"
+    },
+    {
+      "origin": "loyalty_partner_benefits",
+      "text": "В прежней базе: Магнит Косметик — 30%, Магнит Экспресс — 25% на первый заказ от 1 200 ₽; не подтверждено",
+      "declared_type": "Скидка по промокоду",
+      "expected_discounts": [],
+      "expected_qualifier": "exact"
+    },
+    {
+      "origin": "loyalty_partner_benefits",
+      "text": "1% от суммы договора строительного подряда баллами CoralBonus, максимум 50 000 баллов",
+      "declared_type": "Баллы",
+      "expected_discounts": [],
+      "expected_qualifier": "exact"
+    },
+    {
+      "origin": "parser_offers",
+      "source_url": "https://ekp.spb.ru/api/portal/loyalty/partners",
+      "text": "Держателям ЕКП устанавливается специальное ценовое предложение со снижением цены на 5% от стоимости билета на спектакли основного репертуара театра при предъявлении ЕКП и оплате билета в кассе театра (ул. Большая Конюшенная, д.27) при наличии билетов.",
+      "declared_type": null,
+      "expected_discounts": [
+        "5"
+      ],
+      "expected_qualifier": "exact"
+    },
+    {
+      "origin": "parser_offers",
+      "source_url": "https://ekp.spb.ru/api/portal/loyalty/partners",
+      "text": "Специальный тариф рассчитывается путем снижения базовой цены билета на 10%. По одной ЕКП можно получить скидку на 1 билет.",
+      "declared_type": null,
+      "expected_discounts": [
+        "10"
+      ],
+      "expected_qualifier": "exact"
+    },
+    {
+      "origin": "parser_offers",
+      "source_url": "https://media.utair.ru/status",
+      "text": "Скидки\n20% ко Дню Рождения",
+      "declared_type": null,
+      "expected_discounts": [
+        "20"
+      ],
+      "expected_qualifier": "exact"
+    },
+    {
+      "origin": "parser_offers",
+      "source_url": "https://t.me/ekpcard/5726",
+      "text": "А в «Детском магазине поощрений» — снижение стоимости: -50% на всё🎉",
+      "declared_type": null,
+      "expected_discounts": [
+        "50"
+      ],
+      "expected_qualifier": "exact"
+    },
+    {
+      "origin": "parser_offers",
+      "source_url": "https://t.me/mybspb/1487",
+      "text": "Вы можете легко снизить ставку по кредиту: \n🔻 на 8% — при оформлении финансовой защиты (страхования) \n🔻 до 4% — при подтверждении дохода через Госуслуги (выписка СФР) \n🔻 до 4% — при переводе зарплаты в БСПБ ",
+      "declared_type": null,
+      "expected_discounts": [],
+      "expected_qualifier": "exact"
+    }
+  ]
+}

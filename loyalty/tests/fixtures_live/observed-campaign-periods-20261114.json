@@ -1,0 +1,42 @@
+{
+  "provenance": {
+    "retained_input_digest": "5e527b13065c135aff67642201b1d303339218b1879aeb3d7e1cf9187c6a8a17",
+    "coral_source_run": "43612232710:1",
+    "excerpts": "Unchanged public source wording. Coral paragraphs are excerpts; Magnit keeps its public source evidence."
+  },
+  "coral": [
+    {
+      "title": "АУРА",
+      "url": "https://coralbonus.ru/klub-privilegii/nedvizhimost/aura/",
+      "excerpt": "Срок действия бонусов - 18 месяцев с момента начисления на карту CoralBonus\nСроки проведения акции: 13.04.2026 до 21.12.2026",
+      "observed_at": "2026-11-14T15:51:46.680280+00:00",
+      "source_document_sha256": "7a17265eb67375e61af11ccfc394117531ea1730544c1229634c35bbbaf8b4cf"
+    },
+    {
+      "title": "МУЗА",
+      "url": "https://coralbonus.ru/klub-privilegii/nedvizhimost/muza/",
+      "excerpt": "Срок действия бонусов - 18 месяцев с момента начисления на карту CoralBonus\nСроки проведения акции: 08.06.2026 до 07.06.2027 г.",
+      "observed_at": "2026-11-14T15:51:46.680280+00:00",
+      "source_document_sha256": "86d3ed77b0aa3ba04bfa19f27ae8e6ecff4c21941d50dbefc1e0204a7833a943"
+    }
+  ],
+  "magnit": {
+    "observed_at": "2026-10-27T10:42:38.907414+00:00",
+    "evidence": {
+      "catalogue_title": "+1 категория с кешбэком\nТолько для абонентов T2",
+      "category": "Кешбэк / Другое",
+      "content": "<p>\n    Станьте абонентом Т2 и получите дополнительную категорию месяца с кешбэком. Каждый месяца размер кешбэк и категория меняются.\n</p>\n<p>\n    <strong>Условия начисления:</strong>\n</p>\n<ol>\n    <li>\n        Выберите категорию партнёра в разделе «Кешбэк месяца»\n    </li>\n    <li>\n        Покупайте товары из категории в магазинах и онлайн с картой Магнит Плюс\n    </li>\n    <li>\n        Обычно бонусы приходят через 24 часа, а сгорают через 180 дней\n    </li>\n    <li>\n        Не начислим кешбэк, если за месяц уже получили<br>\n        - 2 000 бонусов за покупки на кассе<br>\n        - или 4 000 бонусов за онлайн-заказы\n    </li>\n</ol>\n<p>\n    Срок проведения акции: c 02.11.2026 по 30.11.2027\n</p>\n<p>\n   <a target=\"_blank\" href=\"https://s3.t2.ru/ds-site/actions/pravila-akczii-vygoda-na-svyazi.pdf\">Правила акции</a>\n</p>\n<p>\n    1 бонус = 1 рубль<br>\n    Подробности о бонусах и правила программы лояльности Магнит Плюс на <a href=\"https://legal.magnit.ru/mplus/Pravila-Programmi-loyalnosti\">magnit.ru/terms</a>\n</p>\n<br>\n<span style=\"font-size: 11pt;\">Реклама t2.ru, magnit.ru</span>",
+      "disclaimer": "Перед переходом на сайт партнёра убедитесь:\nНа устройстве не используется VPN\nНе используются блокировщики рекламы\nНе установлены сторонние расширения",
+      "native": "2062",
+      "page_sha256": "fe1e294b41f2213da2554a9bbfbeb9093d0d6c4df79e0b481859770315ebfde1",
+      "partner": "Т2",
+      "rule_links": [
+        "https://s3.t2.ru/ds-site/actions/pravila-akczii-vygoda-na-svyazi.pdf",
+        "https://legal.magnit.ru/mplus/Pravila-Programmi-loyalnosti"
+      ],
+      "steps": "Выберите категорию партнёра в разделе «Кешбэк месяца»\nПокупайте товары из категории в магазинах и онлайн с картой Магнит Плюс\nОбычно бонусы приходят через 24 часа, а сгорают через 180 дней\nНе начислим кешбэк, если за месяц уже получили\n- 2 000 бонусов за покупки на кассе\n- или 4 000 бонусов за онлайн-заказы",
+      "title": "+1 категория с кешбэком Только для абонентов T2",
+      "url": "https://magnit.ru/partners/2062"
+    }
+  }
+}

@@ -6,7 +6,7 @@ codes are not guessed or fetched. Quoted multiword codes retain internal spellin
 from __future__ import annotations
 import re
 
-LABEL = re.compile(r'\bпромокод(?:а|у|ом|ы)?\b', re.I)
+LABEL = re.compile(r'\bпромо-?код(?:а|у|ом|ы)?\b', re.I)
 TOKEN = re.compile(r'[A-Za-zА-Яа-яЁё0-9][A-Za-zА-Яа-яЁё0-9_.-]*')
 STOP = {'http', 'https', 'промокод', 'промокоды', 'акция', 'скидка', 'скидки', 'мир', 'синий', 'серебряный', 'золотой', 'получите', 'получить', 'дополнительные'} | set(('в во на для по при с со из от до после перед к и или либо не нет '
             'составляет составит действует действителен действительны можно нужно '
@@ -35,47 +35,65 @@ def promocode_delivery_methods(clause: str) -> list[str]:
     """
     methods = []
     action_boundary = r'\s+[–—]\s+|,\s*(?=(?:оформить|ввести)\b)'
+    quoted = list(re.finditer(r'«[^»]*»|“[^”]*”|"[^"]*"', clause))
+    boundaries = [m for m in re.finditer(action_boundary, clause, re.I)
+                  if not any(q.start() < m.start() < q.end() for q in quoted)]
     for method, pattern in (('sms', r'\b(?:SMS|СМС)\b'),
                             ('account', r'личн\w*\s+кабинет\w*'),
                             ('app', r'приложени\w*')):
         for match in re.finditer(pattern, clause, re.I):
-            left = max([0] + [m.end() for m in re.finditer(action_boundary, clause[:match.start()], re.I)])
-            boundary = re.search(action_boundary, clause[match.end():], re.I)
-            right = match.end() + boundary.start() if boundary else len(clause)
+            left = max([0] + [m.end() for m in boundaries if m.end() <= match.start()])
+            right = min([len(clause)] + [m.start() for m in boundaries if m.start() >= match.end()])
             local = clause[left:right]
+            prefix = clause[left:match.start()]
+            # A later coupon instruction cannot turn an unrelated shopping,
+            # payment or navigation action into a delivery channel.
+            if not LABEL.search(local):
+                continue
+            # A coupon for an SMS package names the product, not its delivery.
+            if method == 'sms' and re.search(r'\bпромо-?коды\s+на\s*$', prefix, re.I):
+                continue
             if method != 'sms':
-                prefix = clause[left:match.start()]
                 if re.search(r'\bкарт\w*\s+из\s+(?:мобильн\w*\s+)?$', prefix, re.I):
                     continue
-                issuance = re.search(
-                    r'\b(?:получ\w*|выда\w*)\s+[«“"]?промокод\w*\b|'
-                    r'\bпромокод\w*\s+(?:будет\s+)?(?:отображ\w*|выда\w*|прид[её]т|приход\w*)\b',
+                issuance_matches = re.finditer(
+                    r'\b(?:получ(?!енн)\w*|выда\w*)\s+[«“"]?промо-?код\w*\b|'
+                    r'\bпромо-?код\w*\s+(?:будет\s+)?(?:отображ\w*|выда\w*|прид[её]т|приход\w*)\b',
                     local, re.I)
+                issuance = next((m for m in issuance_matches
+                                 if not any(q.start() < left + m.start() < q.end() for q in quoted)
+                                 or re.search(r'\bнажмите\s+(?:на\s+)?(?:кнопку\s*)?[«“"]?\s*$',
+                                              local[:m.start()], re.I)), None)
                 # Login and ordering own their channels even when a neighboring
                 # action issues a code. Only action-introducing commas separate
                 # actions; commas in channel lists keep their shared predicate.
                 merchant_action = re.search(
-                    r'\b(?:перейдите|войдите|оформить)\b', local, re.I)
-                redemption = LABEL.search(local) and re.search(r'\b(?:введите|ввести|укажите)\b', local, re.I)
+                    r'\b(?:перейдите|переходите|войдите|зайдите|оформить|оформите)\b', local, re.I)
+                redemption = LABEL.search(local) and re.search(
+                    r'\b(?:введите|ввести|укажите|указав|применить|применени\w*|использовать)\b', local, re.I)
                 activation = re.search(
-                    r'\b(?:активировать|активируйте|активация)\s+промокод\w*\b', local, re.I)
+                    r'\b(?:активировать|активируйте|активаци[яиюе])\s+'
+                    r'(?:полученн\w*\s+)?промо-?код\w*\b', local, re.I)
                 # A PDF wrap can leave the activation noun on the prior line.
                 # Only this short requirement fragment is negative evidence;
                 # unrelated restrictions do not cancel code availability.
                 unneeded_reference = re.fullmatch(
-                    rf'\s*промокода\s+в\s+{pattern}\s+не\s+требуется[.!?]?\s*', local, re.I)
+                    rf'\s*промо-?кода\s+в\s+{pattern}\s+не\s+требуется[.!?]?\s*', local, re.I)
                 # 'По промокоду' describes application independently of the
                 # discount amount, decimal punctuation or currency abbreviation.
                 applicability = re.search(
-                    r'\bпромокод\s+предоставляет\s+скидк\w*\b|'
-                    r'\bпо\s+промокоду\b', local, re.I)
+                    r'\bпромо-?код(?:ы)?\s+(?:предоставляет\s+скидк\w*|действу(?:ет|ют))\b|'
+                    r'\bпо\s+промо-?коду\b', local, re.I)
                 # An em dash can introduce the venues of application rather
                 # than a new action. Keep that explicit predicate attached to
                 # its channel even though navigation uses dash boundaries.
                 applicability = applicability or re.search(
-                    r'\bпромокод\s+доступен\s+для\s+применения\b',
+                    r'\bпромо-?код\s+доступен\s+для\s+применения\b',
                     clause[:match.start()], re.I)
-                if not issuance and (merchant_action or redemption or activation or unneeded_reference or applicability):
+                navigation = re.search(
+                    r'\bсписок\s+партн[её]ров\b|\bвыбрать\s+поле\s+[«"]промо-?коды\b', local, re.I)
+                support = re.search(r'\bобратитесь\s+в\s+поддержк\w*\b', local, re.I)
+                if not issuance and (merchant_action or redemption or activation or unneeded_reference or applicability or navigation or support):
                     continue
             methods.append(method)
             break
@@ -102,6 +120,12 @@ def candidate(value: str, position: int, prefix: str) -> tuple[str | None, int]:
     quoted = tail[:1] in QUOTES
     if quoted:
         end = tail.find(QUOTES[tail[0]], 1)
+        # One captured public card closes its double quote with an apostrophe.
+        # Accept only its bounded literal-token shape, never open-ended prose.
+        if end < 0 and tail[0] == '"':
+            mismatched = re.match(r'"([A-ZА-ЯЁ0-9][A-ZА-ЯЁ0-9_.-]{1,59})\'(?=$|[\s.,;!?])', tail)
+            if mismatched:
+                end = mismatched.end() - 1
         if end < 0 or end > 62:
             return None, start
         code = tail[1:end].strip()
@@ -165,7 +189,7 @@ def promocode_occurrences(value: str, mention: re.Match) -> list[tuple[str, int,
     if not code:
         return []
     members = [(code, position, stop)]
-    if re.fullmatch(r'промокоды\s*(?:[:—–-]\s*)?', mention[0], re.I):
+    if re.fullmatch(r'промо-?коды\s*(?:[:—–-]\s*)?', mention[0], re.I):
         for _ in range(8):
             separator = re.match(r'[ \t]*(?:,|/|\bи\b|\bили\b)[ \t]*(?=[«“"])', value[stop:])
             if not separator:
@@ -309,7 +333,8 @@ def extract_promocodes_with_context(value: str, tables: list | None = None, *, l
     codes, evidence, delivery = [], [], []
     mentions = list(LABEL.finditer(value))
     for match in mentions:
-        if match[0].casefold()=='промокода' and re.search(r'(?:\bдва|\bтри|\bчетыре|\d+)\s+$',value[max(0,match.start()-40):match.start()],re.I):
+        label = match[0].casefold().replace('-', '')
+        if label=='промокода' and re.search(r'(?:\bдва|\bтри|\bчетыре|\d+)\s+$',value[max(0,match.start()-40):match.start()],re.I):
             continue
         members = promocode_occurrences(value, match)
         cancelled = bool(members) and (promocode_applicability_heading(value, match)
@@ -318,7 +343,7 @@ def extract_promocodes_with_context(value: str, tables: list | None = None, *, l
             if code not in codes and not cancelled:
                 codes.append(code)
                 evidence.append({'code': code, 'evidence': value[match.start():stop].strip()})
-        if match[0].casefold() == 'промокоды' and members:
+        if label == 'промокоды' and members:
             # Explicit 'CODE - percentage; CODE - percentage' offer lists only.
             # A later section or an unrelated word after a semicolon is not a code.
             section = re.split(r'\n\s*\n|(?<=[.!?])\s+(?=[А-ЯA-Z])', value[match.end():], maxsplit=1)[0]

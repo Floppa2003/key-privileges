@@ -47,7 +47,8 @@ class CommonNumericLiteralTests(unittest.TestCase):
     def test_parenthesized_bonus_caps_are_not_fixed_rewards(self):
         body='Получайте +10% бонусов (до 1000 бонусов).'
         result=self.project(body)
-        self.assertEqual(result['benefits'],[])
+        self.assertEqual([(b['kind'],b['value'],b['unit']) for b in result['benefits']],
+                         [('earn_points','10','percent')])
         self.assertEqual([(c['kind'],c['value'],c['unit'],c['qualifier']) for c in result['conditions']],
                          [('benefit_cap','1000','points','up_to')])
 

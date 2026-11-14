@@ -1,0 +1,205 @@
+{
+  "provenance": "Unmodified public source excerpts from the retained 2026-11-14 corpus; no generated source formulations.",
+  "cases": {
+    "wrapped_purchase": {
+      "program": "No Name Card",
+      "partner": "EX bags",
+      "source_url": "https://nonameburo.com/card",
+      "source_id": "parser_offers",
+      "observed_at": "2026-11-14T12:19:32.114244+00:00",
+      "benefit": "— 5% скидка при покупке до 200 000 ₽\n— скидка 10 000 ₽ при покупке\nот 200 000 ₽",
+      "conditions": "",
+      "activation": ""
+    },
+    "flat_range": {
+      "program": "Привет! / Мир / СБП",
+      "partner": "PRO32",
+      "source_url": "https://vamprivet.ru/promo/raznoe/proverennaya-zashchita-kotoroy-doveryayut-2/",
+      "source_id": "parser_offers",
+      "observed_at": "2026-09-24T10:11:58.060505+00:00",
+      "benefit": "",
+      "conditions": "5% кешбэк на заказы до 1 999,99 ₽ 7% кешбэк на заказы от 2 000 ₽ до 2 999,99 ₽ 10% кешбэк на заказы от 3 000 ₽",
+      "activation": ""
+    },
+    "delivery_qualified": {
+      "program": "Привет! / Мир / СБП",
+      "partner": "Перекрёсток",
+      "source_url": "https://vamprivet.ru/promo/produkty-pitaniya/vasha-skidka-na-pokupki-v-perekryestke/",
+      "source_id": "parser_offers",
+      "observed_at": "2026-09-15T12:55:33.779848+00:00",
+      "benefit": "Скидка до 550 ₽ на первый заказ с доставкой от 1 500 ₽ на сайте или в приложении по промокоду для новых клиентов",
+      "conditions": "",
+      "activation": ""
+    },
+    "merchant_qualified": {
+      "program": "T2 «Больше»",
+      "partner": "Магнит Доставка",
+      "source_url": "https://msk.t2.ru/bolshe/offers",
+      "source_id": "parser_offers",
+      "observed_at": "2026-11-14T12:19:32.114244+00:00",
+      "benefit": "Скидка 20% на любой заказ в Магнит Доставка от 1500 рублей",
+      "conditions": "",
+      "activation": ""
+    },
+    "first_merchant_qualified": {
+      "program": "T2 «Больше»",
+      "partner": "Магнит Доставка",
+      "source_url": "https://msk.t2.ru/bolshe/offers",
+      "source_id": "parser_offers",
+      "observed_at": "2026-11-14T12:19:32.114244+00:00",
+      "benefit": "Скидка 35% на первый заказ в Магнит Доставка от 1000 рублей",
+      "conditions": "",
+      "activation": ""
+    },
+    "cosmetics_qualified": {
+      "program": "T2 «Больше»",
+      "partner": "Магнит Косметик",
+      "source_url": "https://msk.t2.ru/bolshe/offers",
+      "source_id": "parser_offers",
+      "observed_at": "2026-11-14T12:19:32.114244+00:00",
+      "benefit": "Скидка 30% на заказ в Магнит Косметик от 2000 рублей",
+      "conditions": "",
+      "activation": ""
+    },
+    "pharmacy_goods_bands": {
+      "program": "Единая карта петербуржца",
+      "partner": "Петербургские аптеки",
+      "source_url": "https://ekp.spb.ru/api/portal/loyalty/partners",
+      "source_id": "parser_offers",
+      "observed_at": "2026-11-14T09:26:59.224303+00:00",
+      "benefit": "Держателю Единой карты петербуржца скидка предоставляется в зависимости от суммы покупки:\nСкидка 3% - при покупке товаров на сумму до 2000 руб., кроме препаратов, изготавливаемых рецептурно-производственным отделом аптеки.\nСкидка 5% - при покупке товаров на сумму от 2000 руб. до 2500 руб., кроме препаратов, изготавливаемых рецептурно-производственным отделом аптеки.\nСкидка 10% - при покупке товаров на сумму от 2500 руб., кроме препаратов, изготавливаемых рецептурно-производственным отделом аптеки.\nПри оформлении заказа на сайте скидка 10% предоставляется при вводе идентификационного номера в специальном поле в корзине.\nАкция действует по 31.12.2026.",
+      "conditions": "",
+      "activation": ""
+    },
+    "meal_qualified": {
+      "program": "Единая карта петербуржца",
+      "partner": "Вкусные вафли",
+      "source_url": "https://ekp.spb.ru/api/portal/loyalty/partners",
+      "source_id": "parser_offers",
+      "observed_at": "2026-11-14T09:26:59.224303+00:00",
+      "benefit": "Держателям ЕКП предоставляется скидка 10% при заказе любых блюд от 1000 рублей.\nСкидка по ЕКП не суммируется с другими акциями и специальными предложениями.",
+      "conditions": "",
+      "activation": ""
+    },
+    "service_qualified": {
+      "program": "Единая карта петербуржца",
+      "partner": "Умная химчистка",
+      "source_url": "https://ekp.spb.ru/api/portal/loyalty/partners",
+      "source_id": "parser_offers",
+      "observed_at": "2026-11-14T09:26:59.224303+00:00",
+      "benefit": "Держателям ЕКП (женщинам старше 55 лет и мужчинам старше 60 лет) и ЕКП \"Серебряный возраст\" при заказе химчистки на сумму от 2000 рублей подарок — купон на скидку 250 рублей!",
+      "conditions": "",
+      "activation": ""
+    },
+    "pie_qualified": {
+      "program": "CoralBonus — Клуб",
+      "partner": null,
+      "source_url": "https://coralbonus.ru/klub-privilegii/kafe-restorany-produkty/russkie-pirogi/",
+      "source_id": "parser_offers",
+      "observed_at": "2026-11-14T15:51:46.680280+00:00",
+      "benefit": "",
+      "conditions": "Только для владельцев карт лояльности CoralBonus действует эксклюзивное предложение от Русских пирогов – скидка 16% при заказе пирогов от 3950 руб.!",
+      "activation": ""
+    },
+    "card_qualified": {
+      "program": "T2 «Больше»",
+      "partner": "Банк ПСБ",
+      "source_url": "https://msk.t2.ru/bolshe/offers",
+      "source_id": "parser_offers",
+      "observed_at": "2026-10-31T11:00:15.824424+00:00",
+      "benefit": "",
+      "conditions": "Совершите любую покупку по карте от 1000 рублей в течение 30 дней с момента активации карты. Исключения составляют покупки по МСС-кодами, указанными в правилах акции, а так же покупки совершенные через СБП (в т.ч. оплата по QR-коду).",
+      "activation": ""
+    },
+    "card_category_qualified": {
+      "program": "T2 «Больше»",
+      "partner": "Кредит Европа Банк",
+      "source_url": "https://msk.t2.ru/bolshe/offers",
+      "source_id": "parser_offers",
+      "observed_at": "2026-10-31T11:00:15.824424+00:00",
+      "benefit": "",
+      "conditions": "Совершите покупки по карте в продуктовых магазинах от 10 000 рублей в течение 30 дней с момента активации карты (МСС 5411, 5499, 5422, 5451, 5441).",
+      "activation": ""
+    },
+    "aggregate_spending": {
+      "program": "Банк «Санкт-Петербург» — объявления о привилегиях",
+      "partner": null,
+      "source_url": "https://t.me/mybspb/1436",
+      "source_id": "parser_offers",
+      "observed_at": "2026-09-25T10:18:26.887516+00:00",
+      "benefit": "2️⃣Оплачивайте покупки этой же картой на общую сумму от 5 000 рублей в период проведения акции (обратите внимание: переводы и оплата по СБП/QR-коду не учитываются).",
+      "conditions": "",
+      "activation": ""
+    },
+    "booking_strict": {
+      "program": "CoralBonus — Акции",
+      "partner": null,
+      "source_url": "https://coralbonus.ru/promo/rixos-tersane-istanbul/",
+      "source_id": "parser_offers",
+      "observed_at": "2026-11-14T15:51:46.680280+00:00",
+      "benefit": "",
+      "conditions": "5 000 бонусов на бронирование стоимостью более 150 000 рублей",
+      "activation": ""
+    },
+    "relative_purchase": {
+      "program": "РЖД Бонус",
+      "partner": "Алёнка.ру",
+      "source_url": "https://rzd-bonus.ru/partners/11597/",
+      "source_id": "parser_offers",
+      "observed_at": "2026-09-16T18:36:17.903769+00:00",
+      "benefit": "По заказам, сумма которых свыше 10 000 рублей, начисление баллов составит — \n666 баллов за заказ.",
+      "conditions": "",
+      "activation": ""
+    },
+    "denied_cost_band": {
+      "program": "РЖД Бонус",
+      "partner": "Издательство «МИФ»",
+      "source_url": "https://rzd-bonus.ru/partners/11533/",
+      "source_id": "parser_offers",
+      "observed_at": "2026-09-16T18:36:17.903769+00:00",
+      "benefit": "",
+      "conditions": "Баллы не начисляются:\n • За оптовые заказы.\n • За заказы стоимостью свыше 10 000 руб.\n • За заказы, оформленные со скидкой 100%.",
+      "activation": ""
+    },
+    "denied_policy_band": {
+      "program": "Привет! / Мир / СБП",
+      "partner": "Banki.ru",
+      "source_url": "https://vamprivet.ru/promo/avtovladelycam/poluchite-bonus-za-oformlenie-osago-4/",
+      "source_id": "parser_offers",
+      "observed_at": "2026-09-24T10:11:58.060505+00:00",
+      "benefit": "",
+      "conditions": "Промокод не действует на покупку полиса стоимостью до 3000 ₽ для новых пользователей и до 4000 ₽ для действующих пользователей",
+      "activation": ""
+    },
+    "tier_qualification": {
+      "program": "CoralBonus — Акции",
+      "partner": null,
+      "source_url": "https://coralbonus.ru/promo/urovni-bonusnykh-kart-2026/",
+      "source_id": "parser_offers",
+      "observed_at": "2026-11-14T15:51:46.680280+00:00",
+      "benefit": "",
+      "conditions": "Silver — присваивается за покупку одного тура стоимостью до 399 999 ₽. Процент бонусов к начислению – от 1%\nGold — присваивается за покупку одного тура стоимостью от 400 000 до 799 999 ₽, либо за две покупки общей стоимостью до 799 999 ₽ в течение 12 месяцев. Процент бонусов к начислению – от 2%\nPlatinum — присваивается за покупку одного тура от 800 000 ₽, либо за три покупки в течение 15 месяцев. Процент бонусов к начислению – от 3%",
+      "activation": ""
+    },
+    "sequential_visit_rates": {
+      "program": "No Name Card",
+      "partner": "Сквош-клуб «МОСКВА»",
+      "source_url": "https://nonameburo.com/card",
+      "source_id": "parser_offers",
+      "observed_at": "2026-11-14T12:19:32.114244+00:00",
+      "benefit": "Скидка 20% на первое посещение, далее 5% постоянная скидка на любую услугу и 10% скидка на покупку первого абонемента",
+      "conditions": "",
+      "activation": ""
+    },
+    "single_order_total": {
+      "program": "T2 «Больше»",
+      "partner": "Ситилинк",
+      "source_url": "https://msk.t2.ru/bolshe/offers",
+      "source_id": "parser_offers",
+      "observed_at": "2026-11-14T12:19:32.114244+00:00",
+      "benefit": "",
+      "conditions": "Промокод предоставляет фиксированную скидку 1000 рублей при оформлении заказа на общую сумму от 5000 рублей.",
+      "activation": ""
+    }
+  }
+}

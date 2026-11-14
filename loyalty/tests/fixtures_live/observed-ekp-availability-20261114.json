@@ -1,0 +1,246 @@
+{
+  "sirius": {
+    "observed_at": "2026-11-06T01:12:54.726068+00:00",
+    "row": {
+      "active": true,
+      "categories": [
+        {
+          "categoryId": 25,
+          "categoryName": "Карта \"МИР\""
+        }
+      ],
+      "description_authorized": false,
+      "discountScheme": "<p>– Оплачивайте билеты на любые маршруты и суда на <a href=\"https://siriussealine.ru/\">сайте</a> или в кассах причалов «Сируис Силайн» в сезоне навигации 2026 года до 08.11.2026 зарегистрированной картой «Мир» и получайте кешбэк 20% <br/>– Наличие рейсов проверяйте на сайте или в кассах причалов до оплаты билетов<br/>– Список адресов причалов и точек продаж указан ниже в пункте «Адреса»  <br/>– В акции не участвуют оплаты по QR-коду <br/>– Кешбэк начисляется при оплате картой «Мир» зарегистрированной в проекте «<a href=\"https://pro.sirius-ft.ru/\">Сириус» — просветительская среда</a>». Для оплаты в торговой точке приложите к терминалу банковскую карту или смартфон с привязанной картой. А для оплаты в интернете выбирайте способ оплаты «Оплатить картой», указав её номер</p>",
+      "id": "4374",
+      "loyaltyDescription": "за оплату на сайте или в кассах причалов «Сируис Силайн» по Карте Сириус",
+      "name": "Судоходная компания «Сириус Силайн»",
+      "text": ""
+    },
+    "request": {
+      "filters": {
+        "categories": [],
+        "name": "",
+        "qrDiscount": false,
+        "region": "98"
+      },
+      "pagination": {
+        "limit": 120,
+        "offset": 720
+      }
+    },
+    "response_sha": "190ed437535b8c7b0b06ebfb389f1a06a066d3699cf2930ff54581053c0f5a63",
+    "observed_total": 1027,
+    "completed_at": "2026-11-06T01:13:18.992Z",
+    "retained_source_status": "public_catalog_api_terms",
+    "provenance": {
+      "source_url": "https://ekp.spb.ru/api/portal/loyalty/partners",
+      "capture": "actual retained anonymous public EKP row, reconstructed 2026-11-14"
+    }
+  },
+  "philharmonia": {
+    "observed_at": "2026-11-14T09:26:59.224303+00:00",
+    "row": {
+      "active": true,
+      "categories": [
+        {
+          "categoryId": 4,
+          "categoryName": "Театры"
+        },
+        {
+          "categoryId": 31,
+          "categoryName": "ЕКПшка"
+        }
+      ],
+      "description_authorized": false,
+      "discountScheme": "При предъявлении ЕКП до совершения оплаты",
+      "id": "319",
+      "loyaltyDescription": "Держателям ЕКП предоставляется скидка 10% на мероприятия, находящиеся в репертуаре филармонии, при предъявлении ЕКП перед оплатой билета в кассе Филармонии для детей и молодежи.<br/>\nВ связи с капитальным ремонтом помещений по адресу: Санкт-Петербург, Б. Самсониевский пр., д. 79, продажа билетов в кассе Филармонии для детей и молодежи временно не осуществляется.<br/>\nПредположительный срок окончания ремонта: 31.12.2026. \n",
+      "name": "Государственная филармония Санкт-Петербурга для детей и молодежи",
+      "text": "Филармония"
+    },
+    "request": {
+      "filters": {
+        "categories": [],
+        "name": "",
+        "qrDiscount": false,
+        "region": "98"
+      },
+      "pagination": {
+        "limit": 120,
+        "offset": 960
+      }
+    },
+    "response_sha": "1ccf35700014e2110d42995e47ea48126ea164cb4342f7d63123c1c1b76a67e4",
+    "observed_total": 1044,
+    "completed_at": "2026-11-14T09:27:33.817Z",
+    "retained_source_status": "public_catalog_api_terms",
+    "provenance": {
+      "source_url": "https://ekp.spb.ru/api/portal/loyalty/partners",
+      "capture": "actual retained anonymous public EKP row, reconstructed 2026-11-14"
+    }
+  },
+  "t2_audience_control": {
+    "observed_at": "2026-11-14T09:26:59.224303+00:00",
+    "row": {
+      "active": true,
+      "categories": [
+        {
+          "categoryId": 33,
+          "categoryName": "Карелия"
+        },
+        {
+          "categoryId": 34,
+          "categoryName": "Псков"
+        },
+        {
+          "categoryId": 12,
+          "categoryName": "Услуги населению"
+        }
+      ],
+      "description_authorized": false,
+      "discountScheme": "При предъявлении ЕКП курьеру",
+      "id": "4376",
+      "loyaltyDescription": "Для держателей ЕКП «Карельская» и ЕКП «Псковская» доступен специальный тариф. <br/>\n\nВ тариф входят:<br/>\n•\tБезлимитные мессенджеры;<br/>\n•\tБезлимитные звонки на t2;<br/>\n•\t20 Гб интернета;<br/>\n•\t500 минут на все номера России;<br/>\n•\t100 SMS на все номера России;<br/>\n•\tАбонентская плата – 400 руб./мес.;<br/>\n•\tПлата за подключение – 0 руб.<br/>\n\nДля оформления предложения необходимо заказать бесплатную доставку sim-карты, предъявить курьеру карту ЕКП «Карельская» или ЕКП «Псковская» и паспорт. <br/> Тариф можно подключить с новым номером t2 или перейти на него с номером другого оператора.<br/> Предложение недоступно для действующих абонентов t2.<br/> Вызвать курьера можно по <a href=\"https://spb.t2.ru/promo/bo-ekp\"> ссылке</a>. <br/> Скидки по ЕКП не суммируются с другими акциями и предложениями.",
+      "name": "t2",
+      "text": "Оператор сотовой связи"
+    },
+    "request": {
+      "filters": {
+        "categories": [],
+        "name": "",
+        "qrDiscount": false,
+        "region": "98"
+      },
+      "pagination": {
+        "limit": 120,
+        "offset": 720
+      }
+    },
+    "response_sha": "e441dd02d77121e366efaa11797db6266ae1d4b0bb65b2afb9a6c0b156caeaff",
+    "observed_total": 1044,
+    "completed_at": "2026-11-14T09:27:28.730Z",
+    "retained_source_status": "public_catalog_api_terms",
+    "provenance": {
+      "source_url": "https://ekp.spb.ru/api/portal/loyalty/partners",
+      "capture": "actual retained anonymous public EKP row, reconstructed 2026-11-14"
+    }
+  },
+  "library_children": {
+    "observed_at": "2026-11-14T09:26:59.224303+00:00",
+    "row": {
+      "active": true,
+      "categories": [
+        {
+          "categoryId": 29,
+          "categoryName": "Библиотеки"
+        },
+        {
+          "categoryId": 31,
+          "categoryName": "ЕКПшка"
+        }
+      ],
+      "description_authorized": false,
+      "discountScheme": "При предъявлении ЕКП перед оплатой",
+      "id": "2104",
+      "loyaltyDescription": "Держателям ЕКП при предъявлении карты перед оплатой предоставляется скидка 50 % на:<br/> \n• составление и редакцию библиографических списков литературы. Приведение библиографического описания в соответствие с ГОСТом;<br/> \n• возмещение от утери, порчи: <br/> \n- электронного читательского билета;<br/> \n- метки на книге;<br/> \n - номера из гардероба;<br/> \n• компенсацию за несвоевременный возврат документов.\n<br/> \nВременно не работает в связи с капитальным ремонтом.",
+      "name": "Детская библиотека №8",
+      "text": "ЦБС Невского района"
+    },
+    "request": {
+      "filters": {
+        "categories": [],
+        "name": "",
+        "qrDiscount": false,
+        "region": "98"
+      },
+      "pagination": {
+        "limit": 120,
+        "offset": 960
+      }
+    },
+    "response_sha": "1ccf35700014e2110d42995e47ea48126ea164cb4342f7d63123c1c1b76a67e4",
+    "observed_total": 1044,
+    "completed_at": "2026-11-14T09:27:33.817Z",
+    "retained_source_status": "public_catalog_api_terms",
+    "provenance": {
+      "source_url": "https://ekp.spb.ru/api/portal/loyalty/partners",
+      "capture": "actual retained anonymous public EKP row, reconstructed 2026-11-14"
+    }
+  },
+  "library_bateninskaya": {
+    "observed_at": "2026-11-14T09:26:59.224303+00:00",
+    "row": {
+      "active": true,
+      "categories": [
+        {
+          "categoryId": 29,
+          "categoryName": "Библиотеки"
+        }
+      ],
+      "description_authorized": false,
+      "discountScheme": "При предъявлении ЕКП перед оплатой",
+      "id": "1620",
+      "loyaltyDescription": "Держателям ЕКП предоставляется скидка 10% на сервисные услуги печати, копирования, сканирования и ламинирования.<br/> \nСкидка распространяется на всех держателей ЕКП независимо от того, записаны ли они в библиотеке или нет.<br/> \nСкидка предоставляется при предъявлении ЕКП перед оплатой услуг.<br/> \nСкидка по ЕКП не суммируется с другими акциями и предложениями библиотек.<br/>\nВременно не работает в связи с производством работ по капитальному ремонту.\n",
+      "name": "Библиотека \"Батенинская\"",
+      "text": "ЦБС Выборгского района"
+    },
+    "request": {
+      "filters": {
+        "categories": [],
+        "name": "",
+        "qrDiscount": false,
+        "region": "98"
+      },
+      "pagination": {
+        "limit": 120,
+        "offset": 960
+      }
+    },
+    "response_sha": "1ccf35700014e2110d42995e47ea48126ea164cb4342f7d63123c1c1b76a67e4",
+    "observed_total": 1044,
+    "completed_at": "2026-11-14T09:27:33.817Z",
+    "retained_source_status": "public_catalog_api_terms",
+    "provenance": {
+      "source_url": "https://ekp.spb.ru/api/portal/loyalty/partners",
+      "capture": "actual retained anonymous public EKP row, reconstructed 2026-11-14"
+    }
+  },
+  "website_only_control": {
+    "observed_at": "2026-11-14T09:26:59.224303+00:00",
+    "row": {
+      "active": true,
+      "categories": [
+        {
+          "categoryId": 9,
+          "categoryName": "Развлечения и досуг"
+        }
+      ],
+      "description_authorized": false,
+      "discountScheme": "При предъявлении ЕКП перед подписанием договора на реализацию мероприятия",
+      "id": "644",
+      "loyaltyDescription": "Держателям ЕКП предоставляются следующие скидки на мероприятия:<br/> \n- 50% на любую детскую развлекательную программу, выбранную держателем;<br/> \n- 20% на проведение взрослых праздников (юбилеи, свадьбы, корпоративы).<br/>  \nСкидка по ЕКП не суммируется с другими предложениями компании.<br/>  \nСайт компании временно не доступен, обращения можно оставлять по телефону.",
+      "name": "Друзья",
+      "text": "Творческое объединение"
+    },
+    "request": {
+      "filters": {
+        "categories": [],
+        "name": "",
+        "qrDiscount": false,
+        "region": "98"
+      },
+      "pagination": {
+        "limit": 120,
+        "offset": 600
+      }
+    },
+    "response_sha": "e9177eea7fd1775ce18362a519d6d28fc28a4dc1a006e76df3baffe4d7834fe6",
+    "observed_total": 1044,
+    "completed_at": "2026-11-14T09:27:25.736Z",
+    "retained_source_status": "public_catalog_api_terms",
+    "provenance": {
+      "source_url": "https://ekp.spb.ru/api/portal/loyalty/partners",
+      "capture": "actual retained anonymous public EKP row, reconstructed 2026-11-14"
+    }
+  }
+}

@@ -1,0 +1,74 @@
+[
+  {
+    "source_url": "https://vamprivet.ru/promo/avtovladelycam/samoe-to-dlya-avto-5/",
+    "text": "Максимальный размер начисления бонусов – 1000 бонусов за период акции",
+    "value": "1000",
+    "unit": "points",
+    "basis_unit": "campaign",
+    "kind": "benefit_cap"
+  },
+  {
+    "source_url": "https://t.me/mybspb/1490",
+    "text": "Оплачивайте покупки в интернет-магазине Wollmer картой БСПБ и получайте +15% кешбэка бонусами ЯРКО за каждый заказ (максимально — 5000 бонусов ЯРКО за одну покупку).",
+    "value": "5000",
+    "unit": "points",
+    "basis_unit": "purchase",
+    "kind": "benefit_cap"
+  },
+  {
+    "source_url": "https://uralsib.ru/aktsii/privetstvennye-bally-rzhd-za-oformlenie-karty",
+    "text": "Максимальная сумма приветственных баллов программы «РЖД Бонус», которую можно получить при оформлении всех участвующих в акции карт, составляет 14 000 баллов.",
+    "value": "14000",
+    "unit": "points",
+    "basis_unit": null,
+    "kind": "benefit_cap"
+  },
+  {
+    "source_url": "https://rzd-bonus.ru/partners/11581/",
+    "text": "Максимальная сумма начисленных баллов составляет 3 333 балла за заказ.",
+    "value": "3333",
+    "unit": "points",
+    "basis_unit": "order",
+    "kind": "benefit_cap"
+  },
+  {
+    "source_url": "https://www.aeroflot.ru/partners/ws/v.0.0.3/json/partner/get?id=525552&lang=ru",
+    "text": "- Ограничение по обмену миль на баллы «Х5 Клуба»: не более 50 000 миль в день для каждого участника «Аэрофлот Бонус».",
+    "value": "50000",
+    "unit": "miles",
+    "basis_unit": "day",
+    "kind": "exchange_limit"
+  },
+  {
+    "source_url": "https://www.aeroflot.ru/partners/ws/v.0.0.3/json/partner/get?id=524569&lang=ru",
+    "text": "- Ограничение по начислению – не более 1 000 000 миль за заключение договора.",
+    "value": "1000000",
+    "unit": "miles",
+    "basis_unit": "contract",
+    "kind": "benefit_cap"
+  },
+  {
+    "source_url": "https://www.aeroflot.ru/partners/ws/v.0.0.3/json/partner/get?id=524430&lang=ru",
+    "text": "- Ограничение по начислению миль – не более 10 000 000 миль за одну покупку.",
+    "value": "10000000",
+    "unit": "miles",
+    "basis_unit": "purchase",
+    "kind": "benefit_cap"
+  },
+  {
+    "source_url": "https://www.aeroflot.ru/partners/ws/v.0.0.3/json/partner/get?id=504448&lang=ru",
+    "text": "- Максимальное количество миль в одном чеке – 1 000 миль.",
+    "value": "1000",
+    "unit": "miles",
+    "basis_unit": "receipt",
+    "kind": "benefit_cap"
+  },
+  {
+    "source_url": "https://t.me/mybspb/1445",
+    "text": "Оплачивайте лечение картой БСПБ и получайте +5% бонусов (макс. 1 000 бонусов за покупку) за любые оплаты в клинике.",
+    "value": "1000",
+    "unit": "points",
+    "basis_unit": "purchase",
+    "kind": "benefit_cap"
+  }
+]

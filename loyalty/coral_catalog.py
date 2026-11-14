@@ -91,10 +91,22 @@ def own_text(node):
 def explicit_period(body):
     matches = re.findall(r'Срок\s+действия\s+предложения\s*:?\s*до\s+(\d{2})\.(\d{2})\.(\d{4})', body, re.I)
     dates = {date(int(y), int(m), int(d)).isoformat() for d, m, y in matches}
-    ranges = re.findall(r'(?:Сроки?\s+проведения|Срок\s+действия)\s+акции\s*:\s*'
-                        r'(\d{2}\.\d{2}\.\d{4})\s*(?:[-–—]|по)\s*(\d{2}\.\d{2}\.\d{4})(?!\d)', body, re.I)
+    ranges = re.findall(r'(?:(?:Сроки?\s+проведения|Срок\s+действия)\s+акции|'
+                        r'Даты\s+действия\s+предложения)\s*:\s*'
+                        r'(\d{2}\.\d{2}\.\d{4})\s*(?:[-–—]|по|до)\s*(\d{2}\.\d{2}\.\d{4})(?!\d)', body, re.I)
     from owned_offer_dates import calendar_date
     periods = {(calendar_date(start), calendar_date(end)) for start, end in ranges}
+    from reward_context import owned_starred_footnote
+    from normalized import normalize_rates
+    footnote = owned_starred_footnote(body)
+    if (footnote and re.match(r'^Только для владельцев карт лояльности CoralBonus\b',
+                             footnote['owner'], re.I)):
+        rewards = normalize_rates(footnote['owner'])
+        if len(rewards) == 1 and rewards[0]['kind'] == 'discount':
+            ends = re.findall(r'(?:^\*\s*|(?<=[.!?])\s+)Действует\s+до\s+'
+                              r'(\d{2}\.\d{2}\.\d{4})(?!\d|\.\d|-\d)', footnote['note'], re.I)
+            if len(ends) == 1:
+                dates.add(calendar_date(ends[0]))
     if any(start > end for start, end in periods):
         return None, None
     dates.update(end for _, end in periods)

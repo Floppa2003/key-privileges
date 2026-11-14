@@ -165,7 +165,8 @@ class CompoundBenefitContextTests(unittest.TestCase):
             expected=[('miles','5')] if literal.startswith('Начислим') else [('discount','25')]
             with self.subTest(literal=literal):
                 self.assertEqual([(r['kind'],r['value']) for r in normalize_rates(literal)],expected)
-                self.assert_benefits(literal,[('earn_miles' if k=='miles' else k,v,None) for k,v in expected])
+                self.assert_benefits(literal,[('earn_miles' if k=='miles' else k,v,None) for k,v in expected]
+                                     + [('redeem_rewards','50',None)])
 
     def test_owned_postfix_denial_can_follow_a_purchase_stage(self):
         self.assert_benefits('Скидка 10% и кофе в подарок на первый заказ не предоставляются.',[])

@@ -34,7 +34,23 @@ def required(soup,selectors,*,unique=False):
     return nodes
 
 
-def explicit_period(value,rule):
+def shared_year_periods(value):
+    """Read the complete labelled list, preserving gaps between stated periods."""
+    labels=list(re.finditer(r'(?m)^[ \t]*Срок действия акции:[ \t]*([^\n]+)',value,re.I))
+    interval=r'(\d{2}\.\d{2})\s*[-–—]\s*(\d{2}\.\d{2})[ .]*(\d{4})'
+    if len(labels)!=1:return [],None
+    items=[item.strip() for item in labels[0][1].split(',')]
+    matches=[re.fullmatch(interval,item) for item in items]
+    if not all(matches):return [],None
+    periods=[tuple(datetime.strptime(s+'.'+m[3],'%d.%m.%Y').date().isoformat()
+                   for s in (m[1],m[2])) for m in matches]
+    if (any(start>end for start,end in periods)
+            or any(previous[1]>=following[0] for previous,following in zip(periods,periods[1:]))):
+        return [],None
+    return periods,labels[0][0].strip()
+
+
+def explicit_period(value,rule,as_of=None):
     """Only an explicitly labelled offer interval, not all date-looking text."""
     flat=re.sub(r'\s+',' ',value)
     if rule=='end_dmy':
@@ -46,8 +62,10 @@ def explicit_period(value,rule):
         m=re.search(r'Предложение действует с (\d{2}\.\d{2}\.\d{4}) (?:по|до) (\d{2}\.\d{2}\.\d{4})',flat,re.I)
         if m:return *(datetime.strptime(s,'%d.%m.%Y').date().isoformat() for s in m.groups()),m[0]
     elif rule=='shared_year_dmy':
-        m=re.search(r'Срок действия акции:\s*(\d{2}\.\d{2})\s*[-–—]\s*(\d{2}\.\d{2})[ .]*(\d{4})',flat,re.I)
-        if m:return *(datetime.strptime(s+'.'+m[3],'%d.%m.%Y').date().isoformat() for s in (m[1],m[2])),m[0]
+        periods,evidence=shared_year_periods(value)
+        if periods:
+            selected=next((period for period in periods if as_of is None or period[1]>=as_of),periods[-1])
+            return *selected,evidence
     elif rule=='single_month':
         m=re.search(r'Срок проведения акции с (\d{1,2}) по (\d{1,2}) ('+'|'.join(MONTHS)+r') (\d{4})',flat,re.I)
         if m:return *(datetime(int(m[4]),MONTHS[m[3].lower()],int(s)).date().isoformat() for s in (m[1],m[2])),m[0]
@@ -89,7 +107,7 @@ def extract_partner_page(source,soup,url,observed_at):
         publication=content(select([cfg['publication_selector']]))
         details['article_published_at']=datetime.strptime(publication,'%d.%m.%Y').date().isoformat()
         details['publication_date_is_not_validity']=True
-    date_from,date_until,date_evidence=explicit_period(terms,cfg.get('date_rule'))
+    date_from,date_until,date_evidence=explicit_period(terms,cfg.get('date_rule'),observed_at[:10])
     if date_evidence:details['validity_evidence']=date_evidence
     if cfg.get('require_explicit_period') and not date_evidence:
         raise ValueError('Required published period missing')

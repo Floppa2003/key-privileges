@@ -6,6 +6,7 @@ The current pipeline is v2: `collect_normalized.py` -> `normalized.json` / `offe
 - [Machine-readable offer schema](offer.schema.json)
 - [Registered source routes](sources_normalized.json)
 - [Daily schedule, manual runs and coverage objective](OPERATIONS.md)
+- [Deterministic parser completion audit, 14 November 2026](DETERMINISTIC_AUDIT_20261114.md)
 
 Each record keeps a stable ID, program/partner, benefit, conditions, redemption text, lexical rates and promo codes, source dates/status, actual detail URL or shared-page locator, source-specific tables/fields, observation time and integrity hash. Normalization is **not** automatic confirmation of eligibility, current availability or a combinable final price. Unknown dates remain unknown; inspect conditions text too.
 

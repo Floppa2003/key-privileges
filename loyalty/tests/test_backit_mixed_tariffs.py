@@ -13,7 +13,13 @@ class MixedTariffs(unittest.TestCase):
   s=BeautifulSoup(FIX.read_text(),'html.parser')
   s.select_one('.shop-rates').append(BeautifulSoup('<div class="row"><div class="name">VS1857 промокод на скидку 200 руб при первом заказе от 1000 руб.</div><div class="rate"><span></span></div></div>','html.parser'))
   r=b.parse_detail(str(s),CARD,NOW)
-  self.assertEqual(len(common(r)['benefits']),3)
+  benefits=common(r)['benefits']
+  cashback=[item for item in benefits if item['kind']=='cashback']
+  discounts=[item for item in benefits if item['kind']=='discount']
+  self.assertEqual([item['value'] for item in cashback],['388','24','388'])
+  self.assertEqual([(item['value'],item['unit']) for item in discounts],[('200','RUB')])
+  self.assertEqual(discounts[0]['evidence']['path'],'/conditions')
+  self.assertIn('VS1857',discounts[0]['evidence']['text'])
   self.assertIn('VS1857',r['conditions_text'])
   self.assertIn('VS1857',str(r['promo_codes']))
   self.assertNotIn('200',r['benefit_text'])

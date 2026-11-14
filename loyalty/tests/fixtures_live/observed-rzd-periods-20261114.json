@@ -1,0 +1,512 @@
+[
+  {
+    "title": "АШАН",
+    "observed_at": "2026-09-16T18:36:17.903769+00:00",
+    "source_cells_sha256": "1d9f0c516a736c32d73466bd506013a2d01f9af6ac8ba3d897d45e3b425f0c0c",
+    "source_cell_indices": [
+      0,
+      2,
+      16,
+      17
+    ],
+    "observation": {
+      "calculated_at": "2026-09-16T18:44:50.230105+00:00",
+      "cells": [
+        {
+          "kind": "string",
+          "text": "АШАН"
+        },
+        {
+          "kind": "string",
+          "text": " — российское подразделение Auchan Retail (входит в Auchan Holding), \nпредставляет собой крупнейшую торговую сеть, работающую на российском рынке \nс 2002 г. "
+        },
+        {
+          "kind": "string",
+          "text": "Баллы не начисляются: за оптовые заказы, за заказы с использованием \nпромокодов."
+        },
+        {
+          "kind": "string",
+          "text": "Предложение действует с 01.06.2026г."
+        }
+      ],
+      "cells_sha256": "308e54b44b0b5b872a49082688b8c644ddddaf71c29bf324b32f29e7f20358bc",
+      "formula_sha256": "bfb6cb7ff84ebcae55bb014abc529c2a5c22b419fa907d1de82717d06c6661e8",
+      "kind": "detail",
+      "requested_at": "2026-09-16T18:44:46.973075+00:00",
+      "url": "https://rzd-bonus.ru/partners/11564/"
+    }
+  },
+  {
+    "title": "Получите 1100 баллов «РЖД Бонус» с дебетовой картой Black от Т-Банка",
+    "observed_at": "2026-09-16T18:36:17.903769+00:00",
+    "source_cells_sha256": "a8d5e0ed70bc821487e3ee648d51657feb7791919a75905414923f140666acff",
+    "source_cell_indices": [
+      0,
+      1,
+      19,
+      20,
+      21
+    ],
+    "observation": {
+      "calculated_at": "2026-09-16T18:46:31.151399+00:00",
+      "cells": [
+        {
+          "kind": "string",
+          "text": "Получите 1100 баллов «РЖД Бонус» с дебетовой картой Black от Т-Банка"
+        },
+        {
+          "format": {
+            "pattern": "dd.mm.yyyy",
+            "type": "DATE"
+          },
+          "kind": "google_date",
+          "number": 46265,
+          "text": "31.08.2026"
+        },
+        {
+          "kind": "string",
+          "text": "Период проведения акции: с 09.04.2026 по 31.12.2026"
+        },
+        {
+          "kind": "string",
+          "text": "Период оформления и получения карты: с 09.04.2026 по 30.11.2026"
+        },
+        {
+          "kind": "string",
+          "text": "Период осуществления покупок по карте: с 09.04.2026 по 30.11.2026"
+        }
+      ],
+      "cells_sha256": "65cefbc8d747532a853ba1dcf488e602107e9708d7d84ab2228ef42b57e8ae37",
+      "formula_sha256": "ee7d610bbe95c949dd127ea668f8db2a8434f1786465d5f04cfa2a342577d763",
+      "kind": "detail",
+      "requested_at": "2026-09-16T18:46:28.181321+00:00",
+      "url": "https://rzd-bonus.ru/promo/poluchite-1100-ballov-rzhd-bonus-s-debetovoy-kartoy-black-ot-t-banka/"
+    }
+  },
+  {
+    "title": "450 баллов «РЖД Бонус» за каждую ночь проживания в отелях Radisson в России",
+    "observed_at": "2026-09-16T18:36:17.903769+00:00",
+    "source_cells_sha256": "fbfac296863d80619ca95490a1558c2f42f1e1a40702663ab32eea18e7acccf8",
+    "source_cell_indices": [
+      0,
+      1,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38
+    ],
+    "observation": {
+      "calculated_at": "2026-09-16T18:48:40.433050+00:00",
+      "cells": [
+        {
+          "kind": "string",
+          "text": "450 баллов «РЖД Бонус» за каждую ночь проживания в отелях Radisson в России"
+        },
+        {
+          "format": {
+            "pattern": "dd.mm.yyyy",
+            "type": "DATE"
+          },
+          "kind": "google_date",
+          "number": 46251,
+          "text": "17.08.2026"
+        },
+        {
+          "kind": "string",
+          "text": "Срок действия предложения:"
+        },
+        {
+          "kind": "string",
+          "text": " до 31.12.2026 "
+        },
+        {
+          "kind": "string",
+          "text": "* Предложение для отеля "
+        },
+        {
+          "kind": "string",
+          "text": "Acron Hotel Veliky Novgorod, a member of Radisson Individuals"
+        },
+        {
+          "kind": "string",
+          "text": "* "
+        },
+        {
+          "kind": "string",
+          "text": "действительно при бронировании минимум за 2 дня до заезда, при наличии \nмест. Срок действия предложения до 29.12.2026."
+        }
+      ],
+      "cells_sha256": "dfabbffe0201d491782ed99e02e3cd40e01ee50706dfe53276887985222fcca8",
+      "formula_sha256": "6d629008509115830440494a23fa68c0f4afb60bb8aa7cf2cf237b81c48d84dc",
+      "kind": "detail",
+      "requested_at": "2026-09-16T18:48:37.641050+00:00",
+      "url": "https://rzd-bonus.ru/promo/450-ballov-rzhd-bonus-za-kazhduyu-noch-prozhivaniya-v-otelyakh-radisson-hotel-group-v-rossii/"
+    }
+  },
+  {
+    "title": "До 500 баллов «РЖД Бонус» за каждую ночь проживания в отеле «Ривьера» в \nКазани",
+    "observed_at": "2026-09-16T18:36:17.903769+00:00",
+    "source_cells_sha256": "e205e3af4abde7261a62ddce01b28fd37d5f3759f3d654625575c5734a0cbf84",
+    "source_cell_indices": [
+      0,
+      1,
+      17
+    ],
+    "observation": {
+      "calculated_at": "2026-09-16T18:50:09.822116+00:00",
+      "cells": [
+        {
+          "kind": "string",
+          "text": "До 500 баллов «РЖД Бонус» за каждую ночь проживания в отеле «Ривьера» в \nКазани"
+        },
+        {
+          "format": {
+            "pattern": "dd.mm.yyyy",
+            "type": "DATE"
+          },
+          "kind": "google_date",
+          "number": 46181,
+          "text": "08.06.2026"
+        },
+        {
+          "kind": "string",
+          "text": "Срок проведения акции: до 30.11.2026."
+        }
+      ],
+      "cells_sha256": "fe2db71e3e3ceacb15c847e0748b83affa19833559017cbd2ec212569030eb47",
+      "formula_sha256": "2c04e77948d4ec5b00ecb5b7e53f1a586d2853af0f9701c477dd3cb18ff35865",
+      "kind": "detail",
+      "requested_at": "2026-09-16T18:50:06.679468+00:00",
+      "url": "https://rzd-bonus.ru/promo/do-500-ballov-rzhd-bonus-za-kazhduyu-noch-prozhivaniya-v-otele-rivera-v-kazani/"
+    }
+  },
+  {
+    "title": "Получите 2000 баллов «РЖД Бонус» за посадку на поезд с сервисом МИГОМ",
+    "observed_at": "2026-09-16T18:36:17.903769+00:00",
+    "source_cells_sha256": "157f294e78365605f0b93ca343fab33051a36e39af570f723ef00b815563ebae",
+    "source_cell_indices": [
+      0,
+      1,
+      25
+    ],
+    "observation": {
+      "calculated_at": "2026-09-16T18:50:30.113442+00:00",
+      "cells": [
+        {
+          "kind": "string",
+          "text": "Получите 2000 баллов «РЖД Бонус» за посадку на поезд с сервисом МИГОМ "
+        },
+        {
+          "format": {
+            "pattern": "dd.mm.yyyy",
+            "type": "DATE"
+          },
+          "kind": "google_date",
+          "number": 46266,
+          "text": "01.09.2026"
+        },
+        {
+          "kind": "string",
+          "text": "Срок проведения акции: до 31.12.2026"
+        }
+      ],
+      "cells_sha256": "a1230994baf3855672b3f8e2bfcaace2582483b5bca0ddf926cf0dd6bb1d5866",
+      "formula_sha256": "167fc86fbd5a62791f8c7823672a3e912a40a0a94fd98a1c092dd870cab4bdb2",
+      "kind": "detail",
+      "requested_at": "2026-09-16T18:50:26.894405+00:00",
+      "url": "https://rzd-bonus.ru/promo/poluchite-2000-ballov-rzhd-bonus-za-posadku-na-poezd-s-servisom-migom-/"
+    }
+  },
+  {
+    "title": "Алёнка.ру",
+    "observed_at": "2026-09-16T18:36:17.903769+00:00",
+    "source_cells_sha256": "1bbd18e69825d36b05aa5a61ee5d5320a74c52eaed651fcf7e1d33a121dc7e0e",
+    "source_cell_indices": [
+      0,
+      2,
+      5,
+      27,
+      28
+    ],
+    "observation": {
+      "calculated_at": "2026-09-16T18:56:14.118446+00:00",
+      "cells": [
+        {
+          "kind": "string",
+          "text": "Алёнка.ру"
+        },
+        {
+          "kind": "string",
+          "text": "— фирменный магазин известных фабрик Красный Октябрь, Кондитерский концерн \nБабаевский, РОТ ФРОНТ. "
+        },
+        {
+          "kind": "string",
+          "text": "Получайте 1 балл за каждые 34 рублей, потраченные "
+        },
+        {
+          "kind": "string",
+          "text": "Предложение действует с "
+        },
+        {
+          "kind": "string",
+          "text": "01.01.2026г."
+        }
+      ],
+      "cells_sha256": "659d32b0a21bb3f54dd10a55c5c47929e4b61c412c41ac602e3fc23d9596ac9b",
+      "formula_sha256": "c647e4bf3e04a6ee63243f3560fe7db0b0d3376d9c8e178a8e2f031625c1e807",
+      "kind": "detail",
+      "requested_at": "2026-09-16T18:56:11.036497+00:00",
+      "url": "https://rzd-bonus.ru/partners/11597/"
+    }
+  },
+  {
+    "title": "Читай-город",
+    "observed_at": "2026-09-16T18:36:17.903769+00:00",
+    "source_cells_sha256": "ad43d8a059205c1c7cbf9b39596ae5dde09d78a225c1020b0adcf96b1edc0c01",
+    "source_cell_indices": [
+      0,
+      2,
+      4,
+      13
+    ],
+    "observation": {
+      "calculated_at": "2026-09-16T18:56:54.388978+00:00",
+      "cells": [
+        {
+          "kind": "string",
+          "text": "Читай-город"
+        },
+        {
+          "kind": "string",
+          "text": " Теперь их можно заказывать прямо из дома, причем в любое время суток: и \nднем, и ночью. "
+        },
+        {
+          "kind": "string",
+          "text": "Получайте 1 балл за каждые 18 рублей, потраченные на первый заказ в \nинтернет-магазине, и 1 балл за каждые 32 рубля, потраченные на каждый \nпоследующий заказ."
+        },
+        {
+          "kind": "string",
+          "text": "Предложение действительно с 01.01.2026г."
+        }
+      ],
+      "cells_sha256": "82ca1ec8f5639ce7dcb27af1782a51037d7b1ffc053ec7eba91463de346f0c91",
+      "formula_sha256": "310349607c6faf1ffe0707191659551f539ef1585a60f7f50960a03c0be9b93c",
+      "kind": "detail",
+      "requested_at": "2026-09-16T18:56:51.505616+00:00",
+      "url": "https://rzd-bonus.ru/partners/115/"
+    }
+  },
+  {
+    "title": "500 баллов «РЖД Бонус» за каждую ночь проживания в отеле «Невский берег», \nг. Санкт-Петербург",
+    "observed_at": "2026-09-16T18:36:17.903769+00:00",
+    "source_cells_sha256": "ac31f704a96234ada96dcf5995456fbe48c5ccd69a756e8a91c1d479f8e29fb3",
+    "source_cell_indices": [
+      0,
+      1,
+      18
+    ],
+    "observation": {
+      "calculated_at": "2026-09-16T18:57:14.910698+00:00",
+      "cells": [
+        {
+          "kind": "string",
+          "text": "500 баллов «РЖД Бонус» за каждую ночь проживания в отеле «Невский берег», \nг. Санкт-Петербург"
+        },
+        {
+          "format": {
+            "pattern": "dd.mm.yyyy",
+            "type": "DATE"
+          },
+          "kind": "google_date",
+          "number": 46181,
+          "text": "08.06.2026"
+        },
+        {
+          "kind": "string",
+          "text": "Срок проведения акции: до 30.11.2026."
+        }
+      ],
+      "cells_sha256": "a2f65d3091bc3df5d74e2380340edd85ad492b09be9c1aebf708e02f57acb9cb",
+      "formula_sha256": "49f42840b97f4c2dc6994fbcbae5e25a6f0b8e0dd2477b197223da1620a326dd",
+      "kind": "detail",
+      "requested_at": "2026-09-16T18:57:11.758306+00:00",
+      "url": "https://rzd-bonus.ru/promo/500-ballov-rzhd-bonus-za-kazhduyu-noch-prozhivaniya-v-otele-nevskiy-bereg/"
+    }
+  },
+  {
+    "title": "Скидка 18% на проживание в отеле Хилтон Москва Ленинградская для участников \n«РЖД Бонус»",
+    "observed_at": "2026-09-16T18:36:17.903769+00:00",
+    "source_cells_sha256": "5eba52702c908c808ac1d07477caeb918c357f99ffb7a50cf42c99213098041e",
+    "source_cell_indices": [
+      0,
+      1,
+      21,
+      22
+    ],
+    "observation": {
+      "calculated_at": "2026-09-16T18:58:56.076683+00:00",
+      "cells": [
+        {
+          "kind": "string",
+          "text": "Скидка 18% на проживание в отеле Хилтон Москва Ленинградская для участников \n«РЖД Бонус»"
+        },
+        {
+          "format": {
+            "pattern": "dd.mm.yyyy",
+            "type": "DATE"
+          },
+          "kind": "google_date",
+          "number": 46023,
+          "text": "01.01.2026"
+        },
+        {
+          "kind": "string",
+          "text": "Срок действия предложения:"
+        },
+        {
+          "kind": "string",
+          "text": " до 31.12.2026. "
+        }
+      ],
+      "cells_sha256": "c3185201238d6fb60fa8409813b7feb7aecebfe97353b2893c0de89c30788c8a",
+      "formula_sha256": "356103083889cadb182d58e874e2574bb2ed4082df20191351ee8cedb69d2f1c",
+      "kind": "detail",
+      "requested_at": "2026-09-16T18:58:52.878114+00:00",
+      "url": "https://rzd-bonus.ru/promo/skidka-18-na-prozhivanie-v-otele-khilton-moskva-leningradskaya-dlya-uchastnikov-rzhd-bonus_2026/"
+    }
+  },
+  {
+    "title": "TEFAL",
+    "observed_at": "2026-09-16T18:36:17.903769+00:00",
+    "source_cells_sha256": "779a53561efcce81d63726b57fe6a5d3420cf6e2ea94cf5f9ab57ab8741b5d54",
+    "source_cell_indices": [
+      0,
+      2,
+      5,
+      22,
+      23
+    ],
+    "observation": {
+      "calculated_at": "2026-09-16T19:03:39.346447+00:00",
+      "cells": [
+        {
+          "kind": "string",
+          "text": "TEFAL"
+        },
+        {
+          "kind": "string",
+          "text": " — официальный интернет-магазин бытовой техники и посуды. "
+        },
+        {
+          "kind": "string",
+          "text": "Получайте 1 балл за каждые 50 рублей, потраченные на заказы в \nинтернет-магазине."
+        },
+        {
+          "kind": "string",
+          "text": "Предложение действует "
+        },
+        {
+          "kind": "string",
+          "text": "с 01.04.2026г."
+        }
+      ],
+      "cells_sha256": "ae87ad03555c76c967f0afeeebcb53e26eefb81a975d38524ed9e968af5b0c9f",
+      "formula_sha256": "42aea87557e2442b0e7e70f86ff7a424d380d3a73a5295527d29bab7ed9da6ba",
+      "kind": "detail",
+      "requested_at": "2026-09-16T19:03:36.472850+00:00",
+      "url": "https://rzd-bonus.ru/partners/11832/"
+    }
+  },
+  {
+    "title": "Буквоед",
+    "observed_at": "2026-09-16T18:36:17.903769+00:00",
+    "source_cells_sha256": "47b20866b56dbca8a67af8a5470a617f0a8c0b2fe607d5ab088c8459b3367ad0",
+    "source_cell_indices": [
+      0,
+      2,
+      4,
+      16,
+      17
+    ],
+    "observation": {
+      "calculated_at": "2026-09-16T19:05:00.242136+00:00",
+      "cells": [
+        {
+          "kind": "string",
+          "text": "Буквоед"
+        },
+        {
+          "kind": "string",
+          "text": " — крупнейшая сеть книжных магазинов в Санкт-Петербурге и Северо-Западном \nрегионе России с широким выбором книг, товаров для развития и творчества в \nонлайне и офлайне.  "
+        },
+        {
+          "kind": "string",
+          "text": "Получайте 1 балл за каждые 18 рублей, потраченные на первый заказ в \nинтернет-магазине, и 1 балл за каждые 32 рубля, потраченные на каждый \nпоследующий заказ."
+        },
+        {
+          "kind": "string",
+          "text": "Предложение действует с 01.01.2026"
+        },
+        {
+          "kind": "string",
+          "text": "г."
+        }
+      ],
+      "cells_sha256": "eb8ab1a5eea8b3990739148d6c782d1c2f7a639985ced17f85d8b0470d736f55",
+      "formula_sha256": "df6109c746780acc80c585715a3711fd6b51822c3732d18e6579d5cba940ab67",
+      "kind": "detail",
+      "requested_at": "2026-09-16T19:04:57.399312+00:00",
+      "url": "https://rzd-bonus.ru/partners/11590/"
+    }
+  },
+  {
+    "title": "Получите 1100 баллов «РЖД Бонус» с дебетовой картой Black от Т-Банка",
+    "observed_at": "2026-09-16T18:36:17.903769+00:00",
+    "source_cells_sha256": "a8d5e0ed70bc821487e3ee648d51657feb7791919a75905414923f140666acff",
+    "source_cell_indices": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "publication_control": true,
+    "observation": {
+      "calculated_at": "2026-09-16T18:46:31.151399+00:00",
+      "cells": [
+        {
+          "kind": "string",
+          "text": "Получите 1100 баллов «РЖД Бонус» с дебетовой картой Black от Т-Банка"
+        },
+        {
+          "format": {
+            "pattern": "dd.mm.yyyy",
+            "type": "DATE"
+          },
+          "kind": "google_date",
+          "number": 46265,
+          "text": "31.08.2026"
+        },
+        {
+          "kind": "string",
+          "text": "Участники "
+        },
+        {
+          "kind": "string",
+          "text": "«РЖД Бонус» могут получить "
+        },
+        {
+          "kind": "string",
+          "text": "1100 баллов от Т-Банка с дебетовой картой Black"
+        }
+      ],
+      "cells_sha256": "8374641fcb05bf06f3bc004f07f3291d385bd9a444516eba010210328156c33b",
+      "formula_sha256": "ee7d610bbe95c949dd127ea668f8db2a8434f1786465d5f04cfa2a342577d763",
+      "kind": "detail",
+      "requested_at": "2026-09-16T18:46:28.181321+00:00",
+      "url": "https://rzd-bonus.ru/promo/poluchite-1100-ballov-rzhd-bonus-s-debetovoy-kartoy-black-ot-t-banka/"
+    }
+  }
+]

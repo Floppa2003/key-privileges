@@ -259,8 +259,11 @@ def extract(source: str,raw: str,url: str,observed_at: str) -> list[dict]:
             archived=bool(re.search(r'заверш[её]н',heading,re.I))
             name=node_text(card.select_one('.promotion-mini__title'));benefit=node_text(card.select_one('.promotion-mini__text'))
             target=urljoin(url,card['href'])
+            from owned_offer_dates import promomiles_period
+            conditions=node_text(card.select_one('.promotion-mini__info'))
+            start,end=promomiles_period(conditions)
             result.append(make_offer(source,card['href'],PROGRAMS[source],None,benefit,url,observed_at,
-                         title=name,conditions=node_text(card.select_one('.promotion-mini__info')),
+                         title=name,conditions=conditions,valid_from=start,valid_until=end,
                          record_kind='campaign',source_status='archived' if archived else 'published',
                          details={'detail_url':target},link_kind='catalog_link',locator='.promotion-mini[href="'+card['href']+'"]',
                          warnings=['catalog_announcement_not_full_campaign_rules']))

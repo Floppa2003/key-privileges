@@ -275,9 +275,19 @@ def document_records(source_id,native_prefix,program,partner,url,observed_at,doc
             'document_part':{'number':index,'total':len(groups)},'document_errors':doc['errors'],
             'public_aliases':[url] if link_kind=='detail_page' else [],'ocr_pages':doc['ocr_pages'],'live_document_text':True}
         details={**(extra_details or {}),**details}
+        start=end=None
+        if source_id=='af_vtb_rules':
+            from owned_offer_dates import vtb_document_period
+            from normalized import text
+            start,end=vtb_document_period(details,text(full,markup=False))
+        elif source_id=='utair_rule_documents':
+            from owned_offer_dates import utair_merch_document_end
+            from normalized import text
+            end=utair_merch_document_end(details,text(full,markup=False))
         rows.append(make_offer(source_id,native_prefix+(f':part:{index}' if len(groups)>1 else ''),
             program,partner,title[:300] if has_text else '',url,observed_at,title=title[:300],
             conditions=full,record_kind='program_rules' if has_text else 'source_observation',
+            valid_from=start,valid_until=end,
             source_status='public_rules_ocr_unverified' if doc['ocr_pages'] else 'public_rules_text',
             link_kind=link_kind,locator=(locator+'; ' if locator else '')+'PDF '+','.join(str(p['number']) for p in pages),details=details,warnings=warnings))
     return rows

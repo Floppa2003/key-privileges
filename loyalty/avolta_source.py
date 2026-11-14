@@ -10,6 +10,8 @@ from bs4 import BeautifulSoup
 from normalized import normalize_rates
 from public_reward_projection import plain, one, make_record
 from quantity_offers import has_quantity_offer
+from content_discovery import owned_discount_components
+from avolta_reward_terms import primary_terms, supplementary_terms
 
 SOURCE = 'club_avolta_public'
 ROOT = 'https://www.clubavolta.com/ru'
@@ -85,8 +87,16 @@ def source_fields(e):
     if not partial:
         claim,conditions,activation=practical_text(headline,intro,body)
     rates=normalize_rates(claim)
-    terms=[dict(kind=r['kind'],value=r['value'],unit=r['unit'],qualifier=r['qualifier'],fragment=r['evidence']) for r in rates]
+    terms=primary_terms(claim,conditions,name)
+    if not terms:
+        terms=[dict(kind='earn_miles' if r['kind']=='miles' else r['kind'],
+                    value=r['value'],unit=r['unit'],qualifier=r['qualifier'],fragment=r['evidence'],
+                    basis_value=r.get('basis_amount'),basis_unit=r.get('basis_unit'),
+                    reward_unit='miles' if r['kind']=='miles' else None) for r in rates]
     if not terms:terms=[dict(kind='partner_privilege',fragment=claim)]
+    if not partial:
+        terms.extend(owned_discount_components(conditions,exclude=(claim,)))
+        terms.extend(supplementary_terms(conditions))
     return dict(native=url[len(PREFIX):],program=PROGRAM,partner=name,title='Club Avolta → '+name,
         benefit=claim,conditions=conditions,activation=activation,
         url=url,category=e['category'],locator='main#Main; hero description and partner usercontent',

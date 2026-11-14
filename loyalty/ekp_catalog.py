@@ -93,6 +93,25 @@ def page(payload,offset):
     return ids
 
 
+def suspension_evidence(row):
+    """An explicit current closure of the owned onsite redemption channel."""
+    if row.get('description_authorized') or row.get('active') is not True:return None
+    body=plain(row.get('loyaltyDescription',''))
+    redemption=plain(row.get('discountScheme',''))
+    if (re.search(r'\bбиблиотека\b',plain(row['name']),re.I)
+        and redemption=='При предъявлении ЕКП перед оплатой'):
+        closed=re.search(r'(?:^|\n)(Временно не работает в связи с '
+                         r'(?:капитальным ремонтом|производством работ по капитальному ремонту)\.)$',body)
+        if closed:return closed[1]
+    if redemption!='При предъявлении ЕКП до совершения оплаты':return None
+    offer=re.match(r'^Держателям ЕКП предоставляется скидка \d+(?:[.,]\d+)?% [^\n]*?'
+                   r' при предъявлении ЕКП перед оплатой билета в кассе ([^.\n]+)\.',body,re.I)
+    if not offer or len(re.findall(r'\bскидк\w*\b',body,re.I))!=1:return None
+    closed=re.search(r'(?m)^[^\n]*продажа билетов в кассе '+re.escape(offer[1])
+                     +r' временно не осуществляется\.',body,re.I)
+    return closed[0] if closed else None
+
+
 def fields(row):
     name=plain(row['name'])
     program=plain(row.get('loyaltyDescription',''))
@@ -101,20 +120,78 @@ def fields(row):
     if locked:kind,status,benefit,conditions='source_observation','public_catalog_details_require_login','',LOGIN
     elif not row['active']:kind,status,benefit,conditions='source_observation','public_catalog_api_inactive','',program or plain(row['text']) or name
     elif not program:kind,status,benefit,conditions='source_observation','public_catalog_terms_missing','',plain(row['text']) or name
-    else:kind,status,benefit,conditions='partner_offer','public_catalog_api_terms',program,program
+    else:
+        kind,status,benefit,conditions='partner_offer','public_catalog_api_terms',program,program
+        if suspension_evidence(row):status='disabled'
     return dict(partner_name=name,title=name,record_kind=kind,source_status=status,
                 benefit_text=benefit,conditions_text=conditions,redemption_text=redemption)
 
 
 def explicit_end(row):
-    """Only an active, public offer's explicit action-end sentence owns a date."""
+    """An active public offer's owned action or sole-prize redemption end."""
     if fields(row)['record_kind'] != 'partner_offer':
         return None
-    from owned_offer_dates import calendar_date
+    from owned_offer_dates import FULL_DATE, calendar_date
     dates = {calendar_date(m[1]) for m in re.finditer(
         r'Акция\s+действует\s+по\s+(\d{2}\.\d{2}\.\d{4})(?!\d|\.\d|-\d)',
         plain(row.get('loyaltyDescription', '')), re.I)}
+    # This source card contains only payment cashback. Its deadline is the
+    # purchase window itself, unlike a multi-benefit card's code-use deadline.
+    payment=re.fullmatch(r'за оплату на сайте или в кассах причалов «([^»]+)» по Карте Сириус',
+                         plain(row.get('loyaltyDescription','')))
+    if payment:
+        deadline=re.match(r'^– Оплачивайте билеты на любые маршруты и суда на сайте или в кассах причалов «'
+                          +re.escape(payment[1])+r'» в сезоне навигации (\d{4}) года до '
+                          r'(\d{2}\.\d{2}\.\d{4}) зарегистрированной картой «Мир» и получайте кешбэк '
+                          r'\d+(?:[.,]\d+)?%(?:\n|$)',plain(row.get('discountScheme','')))
+        if deadline and deadline[2].endswith(deadline[1]):dates.add(calendar_date(deadline[2]))
+    # These source cards offer only one prize obtained through a single code.
+    # A separate "До ... обменяйте" acquisition window is deliberately excluded:
+    # its missing year and later redemption deadline do not define one interval.
+    redemption=plain(row.get('discountScheme',''))
+    if re.match(r'^Обменяйте \d+ Приветов на приз: промокод [^\n]+\. '
+                r'Промокод сохранится в личном кабинете\nКак использовать промокод\n',redemption):
+        dates.update(calendar_date(m[1]) for m in re.finditer(
+            r'^Промокод действует до ('+FULL_DATE+r') включительно$',redemption,re.M))
     return next(iter(dates)) if len(dates) == 1 else None
+
+
+def retained_row(raw):
+    """Bind a stored projection to the same public API object and receipt."""
+    d=raw.get('details',{});row=d.get('public_partner',{})
+    if (raw.get('origin')!='parser_offers' or raw.get('program')!='Единая карта петербуржца'
+        or d.get('method')!='anonymous_source_catalogue_api'):return None
+    try:
+        if (public_row(row)!=row or d.get('public_partner_sha256')!=sha(row)
+            or d.get('api_url')!=API or raw.get('source_url')!=API
+            or raw.get('link_kind')!='page_block'
+            or d.get('protected_terms_retained') is not False
+            or d.get('catalogue_root')!=ROOT or d.get('source_region_parameter')!=REGION
+            or d.get('origin_http_status')!=200 or d.get('source_active') is not row['active']
+            or d.get('request')!=query(d.get('request',{}).get('pagination',{}).get('offset'))
+            or not re.fullmatch(r'[a-f0-9]{64}',d.get('source_response_sha256',''))
+            or d.get('public_detail_url')!=ROOT+'tiles/'+row['id']+'?region='+REGION
+            or any(d.get(k) is not False for k in
+                   ('detail_url_individually_opened','linked_terms_read','user_eligibility_verified'))):
+            return None
+        f=fields(row)
+        checks={'partner':'partner_name','title':'title','kind':'record_kind',
+                'benefit':'benefit_text','conditions':'conditions_text','activation':'redemption_text'}
+        statuses={f['source_status']}
+        if suspension_evidence(row):statuses.add('public_catalog_api_terms')
+        if (all(raw.get(k)==f[v] for k,v in checks.items())
+            and raw.get('source_status') in statuses):return row
+    except (ValueError,KeyError,TypeError):
+        pass
+    return None
+
+
+def project_retained_availability(raw,availability):
+    if not re.search(r'временно не (?:осуществляется|работает)',raw.get('conditions',''),re.I):return
+    row=retained_row(raw)
+    if row is not None:
+        evidence=suspension_evidence(row)
+        if evidence:availability.update(source_enabled=False,source_suspension_evidence=evidence)
 
 
 def make_record(row,observed_at,*,request,response_sha,observed_total,completed_at):
@@ -128,6 +205,8 @@ def make_record(row,observed_at,*,request,response_sha,observed_total,completed_
         'public_detail_url':ROOT+'tiles/'+row['id']+'?region='+REGION,
         'detail_url_individually_opened':False,'linked_terms_read':False,'user_eligibility_verified':False,
         'protected_terms_retained':False,'category_semantics':'mixed_source_tags_not_eligible_regions'}
+    suspended=suspension_evidence(row)
+    if suspended:evidence['source_suspension_evidence']=suspended
     return make_offer('ekp','partner:'+row['id']+':region:'+REGION,'Единая карта петербуржца',
         f['partner_name'],f['benefit_text'],API,observed_at,title=f['title'],conditions=f['conditions_text'],
         valid_until=explicit_end(row),redemption=f['redemption_text'],record_kind=f['record_kind'],source_status=f['source_status'],
@@ -153,6 +232,7 @@ def validate_record(record):
         or d.get('origin_http_status')!=200 or d.get('source_active') is not row['active']
         or d.get('protected_terms_retained') is not False or d.get('detail_url_individually_opened') is not False
         or d.get('linked_terms_read') is not False or d.get('user_eligibility_verified') is not False
+        or d.get('source_suspension_evidence')!=suspension_evidence(row)
         or d.get('public_detail_url')!=ROOT+'tiles/'+row['id']+'?region='+REGION):
         raise ValueError('ekp_evidence_scope_mismatch')
     if row['description_authorized'] and (record['rates'] or record['promo_codes'] or 'loyaltyDescription' in row or 'discountScheme' in row):

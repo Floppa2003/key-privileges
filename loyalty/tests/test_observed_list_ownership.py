@@ -142,7 +142,8 @@ class ObservedListOwnershipTests(unittest.TestCase):
                 'день с момента начисления бонусов.')
         self.assertEqual(normalize_rates(body), [])
         result = self.common(body)
-        self.assertEqual(result['benefits'], [])
+        self.assertEqual([(b['kind'],b['value'],b['unit']) for b in result['benefits']],
+                         [('redeem_rewards','25','percent_of_order')])
         self.assertIn('11%', result['raw']['benefit'])
         self.assertIn('25%', result['raw']['benefit'])
 

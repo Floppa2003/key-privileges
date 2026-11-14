@@ -1,0 +1,215 @@
+[
+  {
+    "source_url": "https://nordwindairlines.ru/ru/club/partnerlist#Indigo",
+    "text": "100 ₽ = 1 миля «NORDWIND КЛУБ».",
+    "kind": "earn_miles",
+    "value": "1",
+    "unit": "miles",
+    "basis_value": "100",
+    "basis_unit": "RUB",
+    "scope": {}
+  },
+  {
+    "source_url": "https://nordwindairlines.ru/ru/club/partnerlist#Lumiere",
+    "text": "20 ₽ = 1 миля «NORDWIND КЛУБ».",
+    "kind": "earn_miles",
+    "value": "1",
+    "unit": "miles",
+    "basis_value": "20",
+    "basis_unit": "RUB",
+    "scope": {}
+  },
+  {
+    "source_url": "https://www.aeroflot.ru/partners/ws/v.0.0.3/json/partner/get?id=17&lang=ru",
+    "text": "15 000 баллов AZIMUT Bonus – 500 Миль «Аэрофлот Бонус»",
+    "kind": "earn_miles",
+    "value": "500",
+    "unit": "miles",
+    "basis_value": "15000",
+    "basis_unit": "points",
+    "scope": {
+      "reward_program": "Аэрофлот Бонус",
+      "basis_program": "AZIMUT Bonus"
+    }
+  },
+  {
+    "source_url": "https://www.aeroflot.ru/partners/ws/v.0.0.3/json/partner/get?id=525552&lang=ru",
+    "text": "- 2 000 баллов начисляются за 1 000 миль",
+    "kind": "earn_points",
+    "value": "2000",
+    "unit": "points",
+    "basis_value": "1000",
+    "basis_unit": "miles",
+    "scope": {}
+  },
+  {
+    "source_url": "https://www.aeroflot.ru/partners/ws/v.0.0.3/json/partner/get?id=525552&lang=ru",
+    "text": "- 10 000 баллов начисляются за 5 000 миль.",
+    "kind": "earn_points",
+    "value": "10000",
+    "unit": "points",
+    "basis_value": "5000",
+    "basis_unit": "miles",
+    "scope": {}
+  },
+  {
+    "source_url": "https://www.aeroflot.ru/partners/ws/v.0.0.3/json/partner/get?id=503988&lang=ru",
+    "text": "200 баллов начисляются за 1 000 миль",
+    "kind": "earn_points",
+    "value": "200",
+    "unit": "points",
+    "basis_value": "1000",
+    "basis_unit": "miles",
+    "scope": {}
+  },
+  {
+    "source_url": "https://www.aeroflot.ru/partners/ws/v.0.0.3/json/partner/get?id=504621&lang=ru",
+    "text": "- 2 000 бонусов начисляются за 100 миль.",
+    "kind": "earn_points",
+    "value": "2000",
+    "unit": "points",
+    "basis_value": "100",
+    "basis_unit": "miles",
+    "scope": {}
+  },
+  {
+    "source_url": "https://www.aeroflot.ru/partners/ws/v.0.0.3/json/partner/get?id=520840&lang=ru",
+    "text": "1 миля «Аэрофлот Бонус» за каждые 2 мили MILE·ON·AIR",
+    "kind": "earn_miles",
+    "value": "1",
+    "unit": "miles",
+    "basis_value": "2",
+    "basis_unit": "miles",
+    "scope": {
+      "reward_program": "Аэрофлот Бонус",
+      "basis_program": "MILE·ON·AIR"
+    }
+  },
+  {
+    "source_url": "https://www.aeroflot.ru/partners/ws/v.0.0.3/json/partner/get?id=520840&lang=ru",
+    "text": "50 миль MILE·ON·AIR начисляются за 200 миль «Аэрофлот Бонус»",
+    "kind": "earn_miles",
+    "value": "50",
+    "unit": "miles",
+    "basis_value": "200",
+    "basis_unit": "miles",
+    "scope": {
+      "reward_program": "MILE·ON·AIR",
+      "basis_program": "Аэрофлот Бонус"
+    }
+  },
+  {
+    "source_url": "https://www.aeroflot.ru/partners/ws/v.0.0.3/json/partner/get?id=502217&lang=ru",
+    "text": "1 миля за каждый потраченный 1 $",
+    "kind": "earn_miles",
+    "value": "1",
+    "unit": "miles",
+    "basis_value": "1",
+    "basis_unit": "dollar_unspecified",
+    "scope": {}
+  },
+  {
+    "source_url": "https://www.aeroflot.ru/partners/ws/v.0.0.3/json/partner/get?id=502563&lang=ru",
+    "text": "4 мили за каждый потраченный 1 $",
+    "kind": "earn_miles",
+    "value": "4",
+    "unit": "miles",
+    "basis_value": "1",
+    "basis_unit": "dollar_unspecified",
+    "scope": {}
+  },
+  {
+    "source_url": "https://www.aeroflot.ru/partners/ws/v.0.0.3/json/partner/get?id=17&lang=ru",
+    "text": "500 миль за каждую ночь проживания",
+    "kind": "earn_miles",
+    "value": "500",
+    "unit": "miles",
+    "basis_value": "1",
+    "basis_unit": "night",
+    "scope": {}
+  },
+  {
+    "source_url": "https://www.aeroflot.ru/partners/ws/v.0.0.3/json/partner/get?id=500762&lang=ru",
+    "text": "До 800 миль за каждые сутки проживания",
+    "kind": "earn_miles",
+    "value": "800",
+    "unit": "miles",
+    "basis_value": "1",
+    "basis_unit": "day",
+    "scope": {}
+  },
+  {
+    "source_url": "https://marketplace.s7.ru/partners/offer/yandexplus",
+    "text": "За подключение вам начислится 100 миль S7, а затем — ещё по 50 миль каждый месяц, пока пользуетесь «Своими Плюсами S7 Airlines».",
+    "kind": "earn_miles",
+    "value": "50",
+    "unit": "miles",
+    "basis_value": "1",
+    "basis_unit": "month",
+    "scope": {}
+  },
+  {
+    "source_url": "https://www.uralairlines.ru/partners/#partner_3139",
+    "text": "У AZIMUT Hotels масштабная программа лояльности. Как партнер Ural Airlines, AZIMUT Hotels начисляет участникам программы «Крылья» 500 бонусов за каждое бронирование (вне зависимости от продолжительности проживания).",
+    "kind": "earn_points",
+    "value": "500",
+    "unit": "points",
+    "basis_value": "1",
+    "basis_unit": "booking",
+    "scope": {}
+  },
+  {
+    "source_url": "https://rzd-bonus.ru/partners/11611/",
+    "text": "Получайте 135 баллов за каждый заказ в интернет-магазине.",
+    "kind": "earn_points",
+    "value": "135",
+    "unit": "points",
+    "basis_value": "1",
+    "basis_unit": "order",
+    "scope": {}
+  },
+  {
+    "source_url": "https://rzd-bonus.ru/promo/450-ballov-rzhd-bonus-za-kazhduyu-noch-prozhivaniya-v-otelyakh-radisson-hotel-group-v-rossii/",
+    "text": "450 баллов «РЖД Бонус» за каждую ночь проживания в отелях Radisson в России",
+    "kind": "earn_points",
+    "value": "450",
+    "unit": "points",
+    "basis_value": "1",
+    "basis_unit": "night",
+    "scope": {
+      "reward_program": "РЖД Бонус"
+    }
+  },
+  {
+    "source_url": "https://rzd-bonus.ru/promo/450-ballov-rzhd-bonus-za-kazhduyu-noch-prozhivaniya-v-otelyakh-radisson-hotel-group-v-rossii/",
+    "text": "Выбирайте отели Radisson для вашего путешествия и получайте 450 баллов \n«РЖД Бонус» за каждую ночь проживания.",
+    "kind": "earn_points",
+    "value": "450",
+    "unit": "points",
+    "basis_value": "1",
+    "basis_unit": "night",
+    "scope": {
+      "reward_program": "РЖД Бонус"
+    }
+  },
+  {
+    "source_url": "https://wolford.ru/aeroflot_bonus/",
+    "text": "1 миля начисляется\nза каждые потраченные\n70 руб.",
+    "kind": "earn_miles",
+    "value": "1",
+    "unit": "miles",
+    "basis_value": "70",
+    "basis_unit": "RUB",
+    "scope": {}
+  },
+  {
+    "source_url": "https://www.clubavolta.com/ru/nashi-partnery/oteli/oteli-raddison",
+    "text": "Получите 3 балла за 1 доллар США, потраченный в Швейцарии или Швеции",
+    "kind": "earn_points",
+    "value": "3",
+    "unit": "points",
+    "basis_value": "1",
+    "basis_unit": "USD",
+    "scope": {}
+  }
+]

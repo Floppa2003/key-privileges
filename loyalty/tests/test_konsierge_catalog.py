@@ -108,9 +108,14 @@ class KonsiergeTests(unittest.TestCase):
         self.assertNotIn('25',[b['value'] for b in n['benefits']]);self.assertEqual(n['validity']['until'],'2026-12-31')
 
     def test_hotel_privilege_not_universal_spa_discount(self):
-        n=self.common(2047);self.assertEqual(len(n['benefits']),1);self.assertIsNone(n['benefits'][0]['value'])
+        n=self.common(2047);self.assertEqual(len(n['benefits']),2);self.assertIsNone(n['benefits'][0]['value'])
         self.assertIn('10%',n['conditions'][0]['evidence']['text']);self.assertIn('BAR',n['conditions'][0]['evidence']['text'])
         self.assertEqual(len(n['benefits'][0]['condition_ids']),2)
+        spa=n['benefits'][1]
+        self.assertEqual((spa['kind'],spa['value'],spa['unit']),('discount','10','percent'))
+        self.assertFalse(spa['standalone_offer'])
+        self.assertIn('Mandara Spa',spa['scope']['source_clause'])
+        self.assertEqual(spa['condition_ids'],n['benefits'][0]['condition_ids'])
 
     def test_room_credit_not_cash(self):
         n=self.common(1838);self.assertIsNone(n['benefits'][0]['value']);self.assertIn('10 000',n['conditions'][0]['evidence']['text'])

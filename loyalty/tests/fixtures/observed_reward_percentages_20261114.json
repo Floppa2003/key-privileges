@@ -1,0 +1,874 @@
+[
+  {
+    "name": "sravni_explicit_point_percent",
+    "source_url": "https://vamprivet.ru/promo/avtovladelycam/samoe-to-dlya-avto-5/",
+    "text": "10% бонусами за покупку полиса ОСАГО на сайте по промокоду",
+    "expected": [
+      {
+        "kind": "earn_points",
+        "value": "10",
+        "unit": "percent"
+      }
+    ]
+  },
+  {
+    "name": "tripster_preposed_point_percent",
+    "source_url": "https://www.uralairlines.ru/partners/#partner_614876",
+    "text": "Партнер возвращает на счет участника программы лояльности \"Крылья\" бонусы в размере 8% от общей суммы, потраченной за оформление экскурсии.",
+    "expected": [
+      {
+        "kind": "earn_points",
+        "value": "8",
+        "unit": "percent"
+      }
+    ]
+  },
+  {
+    "name": "unisim_balance_credit_and_denial",
+    "source_url": "https://www.uralairlines.ru/partners/#partner_630829",
+    "text": "10% на баланс начисляются только за покупку первой eSIM\n10% на баланс начисляются только при покупке на сайте .\n10% на баланс не начисляются, если на момент покупки участник уже имеет eSIM UNISIM.",
+    "expected": [
+      {
+        "kind": "earn_rewards",
+        "value": "10",
+        "unit": "percent"
+      }
+    ]
+  },
+  {
+    "name": "banki_untyped_bonus_percent",
+    "source_url": "https://vamprivet.ru/promo/avtovladelycam/oformite-kasko-s-vygodoy-4/",
+    "text": "Бонус 13% за покупку каско с промокодом",
+    "expected": [
+      {
+        "kind": "earn_rewards",
+        "value": "13",
+        "unit": "percent"
+      }
+    ]
+  },
+  {
+    "name": "mafin_untyped_bonus_percent",
+    "source_url": "https://vamprivet.ru/promo/avtovladelycam/bolshe-chem-prosto-osago-1/",
+    "text": "Бонус до 15% от стоимости полиса ОСАГО",
+    "expected": [
+      {
+        "kind": "earn_rewards",
+        "value": "15",
+        "unit": "percent",
+        "qualifier": "up_to"
+      }
+    ]
+  },
+  {
+    "name": "ekp_two_point_percentages",
+    "source_url": "https://ekp.spb.ru/api/portal/loyalty/partners",
+    "text": "За покупки с применением карты EKП накапливаются бонусы – 3,5% за покупку одежды и обуви, 1% за остальные товары.",
+    "expected": [
+      {
+        "kind": "earn_points",
+        "value": "3.5",
+        "unit": "percent"
+      },
+      {
+        "kind": "earn_points",
+        "value": "1",
+        "unit": "percent"
+      }
+    ]
+  },
+  {
+    "name": "rzd_additional_points_percentage",
+    "source_url": "https://rzd-bonus.ru/partners/11969/",
+    "text": "15% дополнительных премиальных баллов от суммы баллов за лично \nсовершенные поездки на поездах АО «ФПК», накопленных за год,",
+    "expected": [
+      {
+        "kind": "earn_points",
+        "value": "15",
+        "unit": "percent",
+        "basis_value": "100",
+        "basis_unit": "points"
+      }
+    ]
+  },
+  {
+    "name": "sber_redemption_99",
+    "source_url": "https://www.uralairlines.ru/partners/#partner_620351",
+    "text": "Оплачивайте до 99% суммы заказа бонусами СберСпасибо",
+    "expected": [
+      {
+        "kind": "redeem_rewards",
+        "value": "99",
+        "unit": "percent_of_order",
+        "reward_unit": "points"
+      }
+    ]
+  },
+  {
+    "name": "azimut_redemption_100",
+    "source_url": "https://azimuthotels.com/ru/info/bonus",
+    "text": "Оплачивайте 100% стоимости проживания накопленными баллами",
+    "expected": [
+      {
+        "kind": "redeem_rewards",
+        "value": "100",
+        "unit": "percent_of_order",
+        "reward_unit": "points"
+      }
+    ]
+  },
+  {
+    "name": "divan_redemption_is_not_discount",
+    "source_url": "https://vamprivet.ru/promo/dlya-doma-i-sada/mebel-dlya-realnoy-zhizni/",
+    "text": "при оплате покупки на divan.ru можно списать бонусы в размере до 15% от стоимости товара.",
+    "expected": [
+      {
+        "kind": "redeem_rewards",
+        "value": "15",
+        "unit": "percent_of_order",
+        "reward_unit": "points"
+      }
+    ]
+  },
+  {
+    "name": "medical_redemption_25",
+    "source_url": "https://ekp.spb.ru/api/portal/loyalty/partners",
+    "text": "Бонусами можно оплатить до 25% стоимости медицинских услуг.",
+    "expected": [
+      {
+        "kind": "redeem_rewards",
+        "value": "25",
+        "unit": "percent_of_order",
+        "reward_unit": "points"
+      }
+    ]
+  },
+  {
+    "name": "ekp_redemption_99",
+    "source_url": "https://ekp.spb.ru/api/portal/loyalty/partners",
+    "text": "Оплата бонусами возможна до 99% покупки, в том числе за товары по акции со скидками.",
+    "expected": [
+      {
+        "kind": "redeem_rewards",
+        "value": "99",
+        "unit": "percent_of_order",
+        "reward_unit": "points"
+      }
+    ]
+  },
+  {
+    "name": "carsharing_redemption",
+    "source_url": "https://msk.t2.ru/bolshe/offers",
+    "text": "Бонусами можно оплачивать до 50% от суммы поездки.",
+    "expected": [
+      {
+        "kind": "redeem_rewards",
+        "value": "50",
+        "unit": "percent_of_order",
+        "reward_unit": "points"
+      }
+    ]
+  },
+  {
+    "name": "mileage_redemption",
+    "source_url": "https://lavivion.ru/articles/aeroflot-bonus/",
+    "text": "Мили можно списывать на оплату до 90% стоимости товара.",
+    "expected": [
+      {
+        "kind": "redeem_rewards",
+        "value": "90",
+        "unit": "percent_of_order",
+        "reward_unit": "miles"
+      }
+    ]
+  },
+  {
+    "name": "pharmacy_tier_percentages",
+    "source_url": "https://ekp.spb.ru/api/portal/loyalty/partners",
+    "text": "Количество начисленных бонусов зависит от статуса карты:\nСеребро - 1%\nЗолото - 1,5%\nПлатина - 2%",
+    "expected": [
+      {
+        "kind": "earn_points",
+        "value": "1",
+        "unit": "percent"
+      },
+      {
+        "kind": "earn_points",
+        "value": "1.5",
+        "unit": "percent"
+      },
+      {
+        "kind": "earn_points",
+        "value": "2",
+        "unit": "percent"
+      }
+    ]
+  },
+  {
+    "name": "legacy_rzd_point_increment",
+    "source_url": "https://rgo.ru/membership/loyalty-program/programma-rzhd-bonus/",
+    "text": "На 10% больше баллов РЖД Бонус за поездки",
+    "expected": [
+      {
+        "kind": "earn_points",
+        "value": "10",
+        "unit": "percent",
+        "basis_value": "100",
+        "basis_unit": "points"
+      }
+    ],
+    "declared_benefit_type": "Повышенное начисление"
+  },
+  {
+    "name": "legacy_points_cashback_declaration",
+    "source_url": "https://www.uralairlines.ru/wings_rules/",
+    "text": "3–7% за авиабилет в зависимости от тарифа/географии; 8% за допуслуги; 2% за покупки в интернет-магазине",
+    "expected": [
+      {
+        "kind": "earn_points",
+        "value": "7",
+        "unit": "percent",
+        "qualifier": "range",
+        "value_min": "3"
+      },
+      {
+        "kind": "earn_points",
+        "value": "8",
+        "unit": "percent"
+      },
+      {
+        "kind": "earn_points",
+        "value": "2",
+        "unit": "percent"
+      }
+    ],
+    "declared_benefit_type": "Бонусы/кешбэк"
+  },
+  {
+    "name": "legacy_tier_points_declaration",
+    "source_url": "https://www.uralairlines.ru/wings_rules/",
+    "text": "4–10% за авиабилет; 10% за допуслуги; 4% интернет-магазин",
+    "expected": [
+      {
+        "kind": "earn_points",
+        "value": "10",
+        "unit": "percent",
+        "qualifier": "range",
+        "value_min": "4"
+      },
+      {
+        "kind": "earn_points",
+        "value": "10",
+        "unit": "percent"
+      },
+      {
+        "kind": "earn_points",
+        "value": "4",
+        "unit": "percent"
+      }
+    ],
+    "declared_benefit_type": "Бонусы/привилегии"
+  },
+  {
+    "name": "legacy_status_points",
+    "source_url": "https://www.rzd-bonus.ru/?accessible=true",
+    "text": "Серебряный: +10% премиальных баллов; Золотой: +15%; Платиновый: +25% за поездку",
+    "expected": [
+      {
+        "kind": "earn_points",
+        "value": "10",
+        "unit": "percent",
+        "basis_value": "100",
+        "basis_unit": "points"
+      },
+      {
+        "kind": "earn_points",
+        "value": "15",
+        "unit": "percent",
+        "basis_value": "100",
+        "basis_unit": "points"
+      },
+      {
+        "kind": "earn_points",
+        "value": "25",
+        "unit": "percent",
+        "basis_value": "100",
+        "basis_unit": "points"
+      }
+    ],
+    "declared_benefit_type": "Статусное начисление"
+  },
+  {
+    "name": "legacy_money_cashback",
+    "source_url": "https://www.nspk.ru/press-center/details/00d06ff9-ac6f-41fd-9aad-39965b9762cd",
+    "text": "5% рублями, максимум 1 000 ₽ в месяц",
+    "expected": [
+      {
+        "kind": "cashback",
+        "value": "5",
+        "unit": "percent"
+      }
+    ],
+    "declared_benefit_type": "Кешбэк"
+  },
+  {
+    "name": "legacy_declared_cashback",
+    "source_url": "https://neva.travel/ru/promotions/kesbek-10-pri-oplate-kartoi-mir/",
+    "text": "10% стоимости билетов при оплате картой «Мир» в кассах причалов",
+    "expected": [
+      {
+        "kind": "cashback",
+        "value": "10",
+        "unit": "percent"
+      }
+    ],
+    "declared_benefit_type": "Кешбэк"
+  },
+  {
+    "name": "legacy_postfix_points",
+    "source_url": "https://coralbonus.ru/klub-privilegii/nedvizhimost/aps-dsk/",
+    "text": "1% от суммы договора строительного подряда баллами CoralBonus, максимум 50 000 баллов",
+    "expected": [
+      {
+        "kind": "earn_points",
+        "value": "1",
+        "unit": "percent"
+      }
+    ],
+    "declared_benefit_type": "Баллы"
+  },
+  {
+    "name": "statistical_percent_not_reward",
+    "source_url": "https://www.uralairlines.ru/partners/#partner_626684",
+    "text": "Резиденты получают навыки помогают войти в 1% успешных людей страны.",
+    "expected": []
+  },
+  {
+    "name": "discount_before_bonus_exclusion",
+    "source_url": "https://vamprivet.ru/promo/strahovanie/strakhovanie-s-vygodoy-6/",
+    "text": "Введите промокод в окне «Промокод» на этапе оформления и оплатите покупку полиса со скидкой 35% Дополнительно – Воспользоваться промокодом можно один раз – Промокод не суммируется с бонусами и другими акциями",
+    "expected": [
+      {
+        "kind": "discount",
+        "value": "35",
+        "unit": "percent"
+      }
+    ]
+  },
+  {
+    "name": "bonus_mentioned_after_separate_discount",
+    "source_url": "https://t.me/mybspb/1529",
+    "text": "-15% на заказ + те же щедрые бонусы ЯРКО!",
+    "expected": []
+  },
+  {
+    "name": "payment_through_reward_points",
+    "source_url": "https://vamprivet.ru/promo/transport/karshering-dlya-vashikh-dostizheniy/",
+    "text": "Баллами можно погасить до 50% стоимости поездки или расходовать бонусы постепенно",
+    "expected": [
+      {
+        "kind": "redeem_rewards",
+        "value": "50",
+        "unit": "percent_of_order",
+        "reward_unit": "points"
+      }
+    ]
+  },
+  {
+    "name": "bonus_declared_before_percent_exclusion",
+    "source_url": "https://vamprivet.ru/promo/avtovladelycam/oformite-kasko-s-vygodoy-4/",
+    "text": "Оплатите страховую премию по договору каско картой «Мир» и получите бонус 13% Дополнительно – Воспользоваться промокодом можно один раз – Промокод не суммируется с бонусами и другими акциями",
+    "expected": [
+      {
+        "kind": "earn_rewards",
+        "value": "13",
+        "unit": "percent"
+      }
+    ]
+  },
+  {
+    "name": "miles_usage_ceiling",
+    "source_url": "https://vip-rooms.ru/partner/aeroflot",
+    "text": "Ограничение по использованию миль - не более 50% от стоимости услуги к оплате.",
+    "expected": [
+      {
+        "kind": "redeem_rewards",
+        "value": "50",
+        "unit": "percent_of_order",
+        "reward_unit": "miles",
+        "qualifier": "up_to"
+      }
+    ]
+  },
+  {
+    "name": "miles_usage_imperative",
+    "source_url": "https://www.chefmarket.ru/blog/letat-i-gotovit-eshhe-vygodnee/",
+    "text": "Используйте мили до 100% от суммы заказа.",
+    "expected": [
+      {
+        "kind": "redeem_rewards",
+        "value": "100",
+        "unit": "percent_of_order",
+        "reward_unit": "miles",
+        "qualifier": "up_to"
+      }
+    ]
+  },
+  {
+    "name": "miles_usage_floor_and_ceiling",
+    "source_url": "https://www.aeroflot.ru/partners/ws/v.0.0.3/json/partner/get?id=520534&lang=ru",
+    "text": "Ограничение по использованию миль – не менее 10% и не более 50% от стоимости покупки.",
+    "expected": [
+      {
+        "kind": "redeem_rewards",
+        "value": "10",
+        "unit": "percent_of_order",
+        "reward_unit": "miles",
+        "qualifier": "at_least"
+      },
+      {
+        "kind": "redeem_rewards",
+        "value": "50",
+        "unit": "percent_of_order",
+        "reward_unit": "miles",
+        "qualifier": "up_to"
+      }
+    ]
+  },
+  {
+    "name": "wrapped_redemption",
+    "source_url": "https://coralbonus.ru/klub-privilegii/uslugi-aeroporta/biznes-zaly-sheremet-evo-vip/",
+    "text": "Оплачивайте\nбонусами до 99% стоимости\nпребывания в бизнес-залах Шереметьево!",
+    "expected": [
+      {
+        "kind": "redeem_rewards",
+        "value": "99",
+        "unit": "percent_of_order",
+        "reward_unit": "points",
+        "qualifier": "up_to"
+      }
+    ]
+  },
+  {
+    "name": "teremok_coin_percentage",
+    "source_url": "https://ekp.spb.ru/api/portal/loyalty/partners",
+    "text": "Копите монеты в размере 5% с каждого заказа.",
+    "expected": [
+      {
+        "kind": "earn_rewards",
+        "value": "5",
+        "unit": "percent",
+        "reward_unit": "coins"
+      }
+    ]
+  },
+  {
+    "name": "postfix_redemption",
+    "source_url": "https://coralbonus.ru/klub-privilegii/servisy/goldenkey/",
+    "text": "до 99% стоимости можно оплатить баллами CoralBonus",
+    "expected": [
+      {
+        "kind": "redeem_rewards",
+        "value": "99",
+        "unit": "percent_of_order",
+        "reward_unit": "points",
+        "qualifier": "up_to"
+      }
+    ],
+    "declared_benefit_type": "Спеццена/оплата баллами"
+  },
+  {
+    "name": "program_title_not_point_owner",
+    "source_url": "https://www.rzd-bonus.ru/?accessible=true",
+    "text": "Официальный текущий баннер РЖД Бонус показывает 50% на химчистку пиджака + 500 баллов.",
+    "expected": [
+      {
+        "kind": "earn_points",
+        "value": "500",
+        "unit": "points"
+      }
+    ]
+  },
+  {
+    "name": "historical_declared_cashback",
+    "source_url": "https://t.me/s/promomir?before=1189",
+    "text": "В старой официальной подборке: 2% на авиа- и ж/д билеты; до 10% на отели",
+    "expected": [],
+    "declared_benefit_type": "Кешбэк"
+  },
+  {
+    "name": "signed_bounded_reward",
+    "source_url": "https://t.me/mybspb/1555",
+    "text": "до +9% бонусов (до 15 ноября)",
+    "expected": [
+      {
+        "kind": "earn_points",
+        "value": "9",
+        "unit": "percent",
+        "qualifier": "up_to"
+      }
+    ]
+  },
+  {
+    "name": "explicit_maximum_mileage_payment",
+    "source_url": "https://www.aeroflot.ru/partners/ws/v.0.0.3/json/partner/get?id=24&lang=ru",
+    "text": "Использовать Мили можно максимум на 50% стоимости заказа.",
+    "expected": [
+      {
+        "kind": "redeem_rewards",
+        "value": "50",
+        "unit": "percent_of_order",
+        "qualifier": "up_to",
+        "reward_unit": "miles"
+      }
+    ]
+  },
+  {
+    "name": "rzd_additional_point_list",
+    "source_url": "https://t.me/fpcrussia/2816",
+    "text": "+дополнительные баллы на уровнях\n\n+10% Серебряный – Скорый\n+15% Золотой – Экспресс\n+25% Платиновый – Фирменный",
+    "expected": [
+      {
+        "kind": "earn_points",
+        "value": "10",
+        "unit": "percent",
+        "basis_value": "100",
+        "basis_unit": "points"
+      },
+      {
+        "kind": "earn_points",
+        "value": "15",
+        "unit": "percent",
+        "basis_value": "100",
+        "basis_unit": "points"
+      },
+      {
+        "kind": "earn_points",
+        "value": "25",
+        "unit": "percent",
+        "basis_value": "100",
+        "basis_unit": "points"
+      }
+    ]
+  },
+  {
+    "name": "yarko_category_point_list",
+    "source_url": "https://t.me/mybspb/1558",
+    "text": "Владельцы карт ЕКП и «ЯСЧИТАЮ», пора настроить свою выгоду на этот месяц. В мобильном приложении БСПБ вас уже ждут свежие категории повышенных бонусов ЯРКО. Выбирайте 3 из 7 предложенных вариантов и получайте максимум пользы от каждой покупки с 1 по 31 октября:\n\n📚 Книги (15%) — для долгих вечеров за захватывающим сюжетом\n✈️ Авиабилеты (10%) — для тех, кто планирует осенний отпуск или спонтанные выходные \n💊 Аптеки (7%) — заботимся о здоровье и поддерживаем иммунитет \n🛋 Товары для дома (5%) — создаем теплую атмосферу в квартире \n🍽 Рестораны (3%) — согреваемся вкусными ужинами в приятной компании \n🛒 Супермаркеты (2%) — незаменимая классика для ежедневных трат \n💳 На все (1%) — универсальный выбор для любых покупок",
+    "expected": [
+      {
+        "kind": "earn_points",
+        "value": "15",
+        "unit": "percent"
+      },
+      {
+        "kind": "earn_points",
+        "value": "10",
+        "unit": "percent"
+      },
+      {
+        "kind": "earn_points",
+        "value": "7",
+        "unit": "percent"
+      },
+      {
+        "kind": "earn_points",
+        "value": "5",
+        "unit": "percent"
+      },
+      {
+        "kind": "earn_points",
+        "value": "3",
+        "unit": "percent"
+      },
+      {
+        "kind": "earn_points",
+        "value": "2",
+        "unit": "percent"
+      },
+      {
+        "kind": "earn_points",
+        "value": "1",
+        "unit": "percent"
+      }
+    ]
+  },
+  {
+    "name": "locomotive_literal_shpaly_unit",
+    "source_url": "https://rzd-bonus.ru/partners/11810/",
+    "text": "Шпалы, которые можно зарабатывать и оплачивать ими до 50% стоимости \nпокупок.",
+    "expected": [
+      {
+        "kind": "redeem_rewards",
+        "value": "50",
+        "unit": "percent_of_order",
+        "reward_unit": "шпалы"
+      }
+    ]
+  },
+  {
+    "name": "legacy_declared_mileage_percentages",
+    "source_url": "https://media.utair.ru/status/",
+    "text": "Минимум: 1% при цене сегмента от 10 000 ₽; Оптимум: 2%; Премиум: 3%; Евробизнес: 7%; при покупке допуслуг во время бронирования возврат можно увеличить максимум до 7%",
+    "expected": [
+      {
+        "kind": "earn_miles",
+        "value": "1",
+        "unit": "percent"
+      },
+      {
+        "kind": "earn_miles",
+        "value": "2",
+        "unit": "percent"
+      },
+      {
+        "kind": "earn_miles",
+        "value": "3",
+        "unit": "percent"
+      },
+      {
+        "kind": "earn_miles",
+        "value": "7",
+        "unit": "percent"
+      }
+    ],
+    "declared_benefit_type": "Мили"
+  },
+  {
+    "name": "maximum_mileage_percentage_is_cap",
+    "source_url": "https://media.utair.ru/status",
+    "text": "Максимальный % возвращаемых миль 7%.",
+    "expected": [],
+    "expected_conditions": [
+      {
+        "kind": "benefit_cap",
+        "value": "7",
+        "unit": "percent",
+        "qualifier": "up_to"
+      }
+    ]
+  },
+  {
+    "name": "parenthesized_copy_exclusion_not_discount_denial",
+    "source_url": "https://konsierge.com/benefits",
+    "text": "СТОМАТОЛОГИЯ: бесплатная первичная консультация (КТ, 3D не выдаются на руки), 10% скидка в рамках направления хирургии и ортодонтии;",
+    "expected": [
+      {
+        "kind": "discount",
+        "value": "10",
+        "unit": "percent"
+      }
+    ]
+  },
+  {
+    "name": "immediate_pronoun_refers_to_credited_bonus",
+    "source_url": "https://msk.t2.ru/bolshe/offers",
+    "text": "Бонусы поступят на баланс в течение 24 часов после активации промокода. Компенсируйте ими до 50% стоимости поездки.",
+    "expected": [
+      {
+        "kind": "redeem_rewards",
+        "value": "50",
+        "unit": "percent_of_order",
+        "reward_unit": "points"
+      }
+    ]
+  },
+  {
+    "name": "balance_topup_is_positive_earning",
+    "source_url": "https://ekp.spb.ru/api/portal/loyalty/partners",
+    "text": "После этого Держатель получит 100 приветственных бонусов, а через 14 дней баланс пополнится новыми бонусами в размере 5% от стоимости совершенной покупки.",
+    "expected": [
+      {
+        "kind": "earn_points",
+        "value": "100",
+        "unit": "points"
+      },
+      {
+        "kind": "earn_points",
+        "value": "5",
+        "unit": "percent"
+      }
+    ]
+  },
+  {
+    "name": "incremental_miles_dative",
+    "source_url": "https://www.vtb.ru/privilegia/karty/debetovye/privilegiya-aeroflot/",
+    "text": "дополнительно 27% к милям, накопленным по карте в период акции",
+    "expected": [
+      {
+        "kind": "earn_miles",
+        "value": "27",
+        "unit": "percent",
+        "basis_value": "100",
+        "basis_unit": "miles"
+      }
+    ]
+  },
+  {
+    "name": "inline_point_tiers_and_relative_ceiling",
+    "source_url": "https://vamprivet.ru/promo/strahovanie/vasha-tysyacha-1/",
+    "text": "чтобы получить бонус до 1 000 ₽ за оформление полиса, но не более 50% от его стоимости: Количество бонусов зависит от стоимости полиса: – от 2 000 ₽ — 1 000 бонусов – до 2 000 ₽ — 50% от стоимости полиса",
+    "expected": [
+      {
+        "kind": "earn_points",
+        "value": "50",
+        "unit": "percent"
+      },
+      {
+        "kind": "earn_points",
+        "value": "1000",
+        "unit": "points"
+      }
+    ],
+    "expected_conditions": [
+      {
+        "kind": "benefit_cap",
+        "value": "50",
+        "unit": "percent"
+      }
+    ]
+  },
+  {
+    "name": "explicit_cash_share_is_not_reward",
+    "source_url": "https://www.aeroflot.ru/partners/ws/v.0.0.3/json/partner/get?id=504257&lang=ru",
+    "text": "При этом 1% от стоимости бронирования необходимо оплатить банковской картой.",
+    "expected": [],
+    "expected_conditions": [
+      {
+        "kind": "minimum_cash_payment",
+        "value": "1",
+        "unit": "percent_of_order",
+        "qualifier": "at_least"
+      }
+    ]
+  },
+  {
+    "name": "return_of_paid_amount_is_cashback",
+    "source_url": "https://t.me/ekpcard/5670",
+    "field": "benefit",
+    "text": "Держатели ЕКП могут вернуть 5 % от суммы при оплате на автозаправках и за проезд по платным дорогам. Акция запущена совместно с платёжной системой «Мир» и действует по всей России — выгодно для поездок по городу и для путешествий на автомобиле.",
+    "expected": [
+      {
+        "kind": "cashback",
+        "value": "5",
+        "unit": "percent",
+        "reward_unit": null
+      }
+    ]
+  },
+  {
+    "name": "hotel_payment_does_not_erase_point_cap",
+    "source_url": "https://t.me/mybspb/1555",
+    "text": "• +9% бонусов за оплату отелей по ссылке (не более 9 000 бонусов)",
+    "expected": [
+      {
+        "kind": "earn_points",
+        "value": "9",
+        "unit": "percent"
+      }
+    ],
+    "expected_conditions": [
+      {
+        "kind": "benefit_cap",
+        "value": "9000",
+        "unit": "points",
+        "qualifier": "up_to"
+      }
+    ],
+    "cap_links": {
+      "9": [
+        "9000"
+      ]
+    }
+  },
+  {
+    "name": "point_cap_inherits_omitted_unit",
+    "source_url": "https://t.me/mybspb/1445",
+    "text": "Заботьтесь о зрении и получайте +10% бонусов (не более 1 000) за первую покупку.",
+    "expected": [
+      {
+        "kind": "earn_points",
+        "value": "10",
+        "unit": "percent"
+      }
+    ],
+    "expected_conditions": [
+      {
+        "kind": "benefit_cap",
+        "value": "1000",
+        "unit": "points",
+        "qualifier": "up_to"
+      }
+    ],
+    "cap_links": {
+      "10": [
+        "1000"
+      ]
+    }
+  },
+  {
+    "name": "first_and_repeat_point_caps_inherit_unit",
+    "source_url": "https://t.me/s/mybspb",
+    "text": "10% бонусами ЯРКО за первую покупку (до 500) или 5% за последующие (до 250)",
+    "expected": [
+      {
+        "kind": "earn_points",
+        "value": "10",
+        "unit": "percent"
+      },
+      {
+        "kind": "earn_points",
+        "value": "5",
+        "unit": "percent"
+      }
+    ],
+    "expected_conditions": [
+      {
+        "kind": "benefit_cap",
+        "value": "500",
+        "unit": "points",
+        "qualifier": "up_to"
+      },
+      {
+        "kind": "benefit_cap",
+        "value": "250",
+        "unit": "points",
+        "qualifier": "up_to"
+      }
+    ],
+    "cap_links": {
+      "10": [
+        "500"
+      ],
+      "5": [
+        "250"
+      ]
+    }
+  },
+  {
+    "name": "literal_refund_morphology_805",
+    "source_url": "https://aeroexpress.ru/aero/press/news20101967.html",
+    "text": "Купить билет, подписку или абонемент на поезд или экспресс-автобус Аэроэкспресса с дополнительной выгодой можно до 30 сентября 2026 года. Участникам акции возвращается 5% от стоимости поездки, максимальная сумма кешбэка составляет 1 500 рублей в месяц для каждого пассажира.",
+    "expected": [
+      {
+        "kind": "cashback",
+        "value": "5",
+        "unit": "percent",
+        "reward_unit": null
+      }
+    ]
+  },
+  {
+    "name": "literal_refund_morphology_969",
+    "source_url": "https://www.nspk.ru/press-center/details/00d06ff9-ac6f-41fd-9aad-39965b9762cd",
+    "text": "С 16 июля держатели Единой карты петербуржца (ЕКП) смогут возвращать 5% от суммы покупки при оплате ЕКП на автозаправках и проезда по платным дорогам.",
+    "expected": [
+      {
+        "kind": "cashback",
+        "value": "5",
+        "unit": "percent",
+        "reward_unit": null
+      }
+    ]
+  }
+]

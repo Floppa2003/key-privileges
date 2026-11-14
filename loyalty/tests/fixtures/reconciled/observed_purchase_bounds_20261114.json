@@ -1,0 +1,75 @@
+{
+  "provenance": "Unmodified public source excerpts from the retained 2026-11-14 corpus; no generated source formulations.",
+  "cases": {
+    "s7_order_minimum": {
+      "program": "S7 Priority",
+      "partner": "Л’Этуаль",
+      "source_url": "https://marketplace.s7.ru/partners/offer/letu_1",
+      "source_id": "parser_offers",
+      "observed_at": "2026-11-14T12:19:32.114244+00:00",
+      "benefit": "",
+      "conditions": "- Минимальная сумма заказа, за которую начисляются мили, должна составлять не менее 500 рублей.",
+      "activation": ""
+    },
+    "pharmacy_purchase_bands": {
+      "program": "Единая карта петербуржца",
+      "partner": "Петербургские аптеки",
+      "source_url": "https://ekp.spb.ru/api/portal/loyalty/partners",
+      "source_id": "parser_offers",
+      "observed_at": "2026-11-14T09:26:59.224303+00:00",
+      "benefit": "Предъявителям ЕКП \"Серебряный возраст\" предоставляется скидка 5% при покупке на сумму до 1500 рублей, 7% - при покупке на сумму свыше 1500 рублей.\nСкидка по ЕКП \"Серебряный возраст\" не суммируется с другими акциями и специальными предложениями.",
+      "conditions": "",
+      "activation": ""
+    },
+    "trade_in_cash_top_up": {
+      "program": "T2 «Больше»",
+      "partner": "Т2",
+      "source_url": "https://msk.t2.ru/bolshe/offers",
+      "source_id": "parser_offers",
+      "observed_at": "2026-09-30T11:14:43.606863+00:00",
+      "benefit": "Дополнительная скидка 3000 рублей при покупке смартфона в трейд-ин в Т2",
+      "conditions": "Минимальная сумма к доплате по кассовому чеку составляет не менее 1 рубля.",
+      "activation": ""
+    },
+    "photo_qualified_order_minimum": {
+      "program": "T2 «Больше»",
+      "partner": "Мультифото",
+      "source_url": "https://msk.t2.ru/bolshe/offers",
+      "source_id": "parser_offers",
+      "observed_at": "2026-11-14T12:19:32.114244+00:00",
+      "benefit": "25 фотографий 10×15 в подарок при заказе любых фототоваров от 499 рублей в «Мультифото»",
+      "conditions": "",
+      "activation": ""
+    },
+    "photo_before_discount_total": {
+      "program": "T2 «Больше»",
+      "partner": "Мультифото",
+      "source_url": "https://msk.t2.ru/bolshe/offers",
+      "source_id": "parser_offers",
+      "observed_at": "2026-11-14T12:19:32.114244+00:00",
+      "benefit": "",
+      "conditions": "Убедитесь, что общая сумма заказа до скидки составляет не менее 1099 рублей (без учета стоимости доставки).",
+      "activation": ""
+    },
+    "uralsib_purchase_minimum": {
+      "program": "РЖД Бонус",
+      "partner": "Уралсиб",
+      "source_url": "https://uralsib.ru/aktsii/privetstvennye-bally-rzhd-za-oformlenie-karty",
+      "source_id": "uralsib_rzd_rules",
+      "observed_at": "2026-11-14T12:19:32.114244+00:00",
+      "benefit": "",
+      "conditions": "Оформите участвующую в акции карту банка Уралсиб, совершите по ней покупку на сумму не менее 3 000 ₽ и получите до 14 000 приветственных баллов в программе «РЖД Бонус».",
+      "activation": ""
+    },
+    "sportmaster_denied_purchase_control": {
+      "program": "S7 Priority",
+      "partner": "Спортмастер",
+      "source_url": "https://marketplace.s7.ru/partners/offer/sportmaster_1",
+      "source_id": "parser_offers",
+      "observed_at": "2026-11-14T12:19:32.114244+00:00",
+      "benefit": "",
+      "conditions": "Мили не начисляются за заказы на сумму более 100 000 рублей.",
+      "activation": ""
+    }
+  }
+}

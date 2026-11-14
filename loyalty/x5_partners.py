@@ -3,7 +3,7 @@ from __future__ import annotations
 import json,math,re
 from urllib.parse import urlencode
 from bs4 import BeautifulSoup
-from normalized import number,NUMERIC_TOKEN,literal_number,number_starts_here
+from normalized import number,NUMERIC_TOKEN,literal_number,number_starts_here,normalize_rates
 from public_reward_projection import plain,one,make_record
 from expansion_common import compact,sha,identity,iso,check_period,exclusion,ExcludedOffer,reported,add_error,PROGRAMS
 
@@ -44,6 +44,60 @@ def page_data(raw,index):
         raise ValueError('x5_pagination_contract')
     return d
 
+
+X5_POINTS='X5_Club_points_not_cash'
+
+
+def owned_reward_terms(e,title,benefit,access):
+    """Read the owned headline and explicit exchange units, not spending as an award."""
+    terms=[dict(kind='partner_privilege',fragment=benefit)]
+    conditions=[];card=e['card']
+    if card['type']=='purchased':
+        conditions.append(dict(kind='redemption_cost',value=number(str(card['cost'])),unit='points',
+            qualifier='exact',reward_unit=X5_POINTS,fragment=access))
+    for rate in normalize_rates(title):
+        if rate['kind']=='discount':
+            terms.append(dict(kind='discount',value=rate['value'],unit=rate['unit'],
+                qualifier=rate['qualifier'],fragment=title,scope={'source_clause':title}))
+    targets={
+        '«Вкусно — и точка»':(r'бонусов во «Вкусно — и точка»','Vkusno_i_tochka_bonus_not_cash'),
+        'Юрент':(r'бонусов «МТС Юрент»','MTS_Urent_bonus_not_cash'),
+        'Яндекс Плюс':(r'баллов Яндекс Плюс','Yandex_Plus_points_not_cash'),
+    }
+    target=targets.get(compact(e['partner']))
+    if target and card['type']=='purchased':
+        award=re.search(r'(?<!\S)('+NUMERIC_TOKEN+r')\s+'+target[0]
+                        +r'\s+за\s+('+NUMERIC_TOKEN+r')\s+баллов\b',title)
+        if (award and literal_number(award[1]) is not None
+                and literal_number(award[2])==number(str(card['cost']))):
+            terms.append(dict(kind='earn_points',value=number(award[1]),unit='points',
+                qualifier='exact',reward_unit=target[1],fragment=award[0],
+                scope={'reward_program':compact(e['partner']),'source_clause':award[0]}))
+    if card['type']=='exchange' and compact(e['partner'])=='Аэрофлот Бонус':
+        for match in re.finditer(r'('+NUMERIC_TOKEN+r')\s+мил[ьяи]\s+за каждые\s+('
+                                 +NUMERIC_TOKEN+r')\s+балл(?:ов|а)?\b',e.get('exchange_terms','')):
+            if all(literal_number(match[i]) is not None for i in (1,2)):
+                terms.append(dict(kind='earn_miles',value=number(match[1]),unit='miles',
+                    qualifier='exact',basis_value=number(match[2]),basis_unit='points',reward_unit='miles',
+                    fragment=match[0],scope={'reward_program':'Аэрофлот Бонус','basis_reward_unit':X5_POINTS}))
+    uplift=re.fullmatch(r'\+('+NUMERIC_TOKEN+r')% к кешбэку за перенос номера в Билайн',title)
+    cap=re.search(r'(?m)^Лимит начисления — ('+NUMERIC_TOKEN+r') баллов «Х5 Клуба» в месяц\.$',e['conditions'])
+    if card['type']=='quest' and compact(e['partner'])=='Билайн' and uplift and cap:
+        terms.append(dict(kind='earn_points',value=number(uplift[1]),unit='percent',qualifier='exact',
+            reward_unit=X5_POINTS,fragment=title,scope={'additional_cashback':True,'source_clause':title}))
+        conditions.append(dict(kind='benefit_cap',value=number(cap[1]),unit='points',qualifier='up_to',
+            basis_value='1',basis_unit='month',reward_unit=X5_POINTS,fragment=cap[0]))
+    return terms,conditions
+
+
+def action_end_conflicts(body,end):
+    """A complete campaign-end sentence can disagree with the native card dates."""
+    from owned_offer_dates import FULL_DATE,calendar_date
+    pattern=(r'(?:^|(?<=[.!?])\s*|\n)(Акция действует (?:до|по) ('+FULL_DATE
+             +r')(?:\s+(?:года|г\.))?(?:\s+включительно)?[.]?)(?=\n|$)')
+    return [m[1] for m in re.finditer(pattern,body) if calendar_date(m[2])!=end]
+
+
 def source_fields(e):
     identity(e,SOURCE)
     if not re.fullmatch(r'\d+',e['native']) or e['url']!=ROOT+'/'+e['native']:raise ValueError('x5_offer_url')
@@ -70,10 +124,12 @@ def source_fields(e):
         access=(f'Получение: {number(str(cost))} баллов X5 Клуба.' if typ=='purchased' else 'Обмен баллов X5; курс и единицы обмена определяются условиями ниже.')
     else:raise ValueError('x5_cost_type')
     benefit=title+('\n'+e['exchange_terms'] if typ=='exchange' and e.get('exchange_terms') else '')
+    terms,condition_terms=owned_reward_terms(e,title,benefit,access)
     return dict(native=e['native'],program=PROGRAMS[SOURCE],partner=partner,title=title,benefit=benefit,
         url=e['url'],conditions='\n'.join([access,e['period'],e['conditions']]),activation=e['activation'],
         valid_from=start,valid_until=end,category=e.get('category') or 'Партнёры',locator='main; own heading, dates, redemption and conditions',
-        terms=[dict(kind='partner_privilege',fragment=benefit)],scope={'X5_membership_required':True,'individual_code_not_issued':True},
+        terms=terms,condition_terms=condition_terms,date_conflict_evidence=action_end_conflicts(e['conditions'],end),
+        scope={'X5_membership_required':True,'individual_code_not_issued':True},
         warnings=['X5_points_cost_not_cash_discount'])
 
 def exchange_line(value):

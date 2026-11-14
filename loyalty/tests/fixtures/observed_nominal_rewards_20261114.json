@@ -1,0 +1,605 @@
+[
+  {
+    "name": "apartment_point_awards",
+    "source_url": "https://www.uralairlines.ru/partners/#partner_6802",
+    "text": "40 000 бонусов – за 1-комнатную квартиру\n60 000 бонусов – за 2-комнатную\n80 000 бонусов – за 3-комнатную\n100 000 бонусов – за 4-комнатную",
+    "field": "benefit",
+    "expected": [
+      {
+        "kind": "earn_points",
+        "value": "40000",
+        "unit": "points"
+      },
+      {
+        "kind": "earn_points",
+        "value": "60000",
+        "unit": "points"
+      },
+      {
+        "kind": "earn_points",
+        "value": "80000",
+        "unit": "points"
+      },
+      {
+        "kind": "earn_points",
+        "value": "100000",
+        "unit": "points"
+      }
+    ]
+  },
+  {
+    "name": "carsharing_nominal_bonus",
+    "source_url": "https://msk.t2.ru/bolshe/offers",
+    "text": "500 бонусов на поездку в Делимобиле для всех клиентов",
+    "field": "benefit",
+    "expected": [
+      {
+        "kind": "earn_points",
+        "value": "500",
+        "unit": "points"
+      }
+    ]
+  },
+  {
+    "name": "carsharing_first_nominal_bonus",
+    "source_url": "https://msk.t2.ru/bolshe/offers",
+    "text": "1500 бонусов на первую поездку в Делимобиле",
+    "field": "benefit",
+    "expected": [
+      {
+        "kind": "earn_points",
+        "value": "1500",
+        "unit": "points"
+      }
+    ]
+  },
+  {
+    "name": "point_order_awards",
+    "source_url": "https://rzd-bonus.ru/promo/do-737-ballov-rzhd-bonus-za-pokupki-v-shefmarkete/",
+    "text": "Получайте:\n737 баллов за заказ Меню\n 196 баллов за заказ Промосета\n 49 баллов за заказ Основного меню",
+    "field": "benefit",
+    "expected": [
+      {
+        "kind": "earn_points",
+        "value": "737",
+        "unit": "points"
+      },
+      {
+        "kind": "earn_points",
+        "value": "196",
+        "unit": "points"
+      },
+      {
+        "kind": "earn_points",
+        "value": "49",
+        "unit": "points"
+      }
+    ]
+  },
+  {
+    "name": "two_hotel_point_awards",
+    "source_url": "https://rzd-bonus.ru/promo/do-500-ballov-rzhd-bonus-za-kazhduyu-noch-prozhivaniya-v-otele-rivera-v-kazani/",
+    "text": "500 баллов за проживание в будни и 300 баллов — в выходные, праздники и в \nпериод каникул.",
+    "field": "benefit",
+    "expected": [
+      {
+        "kind": "earn_points",
+        "value": "500",
+        "unit": "points"
+      },
+      {
+        "kind": "earn_points",
+        "value": "300",
+        "unit": "points"
+      }
+    ]
+  },
+  {
+    "name": "nominal_award_after_explicit_threshold",
+    "source_url": "https://rzd-bonus.ru/partners/11597/",
+    "text": "По заказам, сумма которых свыше 10 000 рублей, начисление баллов составит — \n666 баллов за заказ.",
+    "field": "benefit",
+    "expected": [
+      {
+        "kind": "earn_points",
+        "value": "666",
+        "unit": "points"
+      }
+    ]
+  },
+  {
+    "name": "sim_order_award",
+    "source_url": "https://rzd-bonus.ru/partners/11563/",
+    "text": "254 балла за заказ, оформленный в категории «SIM-карты».",
+    "field": "benefit",
+    "expected": [
+      {
+        "kind": "earn_points",
+        "value": "254",
+        "unit": "points"
+      }
+    ]
+  },
+  {
+    "name": "welcome_points_not_standard_reference",
+    "source_url": "https://rzd-bonus.ru/partners/11969/",
+    "text": "1000 приветственных баллов на счет при регистрации в Программе «РЖД \nБонус» вместо 500 стандартных",
+    "field": "benefit",
+    "expected": [
+      {
+        "kind": "earn_points",
+        "value": "1000",
+        "unit": "points"
+      }
+    ]
+  },
+  {
+    "name": "real_estate_nominal_list",
+    "source_url": "https://coralbonus.ru/klub-privilegii/nedvizhimost/artel/",
+    "text": "Количество бонусов к начислению:\n100 000 бонусов – при покупке студии;\n200 000 бонусов – при покупке 1-комнатной квартиры;\n300 000 бонусов – при покупке 2-комнатной квартиры;\n400 000 бонусов – при покупке 3-комнатной квартиры.",
+    "field": "conditions",
+    "expected": [
+      {
+        "kind": "earn_points",
+        "value": "100000",
+        "unit": "points"
+      },
+      {
+        "kind": "earn_points",
+        "value": "200000",
+        "unit": "points"
+      },
+      {
+        "kind": "earn_points",
+        "value": "300000",
+        "unit": "points"
+      },
+      {
+        "kind": "earn_points",
+        "value": "400000",
+        "unit": "points"
+      }
+    ]
+  },
+  {
+    "name": "real_estate_passive_list",
+    "source_url": "https://coralbonus.ru/klub-privilegii/nedvizhimost/rdi-novo-molokovo/",
+    "text": "За покупку квартиры вам будет начислены:\n100 000 бонусов – за студию или 1-к квартиру евро формата\n150 000 бонусов – за 1-к стандартную или 2-к квартиру евро формата\n220 000 бонусов – за 2-к стандартную квартиру\n300 000 бонусов – за 3-к стандартную квартиру",
+    "field": "conditions",
+    "expected": [
+      {
+        "kind": "earn_points",
+        "value": "100000",
+        "unit": "points"
+      },
+      {
+        "kind": "earn_points",
+        "value": "150000",
+        "unit": "points"
+      },
+      {
+        "kind": "earn_points",
+        "value": "220000",
+        "unit": "points"
+      },
+      {
+        "kind": "earn_points",
+        "value": "300000",
+        "unit": "points"
+      }
+    ]
+  },
+  {
+    "name": "real_estate_nominal_offer",
+    "source_url": "https://coralbonus.ru/klub-privilegii/nedvizhimost/mangazeya-na-rechnom/",
+    "text": "Для держателей карт CoralBonus действует уникальное предложение от Мангазея – 150 000 бонусов на путешествие при покупке квартиры в ЖК «Мангазея на Речном»!",
+    "field": "conditions",
+    "expected": [
+      {
+        "kind": "earn_points",
+        "value": "150000",
+        "unit": "points"
+      }
+    ]
+  },
+  {
+    "name": "first_visit_nominal_credit",
+    "source_url": "https://coralbonus.ru/klub-privilegii/krasota/maridzhental/",
+    "text": "2000 бонусов, которыми можно оплатить 100% от стоимости любой процедуры*",
+    "field": "conditions",
+    "expected": [
+      {
+        "kind": "earn_points",
+        "value": "2000",
+        "unit": "points"
+      },
+      {
+        "kind": "redeem_rewards",
+        "value": "100",
+        "unit": "percent_of_order"
+      }
+    ]
+  },
+  {
+    "name": "nominal_redemption_bands",
+    "source_url": "https://coralbonus.ru/promo/rixos-tersane-istanbul/",
+    "text": "Количество бонусов к списанию:\n4 000 бонусов на бронирование стоимостью до 149 999 рублей\n5 000 бонусов на бронирование стоимостью более 150 000 рублей",
+    "field": "conditions",
+    "expected": [
+      {
+        "kind": "redeem_rewards",
+        "value": "4000",
+        "unit": "points"
+      },
+      {
+        "kind": "redeem_rewards",
+        "value": "5000",
+        "unit": "points"
+      }
+    ]
+  },
+  {
+    "name": "wrapped_nominal_redemption_bands",
+    "source_url": "https://coralbonus.ru/promo/rixos-hotels-turkiye/",
+    "text": "Количество бонусов к списанию:\n7 000 бонусов\nна бронирование стоимостью до 599 999 рублей\n25 000 бонусов\nна бронирование стоимостью более 600 000 рублей",
+    "field": "conditions",
+    "expected": [
+      {
+        "kind": "redeem_rewards",
+        "value": "7000",
+        "unit": "points"
+      },
+      {
+        "kind": "redeem_rewards",
+        "value": "25000",
+        "unit": "points"
+      }
+    ]
+  },
+  {
+    "name": "literal_point_ratio_without_award_verb",
+    "source_url": "https://t.me/fpcrussia/2816",
+    "text": "1 балл за каждые 3,34 ₽",
+    "field": "benefit",
+    "expected": [
+      {
+        "kind": "earn_points",
+        "value": "1",
+        "unit": "points",
+        "basis_value": "3.34",
+        "basis_unit": "RUB"
+      }
+    ]
+  },
+  {
+    "name": "legacy_declared_point_award",
+    "source_url": "https://coralbonus.ru/promo/zhemchuzhina-vostoka/",
+    "text": "10 000 бонусов; 1 бонус = 1 ₽",
+    "field": "benefit",
+    "expected": [
+      {
+        "kind": "earn_points",
+        "value": "10000",
+        "unit": "points"
+      }
+    ],
+    "declared_benefit_type": "Бонусы"
+  },
+  {
+    "name": "legacy_tier_birthday_award",
+    "source_url": "https://www.uralairlines.ru/wings_rules/",
+    "text": "500 бонусов в день рождения",
+    "field": "benefit",
+    "expected": [
+      {
+        "kind": "earn_points",
+        "value": "500",
+        "unit": "points"
+      }
+    ],
+    "declared_benefit_type": "Бонусы/привилегии"
+  },
+  {
+    "name": "legacy_point_formula",
+    "source_url": "https://smart--hotel--chain.orgs.biz/",
+    "text": "1 балл «РЖД Бонус» за каждые 50 ₽ проживания",
+    "field": "benefit",
+    "expected": [
+      {
+        "kind": "earn_points",
+        "value": "1",
+        "unit": "points",
+        "basis_value": "50",
+        "basis_unit": "RUB"
+      }
+    ],
+    "declared_benefit_type": "Баллы"
+  },
+  {
+    "name": "legacy_point_percent_ceiling",
+    "source_url": "https://coralbonus.ru/klub-privilegii/nedvizhimost/gk-nndk/",
+    "text": "1% от стоимости квартиры баллами CoralBonus, до 180 000 бонусов",
+    "field": "benefit",
+    "expected": [
+      {
+        "kind": "earn_points",
+        "value": "1",
+        "unit": "percent"
+      }
+    ],
+    "declared_benefit_type": "Баллы",
+    "expected_conditions": [
+      {
+        "kind": "benefit_cap",
+        "value": "180000",
+        "unit": "points"
+      }
+    ]
+  },
+  {
+    "name": "legacy_literal_multiplier",
+    "source_url": "https://azimuthotels.com/ru/tl/availability",
+    "text": "×1,2 балла на подходящие расходы",
+    "field": "benefit",
+    "expected": [
+      {
+        "kind": "reward_multiplier",
+        "value": "1.2",
+        "unit": "multiplier",
+        "reward_unit": "points"
+      }
+    ],
+    "declared_benefit_type": "Повышенное начисление"
+  },
+  {
+    "name": "legacy_multiplier_with_explicit_money_basis",
+    "source_url": "https://azimuthotels.com/ru/info/accumulate-points",
+    "text": "×1 балл за 1 ₽ подходящих расходов; в санаториях по примеру программы ×0,5",
+    "field": "benefit",
+    "expected": [
+      {
+        "kind": "earn_points",
+        "value": "1",
+        "unit": "points",
+        "basis_value": "1",
+        "basis_unit": "RUB"
+      }
+    ],
+    "declared_benefit_type": "Баллы"
+  },
+  {
+    "name": "monetary_bonus_not_point_conversion",
+    "source_url": "https://vamprivet.ru/promo/strahovanie/vasha-tysyacha-1/",
+    "text": "Бонус до 1000 ₽ за оформление полиса страхования ипотеки",
+    "field": "benefit",
+    "expected": [
+      {
+        "kind": "earn_rewards",
+        "value": "1000",
+        "unit": "RUB",
+        "qualifier": "up_to",
+        "reward_unit": null
+      }
+    ]
+  },
+  {
+    "name": "tier_threshold_not_award",
+    "source_url": "https://azimuthotels.com/ru/info/bonus",
+    "text": "Серебряный 10 ночей за год или 70 000 баллов",
+    "field": "conditions",
+    "expected": []
+  },
+  {
+    "name": "exchange_price_not_award",
+    "source_url": "https://www.aeroflot.ru/partners/ws/v.0.0.3/json/partner/get?id=17&lang=ru",
+    "text": "15 000 баллов AZIMUT Bonus – 500 Миль «Аэрофлот Бонус»",
+    "field": "conditions",
+    "expected": [
+      {
+        "kind": "earn_miles",
+        "value": "500",
+        "unit": "miles",
+        "basis_value": "15000",
+        "basis_unit": "points"
+      }
+    ]
+  },
+  {
+    "name": "museum_point_price_not_award",
+    "source_url": "https://t.me/ekpcard/5324",
+    "text": "В «Магазине поощрений» билеты на товарищеские матчи любимой питерской команды всего по 100 баллов!",
+    "field": "benefit",
+    "expected": []
+  },
+  {
+    "name": "equivalence_not_award",
+    "source_url": "https://rzd-bonus.ru/promo/puteshestvuyte-za-bonusy-ot-banka-uralsib_2026/",
+    "text": "1,5 бонусных рубля = 1 балл «РЖД Бонус»",
+    "field": "benefit",
+    "expected": []
+  },
+  {
+    "name": "declared_bank_card_award_list",
+    "source_url": "https://uralsib.ru/aktsii/privetstvennye-bally-rzhd-za-oformlenie-karty",
+    "text": "Да, вы можете оформить только одну из карт, участвующих в акции, в таком случае баллы программы «РЖД Бонус» будут начислены в зависимости от выбранной вами карты:\nДебетовая карта «Прибыль» - 3 000 баллов\nКредитная карта «Кредитная карта с кешбэком» -6 000 баллов\nMir Supreme (Пакет услуг «Premium») - 8 000 баллов",
+    "field": "benefit",
+    "expected": [
+      {
+        "kind": "earn_points",
+        "value": "3000",
+        "unit": "points"
+      },
+      {
+        "kind": "earn_points",
+        "value": "6000",
+        "unit": "points"
+      },
+      {
+        "kind": "earn_points",
+        "value": "8000",
+        "unit": "points"
+      }
+    ]
+  },
+  {
+    "name": "branded_wings_nightly_points",
+    "source_url": "https://azimuthotels.com/ru/info/bonus",
+    "text": "500 баллов «Крылья» за каждую ночь по тарифу «Лучшая цена дня»",
+    "field": "benefit",
+    "declared_benefit_type": "Баллы",
+    "expected": [
+      {
+        "kind": "earn_points",
+        "value": "500",
+        "unit": "points",
+        "basis_value": "1",
+        "basis_unit": "night",
+        "scope": {
+          "reward_program": "Крылья"
+        }
+      }
+    ]
+  },
+  {
+    "name": "fronted_month_is_a_reward_ceiling",
+    "source_url": "https://t.me/fpcrussia/2895",
+    "text": "начислим 2 000 баллов «РЖД Бонус» за путешествия по биометрии. Не забудьте указать номер вашей карты программы лояльности при покупке билета.\n\nВ месяц можно получить до 8 000 баллов.",
+    "field": "benefit",
+    "expected": [
+      {
+        "kind": "earn_points",
+        "value": "2000",
+        "unit": "points"
+      }
+    ],
+    "expected_conditions": [
+      {
+        "kind": "benefit_cap",
+        "value": "8000",
+        "unit": "points",
+        "basis_value": "1",
+        "basis_unit": "month",
+        "qualifier": "up_to"
+      }
+    ],
+    "absent": [
+      {
+        "kind": "earn_points",
+        "value": "8000"
+      }
+    ]
+  },
+  {
+    "name": "option_renewal_each_month",
+    "source_url": "https://sp.yandex.ru/s7",
+    "field": "benefit",
+    "text": "За заказы в сервисах Яндекса начисляется столько же миль S7, сколько баллов Плюса; 50 миль за продление опции каждый месяц; 100 миль при первом подключении на месяц или 500 миль при подключении на 12 месяцев",
+    "expected": [
+      {
+        "kind": "earn_miles",
+        "value": "50",
+        "unit": "miles",
+        "basis_value": "1",
+        "basis_unit": "month"
+      },
+      {
+        "kind": "earn_miles",
+        "value": "100",
+        "unit": "miles"
+      },
+      {
+        "kind": "earn_miles",
+        "value": "500",
+        "unit": "miles"
+      }
+    ],
+    "declared_benefit_type": "Мили + привилегии"
+  },
+  {
+    "name": "miles_for_each_data_package",
+    "source_url": "https://marketplace.s7.ru/partners/offer/justesim_1",
+    "field": "benefit",
+    "text": "Интернет в подарок и до 250 миль за каждый пакет",
+    "expected": [
+      {
+        "kind": "gift"
+      },
+      {
+        "kind": "earn_miles",
+        "value": "250",
+        "unit": "miles",
+        "basis_value": "1",
+        "basis_unit": "package",
+        "qualifier": "up_to"
+      }
+    ]
+  },
+  {
+    "name": "fronted_nightly_miles_ceiling",
+    "source_url": "https://www.aeroflot.ru/partners/ws/v.0.0.3/json/partner/get?id=522170&lang=ru",
+    "field": "conditions",
+    "text": "- За одну ночь проживания начисляется не более 500 миль.",
+    "expected": [],
+    "expected_conditions": [
+      {
+        "kind": "benefit_cap",
+        "value": "500",
+        "unit": "miles",
+        "qualifier": "up_to",
+        "basis_value": "1",
+        "basis_unit": "night"
+      }
+    ]
+  },
+  {
+    "name": "nightly_heading_owns_weekday_and_weekend_points",
+    "source_url": "https://rzd-bonus.ru/promo/do-500-ballov-rzhd-bonus-za-kazhduyu-noch-prozhivaniya-v-otele-rivera-v-kazani/",
+    "field": "benefit",
+    "text": "Оплачивайте проживание в отеле и получайте баллы в программе «РЖД Бонус» \nза каждую ночь: \n500 баллов за проживание в будни и 300 баллов — в выходные, праздники и в \nпериод каникул.",
+    "expected": [
+      {
+        "kind": "earn_points",
+        "value": "500",
+        "unit": "points",
+        "basis_value": "1",
+        "basis_unit": "night"
+      },
+      {
+        "kind": "earn_points",
+        "value": "300",
+        "unit": "points",
+        "basis_value": "1",
+        "basis_unit": "night"
+      }
+    ]
+  },
+  {
+    "name": "subscription_month_and_year_points",
+    "source_url": "https://rzd-bonus.ru/partners/11650/",
+    "field": "benefit",
+    "text": "Получайте 135 баллов за месяц подписки или 338 баллов за год подписки в \nцифровом пространстве Яндекс 360.",
+    "expected": [
+      {
+        "kind": "earn_points",
+        "value": "135",
+        "unit": "points",
+        "basis_value": "1",
+        "basis_unit": "month"
+      },
+      {
+        "kind": "earn_points",
+        "value": "338",
+        "unit": "points",
+        "basis_value": "1",
+        "basis_unit": "year"
+      }
+    ]
+  },
+  {
+    "name": "calculated_example_totals_are_not_flat_awards",
+    "source_url": "https://azimuthotels.com/ru/info/accumulate-points",
+    "field": "benefit",
+    "text": "Пример 1\nУчастник заплатил 20 000 ₽ (без НДС) за 3 ночи проживания в отеле, участвующем в программе AZIMUT Bonus.\nУчастник уровня Бонус получит 20 000 * 1 = 20 000 баллов.\nУчастник уровня Платиновый получит 20 000 * 1,5 = 30 000 баллов.\nПример 2\nУчастник заплатил 100 000 ₽ (без НДС) за 10 ночей проживания в санатории, участвующем в программе AZIMUT Bonus.\nУчастник уровня Бонус получит 100 000 * 0,5 = 50 000 баллов.\nУчастник уровня Платиновый получит 100 000 * 0,75 = 75 000 баллов.\n",
+    "expected": []
+  }
+]
