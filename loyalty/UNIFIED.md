@@ -1,10 +1,23 @@
-# Common normalization of all stored data — 1.0.10
+# Common normalization of all stored data — 1.0.11
 
 This is a deterministic **source-preserving projection**, not another web scrape,
 a new discount catalogue, a personal entitlement check, or a savings calculator.
 It consumes all five explicitly supported input datasets in the existing Google
 spreadsheet. The other three sheets are control/audit history, not benefit rows.
 All eight original sheets are read-only to this stage.
+
+Version 1.0.11 repairs encountered list and component boundaries. An explicit
+discount/cashback heading owns its adjacent percentage items; an observed
+sentence continuation retains its label across a line break. Original service
+context stays with a bare rate, while quoted names, page-fill percentages and
+separately named bonus services do not inherit a discount. A free-delivery
+threshold does not constrain the neighbouring discount. The stated combined
+discount ceiling remains a condition, and a comparison of accrued bonuses with
+a discount does not become an ordinary cash discount or an invented points
+formula. Conflicting starts in the same owned Mir offer are withheld when its
+end agrees; the agreed end still expires normally. Source announcements retain
+their exclusion with a specific reason. Raw inputs, source/common schemas and
+the reader layout remain unchanged. Regressions use encountered source wording.
 
 Version 1.0.10 repairs the next encountered offer-period and action-ownership
 forms. Labelled Coral periods accept the observed plural/action labels and

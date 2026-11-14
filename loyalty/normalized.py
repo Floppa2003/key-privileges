@@ -17,7 +17,7 @@ from reward_context import (reward_role, benefit_denied, gift_spans, mileage_for
                             forward_reward_basis, purchase_requirement_denied, benefit_context_text,
                             monthly_mileage_payout_cap)
 
-VERSION = '2.9.6'
+VERSION = '2.9.7'
 HOSTS = {
  'moskvich': ['moskvichmag.ru'], 'noname': ['nonameburo.com'],
  's7': ['marketplace.s7.ru'], 'ural': ['www.uralairlines.ru'],
@@ -293,7 +293,7 @@ def percentage_caps(clause: str):
     for index, span in enumerate(percent_spans(clause)):
         if span['min_value'] is not None:continue
         prefix = re.split(r'[.!?](?:\s|$)|[;\n]', clause[:span['start']])[-1]
-        bound = re.search(r'\bне\s+(?:может\s+)?превыш\w*(?:\s+в\s+сумме)?\s*$', prefix, re.I)
+        bound = re.search(r'\bне\s+(?:(?:может|долж(?:ен|на|но|ны))\s+)?превыш\w*(?:\s+в\s+сумме)?\s*$', prefix, re.I)
         if not bound:continue
         owners = list(owner.finditer(prefix[:bound.start()]))
         if owners:
@@ -319,6 +319,64 @@ def benefit_mentions(clause):
     return sorted(spans)
 
 
+def _outer_percent_starts(clause):
+    """List headings do not label percentages inside quoted names or parentheses."""
+    plain=re.sub(r'«[^»]*»|"[^"\n]*"|\([^()]*\)',lambda m:' '*len(m[0]),clause)
+    return {span['start'] for span in percent_spans(plain)}
+
+
+def rate_clause_contexts(value):
+    """Literal clause offsets and the owner of an adjacent explicit rate list.
+
+    A list ends at an ordinary rule/section, an unrelated quantity, or a blank
+    line. Its heading is context, not invented text inserted into quotations.
+    """
+    working=benefit_context_text(value)
+    # An observed soft wrap continues the same labelled discount sentence.
+    # Keep offsets and original evidence, including its actual newline.
+    for boundary in re.finditer(r'\n(?=[ \t]*и\s+'+NUMBER+r'\s*%)',value,re.I):
+        prefix=re.split(r'[.!?](?:\s|$)|[;\n]',value[:boundary.start()])[-1]
+        if (re.search(TYPES['discount']+'|'+TYPES['cashback'],prefix,re.I)
+                and percent_spans(prefix)):
+            working=working[:boundary.start()]+' '+working[boundary.end():]
+    matches=list(re.finditer(r'[^\n;]+',working))
+    heading='';previous_end=0;index=0
+    while index<len(matches):
+        match=matches[index];start,end=match.span();clause=value[start:end].strip()
+        if re.search(r'\n[ \t]*\n',value[previous_end:start]):heading=''
+        kinds=[k for k in ('discount','cashback') if re.search(TYPES[k],clause,re.I)]
+        offer_heading=(clause.endswith(':') and '%' not in clause and len(kinds)==1
+                       and re.search(r'\b(?:предоставля(?:ется|ются)|представляются|получайте)\b',clause,re.I)
+                       and not re.search(r'\bне\s+(?:предоставля\w*|представля\w*|получ\w*)',clause,re.I))
+        if offer_heading:
+            heading=clause
+            yield start,end,''
+        else:
+            spans=percent_spans(clause);outer=_outer_percent_starts(clause)
+            other_reward=re.search(r'\b(?:бонусн\w*\s+услуг\w*|монет\w*|балл\w*|мил[ьяиюе]\w*)\b',clause,re.I)
+            first=next((span for span in spans if span['start'] in outer),None)
+            prefix=clause[:first['start']] if first else ''
+            list_item=bool(first and not other_reward and
+                           (re.match(r'\s*[-–—•]',clause) or not prefix.strip()
+                            or re.search(r'[-–—:]\s*$',prefix)))
+            inherited=heading if list_item else ''
+            if not inherited:heading=''
+            if (inherited and len(spans)==1 and not prefix.strip(' \t-–—')
+                    and not clause[first['end']:].strip(' \t.')):
+                # A bare rate followed by service bullets owns those services;
+                # do not expose a context-free percentage in the common model.
+                while index+1<len(matches):
+                    following=matches[index+1];item=value[following.start():following.end()].strip()
+                    if (re.search(r'\n[ \t]*\n',value[end:following.start()])
+                            or not re.match(r'[-–—•]\s*\S',item)
+                            or percent_spans(item)
+                            or re.search(TYPES['discount']+'|'+TYPES['cashback'],item,re.I)):
+                        break
+                    index+=1;end=following.end()
+            yield start,end,inherited
+        previous_end=end;index+=1
+
+
 def normalize_rates(value: str, *, heading_context: str = '', with_spans: bool = False) -> list[dict]:
     """Only recognizable local rate phrases; context is mandatory for every value.
     Rates are NOT combinable without interpreting their evidence/conditions.
@@ -327,11 +385,13 @@ def normalize_rates(value: str, *, heading_context: str = '', with_spans: bool =
     result = []
     percent_index = 0
     amount_indexes = {'miles':0,'RUB':0}
-    heading_kinds = [k for k in ('discount','cashback') if re.search(TYPES[k],heading_context,re.I)]
-    heading_kind = heading_kinds[0] if len(heading_kinds)==1 else None
     value=text(value, markup=False)
-    for match in re.finditer(r'[^\n;]+',benefit_context_text(value)):
-        clause = value[match.start():match.end()].strip()
+    for left,right,list_heading in rate_clause_contexts(value):
+        clause = value[left:right].strip()
+        heading_kinds = [k for k in ('discount','cashback')
+                         if re.search(TYPES[k],list_heading or heading_context,re.I)]
+        heading_kind = heading_kinds[0] if len(heading_kinds)==1 else None
+        outer_percentages=_outer_percent_starts(clause) if heading_kind else set()
         # In an explicit price band, "от 1000 руб. — 10%", the currency dot
         # is an abbreviation. Other sentence endings remain boundaries.
         # Keep character positions stable for the original label/rate spans.
@@ -379,7 +439,14 @@ def normalize_rates(value: str, *, heading_context: str = '', with_spans: bool =
                 continue
             if not before and not after and not heading_kind:
                 continue
+            if not before and not after and heading_kind and start not in outer_percentages:
+                continue
             kind = after or (before[-1][1] if before else heading_kind)
+            # This source compares accrued bonuses with a discount. It does
+            # not promise an upfront reduction or an explicit points formula.
+            if (kind=='discount' and re.search(r'\bразмер\s+начисленн\w*\s+бонус\w*\s+'
+                                              r'соответству\w*\s+скидк\w*\s*$',clause[:start],re.I)):
+                continue
             if benefit_denied(clause,start,label_end,amounts=polarity_spans):
                 continue
             if kind=='miles' and reward_role(clause,start,label_end,amounts=polarity_spans) in ('denied','spend','reference'):
