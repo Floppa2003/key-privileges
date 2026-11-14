@@ -51,7 +51,7 @@ The public publisher updates `parser_offers` (A:Y managed; Z manual comments) an
 
 Writes are literal, ID-upserted and read back. Failed/missing source observations never delete or expire old offers; consumers must check latest coverage and row observation times. Green workflow status means the pipeline ran, not that every registered site was fully collected.
 
-Mir uses the anonymous JSON POST filter API: the page number is in the request body. The public SBP/Mir switch is observed, both accessible catalog profiles are traversed and overlapping offer IDs deduplicated. Counts are regional and profile-specific, not an all-Russia/personal-account total. Later-page failures retain earlier-page evidence.
+Mir visits the anonymous catalogue in a normal browser, follows its visible pagination controls and observes the page's own public responses. Production does not send independent filter API requests. The public SBP/Mir switch is observed, both accessible catalog profiles are traversed and overlapping offer IDs deduplicated. Counts are regional and profile-specific, not an all-Russia/personal-account total. Later-page failures retain earlier-page evidence; regional read failures retain their typed HTTP diagnostics.
 
 The independent KEY collector remains unchanged. The public repository/artifacts must never contain spreadsheet exports, destination IDs, Google tokens or personal browser sessions. Artifacts expire after seven days. Following explicit authorization on 2026-09-15, collection runs daily at 05:23 UTC in this repository. The old `LOYALTY_SCHEDULE_ENABLED` opt-in condition is no longer used; the separate existing `LOYALTY_SHEETS_SYNC` publication guard remains. Disable the workflow in Actions to pause it. See `OPERATIONS.md`.
 
