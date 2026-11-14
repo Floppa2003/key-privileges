@@ -1,0 +1,12 @@
+{
+  "source_url": "https://www.uralairlines.ru/wings_rules/",
+  "retrieved_date_utc": "2026-11-14",
+  "retrieval_method": "anonymous browser DOM; no authentication or access-challenge interaction",
+  "selector": ".uan-styled-text",
+  "scope": "complete article DOM block, navigation and footer excluded",
+  "sha256": "fdc1987c242d7d884f34addf7711e1f2d21a8f9f870feac9eb9cd0687401d980",
+  "bytes": 37915,
+  "dom_utf16_characters": 22442,
+  "dom_utf16_fnv1a": "f67c3860",
+  "fixture_edits": "none"
+}

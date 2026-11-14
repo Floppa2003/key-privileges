@@ -6,6 +6,7 @@ from normalized import content_hash
 from public_transport import PublicSource
 from read_budget import within_source_budget
 from mir_ui import collect_mir as collect_region, LISTING_REGIONS
+from source_diagnostics import error_record
 
 
 def merge_regions(catalogs):
@@ -63,8 +64,8 @@ async def collect_mir(client,cfg,report,now,limit):
                              'coverage':result['coverage']})
             report['errors'].extend({**e,'region':key} for e in result['errors'])
         except Exception as exc:
-            report['errors'].append({'phase':'catalog_region','region':key,
-                'reason':str(exc)[:180] if isinstance(exc,RuntimeError) else type(exc).__name__})
+            report['errors'].append({**error_record(exc,'catalog_region',cfg.get('url','')),
+                                     'region':key})
     records,meta=merge_regions(catalogs)
     report['errors'].extend(meta['errors'])
     # Counts of per-region URLs are deliberately not summed into unique offers.

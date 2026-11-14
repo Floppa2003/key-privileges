@@ -1,16 +1,14 @@
 {
-  "request_id": "2026-11-13-parser-semantic-ownership",
+  "request_id": "2026-11-14-observed-source-repairs",
   "source_ids": [
-    "utair_generations_rules",
-    "af_bootwood_rules",
-    "af_wolford_rules",
-    "af_iway_rules",
-    "af_skyshop_rules",
-    "af_tripster_rules",
-    "af_comfort_rules",
-    "af_vipzal_rules",
-    "hse_alumni"
+    "ural",
+    "ural_tiers",
+    "ural_triangle_rules",
+    "mir",
+    "mir_neva",
+    "loyals",
+    "t2_magnit_rules"
   ],
-  "reason": "Refresh the reviewed source-owned mileage templates and HSE coupon fallback after repairing occurrence-level denial, full earning bounds and cancelled-code extraction. Re-normalize all retained inputs with normalizer 1.0.6, including coupon cancellation/instruction boundaries and monetary condition ownership. Use existing allowlisted collectors, budgets and serialized publication with destination readback. Preserve original evidence and partial/unavailable source reporting.",
+  "reason": "Recheck the seven observed source failures after fixing the actual Ural qualification wording and preserving MIR regional HTTP diagnostics. Use existing registered collectors, access policies, budgets and serialized publication with destination readback. Failed or partial sources retain their original statuses and previously published records; no replacement URLs or source availability are inferred.",
   "publish": true
 }

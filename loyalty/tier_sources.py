@@ -71,7 +71,9 @@ def ural_tiers(raw, observed_at):
             raise ValueError('ural_tier_boundary_ambiguous')
         q={'evidence':qualification,'registration':bool(re.search('при регистрации',flat_qualification,re.I)),
            'flights':None,'spend_rub':None,'operator':None,'window':None,'window_years':None,'required_previous_tier':None}
-        f=_qualification_clause(flat_qualification,r'при совершении',rf'при совершении ({NUMERIC_TOKEN}) пол[её]т(?:ов|а)?\b')
+        # The published spend alternative says "при совершении любого количества
+        # полетов"; it is not another numerical flight-count qualification.
+        f=_qualification_clause(flat_qualification,r'при совершении(?! любого количества пол[её]тов\b)',rf'при совершении ({NUMERIC_TOKEN}) пол[её]т(?:ов|а)?\b')
         amount=_qualification_clause(flat_qualification,r'на сумму',rf'на сумму ({NUMERIC_TOKEN}) рубл(?:ей|я|ь)\b')
         years=_qualification_clause(flat_qualification,r'в течение',rf'в течение ({NUMERIC_TOKEN}) календарн(?:ого|ых) (?:года|лет)\b')
         if f:q['flights']=_qualification_number(f,integer=True)

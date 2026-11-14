@@ -1,0 +1,36 @@
+{
+  "provenance": {
+    "workflow_run_id": "43594061340:1",
+    "artifact": "writer-public/normalized.json",
+    "artifact_sha256": "d57cf6fb389cbd95f276198c82227c3b6db976e9782ed340c96f0233d00235f9"
+  },
+  "source_report": {
+    "source_id": "mir",
+    "name": "Привет! / Мир / СБП",
+    "root": "https://vamprivet.ru/promo/",
+    "status": "failed",
+    "discovered": 0,
+    "normalized": 0,
+    "failed": 2,
+    "coverage": "{\"shared_observations_merged\": 0, \"errors\": [], \"method\": \"two_public_UI_regions_with_independently_read_details\", \"profiles\": [], \"unique_normalized\": 0, \"unique_discovered\": 0, \"detail_limit\": 500, \"undiscovered_or_failed_details_reported_per_region\": true}",
+    "region": "",
+    "errors": [
+      {
+        "phase": "catalog_region",
+        "region": "msk",
+        "reason": "http_403"
+      },
+      {
+        "phase": "catalog_region",
+        "region": "spb",
+        "reason": "http_403"
+      }
+    ],
+    "observed_at": "2026-11-14T12:19:32.114244+00:00",
+    "route_kind": "collector",
+    "discovered_items": 0,
+    "collection_state": "finished",
+    "execution_seconds": 4.242,
+    "queue_seconds": 0.006
+  }
+}
