@@ -19,6 +19,8 @@ from unified_normalization import normalize_inputs,digest,dump
 from unified_views import SCHEMAS,prepare_views,retire_missing
 from practical_scope import select_inputs,VERSION as SCOPE_VERSION
 from catalogue_publish import prepare_catalogue, publish_catalogue, verify_catalogue
+from document_catalogue import (document_sources, read_archived_documents,
+    prepare_documents, publish_documents, verify_documents)
 
 class UnifiedSheets(Sheets):
     schemas=SCHEMAS
@@ -58,9 +60,14 @@ def publish_all(*,as_of=None,client=None):
     generation=next(row[-1] for row in views['normalization_audit'] if row[0]=='manifest')
     catalogue=prepare_catalogue(client,result['records'],as_of=as_of,
         source_fingerprint=digest(inputs),generation=generation)
+    archived_documents=read_archived_documents(client) if catalogue is not None else []
+    documents=prepare_documents(client,document_sources(inputs)+archived_documents,
+        generation=generation,as_of=as_of) if catalogue is not None else None
     from model import plan_rows
     for name,rows in views.items():plan_rows([SCHEMAS[name]],rows,len(SCHEMAS[name]))
     if _values_fingerprint(read_tables(client))!=digest(inputs):raise ValueError('Source changed before publication')
+    if documents is not None and read_archived_documents(client)!=archived_documents:
+        raise ValueError('Document source archive changed before publication')
     audit=[row.copy() for row in views['normalization_audit']]
     for row in audit:
         if row[0]=='manifest':row[4]='publishing'
@@ -81,7 +88,10 @@ def publish_all(*,as_of=None,client=None):
             'criteria':{str(w-2):{'condition':{'type':'TEXT_EQ','values':[{'userEnteredValue':'current'}]}}}
         }}}]})
     publish_catalogue(client,catalogue)
+    publish_documents(client,documents)
     if _values_fingerprint(read_tables(client))!=digest(inputs):raise ValueError('Source changed during publication; manifest remains unverified')
+    if documents is not None and read_archived_documents(client)!=archived_documents:
+        raise ValueError('Document source archive changed during publication; manifest remains unverified')
     for row in views['normalization_audit']:
         if row[0]=='manifest':row[4]='verified'
     client.upsert('normalization_audit',views['normalization_audit'])
@@ -91,9 +101,12 @@ def publish_all(*,as_of=None,client=None):
     actual=client.values('normalization_audit',meta['normalization_audit']);pos={r[0]:i for i,r in enumerate(actual) if r}
     verify_rows(actual,[(pos[r[0]],r) for r in views['normalization_audit']],len(SCHEMAS['normalization_audit']))
     verify_catalogue(client,catalogue)
+    verify_documents(client,documents)
     print(dump({'mode':'unified_views_published_and_readback_verified','records':len(inputs),
                 'rows':{k:len(v) for k,v in views.items()},'source_snapshot_sha256':digest(inputs),
-                'reader_catalogue':catalogue['counts'] if catalogue else None}))
+                'reader_catalogue':catalogue['counts'] if catalogue else None,
+                'reader_documents':{'documents':len(documents['rows'])-1,
+                    'archived_copies':sum(bool(row[5]) for row in documents['rows'][1:])} if documents else None}))
     return result
 
 

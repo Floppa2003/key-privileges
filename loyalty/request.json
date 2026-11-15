@@ -1,14 +1,13 @@
 {
-  "request_id": "2026-11-14-observed-source-repairs",
+  "request_id": "2026-11-15-preserve-public-pdf-originals",
   "source_ids": [
-    "ural",
-    "ural_tiers",
-    "ural_triangle_rules",
-    "mir",
-    "mir_neva",
-    "loyals",
-    "t2_magnit_rules"
+    "rgo",
+    "rzd_finuslugi_rules",
+    "af_primbank_rules",
+    "utair_rule_documents",
+    "af_vtb_rules",
+    "uralsib_rzd_rules"
   ],
-  "reason": "Recheck the seven observed source failures after fixing the actual Ural qualification wording and preserving MIR regional HTTP diagnostics. Use existing registered collectors, access policies, budgets and serialized publication with destination readback. Failed or partial sources retain their original statuses and previously published records; no replacement URLs or source availability are inferred.",
+  "reason": "Preserve original public PDF bytes before parsing and recover known document versions through the existing registered collectors. Archive immutable content-addressed copies to main and verify remote bytes before serialized Sheets publication. Retain historical hashes, explicitly report unavailable originals, and keep unparsed documents searchable without inventing benefits. Existing access policies and source budgets apply.",
   "publish": true
 }

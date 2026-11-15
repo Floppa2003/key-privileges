@@ -17,11 +17,11 @@ from quantity_offers import has_quantity_offer
 from reward_context import (benefit_denied, benefit_phrase_end,
                             benefit_restriction_follows, benefit_exclusion_spans)
 
-VERSION = "practical-catalogue-v2"
+VERSION = "practical-catalogue-v3"
 HEADERS = ["Партнёр","Программа","Выгода","Промокод / получение","Как получить",
            "Условия","Срок из источника","Категория","Проверено / получено UTC",
            "Источник","Комментарий","Тип записи","Статус срока","ID","Набор",
-           "Строка","Заголовок"]
+           "Строка","Заголовок","Копия документа"]
 NOISE_KIND = {"announcement", "raw_page", "source_observation"}
 TECHNICAL = re.compile(
     r"^(?:Подробнее[.; ]*|(?:Microsoft (?:Word|PowerPoint)|Презентация PowerPoint)\b.*|"

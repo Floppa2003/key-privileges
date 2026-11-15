@@ -195,6 +195,8 @@ def page_image_count(page):
 def extract_pdf(data, *, allow_ocr=True):
     if not isinstance(data,bytes) or not data.startswith(b'%PDF-') or not 100<=len(data)<=MAX_BYTES:
         raise ValueError('invalid_or_oversized_pdf')
+    from pdf_archive import capture_if_enabled
+    capture_if_enabled(data)
     from pypdf import PdfReader
     reader=PdfReader(io.BytesIO(data),strict=True)
     if reader.is_encrypted or not 1<=len(reader.pages)<=MAX_PAGES:

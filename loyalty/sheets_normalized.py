@@ -10,6 +10,7 @@ from model import plan_rows
 from sheets_sync import Sheets
 from practical_scope import publication_rows
 from source_lifecycle import reconcile_rows, validate_inventories
+from document_retention import DocumentArchiveSheets, retain_documents
 
 SCHEMAS = {
  'parser_offers':['ID','Программа','Партнёр','Заголовок','Категория','Тип записи','Типы выгод',
@@ -75,7 +76,8 @@ def main():
     if path.stat().st_size>25000000:
         raise ValueError('Normalized bundle exceeds 25 MB')
     bundle=json.loads(path.read_text())
-    rows=publication_rows(prepare(bundle),{r['id']:r['source_id'] for r in bundle['records']})
+    prepared=prepare(bundle)
+    rows=publication_rows(prepared,{r['id']:r['source_id'] for r in bundle['records']})
     if not args.publish:
         print(dump({'mode':'normalized_dry_run','rows':{k:len(v) for k,v in rows.items()}}));return
     args=(os.environ.get('DISCOUNTS_SPREADSHEET_ID',''),os.environ.get('GOOGLE_ACCESS_TOKEN',''))
@@ -83,7 +85,8 @@ def main():
     offers=clients['parser_offers']
     before=offers.values('parser_offers',offers.ensure_tab('parser_offers'))
     reconciled=reconcile_rows(bundle,before,rows['parser_offers'])
-    counts={'parser_offers':offers.upsert('parser_offers',reconciled,expected_before=before),
+    retained=retain_documents(DocumentArchiveSheets(*args),before,prepared['parser_offers'])
+    counts={'parser_documents_archive':retained,'parser_offers':offers.upsert('parser_offers',reconciled,expected_before=before),
             'parser_coverage':clients['parser_coverage'].upsert('parser_coverage',rows['parser_coverage'])}
     print(dump({'mode':'normalized_published_readback_verified','changed_rows':counts}))
 

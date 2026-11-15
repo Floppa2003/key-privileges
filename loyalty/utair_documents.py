@@ -4,6 +4,7 @@ import asyncio
 import copy
 import hashlib
 import json
+import os
 import re
 from urllib.parse import unquote,urljoin,urlsplit
 import requests
@@ -13,6 +14,7 @@ from normalized import content_hash
 from html_text import html_text
 from read_budget import within_source_budget
 from practical_scope import follow_document_link
+from pdf_archive import original_record, ORIGINAL_ONLY
 
 from utair_document_routes import ROOT, direct_resource
 HEADERS={'User-Agent':'Mozilla/5.0'}
@@ -80,13 +82,22 @@ def fetch_document(entry,observed_at,parent_sha256):
             for block in response.iter_content(65536):
                 data.extend(block)
                 if len(data)>MAX_BYTES:raise ValueError('document_size_limit')
-        doc=extract_pdf(bytes(data))
-        rows=document_records('utair_rule_documents',('direct-document:' if direct else 'document:')+key,'Utair Status','Utair',
-            public,observed_at,doc,parent_source=ROOT,parent_sha256=parent_sha256,
-            label='; '.join(entry['labels']),
-            link_kind='page_block' if direct else 'detail_page',
-            locator=('Current landing a[href] resource path: '+resource['path']) if direct else '',
-            extra_details={'direct_document_resources':[resource]} if direct else None)
+        native=('direct-document:' if direct else 'document:')+key
+        label='; '.join(entry['labels'])
+        link_kind='page_block' if direct else 'detail_page'
+        locator=('Current landing a[href] resource path: '+resource['path']) if direct else ''
+        extra={'direct_document_resources':[resource]} if direct else {}
+        try:
+            doc=extract_pdf(bytes(data))
+        except Exception as exc:
+            rows=[original_record('utair_rule_documents',native,'Utair Status','Utair',
+                public,observed_at,bytes(data),exc,parent_source=ROOT,label=label,
+                link_kind=link_kind,locator=locator,
+                extra_details={**extra,'parent_response_sha256':parent_sha256})]
+        else:
+            rows=document_records('utair_rule_documents',native,'Utair Status','Utair',
+                public,observed_at,doc,parent_source=ROOT,parent_sha256=parent_sha256,
+                label=label,link_kind=link_kind,locator=locator,extra_details=extra)
         for row in rows:
             row['details']['discovery_labels']=entry['labels'].copy()
             row['details']['discovery_contexts']=entry['contexts']
@@ -120,6 +131,19 @@ def merge_documents(rows):
 
     result=[]
     for aliases in by_hash.values():
+        parsed=[r for r in aliases if r['details'].get('extraction_method')!=ORIGINAL_ONLY]
+        if not parsed:
+            row=copy.deepcopy(aliases[0])
+            for field in ('public_aliases','direct_document_resources','discovery_labels','discovery_contexts'):
+                values=[]
+                for alias in aliases:
+                    for value in alias['details'].get(field,[]):
+                        if value not in values:values.append(value)
+                if values:row['details'][field]=values
+            row['content_sha256']=content_hash(row)
+            result.append(row)
+            continue
+        aliases=parsed
         first=aliases[0];prefix=first['native_id'].split(':part:')[0]
         variants={};merged={k:[] for k in ('public_aliases','direct_document_resources','discovery_labels','discovery_contexts')}
         for row in aliases:
@@ -162,7 +186,8 @@ async def collect_documents(client,cfg,report,now,limit):
         raise ValueError('unreviewed_document_source')
     raw=await within_source_budget(client,lambda:client.read(ROOT,render=True))
     discovered=discover_documents(raw)
-    entries=[e for e in discovered if follow_document_link(e['url'],'; '.join(e['labels']+e['contexts']))]
+    entries=(discovered if os.environ.get('PDF_CAPTURE_DIR') else
+        [e for e in discovered if follow_document_link(e['url'],'; '.join(e['labels']+e['contexts']))])
     omitted=[{'url':e['url'],'labels':e['labels'],'reason':'out_of_scope_general_programme_rules'} for e in discovered if e not in entries]
     parent_sha=hashlib.sha256(raw.encode()).hexdigest()
     records=[];attempted=0;read=0

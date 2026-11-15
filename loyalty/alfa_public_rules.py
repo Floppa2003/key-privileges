@@ -177,12 +177,16 @@ def fetch_pdf(url: str, *, get=requests.get) -> bytes:
     data = bytes(raw)
     if not data.startswith(b"%PDF-"):
         raise RuntimeError("alfa_public_rules_not_pdf")
+    from pdf_archive import capture_if_enabled
+    capture_if_enabled(data)
     return data
 
 
 def pdf_text(data: bytes) -> str:
     if not data.startswith(b"%PDF-") or len(data) > MAX_BYTES:
         raise ValueError("alfa_public_rules_pdf_identity")
+    from pdf_archive import capture_if_enabled
+    capture_if_enabled(data)
     reader = PdfReader(io.BytesIO(data))
     if not 5 <= len(reader.pages) <= 80:
         raise ValueError("alfa_public_rules_page_bound")
@@ -448,10 +452,18 @@ async def collect_core(cfg, report, observed_at, limit):
     if cfg["url"] != CORE_URL:
         raise ValueError("alfa_core_config_url_changed")
     data = await asyncio.to_thread(fetch_pdf, CORE_URL)
-    rows = parse_core(data, observed_at)
+    try:
+        rows = parse_core(data, observed_at)
+    except Exception as exc:
+        from pdf_archive import original_record
+        report['errors'].append({'phase':'document_text','reason':type(exc).__name__})
+        rows = [original_record(cfg['id'],'public-rules',PROGRAM,'Альфа-Банк',
+            CORE_URL,observed_at,data,exc,label=cfg.get('name','Alfa Only'))]
     rows = rows[:limit]
     report["discovered"] = len(rows)
-    report["coverage"] = "nine_practical_benefits_from_public_core_rules_revision_47; authenticated_partner_catalog_not_read"
+    report["coverage"] = ("public_core_PDF_retained_for_viewing; semantic_parser_failed"
+        if rows and rows[0]['details'].get('extraction_method')=='source_pdf_original_only'
+        else "nine_practical_benefits_from_public_core_rules_revision_47; authenticated_partner_catalog_not_read")
     return rows
 
 
@@ -459,10 +471,18 @@ async def collect_cashback(cfg, report, observed_at, limit):
     if cfg["url"] != CASHBACK_URL:
         raise ValueError("alfa_cashback_config_url_changed")
     data = await asyncio.to_thread(fetch_pdf, CASHBACK_URL)
-    rows = parse_cashback(data, observed_at)
+    try:
+        rows = parse_cashback(data, observed_at)
+    except Exception as exc:
+        from pdf_archive import original_record
+        report['errors'].append({'phase':'document_text','reason':type(exc).__name__})
+        rows = [original_record(cfg['id'],'cashback-rules',PROGRAM,'Альфа-Банк',
+            CASHBACK_URL,observed_at,data,exc,label=cfg.get('name','Alfa Only'))]
     rows = rows[:limit]
     report["discovered"] = len(rows)
-    report["coverage"] = "alfa_only_cashback_limits_from_public_reverse_cashback_rules_revision_101; personal_category_rates_not_read"
+    report["coverage"] = ("public_cashback_PDF_retained_for_viewing; semantic_parser_failed"
+        if rows and rows[0]['details'].get('extraction_method')=='source_pdf_original_only'
+        else "alfa_only_cashback_limits_from_public_reverse_cashback_rules_revision_101; personal_category_rates_not_read")
     return rows
 
 

@@ -193,15 +193,24 @@ class Reader:
                 if last not in ('el_transport_error','el_provider_unavailable','el_html_needs_render_or_scope_review','el_no_content'):break
         raise ValueError(last)
 
-def rows_for(data,entry,receipt,observed_at):
+def rows_for(data,entry,receipt,observed_at,*,document_error=None):
     names=sorted({p['partner'] for p in entry['parents']});partner=names[0] if len(names)==1 else None
     detail={'retrieval_method':METHOD,'parent_references':entry['parents'],'download_receipt':receipt,
         'source_account_used':False,'eligibility_verified':False,'recursive_links_read':False}
     if data.startswith(b'%PDF-'):
-        doc=extract_pdf(data)
-        rows=document_records(SID,'pdf:'+sha(entry['url'].encode()),'ЕКП — связанные публичные условия',partner,
-            entry['url'],observed_at,doc,parent_source=entry['parents'][0]['source_url'],
-            parent_sha256=entry['parents'][0]['content_sha256'],label=entry['parents'][0]['label'],extra_details=detail)
+        if document_error is None:
+            try:doc=extract_pdf(data)
+            except Exception as exc:document_error=exc
+        if document_error is not None:
+            from pdf_archive import original_record
+            rows=[original_record(SID,'pdf:'+sha(entry['url'].encode()),'ЕКП — связанные публичные условия',partner,
+                entry['url'],observed_at,data,document_error,parent_source=entry['parents'][0]['source_url'],
+                label=entry['parents'][0]['label'],extra_details={**detail,
+                    'parent_response_sha256':entry['parents'][0]['content_sha256']})]
+        else:
+            rows=document_records(SID,'pdf:'+sha(entry['url'].encode()),'ЕКП — связанные публичные условия',partner,
+                entry['url'],observed_at,doc,parent_source=entry['parents'][0]['source_url'],
+                parent_sha256=entry['parents'][0]['content_sha256'],label=entry['parents'][0]['label'],extra_details=detail)
     else:
         title,value=html_fields(data)
         from owned_offer_dates import labelled_numeric_campaign_period
@@ -242,6 +251,16 @@ def assemble(base,audit,folder):
             raise ValueError('el_receipt')
         if not entry['url'].lower().endswith('.pdf') and data!=clean_html(data).encode():raise ValueError('el_unsanitized_html')
         if data.startswith(b'%PDF-'):
+            if 'document_error' in result:
+                if ('document' in result or not isinstance(result['document_error'],str)
+                    or not re.fullmatch(r'[A-Za-z][A-Za-z0-9_]{0,79}',result['document_error'])):
+                    raise ValueError('el_document_error_shape')
+                # Transport and exact saved bytes were checked above. A failed
+                # parser adds a document reference, never invented pages/terms.
+                rows.extend(rows_for(data,entry,receipt,audit['started_at'],document_error=ValueError()))
+                downloaded+=1
+                errors.append({'url':entry['url'],'reason':'el_pdf_original_requires_viewing'})
+                continue
             # OCR was already executed once during collection; validate its saved
             # page identities and exact parts, never perform it again on publish.
             doc=result['document']
@@ -323,12 +342,13 @@ def validate_record(r):
 
 def main():
     parser=argparse.ArgumentParser();parser.add_argument('--input',default='ekp-upstream/normalized.json');parser.add_argument('--out',default='ekp-linked-output')
-    args=parser.parse_args();base=json.loads(Path(args.input).read_text());started=now();entries,inventory=discover(base,instant(started),practical_only=True)
+    practical_only=not bool(os.environ.get('PDF_CAPTURE_DIR'))
+    args=parser.parse_args();base=json.loads(Path(args.input).read_text());started=now();entries,inventory=discover(base,instant(started),practical_only=practical_only)
     folder=Path(args.out);folder.mkdir(parents=True,exist_ok=True);(folder/'objects').mkdir(exist_ok=True)
     (folder/'parents.json').write_text(json.dumps(base,ensure_ascii=False))
     reader=Reader(os.getenv('SCRAPINGANT_API_KEY',''))
     audit={'run_id':os.environ['GITHUB_RUN_ID']+':'+os.environ['GITHUB_RUN_ATTEMPT'],'commit':os.environ['GITHUB_SHA'],
-        'started_at':started,'practical_only':True,'inventory':inventory,'results':[],'requests':reader.receipts,'reserved':0,'source_account_used':False}
+        'started_at':started,'practical_only':practical_only,'inventory':inventory,'results':[],'requests':reader.receipts,'reserved':0,'source_account_used':False}
     for i,entry in enumerate(entries):
         result={'url':entry['url']};audit['results'].append(result)
         try:
@@ -336,7 +356,9 @@ def main():
             data,receipt=reader.read(entry['url']);pdf=data.startswith(b'%PDF-')
             name=sha(entry['url'].encode())+('.pdf' if pdf else '.html');(folder/'objects'/name).write_bytes(data)
             result.update(file=name,sha256=sha(data),receipt=receipt)
-            if pdf:result['document']=extract_pdf(data)
+            if pdf:
+                try:result['document']=extract_pdf(data)
+                except Exception as exc:result['document_error']=type(exc).__name__
         except Exception as exc:
             code=str(exc) if isinstance(exc,ValueError) and str(exc).startswith('el_') else 'el_collection_error'
             result.clear();result.update(url=entry['url'],error=code)

@@ -53,6 +53,8 @@ def required_integer(match,group=1):
 def pdf_pages(data: bytes) -> list[str]:
     if not isinstance(data,bytes) or not data.startswith(b'%PDF-') or not 100<=len(data)<=3000000:
         raise ValueError('invalid_or_oversized_pdf')
+    from pdf_archive import capture_if_enabled
+    capture_if_enabled(data)
     # Imported only in collection, never needed by the Google publisher.
     from pypdf import PdfReader
     from document_text import _prepare_pdf_page, needs_page_ocr
@@ -152,5 +154,11 @@ def parse_pdf_pages(source: str,pages: list[str],observed_at: str,*,document_sha
 
 async def collect_pdf_rule(client,cfg,now):
     data=await within_source_budget(client,lambda:client.read_pdf(cfg['url']))
-    pages=pdf_pages(data)
-    return [parse_pdf_pages(cfg['id'],pages,now,document_sha256=hashlib.sha256(data).hexdigest())]
+    try:
+        pages=pdf_pages(data)
+        return [parse_pdf_pages(cfg['id'],pages,now,document_sha256=hashlib.sha256(data).hexdigest())]
+    except Exception as exc:
+        from pdf_archive import original_record
+        spec=PDF_RULES[cfg['id']]
+        return [original_record(cfg['id'],'rules',spec['program'],spec['partner'],
+            cfg['url'],now,data,exc,label=spec['title'])]

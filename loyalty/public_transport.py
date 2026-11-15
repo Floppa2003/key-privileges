@@ -264,6 +264,8 @@ class PublicSource:
             data=await response.body()
             if len(data)>6000000:raise RuntimeError('source_response_too_large')
             if not data.startswith(b'%PDF-'):raise RuntimeError('not_a_pdf')
+            from pdf_archive import capture_if_enabled
+            capture_if_enabled(data)
             return data
 
     async def json(self,url: str,*,method='GET',data=None,content_type=None):

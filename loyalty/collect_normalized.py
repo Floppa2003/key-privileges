@@ -73,6 +73,20 @@ async def collect_s7(client,cfg,report,now,limit):
     return records
 
 
+def rgo_catalogue_entries(raw,base_url):
+    """Keep the live card label beside its link; a logo filename is not a name."""
+    soup=BeautifulSoup(raw,'html.parser');entries={}
+    for node in soup.select('.loyalty-card__link[href]'):
+        url=urljoin(base_url,node['href'])
+        card=node.find_parent(class_='loyalty-card')
+        heading=card.select_one('.loyalty-card__title') if card else None
+        label=' '.join(heading.get_text(' ',strip=True).split()) if heading else ''
+        entry=entries.setdefault(url,{'url':url,'label':''})
+        if label and label not in entry['label'].split('; '):
+            entry['label']='; '.join(filter(None,(entry['label'],label)))
+    return list(entries.values())
+
+
 async def collect_rgo(client,cfg,report,now,limit):
     raw=await client.read(cfg['url'],render=True)
     page=client.page;exhausted=False
@@ -98,15 +112,18 @@ async def collect_rgo(client,cfg,report,now,limit):
         exhausted=not await more.count() or not await more.is_visible()
         if not exhausted:
             report['errors'].append({'phase':'catalog','reason':'pagination_iteration_limit_reached'})
-    soup=BeautifulSoup(await page.content(),'html.parser')
-    urls=list(dict.fromkeys(urljoin(cfg['url'],x['href']) for x in soup.select('.loyalty-card__link[href]')))
+    catalogue=await page.content()
+    entries=rgo_catalogue_entries(catalogue,cfg['url'])
+    urls=[e['url'] for e in entries]
     report['discovered']=len(urls);report['coverage']='load_more_exhausted' if exhausted else 'pagination_not_exhausted'
     records=[]
-    for index,url in enumerate(urls[:limit]):
+    for index,entry in enumerate(entries[:limit]):
+        url=entry['url']
         try:
             if urlsplit(url).path.lower().endswith('.pdf'):
                 data=await within_source_budget(client,lambda:client.read_pdf(url))
-                rows=await within_source_budget(client,lambda:asyncio.to_thread(extract_rgo_pdf,data,url,now))
+                rows=await within_source_budget(client,lambda:asyncio.to_thread(extract_rgo_pdf,data,url,now,
+                    label=entry['label'],parent_sha256=hashlib.sha256(catalogue.encode()).hexdigest()))
                 records.extend(rows)
                 if rows[0]['details']['document_errors']:
                     report['errors'].append({'phase':'document_text','path':urlsplit(url).path,'errors':rows[0]['details']['document_errors']})
@@ -190,7 +207,11 @@ async def one(browser,cfg,now,limit):
                     await client.read(cfg['url'],render=True)
                     report['coverage']='page_accessible_adapter_not_yet_implemented'
                     report['errors'].append({'phase':'extraction','reason':'no_reviewed_adapter'})
-        for r in records:validate_offer(r)
+        for r in records:
+            validate_offer(r)
+            if r['details'].get('extraction_method')=='source_pdf_original_only':
+                report['errors'].append({'phase':'document_text','reason':'pdf_original_requires_viewing',
+                    'document_sha256':r['details']['document_sha256']})
         # One physical document can create several bounded evidence parts.
         report['discovered_items']=report['discovered']
         report['discovered']=max(report['discovered'],len(records))

@@ -731,7 +731,8 @@ def make_offer(source_id: str, native_id: str, program: str, partner_name: str |
     if valid_from and valid_until and valid_from>valid_until:
         raise ValueError('Reversed validity interval')
     benefit,conditions,redemption = (text(v, markup=False) for v in (benefit,conditions,redemption))
-    if not benefit and not conditions:
+    if not benefit and not conditions and not (record_kind=='source_observation'
+            and (details or {}).get('extraction_method')=='source_pdf_original_only'):
         raise ValueError('An offer needs source evidence')
     if any(len(s)>40000 for s in (benefit,conditions,redemption)):
         raise ValueError('Oversized text; refusing to truncate conditions')
@@ -779,7 +780,12 @@ def validate_offer(r: dict) -> None:
     if r.get('source_id') not in HOSTS or urlsplit(r.get('source_url','')).hostname not in HOSTS[r['source_id']]:
         raise ValueError('Unexpected source URL')
     canonical_url(r['source_url'])
-    validate_recovered(r)
+    original_only=r.get('details',{}).get('extraction_method')=='source_pdf_original_only'
+    if original_only:
+        from pdf_archive import validate_original_record
+        validate_original_record(r)
+    else:
+        validate_recovered(r)
     if r['source_id']=='loyals':
         post=r['details']['public_post']
         if (r['benefit_text'] != text(post['content']['rendered'])
@@ -806,6 +812,8 @@ def validate_offer(r: dict) -> None:
         raise ValueError('Promo code evidence mismatch')
     if r.get('details',{}).get('table_benefits')!=extract_table_benefits(r.get('tables',[])):
         raise ValueError('Table benefit evidence mismatch')
+    if original_only:
+        return
     if r['details'].get('live_document_text'):
         from document_text import validate_document_record
         validate_document_record(r)
