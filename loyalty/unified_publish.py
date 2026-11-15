@@ -21,6 +21,7 @@ from practical_scope import select_inputs,VERSION as SCOPE_VERSION
 from catalogue_publish import prepare_catalogue, publish_catalogue, verify_catalogue
 from document_catalogue import (document_sources, read_archived_documents,
     prepare_documents, publish_documents, verify_documents)
+from pdf_archive import current_archive
 
 class UnifiedSheets(Sheets):
     schemas=SCHEMAS
@@ -132,7 +133,10 @@ def main():
     args=p.parse_args()
     if args.publish:
         if args.out or args.offline_input:p.error('Live publication never writes local/export artifacts')
-        publish_all(as_of=args.as_of);return
+        with current_archive() as archive_commit:
+            print(dump({'mode':'public_pdf_snapshot_verified','commit_sha':archive_commit}))
+            publish_all(as_of=args.as_of)
+        return
     if not args.offline_input:p.error('Use --publish or --offline-input')
     path=Path(args.offline_input)
     if path.stat().st_size>50000000:raise ValueError('Offline input bound exceeded')

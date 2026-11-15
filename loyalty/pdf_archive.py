@@ -6,10 +6,14 @@ No sidecar index, model output, source text, or signed download URL is stored.
 """
 from __future__ import annotations
 
+from contextlib import contextmanager
 import hashlib
+import io
 import os
 from pathlib import Path
 import re
+import subprocess
+import tarfile
 import tempfile
 
 MAX_BYTES = 20_000_000
@@ -92,6 +96,48 @@ def archive_url(document_sha256, *, directory=None):
         return ''
     _verify(path, document_sha256)
     return URL_ROOT + document_sha256 + '.pdf'
+
+
+@contextmanager
+def current_archive():
+    """Read main's PDF data without checking out or executing its newer code.
+
+    Every live unified publisher enters here, including queued runs whose
+    tested executable revision predates an already published PDF. Failure is
+    fatal before the publisher can replace valid links with missing-copy rows.
+    """
+    command = ['git', '-C', str(DEFAULT_ARCHIVE_DIR.parent)]
+    options = {'check': True, 'capture_output': True, 'timeout': 120,
+               'env': {**os.environ, 'GIT_TERMINAL_PROMPT': '0'}}
+    subprocess.run(command + ['fetch', '--no-tags', '--depth=1', 'origin',
+                              'refs/heads/main'], **options)
+    commit = subprocess.run(command + ['rev-parse', '--verify', 'FETCH_HEAD^{commit}'],
+                            **options).stdout.decode('ascii').strip()
+    if not re.fullmatch('[a-f0-9]{40}', commit):
+        raise ValueError('archive_snapshot_commit_invalid')
+    packed = subprocess.run(command + ['archive', '--format=tar', commit,
+                                      'source-documents'], **options).stdout
+    with tempfile.TemporaryDirectory(prefix='loyalty-pdf-archive-') as directory:
+        with tarfile.open(fileobj=io.BytesIO(packed), mode='r:') as archive:
+            for member in archive:
+                if member.isdir() and member.name.rstrip('/') == 'source-documents':
+                    continue
+                name = re.fullmatch(r'source-documents/([a-f0-9]{64})[.]pdf', member.name)
+                if not name or not member.isfile() or not 100 <= member.size <= MAX_BYTES:
+                    raise ValueError('archive_snapshot_entry_invalid')
+                data = archive.extractfile(member).read()
+                if validated_sha(data) != name[1]:
+                    raise ValueError('archive_snapshot_digest_mismatch')
+                capture_pdf(data, directory=directory)
+        previous = os.environ.get('PDF_ARCHIVE_DIR')
+        os.environ['PDF_ARCHIVE_DIR'] = directory
+        try:
+            yield commit
+        finally:
+            if previous is None:
+                os.environ.pop('PDF_ARCHIVE_DIR', None)
+            else:
+                os.environ['PDF_ARCHIVE_DIR'] = previous
 
 
 def original_record(source_id, native_prefix, program, partner, url, observed_at,

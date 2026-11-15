@@ -23,10 +23,12 @@ LLM jobs and eligibility rules are outside this change.
 3. **Projection:** add the copy link to the generated Sheet view, with guarded,
    idempotent native UI migration. Keep unparsed and bulk documents searchable
    without treating them as parsed discounts. Links require verified local bytes.
-4. **Persistence:** archive collection output to `main` before Sheet publication;
-   use the archive commit in the publisher. Keep the write job separate from
-   Google credentials. Verify remote committed bytes and retry only explicit
-   concurrent-head conflicts. Preserve all existing versions.
+4. **Persistence:** archive collection output to `main` before Sheet publication.
+   Every live publisher then reads a fresh, verified snapshot of only the PDF
+   data from `main`, while its executable checkout remains at the tested run
+   revision. This also protects queued publishers from erasing newer copy links.
+   Keep the write job separate from Google credentials. Verify remote committed
+   bytes and retry only explicit concurrent-head conflicts. Preserve all versions.
 5. **Backfill and skill:** retrieve known public document sources from current
    Sheet metadata and existing collectors; match historical hashes exactly,
    report unavailable versions, and publish the validated reusable lookup skill.
