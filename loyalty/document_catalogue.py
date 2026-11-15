@@ -232,15 +232,6 @@ def publish_documents(client, plan):
     requests.append({'updateCells':{'start':{'sheetId':TAB_ID,'rowIndex':0,'columnIndex':0},
         'rows':[{'values':[literal(v) for v in HEADERS]}],'fields':'userEnteredValue'}})
     client.request('POST',':batchUpdate',json={'requests':requests})
-    batch=[];size=0
-    for number,row in enumerate(plan['rows'][1:],1):
-        operation={'updateCells':{'start':{'sheetId':TAB_ID,'rowIndex':number,'columnIndex':0},
-            'rows':[{'values':[literal(v) for v in row]}],'fields':'userEnteredValue'}}
-        weight=len(json.dumps(operation,ensure_ascii=False).encode())
-        if batch and size+weight>800000:
-            client.request('POST',':batchUpdate',json={'requests':batch});batch=[];size=0
-        batch.append(operation);size+=weight
-    if batch:client.request('POST',':batchUpdate',json={'requests':batch})
     full={'sheetId':TAB_ID,'startRowIndex':0,'endRowIndex':plan['row_count'],'startColumnIndex':0,'endColumnIndex':12}
     requests=[
         {'repeatCell':{'range':full,'cell':{'userEnteredFormat':{'verticalAlignment':'TOP','wrapStrategy':'WRAP',
@@ -253,10 +244,24 @@ def publish_documents(client, plan):
         {'updateDimensionProperties':{'range':{'sheetId':TAB_ID,'dimension':'COLUMNS','startIndex':8,'endIndex':15},
             'properties':{'hiddenByUser':True},'fields':'hiddenByUser'}},
         {'updateCells':{'start':{'sheetId':TAB_ID,'rowIndex':0,'columnIndex':6},'rows':[{'values':[{'note':
-            'Дата наблюдения исходного документа, а не срок действия предложения. Копия не подтверждает актуальность или право участия.'}]}],'fields':'note'}},
-        state_request(plan['state'])]
+            'Дата наблюдения исходного документа, а не срок действия предложения. Копия не подтверждает актуальность или право участия.'}]}],'fields':'note'}}]
     for start,end,width in ((0,2,230),(2,3,300),(3,4,270),(4,6,320),(6,7,205),(7,8,360)):
         requests.append({'updateDimensionProperties':{'range':{'sheetId':TAB_ID,'dimension':'COLUMNS',
             'startIndex':start,'endIndex':end},'properties':{'pixelSize':width},'fields':'pixelSize'}})
     client.request('POST',':batchUpdate',json={'requests':requests})
+    batch=[];size=0
+    for number,row in enumerate(plan['rows'][1:],1):
+        cells=[literal(v) for v in row]
+        if row[5]:
+            # Apply links after base formatting: Sheets can promote a whole-
+            # cell rich-text run to a cell-level link that formatting resets.
+            cells[5]['textFormatRuns']=[{'startIndex':0,'format':{'link':{'uri':row[5]}}}]
+        operation={'updateCells':{'start':{'sheetId':TAB_ID,'rowIndex':number,'columnIndex':0},
+            'rows':[{'values':cells}],'fields':'userEnteredValue,textFormatRuns'}}
+        weight=len(json.dumps(operation,ensure_ascii=False).encode())
+        if batch and size+weight>800000:
+            client.request('POST',':batchUpdate',json={'requests':batch});batch=[];size=0
+        batch.append(operation);size+=weight
+    if batch:client.request('POST',':batchUpdate',json={'requests':batch})
+    client.request('POST',':batchUpdate',json={'requests':[state_request(plan['state'])]})
     verify_documents(client,plan)
