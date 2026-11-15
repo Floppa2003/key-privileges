@@ -2,7 +2,7 @@ name: Normalize all stored loyalty sources
 on:
   push:
     branches: [main, loyalty/unified-normalization]
-    paths: [loyalty/unified*, loyalty/tests/test_unified*, .github/workflows/normalize.yml]
+    paths: [loyalty/unified*, loyalty/tests/test_unified*, loyalty/document_catalogue.py, .github/workflows/normalize.yml]
   workflow_dispatch:
 permissions:
   contents: read
