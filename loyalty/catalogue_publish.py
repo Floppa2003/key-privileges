@@ -44,15 +44,15 @@ def prepare_catalogue(client, records, *, as_of, source_fingerprint, generation)
         raise ValueError('Unexpected reader catalogue dimensions')
     if grid['columnCount'] < 26:
         raise ValueError('Reader catalogue state columns missing')
-    old = read_values(client, "'_ui_catalog'!A1:Q1")
-    if old != [HEADERS]:
+    old = read_values(client, "'_ui_catalog'!A1:R1")
+    if old not in ([HEADERS], [HEADERS[:-1]]):
         raise ValueError('Unexpected reader catalogue header')
     result = build_catalogue(records, as_of=as_of)
     rows = [HEADERS] + result['rows']
     if len(rows) > grid['rowCount'] or not result['rows']:
         raise ValueError('Refusing empty or oversized reader catalogue')
     for row in rows:
-        if len(row) != 17 or any(not isinstance(v,str) or len(v)>45000 for v in row):
+        if len(row) != len(HEADERS) or any(not isinstance(v,str) or len(v)>45000 for v in row):
             raise ValueError('Reader catalogue cell contract')
     state = [['Каталог',VERSION], ['Статус','verified'], ['Дата пересчёта',as_of],
              ['Записей',str(len(result['rows']))], ['Поколение',generation],
@@ -67,12 +67,12 @@ def verify_catalogue(client, plan):
     if plan is None:return
     from ui_freshness import verify_ui
     verify_ui(client,plan.get('ui'),read_values)
-    actual = read_values(client, f"'_ui_catalog'!A1:Q{plan['properties']['gridProperties']['rowCount']}")
-    if padded(actual,17) != plan['rows']:
+    actual = read_values(client, f"'_ui_catalog'!A1:R{plan['properties']['gridProperties']['rowCount']}")
+    if padded(actual,len(HEADERS)) != plan['rows']:
         raise ValueError('Reader catalogue full readback mismatch')
     if read_values(client, STATE_RANGE) != plan['state']:
         raise ValueError('Reader catalogue state readback mismatch')
-    if read_values(client, f"'_ui_catalog'!R1:X{plan['properties']['gridProperties']['rowCount']}"):
+    if read_values(client, f"'_ui_catalog'!S1:X{plan['properties']['gridProperties']['rowCount']}"):
         raise ValueError('Obsolete raw catalogue helper remains')
 
 

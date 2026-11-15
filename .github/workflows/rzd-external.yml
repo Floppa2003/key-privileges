@@ -52,6 +52,8 @@ jobs:
           python-version: '3.12'
       - run: python -m pip install -r loyalty/requirements.txt
       - name: Read public source pages and linked rules without any credentials
+        env:
+          PDF_CAPTURE_DIR: rzd-external-output/source-documents
         run: python loyalty/rzd_external.py
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
@@ -59,10 +61,18 @@ jobs:
           name: rzd-external-public-${{ github.run_id }}-${{ github.run_attempt }}
           path: rzd-external-output/
           retention-days: 7
-  publish:
+  archive:
     needs: collect
+    if: needs.collect.result == 'success' && github.repository == 'Floppa2003/key-privileges' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+    uses: ./.github/workflows/archive-pdfs.yml
+    with:
+      artifact_name: rzd-external-public-${{ github.run_id }}-${{ github.run_attempt }}
+  publish:
+    needs: [collect, archive]
     if: >-
-      needs.collect.result == 'success' && github.repository == 'Floppa2003/key-privileges' &&
+      needs.collect.result == 'success' && needs.archive.result == 'success' && github.repository == 'Floppa2003/key-privileges' &&
       github.ref == 'refs/heads/main' && vars.LOYALTY_SHEETS_SYNC == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 10

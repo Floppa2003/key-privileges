@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import json
+import os
 import re
 import tempfile
 import time
@@ -351,12 +352,21 @@ def _collect(cfg, report, now, limit, *, include_documents=True):
             return collect_loyals(reader,cfg,report,now,limit)
         _, raw=reader.read(cfg['url'])
         if SOURCES[cfg['id']].get('format')=='pdf':
-            from known_pdf import pdf_pages, parse_pdf_pages
-            row=parse_pdf_pages(cfg['id'],pdf_pages(raw),now,document_sha256=hashlib.sha256(raw).hexdigest())
+            from known_pdf import pdf_pages, parse_pdf_pages, PDF_RULES
+            try:
+                row=parse_pdf_pages(cfg['id'],pdf_pages(raw),now,document_sha256=hashlib.sha256(raw).hexdigest())
+            except Exception as exc:
+                from pdf_archive import original_record
+                spec=PDF_RULES[cfg['id']]
+                row=original_record(cfg['id'],'rules',spec['program'],spec['partner'],cfg['url'],now,
+                    raw,exc,label=spec['title'],extra_details={'transport':transport_evidence(cfg['id'])})
+                report['errors'].append({'phase':'document_text','reason':type(exc).__name__})
             row['details']['transport']=transport_evidence(cfg['id'])
             row['content_sha256']=content_hash(row)
             report['discovered']=1
-            report['coverage']='verified_exact_public_PDF; all native-text pages; supplementary rules'
+            report['coverage']=('verified_public_PDF_retained_for_viewing; semantic_parser_failed'
+                if row['details'].get('extraction_method')=='source_pdf_original_only'
+                else 'verified_exact_public_PDF; all native-text pages; supplementary rules')
             return [row]
         parent=parse_bank_page(cfg['id'],raw.decode('utf-8'),now)
         records=[parent];inventory=[];seen=set()
@@ -375,6 +385,7 @@ def _collect(cfg, report, now, limit, *, include_documents=True):
             item={'url':url,'label':link['label'],'status':'outside_direct_PDF_scope'}
             inventory.append(item)
             if url not in reader.document_urls:continue
+            data=None
             try:
                 if len(records)>=limit:raise RuntimeError('record_limit')
                 data,transport=reader.read_document(url)
@@ -393,6 +404,14 @@ def _collect(cfg, report, now, limit, *, include_documents=True):
                 reason=str(exc)[:160] if isinstance(exc,(RuntimeError,ValueError)) else type(exc).__name__
                 item.update(status='failed',reason=reason)
                 report['errors'].append({'phase':'document','path':urlsplit(url).path,'reason':reason})
+                if data is not None:
+                    from pdf_archive import original_record
+                    row=original_record(cfg['id'],'linked-pdf:'+hashlib.sha256(url.encode()).hexdigest()[:32],
+                        parent['program'],parent['partner_name'],url,now,data,exc,
+                        parent_source=cfg['url'],label=link['label'],
+                        extra_details={'transport':transport_evidence(cfg['id']),'document_download':transport,
+                            'parent_record_id':parent['id'],'parent_response_sha256':hashlib.sha256(raw).hexdigest()})
+                    if len(records)<limit:records.append(row)
                 if reason in ('source_rate_limited','source_time_budget_exhausted','record_limit'):break
         parent['details']['linked_document_inventory']=inventory
         parent['details']['linked_documents_discovery']='live_parent_page_direct_PDFs_only'
@@ -407,4 +426,5 @@ def _collect(cfg, report, now, limit, *, include_documents=True):
 
 
 async def collect_recovered(cfg, report, now, limit):
-    return await asyncio.to_thread(_collect,cfg,report,now,limit,include_documents=False)
+    return await asyncio.to_thread(_collect,cfg,report,now,limit,
+        include_documents=bool(os.environ.get('PDF_CAPTURE_DIR')))

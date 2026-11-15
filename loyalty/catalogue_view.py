@@ -268,9 +268,12 @@ def record_row(n, as_of):
         comments="\n".join(filter(None,[text(comments),"В периоде акции год не написан; использован текущий месяц и год заголовка страницы."]))
     if "partial_restaurant_reward_only" in warn:
         status="Только ресторанная скидка"
+    from document_catalogue import document_digest
+    from pdf_archive import archive_url
     row=[name,raw.get("program") or "",headline,code,activation,terms,period or "",
          raw.get("category") or "",raw.get("observed_at") or "",source,text(comments),
-         ROLE.get(kind,"Предложение"),status,raw["id"],raw["origin"],str(raw["source_row"]),raw.get("title") or ""]
+         ROLE.get(kind,"Предложение"),status,raw["id"],raw["origin"],str(raw["source_row"]),raw.get("title") or "",
+         archive_url(document_digest(raw))]
     return row,None
 
 
@@ -284,7 +287,7 @@ def build_catalogue(records, *, as_of):
         rows.append(row)
     seen={};unique=[]
     for row in rows:
-        signature=tuple(key(row[j]) for j in (0,1,2,3,4,5,6,7,9,10,11,12))
+        signature=tuple(key(row[j]) for j in (0,1,2,3,4,5,6,7,9,10,11,12,17))
         if signature in seen:
             removed.append({"id":row[13],"reason":"точный дубль","same_as":seen[signature]});continue
         seen[signature]=row[13];unique.append(row)

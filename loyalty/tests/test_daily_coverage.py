@@ -1,6 +1,7 @@
 """Daily coverage must outlive the old 5,000-row diagnostic window."""
 import copy
 import json
+import os
 import sys
 import unittest
 from pathlib import Path
@@ -72,6 +73,8 @@ class DailyCoverageTests(unittest.TestCase):
              patch.object(publication.Path, 'read_text', return_value=json.dumps(payload)), \
              patch.object(publication, 'NormalizedSheets') as offers, \
              patch.object(publication, 'CoverageSheets', create=True) as coverage, \
+             patch.dict(os.environ, {'DISCOUNTS_SPREADSHEET_ID': 'fixture-sheet',
+                                     'GOOGLE_ACCESS_TOKEN': 'fixture-token'}), \
              patch.object(sys, 'argv', ['sheets_normalized.py', '--publish']):
             stat.return_value.st_size = 2000
             offers.return_value.upsert.return_value = 1

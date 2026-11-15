@@ -115,6 +115,8 @@ def fetch_pdf(url: str, *, get=requests.get) -> bytes:
     data = bytes(raw)
     if not data.startswith(b"%PDF-"):
         raise RuntimeError("alfa_partner_pdf_not_pdf")
+    from pdf_archive import capture_if_enabled
+    capture_if_enabled(data)
     return data
 
 
@@ -125,6 +127,8 @@ def pdf_text(data: bytes) -> str:
 
     if not data.startswith(b"%PDF-") or len(data) > MAX_BYTES:
         raise ValueError("alfa_partner_pdf_identity")
+    from pdf_archive import capture_if_enabled
+    capture_if_enabled(data)
     reader = PdfReader(io.BytesIO(data))
     if not 4 <= len(reader.pages) <= MAX_PAGES:
         raise ValueError("alfa_partner_pdf_page_bound")
@@ -449,12 +453,21 @@ async def collect(cfg, report, observed_at: str, limit: int) -> list[dict]:
     rows = []
     errors = []
     for spec in DOCS[:limit]:
+        data = None
         try:
             data = await asyncio.to_thread(fetch_pdf, spec["url"])
             rows.append(parse_document(spec, data, observed_at))
         except Exception as exc:
             reason = str(exc) if isinstance(exc, (ValueError, RuntimeError)) else type(exc).__name__
             errors.append({"phase": "partner_pdf", "native_id": spec["native_id"], "reason": reason[:160]})
+            if data is not None:
+                from pdf_archive import original_record, validated_sha
+                try:
+                    validated_sha(data)
+                except ValueError:
+                    continue  # No PDF copy can be promised for an invalid download.
+                rows.append(original_record(SOURCE_ID,spec['native_id'],PROGRAM,spec['display_name'],
+                    spec['url'],observed_at,data,exc,label=spec['display_name']))
     report["discovered"] = len(DOCS)
     report["coverage"] = (
         "five_reviewed_public_alfa_only_partner_rule_pdfs; "

@@ -177,7 +177,15 @@ def bank_record(raw,observed):
                  'rzd_exchange_confirmed':False},warnings=['external_product_page_not_rzd_exchange_confirmation','user_eligibility_not_verified'])
 
 def bank_pdf_records(data,entry,parent,observed):
-    doc=extract_pdf(data,allow_ocr=False)
+    try:
+        doc=extract_pdf(data,allow_ocr=False)
+    except Exception as exc:
+        from pdf_archive import original_record
+        return [original_record('rzd_unicredit_rules','pdf:'+sha(entry['url'].encode())[:32],
+            'РЖД Бонус — связанные правила ЮниКредита','ЮниКредит Банк',entry['url'],observed,data,exc,
+            parent_source=BANK,label=entry['label'],extra_details={'retrieval_method':METHOD,
+                'parent_record_id':parent['id'],'parent_response_sha256':parent['content_sha256'],
+                'rzd_exchange_confirmed':False})]
     if not doc['title'].strip() or re.fullmatch(r'\d+',doc['title'].strip()):
         doc['title']=entry['label']
     return document_records('rzd_unicredit_rules','pdf:'+sha(entry['url'].encode())[:32],

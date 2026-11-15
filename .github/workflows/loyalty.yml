@@ -50,6 +50,7 @@ jobs:
         env:
           PAGE_LIMIT: ${{ inputs.limit || '500' }}
           SOURCE_IDS: ${{ inputs.sources || '' }}
+          PDF_CAPTURE_DIR: loyalty-output/source-documents
         run: xvfb-run -a python loyalty/collect_normalized.py --limit "$PAGE_LIMIT" --sources "$SOURCE_IDS"
       - name: Validate publication payload without access to Google
         if: always()
@@ -88,10 +89,18 @@ jobs:
         env:
           SOURCE_IDS: ${{ inputs.sources || '' }}
         run: python loyalty/source_lifecycle.py --input loyalty-output/normalized.json --sources "$SOURCE_IDS"
-  publish:
+  archive:
     needs: collect
+    if: needs.collect.result == 'success' && github.repository == 'Floppa2003/key-privileges' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+    uses: ./.github/workflows/archive-pdfs.yml
+    with:
+      artifact_name: loyalty-public-${{ github.run_id }}-${{ github.run_attempt }}
+  publish:
+    needs: [collect, archive]
     if: >-
-      needs.collect.result == 'success' &&
+      needs.collect.result == 'success' && needs.archive.result == 'success' &&
       github.ref == 'refs/heads/main' &&
       vars.LOYALTY_SHEETS_SYNC == 'true' &&
       (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.publish))

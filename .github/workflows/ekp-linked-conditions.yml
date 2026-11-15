@@ -82,6 +82,7 @@ jobs:
       - name: Read public rules under the existing Free budget without Google credentials
         env:
           SCRAPINGANT_API_KEY: ${{ secrets.SCRAPINGANT_API_KEY }}
+          PDF_CAPTURE_DIR: ekp-linked-output/source-documents
         run: python loyalty/ekp_linked_rules.py
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
@@ -89,10 +90,18 @@ jobs:
           name: ekp-linked-public-${{ github.run_id }}-${{ github.run_attempt }}
           path: ekp-linked-output/
           retention-days: 7
-  publish:
+  archive:
     needs: collect
+    if: needs.collect.result == 'success' && github.repository == 'Floppa2003/key-privileges' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+    uses: ./.github/workflows/archive-pdfs.yml
+    with:
+      artifact_name: ekp-linked-public-${{ github.run_id }}-${{ github.run_attempt }}
+  publish:
+    needs: [collect, archive]
     if: >-
-      needs.collect.result == 'success' && github.repository == 'Floppa2003/key-privileges' &&
+      needs.collect.result == 'success' && needs.archive.result == 'success' && github.repository == 'Floppa2003/key-privileges' &&
       github.ref == 'refs/heads/main' && vars.LOYALTY_SHEETS_SYNC == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 10

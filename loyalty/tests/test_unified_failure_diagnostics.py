@@ -19,7 +19,10 @@ class UnifiedFailureDiagnosticsTests(unittest.TestCase):
             'GOOGLE_ACCESS_TOKEN': 'SYNTHETIC_TEST_TOKEN',
         }
         with patch.dict('os.environ', env), patch.object(sys, 'argv', ['unified_publish.py', '--publish']):
-            with patch('unified_inputs.read_tables', side_effect=error), contextlib.redirect_stdout(output):
+            # These tests inject failures at the Sheets boundary, after the
+            # independently tested public-Git archive prerequisite succeeds.
+            with patch('pdf_archive.current_archive', return_value=contextlib.nullcontext('0' * 40)), \
+                 patch('unified_inputs.read_tables', side_effect=error), contextlib.redirect_stdout(output):
                 with self.assertRaises(SystemExit) as failed:
                     runpy.run_path(str(ROOT / 'unified_publish.py'), run_name='__main__')
         self.assertEqual(failed.exception.code, 1)

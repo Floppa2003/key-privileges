@@ -74,7 +74,7 @@ class Sheets:
         return r.json()
 
     def metadata(self) -> dict:
-        d = self.request('GET', params={'fields': 'sheets.properties(sheetId,title,gridProperties)'})
+        d = self.request('GET', params={'fields': 'sheets.properties(sheetId,title,hidden,gridProperties)'})
         return {s['properties']['title']: s['properties'] for s in d['sheets']}
 
     def values(self, title: str, props: dict) -> list[list]:

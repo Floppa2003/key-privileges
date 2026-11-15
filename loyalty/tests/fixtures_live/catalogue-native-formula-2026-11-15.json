@@ -1,0 +1,21 @@
+{
+  "source": "Google Sheet native formula and column headers; contains no source offers or codes",
+  "observed_at": "2026-11-15",
+  "headers": [
+    "Партнёр / предложение",
+    "Программа",
+    "Конкретная выгода",
+    "Промокод / получение кода",
+    "Как получить",
+    "Условия и ограничения",
+    "Срок из источника",
+    "Категория",
+    "Дата источника / получения, UTC",
+    "Ссылка на источник",
+    "Комментарии",
+    "Что за запись",
+    "Статус срока",
+    "ID — служебное"
+  ],
+  "formula": "=ARRAYFORMULA(IF(OR(normalization_audit!E7<>\"verified\";normalization_audit!I7<>\"current\";'_ui_catalog'!Z2<>\"verified\";'_ui_catalog'!Z5<>normalization_audit!J7);\"Идёт обновление каталога. Дождись завершения проверки.\";LET(d;FILTER('_ui_catalog'!A2:Q;'_ui_catalog'!N2:N<>\"\");word;LOWER(SUBSTITUTE(TRIM($B$3);\"ё\";\"е\"));hits;IF(word=\"\";1;BYROW(CHOOSECOLS(d;1;2;3;4;5;6;8;11;17);LAMBDA(r;SUM(IF(ISNUMBER(FIND(word;LOWER(SUBSTITUTE(r;\"ё\";\"е\"))));1;0))>0)));category;LOWER(SUBSTITUTE(TRIM($B$5);\"ё\";\"е\"));freshRewards;IF((INDEX(d;0;15)=\"parser_offers\")*ISNUMBER(MATCH(INDEX(d;0;2);{\"Backit — денежный кешбэк\";\"Club Avolta\";\"Мантера Моменты\";\"X5 Клуб — партнёры\";\"Магнит Плюс — партнёры\";\"Город / Тройка\";\"Цветной — программа лояльности\";\"FlyStation — публичные акции\"};0));IFERROR((DATEVALUE(LEFT(INDEX(d;0;9);10))<=TODAY())*(DATEVALUE(LEFT(INDEX(d;0;9);10))>=TODAY()-7);0);1);keep;hits*freshRewards*IF($B$4=\"\";1;INDEX(d;0;2)=$B$4)*IF(category=\"\";1;ISNUMBER(FIND(category;LOWER(SUBSTITUTE(INDEX(d;0;8);\"ё\";\"е\")))))*(INDEX(d;0;14)<>\"\");IF(SUM(keep)=0;\"Ничего не найдено. Измени поиск, программу или категорию.\";SORT(FILTER(CHOOSECOLS(d;1;2;3;4;5;6;7;8;9;10;11;12;13;14);keep);1;TRUE;2;TRUE)))))"
+}

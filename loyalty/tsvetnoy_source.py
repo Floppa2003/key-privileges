@@ -23,6 +23,8 @@ def matrix(data, tier_names):
     No page width, number of tiers, tier name, brand name or rate is frozen.
     """
     if not data.startswith(b'%PDF-') or len(data)>6000000:raise ValueError('tsvetnoy_pdf_identity')
+    from pdf_archive import capture_if_enabled
+    capture_if_enabled(data)
     if not tier_names or len(set(tier_names))!=len(tier_names):raise ValueError('tsvetnoy_tier_inventory')
     from pypdf import PdfReader
     reader=PdfReader(io.BytesIO(data))
@@ -228,11 +230,24 @@ def source_fields(e):
         warnings=['accumulation_mark_is_status_progress_not_cashback','source_pdf_creation_date_not_offer_valid_from','tier_boundary_wording_preserved_separately'])
 
 async def collect(client,cfg,report,now,limit):
-    from pypdf import PdfReader
     from read_budget import within_source_budget
     if cfg['id']!=SOURCE or cfg['url']!=ROOT:raise ValueError('tsvetnoy_config')
     doc=current_document(await within_source_budget(client,lambda:client.json('https://tsvetnoy.com/api/v1/documents')))
     url='https://tsvetnoy.com/pdf/'+doc['key'];data=await within_source_budget(client,lambda:client.read_pdf(url))
+    try:
+        return await _collect_matrix(client,report,now,limit,doc,data,url)
+    except Exception as exc:
+        from pdf_archive import original_record
+        report['discovered']=1
+        report['coverage']='public_current_PDF_retained_for_viewing; matrix_not_parsed'
+        report['errors'].append({'phase':'document_text','reason':type(exc).__name__})
+        return [original_record(SOURCE,'document:'+doc['key'],PROGRAMS[SOURCE],'Цветной',url,now,
+            data,exc,parent_source=ROOT,label=doc.get('fileName') or PROGRAMS[SOURCE])]
+
+
+async def _collect_matrix(client,report,now,limit,doc,data,url):
+    from pypdf import PdfReader
+    from read_budget import within_source_budget
     raw=await within_source_budget(client,lambda:client.read(ROOT,render=True))
     await within_source_budget(client,lambda:client.page.locator('h3.loyality-terms__card-title').first.wait_for(state='attached',timeout=12000))
     raw=await client.page.content();tiers,registration=tier_evidence(raw)
@@ -245,7 +260,13 @@ async def collect(client,cfg,report,now,limit):
     if len(candidates)>limit:raise ValueError('tsvetnoy_record_limit')
     for e in candidates:
         inventory.append(e['native'])
-        try:records.append(make_record(SOURCE,e,now))
+        try:
+            row=make_record(SOURCE,e,now)
+            if e.get('kind')!='tier':
+                from normalized import content_hash
+                row['details']['document_sha256']=e['page_sha256']
+                row['content_sha256']=content_hash(row)
+            records.append(row)
         except ExcludedOffer as exc:excluded[e['native']]=str(exc)
     reported(report,records,inventory,excluded,document=doc,pdf_sha256=sha(data),pages=len(PdfReader(io.BytesIO(data)).pages),scope='active_brand_matrix_and_observed_public_card_tiers')
     return records
