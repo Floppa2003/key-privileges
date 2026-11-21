@@ -1,0 +1,75 @@
+[
+  {
+    "id": "s7",
+    "url": "https://marketplace.s7.ru/partners/category/retail",
+    "canaries": [
+      "https://marketplace.s7.ru/partners/offer/flowwow",
+      "https://marketplace.s7.ru/city/offer/goldapple_1"
+    ],
+    "detail_pattern": "/offer/"
+  },
+  {
+    "id": "ekp",
+    "url": "https://ekp.spb.ru/capabilities/loyalty/",
+    "canaries": [
+      "https://ekp.spb.ru/capabilities/loyalty/tiles/608?region=78",
+      "https://ekp.spb.ru/capabilities/loyalty/tiles/1830?region=98&categories=clothes"
+    ],
+    "detail_pattern": "/loyalty/tiles/[0-9]+"
+  },
+  {
+    "id": "nordwind",
+    "url": "https://nordwindairlines.ru/ru/club/partnerlist",
+    "canaries": [],
+    "detail_pattern": "(?!)"
+  },
+  {
+    "id": "coral",
+    "url": "https://coralbonus.ru/klub-privilegii/",
+    "canaries": [
+      "https://coralbonus.ru/promo/",
+      "https://coralbonus.ru/klub-privilegii/zdorov-e/medsi/",
+      "https://coralbonus.ru/klub-privilegii/zdorov-e/napopravku/"
+    ],
+    "detail_pattern": "/klub-privilegii/[^/]+/[^/]+/"
+  },
+  {
+    "id": "rzd",
+    "url": "https://www.rzd-bonus.ru/?accessible=true",
+    "canaries": [],
+    "detail_pattern": "/partners/"
+  },
+  {
+    "id": "aeroflot",
+    "url": "https://www.aeroflot.ru/ru-ru/afl_bonus/partners",
+    "canaries": [],
+    "detail_pattern": "/partners/[^/]+/"
+  },
+  {
+    "id": "loyals",
+    "url": "https://loyals.ru/",
+    "canaries": [],
+    "detail_pattern": "(?!)"
+  },
+  {
+    "id": "utair",
+    "url": "https://www.utair.ru/support/2/kakiye_partnery_est_u_utair_status",
+    "canaries": [],
+    "detail_pattern": "(?!)"
+  },
+  {
+    "id": "af_medsi",
+    "url": "https://medsi.ru/actions/aeroflot-bonus-v-klinikakh-medsi/",
+    "canaries": [],
+    "detail_pattern": "(?!)"
+  },
+  {
+    "id": "mir",
+    "url": "https://vamprivet.ru/promo/",
+    "canaries": [
+      "https://vamprivet.ru/promo/krasota-i-zdorovye/chekap-zubov-dlya-zdorovoy-ulybki-1/",
+      "https://vamprivet.ru/promo/produkty-pitaniya/rybnye-delikatesy-ikra-i-moreprodukty-3/"
+    ],
+    "detail_pattern": "/promo/[^/]+/[^/]+/"
+  }
+]
